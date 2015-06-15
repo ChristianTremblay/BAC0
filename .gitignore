@@ -1,2 +1,7 @@
 /dist
 /build
+/BAC0/core/__pycache__
+/BAC0/core/app/__pycache__
+/BAC0/core/functions/__pycache__
+/BAC0/core/io/__pycache__
+/BAC0.egg-info
