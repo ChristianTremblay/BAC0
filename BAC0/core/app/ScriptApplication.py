@@ -10,22 +10,15 @@ coorresponding ReadPropertyACK and return the value.
 For 'write' commands it will create WritePropertyRequst PDUs and prints out a simple acknowledgement.
 """
 
-import sys
-
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
-from bacpypes.core import run as startBacnetIPApp
-from bacpypes.core import stop as stopBacnetIPApp
+from bacpypes.app import BIPSimpleApplication
+from bacpypes.object import get_datatype
 
-from bacpypes.pdu import Address, GlobalBroadcast
-from bacpypes.app import LocalDeviceObject, BIPSimpleApplication
-from bacpypes.object import get_object_class, get_datatype
+from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU,ReadPropertyRequest, ReadPropertyACK, ReadPropertyMultipleRequest, ReadPropertyMultipleACK, IAmRequest
 
-from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU,ReadPropertyRequest, ReadPropertyACK, WritePropertyRequest, ReadPropertyMultipleRequest, PropertyReference, ReadAccessSpecification, ReadPropertyMultipleACK,WhoIsRequest, IAmRequest,UnconfirmedRequestPDU
-
-from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
-from bacpypes.constructeddata import Array, Any
-from bacpypes.basetypes import ServicesSupported, PropertyIdentifier
+from bacpypes.primitivedata import Unsigned
+from bacpypes.constructeddata import Array
 
 
 from collections import defaultdict
@@ -36,13 +29,13 @@ _debug = 0
 _log = ModuleLogger(globals())
 
 @bacpypes_debugging
-class BacnetScriptApplication(BIPSimpleApplication):
+class ScriptApplication(BIPSimpleApplication):
     """
     This class define the bacnet application that process requests
     """
 
     def __init__(self, *args):
-        if _debug: BacnetScriptApplication._debug("__init__ %r", args)
+        if _debug: ScriptApplication._debug("__init__ %r", args)
         BIPSimpleApplication.__init__(self, *args)
 
         # keep track of requests to line up responses
@@ -57,7 +50,7 @@ class BacnetScriptApplication(BIPSimpleApplication):
         Initialize class variables to None for the present request
         Sends the apdu to the application request
         """
-        if _debug: BacnetScriptApplication._debug("request %r", apdu)
+        if _debug: ScriptApplication._debug("request %r", apdu)
 
         # save a copy of the request
         self._request = apdu
@@ -71,7 +64,7 @@ class BacnetScriptApplication(BIPSimpleApplication):
         
     def indication(self, apdu):
         """Given an I-Am request, cache it."""
-        if _debug: BacnetScriptApplication._debug("do_IAmRequest %r", apdu)
+        if _debug: ScriptApplication._debug("do_IAmRequest %r", apdu)
         if isinstance(apdu,IAmRequest):
             # build a key from the source, just use the instance number
             key = (str(apdu.pduSource),
@@ -88,7 +81,7 @@ class BacnetScriptApplication(BIPSimpleApplication):
         """
         This function process answers from the stack and look for a returned value or an error.
         """
-        if _debug: BacnetScriptApplication._debug("confirmation %r", apdu)
+        if _debug: ScriptApplication._debug("confirmation %r", apdu)
         if isinstance(apdu, Error):
             self.error = "%s" % (apdu.errorCode,)          
             #sys.stdout.write("error: %s\n" % (apdu.errorCode,))
@@ -106,7 +99,7 @@ class BacnetScriptApplication(BIPSimpleApplication):
         elif (isinstance(self._request, ReadPropertyRequest)) and (isinstance(apdu, ReadPropertyACK)):
             # find the datatype
             datatype = get_datatype(apdu.objectIdentifier[0], apdu.propertyIdentifier)
-            if _debug: BacnetScriptApplication._debug("    - datatype: %r", datatype)
+            if _debug: ScriptApplication._debug("    - datatype: %r", datatype)
             if not datatype:
                 raise TypeError("unknown datatype")
 
@@ -119,22 +112,22 @@ class BacnetScriptApplication(BIPSimpleApplication):
             else:
                 self.value = apdu.propertyValue.cast_out(datatype)
 
-            if _debug: BacnetScriptApplication._debug("    - value: %r", self.value)
+            if _debug: ScriptApplication._debug("    - value: %r", self.value)
             
         elif (isinstance(self._request, ReadPropertyMultipleRequest)) and (isinstance(apdu, ReadPropertyMultipleACK)):
             # loop through the results
             for result in apdu.listOfReadAccessResults:
                 # here is the object identifier
                 objectIdentifier = result.objectIdentifier
-                if _debug: BacnetScriptApplication._debug("    - objectIdentifier: %r", objectIdentifier)
+                if _debug: ScriptApplication._debug("    - objectIdentifier: %r", objectIdentifier)
 
                 # now come the property values per object
                 for element in result.listOfResults:
                     # get the property and array index
                     propertyIdentifier = element.propertyIdentifier
-                    if _debug: BacnetScriptApplication._debug("    - propertyIdentifier: %r", propertyIdentifier)
+                    if _debug: ScriptApplication._debug("    - propertyIdentifier: %r", propertyIdentifier)
                     propertyArrayIndex = element.propertyArrayIndex
-                    if _debug: BacnetScriptApplication._debug("    - propertyArrayIndex: %r", propertyArrayIndex)
+                    if _debug: ScriptApplication._debug("    - propertyArrayIndex: %r", propertyArrayIndex)
 
                     # here is the read result
                     readResult = element.readResult
@@ -155,7 +148,7 @@ class BacnetScriptApplication(BIPSimpleApplication):
 
                         # find the datatype
                         datatype = get_datatype(objectIdentifier[0], propertyIdentifier)
-                        if _debug: BacnetScriptApplication._debug("    - datatype: %r", datatype)
+                        if _debug: ScriptApplication._debug("    - datatype: %r", datatype)
                         if not datatype:
                             raise TypeError("unknown datatype")
 
@@ -167,7 +160,7 @@ class BacnetScriptApplication(BIPSimpleApplication):
                                 self.values.append(propertyValue.cast_out(datatype.subtype))
                         else:
                             value = propertyValue.cast_out(datatype)
-                        if _debug: BacnetScriptApplication._debug("    - value: %r", value)
+                        if _debug: ScriptApplication._debug("    - value: %r", value)
                         self.values.append(value)
                         #sys.stdout.write(" = " + str(value) + '\n')
                     #sys.stdout.flush()

@@ -10,26 +10,14 @@ coorresponding ReadPropertyACK and return the value.
 For 'write' commands it will create WritePropertyRequst PDUs and prints out a simple acknowledgement.
 """
 
-import sys
-
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
-from bacpypes.core import run as startBacnetIPApp
-from bacpypes.core import stop as stopBacnetIPApp
-
-from bacpypes.pdu import Address, GlobalBroadcast
-from bacpypes.app import LocalDeviceObject, BIPSimpleApplication
+from bacpypes.pdu import Address
 from bacpypes.object import get_object_class, get_datatype
-
-from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU,ReadPropertyRequest, ReadPropertyACK, WritePropertyRequest, ReadPropertyMultipleRequest, PropertyReference, ReadAccessSpecification, ReadPropertyMultipleACK,WhoIsRequest, IAmRequest,UnconfirmedRequestPDU
-
-from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
-from bacpypes.constructeddata import Array, Any
-from bacpypes.basetypes import ServicesSupported, PropertyIdentifier
-
+from bacpypes.apdu import PropertyReference,ReadAccessSpecification,ReadPropertyRequest, ReadPropertyACK, ReadPropertyMultipleRequest, ReadPropertyMultipleACK
+from bacpypes.basetypes import PropertyIdentifier
 
 import time
-
 
 # some debugging
 _debug = 0

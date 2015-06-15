@@ -10,38 +10,17 @@ coorresponding ReadPropertyACK and return the value.
 For 'write' commands it will create WritePropertyRequst PDUs and prints out a simple acknowledgement.
 """
 
-import sys
-
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
-from bacpypes.core import run as startBacnetIPApp
-from bacpypes.core import stop as stopBacnetIPApp
-
-from bacpypes.pdu import Address, GlobalBroadcast
-from bacpypes.app import LocalDeviceObject, BIPSimpleApplication
-from bacpypes.object import get_object_class, get_datatype
-
-from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU,ReadPropertyRequest, ReadPropertyACK, WritePropertyRequest, ReadPropertyMultipleRequest, PropertyReference, ReadAccessSpecification, ReadPropertyMultipleACK,WhoIsRequest, IAmRequest,UnconfirmedRequestPDU
-
-from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
-from bacpypes.constructeddata import Array, Any
-from bacpypes.basetypes import ServicesSupported, PropertyIdentifier
-
-from threading import Thread
-import time
-from collections import defaultdict
-from bacnetScript.bacnetRead import ReadProperty
-from bacnetScript.bacnetWrite import WriteProperty
-from bacnetScript.bacnetBasicApp import BacnetBasicApp
-from bacnetScript.bacnetDiscoverPoints import *
-
+from BAC0.scripts.BasicScript import BasicScript
+from BAC0.core.io import Read, Write
 
 # some debugging
 _debug = 0
 _log = ModuleLogger(globals())
 
 @bacpypes_debugging
-class BacnetScript(BacnetBasicApp,ReadProperty,WriteProperty):
+class SimpleScript(BasicScript,Read.ReadProperty,Write.WriteProperty):
     """ 
     This class build a running bacnet application and will accept read ans write requests
     
@@ -54,20 +33,20 @@ class BacnetScript(BacnetBasicApp,ReadProperty,WriteProperty):
         Normally, the address must be in the same subnet than the bacnet network (if no BBMD or Foreign device is used)        
         """     
         if _debug: _log.debug("Configurating app")
-        BacnetBasicApp.__init__(self, localIPAddr = localIPAddr, localObjName = localObjName, Boid = Boid,maxAPDULengthAccepted = maxAPDULengthAccepted,segmentationSupported = segmentationSupported, vendorID = vendorID )
+        BasicScript.__init__(self, localIPAddr = localIPAddr, localObjName = localObjName, Boid = Boid,maxAPDULengthAccepted = maxAPDULengthAccepted,segmentationSupported = segmentationSupported, vendorID = vendorID )
         
         # Force and gloab whois to find all devices on the network
         self.whois()
    
-    def discover(self,addr):     
-        discoverPoints(self,addr)
+    #def discover(self,addr):     
+    #    bf.discoverPoints(self,addr)
             
             
 #
 #   __main__
 #
 if __name__ == '__main__':
-    bacnet = BacnetScript(localIPAddr = '192.168.210.63')
+    bacnet = SimpleScript(localIPAddr = '192.168.210.63')
 
 
 

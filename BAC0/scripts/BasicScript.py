@@ -10,36 +10,25 @@ coorresponding ReadPropertyACK and return the value.
 For 'write' commands it will create WritePropertyRequst PDUs and prints out a simple acknowledgement.
 """
 
-import sys
-
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
-
 from bacpypes.core import run as startBacnetIPApp
 from bacpypes.core import stop as stopBacnetIPApp
+from bacpypes.app import LocalDeviceObject
+from bacpypes.basetypes import ServicesSupported
 
-from bacpypes.pdu import Address, GlobalBroadcast
-from bacpypes.app import LocalDeviceObject, BIPSimpleApplication
-from bacpypes.object import get_object_class, get_datatype
-
-from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU,ReadPropertyRequest, ReadPropertyACK, WritePropertyRequest, ReadPropertyMultipleRequest, PropertyReference, ReadAccessSpecification, ReadPropertyMultipleACK,WhoIsRequest, IAmRequest,UnconfirmedRequestPDU
-
-from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
-from bacpypes.constructeddata import Array, Any
-from bacpypes.basetypes import ServicesSupported, PropertyIdentifier
 
 from threading import Thread
-import time
-from collections import defaultdict
 
-from bacnetScript.bacnetScriptApplication import BacnetScriptApplication
-from bacnetScript.bacnetWhoisIAm import BacnetWhoisIAm
+from ..core.functions.WhoisIAm import WhoisIAm
+from ..core.app.ScriptApplication import ScriptApplication
+ 
 
 # some debugging
 _debug = 0
 _log = ModuleLogger(globals())
 
 @bacpypes_debugging
-class BacnetBasicApp(BacnetWhoisIAm):
+class BasicScript(WhoisIAm):
     """ 
     This class build a running bacnet application and will accept whois ans iam requests
     
@@ -91,7 +80,7 @@ class BacnetBasicApp(BacnetWhoisIAm):
             self.this_device.protocolServicesSupported = pss.value
         
             # make a simple application
-            self.this_application = BacnetScriptApplication(self.this_device, self.localIPAddr)
+            self.this_application = ScriptApplication(self.this_device, self.localIPAddr)
             
         
             _log.debug("running")
@@ -135,10 +124,3 @@ class BacnetBasicApp(BacnetWhoisIAm):
         print('App started')
 
 
-
-           
-#
-#   __main__
-#
-if __name__ == '__main__':
-    bacnet = BacnetBasicApp(localIPAddr = '192.168.210.63')

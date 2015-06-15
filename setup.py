@@ -5,7 +5,7 @@ from setuptools import setup
 #   read
 #
 
-def read(fname):
+def readReadme(fname):
     """Utility function to read the contents of the README.txt file."""
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
@@ -13,13 +13,18 @@ def read(fname):
 #   __main__
 #
 
-setup(name='bacnetScript',
-    version='0.1',
+setup(name='BAC0',
+    version='0.2',
     description='BACnet Scripting Library',
     author='Christian Tremblay',
     author_email='christian.tremblay@servisys.com',
     url='http://www.servisys.com/',
-    packages=['bacnetScript'],
+    packages=['BAC0',
+              'BAC0.core',
+              'BAC0.core.app',
+              'BAC0.core.io',
+              'BAC0.core.functions',
+              'BAC0.scripts'],
     long_description=open('README.txt').read(),
     classifiers=[
         "Development Status :: 4 - Beta",

@@ -1,15 +1,7 @@
 #!/usr/bin/python
-
-"""
-Description
-"""
-
-
-
 from ipy_progressbar import ProgressBar
-import pandas as pd
 
-def discoverPoints(bacnetapp,address):
+def discoverPoints(self,bacnetapp,address):
     pss = bacnetapp.read('%s device 5 protocolServicesSupported' % address)
     deviceName = bacnetapp.read('%s device 5 objectName' % address)
     print('Found %s' % deviceName)
@@ -24,7 +16,7 @@ def discoverPoints(bacnetapp,address):
                 result.append(bacnetapp.readMultiple('%s %s %s objectName description presentValue' % (address, objList[i][0], objList[i][1])))
 
     df = pd.DataFrame(result, columns=['name','description','presentValue','units']).set_index(['name'])
-    return df
+    return (deviceName,pss,objList,df)
 
 
 
