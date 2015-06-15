@@ -1,7 +1,8 @@
 #!/usr/bin/python
 from ipy_progressbar import ProgressBar
+import pandas as pd
 
-def discoverPoints(self,bacnetapp,address):
+def discoverPoints(bacnetapp,address):
     pss = bacnetapp.read('%s device 5 protocolServicesSupported' % address)
     deviceName = bacnetapp.read('%s device 5 objectName' % address)
     print('Found %s' % deviceName)
