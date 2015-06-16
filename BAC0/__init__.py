@@ -1,3 +1,4 @@
 #!/usr/bin/python
 from . import core
-from . import scripts
+from .scripts.BasicScript import BasicScript 
+from .scripts.ReadWriteScript import ReadWriteScript 
