@@ -14,7 +14,7 @@ def readReadme(fname):
 #
 
 setup(name='BAC0',
-    version='0.2.1',
+    version='0.2.2',
     description='BACnet Scripting Library',
     author='Christian Tremblay',
     author_email='christian.tremblay@servisys.com',
@@ -25,6 +25,11 @@ setup(name='BAC0',
               'BAC0.core.io',
               'BAC0.core.functions',
               'BAC0.scripts'],
+    install_requires=[
+          'ipy_progressbar',
+          'pandas',
+        ],
+    dependency_links=['git://github.com/ChristianTremblay/bacnetScript.git#egg=package-0.11.34.7'],
     long_description=open('README.txt').read(),
     classifiers=[
         "Development Status :: 4 - Beta",
