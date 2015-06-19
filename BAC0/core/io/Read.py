@@ -19,6 +19,10 @@ from bacpypes.basetypes import PropertyIdentifier
 
 import time
 
+
+from queue import Queue
+from threading import Event
+
 # some debugging
 _debug = 0
 _log = ModuleLogger(globals())
@@ -29,6 +33,8 @@ _log = ModuleLogger(globals())
 class ReadProperty():
     def __init__(self):
         self.this_application = None
+        self.this_application.ResponseQueue = Queue()
+        
     def read(self, args):
         """
         Given arguments, will process a read request, wait for the answer and return the value
@@ -77,12 +83,19 @@ class ReadProperty():
         Wait for the answer and return the value
         A 5sec timeout will terminate the request 
         """        
-        timeout = time.time() + 5   # 5 secondes from now   
-        #val = None
-        while self.this_application.value == None:
-            if self.this_application.value != None or time.time() > timeout or self.this_application.error != None:
-                break
-        return self.this_application.value
+        #timeout = time.time() + 5   # 5 secondes from now   
+        ##val = None
+        #while self.this_application.value == None:
+        #    if self.this_application.value != None or time.time() > timeout or self.this_application.error != None:
+        #        break
+        #return self.this_application.value
+        
+        # Test with Queue
+        data = None
+        while True:
+            data, evt = self.this_application.ResponseQueue.get()    
+            evt.set()
+            return data
         
     def readMultiple(self, args):
         """read <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )..."""
@@ -167,9 +180,14 @@ class ReadProperty():
         Wait for the answer and return the value
         A 5sec timeout will terminate the request 
         """        
-        timeout = time.time() + 5   # 5 secondes from now   
-        #val = None
-        while self.this_application.values == []:
-            if self.this_application.values != [] or time.time() > timeout or self.this_application.error != None:
-                break
-        return self.this_application.values
+        #timeout = time.time() + 5   # 5 secondes from now   
+        ##val = None
+        #while self.this_application.values == []:
+        #    if self.this_application.values != [] or time.time() > timeout or self.this_application.error != None:
+        #        break
+        #return self.this_application.values
+        data = None
+        while True:
+            data, evt = self.this_application.ResponseQueue.get()    
+            evt.set()
+            return data

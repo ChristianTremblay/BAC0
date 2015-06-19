@@ -17,7 +17,10 @@ from bacpypes.app import LocalDeviceObject
 from bacpypes.basetypes import ServicesSupported
 
 
-from threading import Thread
+from threading import Thread, Event
+
+from queue import Queue
+
 
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.app.ScriptApplication import ScriptApplication
@@ -52,6 +55,7 @@ class BasicScript(WhoisIAm):
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
         self.vendorID = vendorID
         self.discoveredDevices = None
+        self.ResponseQueue = Queue()
         
                 
         self.startApp()

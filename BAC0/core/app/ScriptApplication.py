@@ -22,6 +22,8 @@ from bacpypes.constructeddata import Array
 
 
 from collections import defaultdict
+from threading import Thread, Event
+from queue import Queue
 
 
 # some debugging
@@ -44,6 +46,8 @@ class ScriptApplication(BIPSimpleApplication):
         self.error = None
         self.values = []
         self.i_am_counter = defaultdict(int)
+        self.ResponseQueue = Queue()
+        
 
     def request(self, apdu):
         """
@@ -58,6 +62,7 @@ class ScriptApplication(BIPSimpleApplication):
         self.error = None
         self.values = []
         self.i_am_counter = defaultdict(int)
+        #self.ResponseQueue = Queue()
 
         # forward it along
         BIPSimpleApplication.request(self, apdu)
@@ -111,6 +116,11 @@ class ScriptApplication(BIPSimpleApplication):
                     self.value = apdu.propertyValue.cast_out(datatype.subtype)
             else:
                 self.value = apdu.propertyValue.cast_out(datatype)
+                
+            # Test with Queue to share data with script
+            evt = Event()
+            self.ResponseQueue.put((self.value, evt))
+            evt.wait()
 
             if _debug: ScriptApplication._debug("    - value: %r", self.value)
             
@@ -162,6 +172,11 @@ class ScriptApplication(BIPSimpleApplication):
                             value = propertyValue.cast_out(datatype)
                         if _debug: ScriptApplication._debug("    - value: %r", value)
                         self.values.append(value)
+            #self.ResponseQueue.put(self.values)
+            evt = Event()
+            self.ResponseQueue.put((self.values, evt))
+            evt.wait()
+
                         #sys.stdout.write(" = " + str(value) + '\n')
                     #sys.stdout.flush()
 
