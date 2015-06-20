@@ -93,11 +93,15 @@ class ScriptApplication(BIPSimpleApplication):
             #sys.stdout.flush()
 
         elif isinstance(apdu, AbortPDU):
-            self.error = apdu.debug_contents()
+            #self.error = apdu.debug_contents()
+            pass
             
 
         if isinstance(apdu, SimpleAckPDU):
-            self.value = apdu.debug_contents()           
+            #self.value = apdu.debug_contents()  
+            evt = Event()
+            self.ResponseQueue.put((self.value, evt))
+            evt.wait()
             #sys.stdout.write("ack\n")
             #sys.stdout.flush() 
 

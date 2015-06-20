@@ -21,6 +21,9 @@ from bacpypes.apdu import WritePropertyRequest
 from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
 from bacpypes.constructeddata import Array, Any
 
+from queue import Queue, Empty
+from threading import Event
+
 # some debugging
 _debug = 0
 _log = ModuleLogger(globals())
@@ -110,4 +113,13 @@ class WriteProperty():
 
         except Exception as e:
             WriteProperty._exception("exception: %r", e)
+            
+        while True:
+            try:
+                data, evt = self.this_application.ResponseQueue.get(timeout=2)    
+                evt.set()
+                return data
+            except Empty:
+                print('No response from controller')
+                return None
  

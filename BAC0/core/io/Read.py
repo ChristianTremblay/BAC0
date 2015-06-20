@@ -20,7 +20,7 @@ from bacpypes.basetypes import PropertyIdentifier
 import time
 
 
-from queue import Queue
+from queue import Queue, Empty
 from threading import Event
 
 # some debugging
@@ -93,9 +93,13 @@ class ReadProperty():
         # Test with Queue
         data = None
         while True:
-            data, evt = self.this_application.ResponseQueue.get()    
-            evt.set()
-            return data
+            try:
+                data, evt = self.this_application.ResponseQueue.get(timeout=2)    
+                evt.set()
+                return data
+            except Empty:
+                print('No response from controller')
+                return None
         
     def readMultiple(self, args):
         """read <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )..."""
@@ -188,7 +192,11 @@ class ReadProperty():
         #return self.this_application.values
         data = None
         while True:
-            data, evt = self.this_application.ResponseQueue.get()    
-            evt.set()
-            return data
+            try:
+                data, evt = self.this_application.ResponseQueue.get(timeout=2)    
+                evt.set()
+                return data
+            except Empty:
+                print('No response from controller')
+                return None
             

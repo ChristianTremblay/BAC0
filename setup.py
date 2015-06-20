@@ -14,7 +14,7 @@ def readReadme(fname):
 #
 
 setup(name='BAC0',
-    version='0.2.3',
+    version='0.2.4',
     description='BACnet Scripting Library',
     author='Christian Tremblay',
     author_email='christian.tremblay@servisys.com',
