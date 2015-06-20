@@ -7,6 +7,7 @@ def discoverPoints(bacnetapp,address, progress=True):
     deviceName = bacnetapp.read('%s device 5 objectName' % address)
     print('Found %s' % deviceName)
     objList = bacnetapp.read('%s device 5 objectList' % address)
+    newLine = []   
     result = []
     
     if progress:
@@ -22,12 +23,14 @@ def discoverPoints(bacnetapp,address, progress=True):
         for each in objList:
             if each[0] not in 'file calendar device schedule':
                 if 'binary' not in each[0] and 'multiState' not in each[0]:
-                    result.append(bacnetapp.readMultiple('%s %s %s objectName description presentValue units' % (address, each[0], each[1])))
+                    newLine = [each[0],each[1]]
+                    newLine.extend(bacnetapp.readMultiple('%s %s %s objectName description presentValue units' % (address, each[0], each[1])))
                 else:
-                    result.append(bacnetapp.readMultiple('%s %s %s objectName description presentValue' % (address, each[0], each[1])))
-    
+                    newLine = [each[0],each[1]]
+                    newLine.extend(bacnetapp.readMultiple('%s %s %s objectName description presentValue' % (address, each[0], each[1])))
+                result.append(newLine)
             
-    df = pd.DataFrame(result, columns=['name','description','presentValue','units']).set_index(['name'])
+    df = pd.DataFrame(result, columns=['pointType','pointAddress','pointName','description','presentValue','units']).set_index(['pointName'])
     return (deviceName,pss,objList,df)
 
 

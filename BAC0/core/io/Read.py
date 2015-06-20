@@ -191,3 +191,4 @@ class ReadProperty():
             data, evt = self.this_application.ResponseQueue.get()    
             evt.set()
             return data
+            
