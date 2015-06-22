@@ -5,9 +5,10 @@ Built around a simple BIPSimpleApplication this class allows to create read and 
 requests and store read responses in a variables
 
 For 'read' commands it will create ReadPropertyRequest PDUs, then lines up the
-coorresponding ReadPropertyACK and return the value. 
+coorresponding ReadPropertyACK and return the value.
 
-For 'write' commands it will create WritePropertyRequst PDUs and prints out a simple acknowledgement.
+For 'write' commands it will create WritePropertyRequst PDUs and prints out a simple
+acknowledgement.
 """
 
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
@@ -15,16 +16,16 @@ from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 from bacpypes.app import BIPSimpleApplication
 from bacpypes.object import get_datatype
 
-from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU,ReadPropertyRequest, ReadPropertyACK, ReadPropertyMultipleRequest, ReadPropertyMultipleACK, IAmRequest
+from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU, ReadPropertyRequest, \
+    ReadPropertyACK, ReadPropertyMultipleRequest, ReadPropertyMultipleACK, IAmRequest
 
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
 
 
 from collections import defaultdict
-from threading import Thread, Event
+from threading import Event
 from queue import Queue
-
 
 # some debugging
 _debug = 0
@@ -47,7 +48,6 @@ class ScriptApplication(BIPSimpleApplication):
         self.values = []
         self.i_am_counter = defaultdict(int)
         self.ResponseQueue = Queue()
-        
 
     def request(self, apdu):
         """
@@ -66,16 +66,15 @@ class ScriptApplication(BIPSimpleApplication):
 
         # forward it along
         BIPSimpleApplication.request(self, apdu)
-        
+
     def indication(self, apdu):
         """Given an I-Am request, cache it."""
         if _debug: ScriptApplication._debug("do_IAmRequest %r", apdu)
-        if isinstance(apdu,IAmRequest):
+        if isinstance(apdu, IAmRequest):
             # build a key from the source, just use the instance number
             key = (str(apdu.pduSource),
-                apdu.iAmDeviceIdentifier[1],
-                )
-    
+                   apdu.iAmDeviceIdentifier[1],
+            )
             # count the times this has been received
             self.i_am_counter[key] += 1
         # pass back to the default implementation
@@ -88,24 +87,19 @@ class ScriptApplication(BIPSimpleApplication):
         """
         if _debug: ScriptApplication._debug("confirmation %r", apdu)
         if isinstance(apdu, Error):
-            self.error = "%s" % (apdu.errorCode,)          
-            #sys.stdout.write("error: %s\n" % (apdu.errorCode,))
-            #sys.stdout.flush()
+            self.error = "%s" % (apdu.errorCode,)   
 
         elif isinstance(apdu, AbortPDU):
-            #self.error = apdu.debug_contents()
             pass
-            
 
         if isinstance(apdu, SimpleAckPDU):
-            #self.value = apdu.debug_contents()  
             evt = Event()
             self.ResponseQueue.put((self.value, evt))
             evt.wait()
-            #sys.stdout.write("ack\n")
-            #sys.stdout.flush() 
 
-        elif (isinstance(self._request, ReadPropertyRequest)) and (isinstance(apdu, ReadPropertyACK)):
+        elif (isinstance(self._request, ReadPropertyRequest)) \
+            and (isinstance(apdu, ReadPropertyACK)):
+
             # find the datatype
             datatype = get_datatype(apdu.objectIdentifier[0], apdu.propertyIdentifier)
             if _debug: ScriptApplication._debug("    - datatype: %r", datatype)
@@ -120,15 +114,17 @@ class ScriptApplication(BIPSimpleApplication):
                     self.value = apdu.propertyValue.cast_out(datatype.subtype)
             else:
                 self.value = apdu.propertyValue.cast_out(datatype)
-                
-            # Test with Queue to share data with script
+
+            # Share data with script
             evt = Event()
             self.ResponseQueue.put((self.value, evt))
             evt.wait()
 
             if _debug: ScriptApplication._debug("    - value: %r", self.value)
-            
-        elif (isinstance(self._request, ReadPropertyMultipleRequest)) and (isinstance(apdu, ReadPropertyMultipleACK)):
+
+        elif (isinstance(self._request, ReadPropertyMultipleRequest)) \
+            and (isinstance(apdu, ReadPropertyMultipleACK)):
+
             # loop through the results
             for result in apdu.listOfReadAccessResults:
                 # here is the object identifier
@@ -176,18 +172,6 @@ class ScriptApplication(BIPSimpleApplication):
                             value = propertyValue.cast_out(datatype)
                         if _debug: ScriptApplication._debug("    - value: %r", value)
                         self.values.append(value)
-            #self.ResponseQueue.put(self.values)
             evt = Event()
             self.ResponseQueue.put((self.values, evt))
             evt.wait()
-
-                        #sys.stdout.write(" = " + str(value) + '\n')
-                    #sys.stdout.flush()
-
-
-            
-                        #sys.stdout.write(" = " + str(value) + '\n')
-                    #sys.stdout.flush()
-            #sys.stdout.write(str(self.value) + '\n')
-            #sys.stdout.flush()
-            

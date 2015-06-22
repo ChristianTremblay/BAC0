@@ -1,52 +1,52 @@
 #!/usr/bin/python
-
 """
-Built around a simple BIPSimpleApplication this class allows to create read and write
-requests and store read responses in a variables
-
-For 'read' commands it will create ReadPropertyRequest PDUs, then lines up the
-coorresponding ReadPropertyACK and return the value. 
-
-For 'write' commands it will create WritePropertyRequst PDUs and prints out a simple acknowledgement.
+Module : Reap.py
+Author : Christian Tremblay, ing.
+Inspired a lot by the work of Joel Bender (joel@carrickbender.com)
+Email : christian.tremblay@servisys.com
 """
 
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
 from bacpypes.pdu import Address
 from bacpypes.object import get_object_class, get_datatype
-from bacpypes.apdu import PropertyReference,ReadAccessSpecification,ReadPropertyRequest, ReadPropertyACK, ReadPropertyMultipleRequest, ReadPropertyMultipleACK
+from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
+    ReadPropertyRequest, ReadPropertyMultipleRequest
 from bacpypes.basetypes import PropertyIdentifier
 
-import time
-
-
 from queue import Queue, Empty
-from threading import Event
+
+from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException
 
 # some debugging
 _debug = 0
-_log = ModuleLogger(globals())
-
-
+_LOG = ModuleLogger(globals())
 
 @bacpypes_debugging
 class ReadProperty():
+    """
+    This class defines functions to read bacnet messages.
+    It handles readProperty, readPropertyMultiple
+    Data exchange is made via a Queue object
+    A timeout of 2 seconds allow detection of invalid device or communciation errors.
+    """
     def __init__(self):
         self.this_application = None
         self.this_application.ResponseQueue = Queue()
-        
+
     def read(self, args):
         """
         Given arguments, will process a read request, wait for the answer and return the value
         Arguments are
         <addr> <type> <inst> <prop> [ <indx> ]
-        ex. '2:5 analogInput 1 presentValue' will read controller with a MAC address of 5 in the network 2
+        ex. '2:5 analogInput 1 presentValue' will read controller with a MAC address of 5 in the
+        network 2
         Will ask for the present Value of analog input 1 (AI:1)
         """
-        if not self._started : raise Exception('App not running, use startApp() function')
+        if not self._started: raise Exception('App not running, use startApp() function')
         args = args.split()
         self.this_application.value == None
-        if _debug: ReadProperty._debug("do_read %r", args)
+        print_debug("do_read %r", args)
 
         try:
             addr, obj_type, obj_inst, prop_id = args[:4]
@@ -71,40 +71,29 @@ class ReadProperty():
 
             if len(args) == 5:
                 request.propertyArrayIndex = int(args[4])
-            if _debug: ReadProperty._debug("    - request: %r", request)
+            print_debug("    - request: %r", request)
 
             # give it to the application
             self.this_application.request(request)
 
-        except Exception as e:
-            ReadProperty._exception("exception: %r", e)
+        except ReadPropertyException as error:
+            ReadProperty._exception("exception: %r", error)
 
-        """
-        Wait for the answer and return the value
-        A 5sec timeout will terminate the request 
-        """        
-        #timeout = time.time() + 5   # 5 secondes from now   
-        ##val = None
-        #while self.this_application.value == None:
-        #    if self.this_application.value != None or time.time() > timeout or self.this_application.error != None:
-        #        break
-        #return self.this_application.value
-        
-        # Test with Queue
+        # Share response with Queue
         data = None
         while True:
             try:
-                data, evt = self.this_application.ResponseQueue.get(timeout=2)    
+                data, evt = self.this_application.ResponseQueue.get(timeout=2)
                 evt.set()
                 return data
             except Empty:
                 print('No response from controller')
                 return None
-        
+
     def readMultiple(self, args):
         """read <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )..."""
         args = args.split()
-        if _debug: ReadProperty._debug("readMultiple %r", args)
+        print_debug("readMultiple %r", args)
 
         try:
             i = 0
@@ -120,7 +109,7 @@ class ReadProperty():
                     obj_type = int(obj_type)
                 elif not get_object_class(obj_type):
                     raise ValueError("unknown object type")
-                
+
                 obj_inst = int(args[i])
                 i += 1
 
@@ -173,30 +162,27 @@ class ReadProperty():
                 listOfReadAccessSpecs=read_access_spec_list,
                 )
             request.pduDestination = Address(addr)
-            if _debug: ReadProperty._debug("    - request: %r", request)
+            print_debug("    - request: %r", request)
 
             # give it to the application
             self.this_application.request(request)
 
-        except Exception as e:
-            ReadProperty._exception("exception: %r", e)
-        """
-        Wait for the answer and return the value
-        A 5sec timeout will terminate the request 
-        """        
-        #timeout = time.time() + 5   # 5 secondes from now   
-        ##val = None
-        #while self.this_application.values == []:
-        #    if self.this_application.values != [] or time.time() > timeout or self.this_application.error != None:
-        #        break
-        #return self.this_application.values
+        except ReadPropertyMultipleException as error:
+            ReadProperty._exception("exception: %r", error)
+
         data = None
         while True:
             try:
-                data, evt = self.this_application.ResponseQueue.get(timeout=2)    
+                data, evt = self.this_application.ResponseQueue.get(timeout=2)
                 evt.set()
                 return data
             except Empty:
                 print('No response from controller')
                 return None
-            
+
+def print_debug(msg,*args):
+    """
+    Used to print info to console when debug mode active
+    """
+    if _debug:
+        ReadProperty._debug(msg,args)            

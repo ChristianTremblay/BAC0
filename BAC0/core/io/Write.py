@@ -1,13 +1,9 @@
 #!/usr/bin/python
-
 """
-Built around a simple BIPSimpleApplication this class allows to create read and write
-requests and store read responses in a variables
-
-For 'read' commands it will create ReadPropertyRequest PDUs, then lines up the
-coorresponding ReadPropertyACK and return the value. 
-
-For 'write' commands it will create WritePropertyRequst PDUs and prints out a simple acknowledgement.
+Module : Write.py
+Author : Christian Tremblay, ing.
+Inspired a lot by the work of Joel Bender (joel@carrickbender.com)
+Email : christian.tremblay@servisys.com
 """
 
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
@@ -21,24 +17,28 @@ from bacpypes.apdu import WritePropertyRequest
 from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
 from bacpypes.constructeddata import Array, Any
 
-from queue import Queue, Empty
-from threading import Event
+from queue import Empty
+
+from .IOExceptions import WritePropertyException, WritePropertyCastError
 
 # some debugging
 _debug = 0
-_log = ModuleLogger(globals())
-
+_LOG = ModuleLogger(globals())
 
 @bacpypes_debugging
 class WriteProperty():
+    """
+    This class define function to write to bacnet objects
+    Will implement a Queue object waiting for an acknowledgment
+    """
     def __init__(self):
         self.this_application = None
-    
+
     def write(self, args):
         """write <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]"""
-        if not self._started : raise Exception('App not running, use startApp() function')
+        if not self._started: raise Exception('App not running, use startApp() function')
         args = args.split()
-        WriteProperty._debug("do_write %r", args)
+        print_debug("do_write %r", args)
 
         try:
             addr, obj_type, obj_inst, prop_id = args[:4]
@@ -51,19 +51,19 @@ class WriteProperty():
             if len(args) >= 6:
                 if args[5] != "-":
                     indx = int(args[5])
-            if _debug: WriteProperty._debug("    - indx: %r", indx)
+            print_debug("    - indx: %r", indx)
 
             priority = None
             if len(args) >= 7:
                 priority = int(args[6])
-            if _debug: WriteProperty._debug("    - priority: %r", priority)
+            print_debug("    - priority: %r", priority)
 
             # get the datatype
             datatype = get_datatype(obj_type, prop_id)
-            if _debug: WriteProperty._debug("    - datatype: %r", datatype)
+            print_debug("    - datatype: %r", datatype)
 
             # change atomic values into something encodeable, null is a special case
-            if (value == 'null'):
+            if value == 'null':
                 value = Null()
             elif issubclass(datatype, Atomic):
                 if datatype is Integer:
@@ -82,7 +82,7 @@ class WriteProperty():
                     raise TypeError("invalid result datatype, expecting %s" % (datatype.subtype.__name__,))
             elif not isinstance(value, datatype):
                 raise TypeError("invalid result datatype, expecting %s" % (datatype.__name__,))
-            if _debug: WriteProperty._debug("    - encodeable value: %r %s", value, type(value))
+            print_debug("    - encodeable value: %r %s", value, type(value))
 
             # build a request
             request = WritePropertyRequest(
@@ -95,8 +95,8 @@ class WriteProperty():
             request.propertyValue = Any()
             try:
                 request.propertyValue.cast_in(value)
-            except Exception as e:
-                WriteProperty._exception("WriteProperty cast error: %r", e)
+            except WritePropertyCastError as error:
+                WriteProperty._exception("WriteProperty cast error: %r", error)
 
             # optional array index
             if indx is not None:
@@ -106,20 +106,26 @@ class WriteProperty():
             if priority is not None:
                 request.priority = priority
 
-            if _debug: WriteProperty._debug("    - request: %r", request)
+            print_debug("    - request: %r", request)
 
             # give it to the application
             self.this_application.request(request)
 
-        except Exception as e:
-            WriteProperty._exception("exception: %r", e)
-            
+        except WritePropertyException as error:
+            WriteProperty._exception("exception: %r", error)
+
         while True:
             try:
-                data, evt = self.this_application.ResponseQueue.get(timeout=2)    
+                data, evt = self.this_application.ResponseQueue.get(timeout=2)
                 evt.set()
                 return data
             except Empty:
                 print('No response from controller')
                 return None
- 
+
+def print_debug(msg, *args):
+    """
+    Used to print info to console when debug mode active
+    """
+    if _debug:
+        WriteProperty._debug(msg, args)
