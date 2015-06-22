@@ -2,11 +2,11 @@
 from ipy_progressbar import ProgressBar
 import pandas as pd
 
-def discoverPoints(bacnetapp,address, progress=True):
-    pss = bacnetapp.read('%s device 5 protocolServicesSupported' % address)
-    deviceName = bacnetapp.read('%s device 5 objectName' % address)
+def discoverPoints(bacnetapp,address, devID, progress=True):
+    pss = bacnetapp.read('%s device %s protocolServicesSupported' % (address,devID))
+    deviceName = bacnetapp.read('%s device %s objectName' % (address,devID))
     print('Found %s' % deviceName)
-    objList = bacnetapp.read('%s device 5 objectList' % address)
+    objList = bacnetapp.read('%s device %s objectList' % (address,devID))
     newLine = []   
     result = []
     
