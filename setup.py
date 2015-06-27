@@ -2,13 +2,14 @@
 Setup.py
 """
 from setuptools import setup
+from BAC0 import infos as infos
 
 setup(name='BAC0',
-      version='0.2.4',
+      version=infos.__version__,
       description='BACnet Scripting Library',
-      author='Christian Tremblay',
-      author_email='christian.tremblay@servisys.com',
-      url='http://www.servisys.com/',
+      author=infos.__author__,
+      author_email=infos.__email__,
+      url=infos.__url__,
       packages=[
           'BAC0',
           'BAC0.core',
@@ -18,7 +19,6 @@ setup(name='BAC0',
           'BAC0.scripts'
           ],
       install_requires=[
-          'ipy_progressbar',
           'pandas',
           ],
       dependency_links=[
