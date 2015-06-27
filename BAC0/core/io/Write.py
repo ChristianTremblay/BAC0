@@ -1,11 +1,27 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+#
+# Licensed under LGPLv3, see file LICENSE in this source tree.
 """
-Module : Write.py
-Author : Christian Tremblay, ing.
-Inspired a lot by the work of Joel Bender (joel@carrickbender.com)
-Email : christian.tremblay@servisys.com
-"""
+This module allows the creation of WriteProperty requests by and app
 
+    Must be used while defining an app
+    Example::
+    
+        class BasicScript(WhoisIAm, WriteProperty)
+    
+    Class::
+    
+        WriteProperty()
+            def write()            
+    
+    Functions::
+
+        print_debug()
+
+"""
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
 
@@ -31,11 +47,36 @@ class WriteProperty():
     This class define function to write to bacnet objects
     Will implement a Queue object waiting for an acknowledgment
     """
+    """
+    This class defines functions to write to bacnet properties.
+    It handles writeProperty
+    Data exchange is made via a Queue object
+    A timeout of 2 seconds allow detection of invalid device or communciation
+    errors.
+    """
+    _TIMEOUT = 2
+    
     def __init__(self):
+        """ This function is a fake one so spyder can see local variables
+        """
         self.this_application = None
 
     def write(self, args):
-        """write <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]"""
+        """ This function build a write request wait for an acknowledgment and 
+        return a boolean status (True if ok, False if not)
+        
+        :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]
+        :returns: data read from device (str representing data like 10 or True)
+        
+        *Example*::
+            
+            import BAC0
+            myIPAddr = '192.168.1.10'
+            bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)          
+            bacnet.write('2:5 analogValue 1 presentValue 100')
+        
+        will write 100 to AV:1 of a controller with a MAC address of 5 in the network 2
+        """
         if not self._started: raise Exception('App not running, use startApp() function')
         args = args.split()
         print_debug("do_write %r", args)
@@ -116,7 +157,7 @@ class WriteProperty():
 
         while True:
             try:
-                data, evt = self.this_application.ResponseQueue.get(timeout=2)
+                data, evt = self.this_application.ResponseQueue.get(timeout=self._TIMEOUT)
                 evt.set()
                 return data
             except Empty:

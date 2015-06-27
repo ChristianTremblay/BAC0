@@ -1,13 +1,18 @@
 #!/usr/bin/python
-
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+#
+# Licensed under LGPLv3, see file LICENSE in this source tree.
 """
-Built around a simple BIPSimpleApplication this class allows to create read and write
-requests and store read responses in a variables
+This module allows the creation of Whois and IAm requests by and app
 
-For 'read' commands it will create ReadPropertyRequest PDUs, then lines up the
-coorresponding ReadPropertyACK and return the value. 
+Usage 
+Must be used while defining an app
+ex.: class BasicScript(WhoisIAm):
 
-For 'write' commands it will create WritePropertyRequst PDUs and prints out a simple acknowledgement.
+Class : WhoisIAm
+
 """
 
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
@@ -22,11 +27,31 @@ _log = ModuleLogger(globals())
 
 @bacpypes_debugging
 class WhoisIAm():
+    """
+    This class will be used by inheritance to add features to an app
+    Will allows the usage of whois and iam functions
+    """
     def __init__(self):
         self.this_application = None
            
     def whois(self, *args):
-        """whois [ <addr>] [ <lolimit> <hilimit> ]"""
+        """
+        Creation of a whois requests
+        Requets is given to the app
+        
+        :param args: string built as [ <addr>] [ <lolimit> <hilimit> ] **optional**  
+        :returns: discoveredDevices as a defaultdict(int)
+        
+        Example::
+            
+            whois() 
+            #will create a broadcast whois request and every device will response by a Iam
+            whois('2:5') 
+            #will create a whois request aimed at device 5
+            whois('10 1000')
+            #will create a whois request looking for device ID 10 to 1000
+            
+        """
         if args:        
             args = args.split()
         if _debug: WhoisIAm._debug("do_whois %r" % args)
@@ -55,12 +80,19 @@ class WhoisIAm():
       
         return self.discoveredDevices
         
-#    def whois(self,*args):      
-#        tools.printWhoisResult(self._whois(*args))
-        
-
     def iam(self):
-        """iam"""
+        """
+        Creation of a iam request
+
+        Iam requests are sent when whois requests ask for it
+        Content is defined by the script (deviceId, vendor, etc...)
+
+        :returns: bool        
+        
+        Example::
+            
+            iam()
+        """
         
         if _debug: WhoisIAm._debug("do_iam")
 
@@ -83,4 +115,3 @@ class WhoisIAm():
         except Exception as e:
             WhoisIAm._exception("exception: %r" % e)
             return False
-

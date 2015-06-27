@@ -1,13 +1,26 @@
 #!/usr/bin/python
-
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+#
+# Licensed under LGPLv3, see file LICENSE in this source tree.
 """
-Built around a simple BIPSimpleApplication this class allows to create read and write
-requests and store read responses in a variables
+BasicScript is an object that will implement the BAC0.core.app.ScriptApplication
+The object will also implement basic function to start and stop this application.
+Stopping the app allows to free the socket used by the app.
+No communication will occur if the app is stopped.
 
-For 'read' commands it will create ReadPropertyRequest PDUs, then lines up the
-coorresponding ReadPropertyACK and return the value. 
+The basic script will be able to use basic Whois and Iam function. Those features
+are allowed by inheritance as the class will extend WhoisIAm class.
 
-For 'write' commands it will create WritePropertyRequst PDUs and prints out a simple acknowledgement.
+Adding other features will work the same way (see BAC0.scripts.ReadWriteScript)
+
+Class::
+
+    BasicScript(WhoisIAm)
+        def startApp()
+        def stopApp()
+
 """
 
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
@@ -16,11 +29,9 @@ from bacpypes.core import stop as stopBacnetIPApp
 from bacpypes.app import LocalDeviceObject
 from bacpypes.basetypes import ServicesSupported
 
-
-from threading import Thread, Event
+from threading import Thread
 
 from queue import Queue
-
 
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.app.ScriptApplication import ScriptApplication
@@ -38,10 +49,11 @@ class BasicScript(WhoisIAm):
     """
     def __init__(self, localIPAddr = '127.0.0.1', localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorID = '15' ):
         """
-        Initialization requires information on the local device
+        Initialization requires information about the local device
         Default values are localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorID = '15' )
         Local IP address must be given in a string.
-        Normally, the address must be in the same subnet than the bacnet network (if no BBMD or Foreign device is used)        
+        Normally, the address must be in the same subnet than the bacnet network (if no BBMD or Foreign device is used)
+        Script doesn't support BBMD actually
         """     
         if _debug: _log.debug("Configurating app")
         self.response = None
@@ -62,6 +74,10 @@ class BasicScript(WhoisIAm):
             
             
     def startApp(self):
+        """
+        This function is used to define the local device, including services supported.
+        Once the application is defined, calls the _startAppThread which will handle the thread creation
+        """
         if _debug: _log.debug("App initialization")
         try:
             # make a device object
@@ -87,9 +103,10 @@ class BasicScript(WhoisIAm):
             self.this_application = ScriptApplication(self.this_device, self.localIPAddr)
             
         
-            _log.debug("running")
+            if _debug: _log.debug("Starting")
             self._initialized = True
             self._startAppThread()
+            if _debug: _log.debug("Running")
         except Exception as e:
             _log.exception("an error has occurred: %s", e)
         finally:
@@ -99,7 +116,8 @@ class BasicScript(WhoisIAm):
     def stopApp(self):
         """
         Used to stop the application
-        Not working actually
+        Free the socket using ``handle_close()`` function
+        Stop the thread
         """
         print('Stopping app')
         # Freeing socket
@@ -120,11 +138,10 @@ class BasicScript(WhoisIAm):
     def _startAppThread(self):
         """
         Starts the application in its own thread so requests can be processed.
+        Once started, socket will be reserved.
         """
         print('Starting app...')
         self.t = Thread(target=startBacnetIPApp)
         self.t.start()
         self._started = True
         print('App started')
-
-

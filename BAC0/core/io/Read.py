@@ -1,9 +1,29 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+#
+# Licensed under LGPLv3, see file LICENSE in this source tree.
 """
-Module : Reap.py
-Author : Christian Tremblay, ing.
-Inspired a lot by the work of Joel Bender (joel@carrickbender.com)
-Email : christian.tremblay@servisys.com
+This module allows the creation of ReadProperty and ReadPropertyMultiple 
+requests by and app
+
+    Must be used while defining an app
+    Example::
+    
+        class BasicScript(WhoisIAm, ReadProperty)
+    
+    Class::
+    
+        ReadProperty()
+            def read()
+            def readMultiple()
+            
+    
+    Functions::
+
+        print_debug()
+
 """
 
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
@@ -28,19 +48,32 @@ class ReadProperty():
     This class defines functions to read bacnet messages.
     It handles readProperty, readPropertyMultiple
     Data exchange is made via a Queue object
-    A timeout of 2 seconds allow detection of invalid device or communciation errors.
+    A timeout of 2 seconds allow detection of invalid device or communciation
+    errors.
     """
+    _TIMEOUT = 2
+    
     def __init__(self):
+        """ This function is a fake one so spyder can see local variables
+        """
         self.this_application = None
         self.this_application.ResponseQueue = Queue()
 
     def read(self, args):
-        """
-        Given arguments, will process a read request, wait for the answer and return the value
-        Arguments are
-        <addr> <type> <inst> <prop> [ <indx> ]
-        ex. '2:5 analogInput 1 presentValue' will read controller with a MAC address of 5 in the
-        network 2
+        """ This function build a read request wait for the answer and 
+        return the value
+        
+        :param args: String with <addr> <type> <inst> <prop> [ <indx> ]
+        :returns: data read from device (str representing data like 10 or True)
+        
+        *Example*::
+            
+            import BAC0
+            myIPAddr = '192.168.1.10'
+            bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)          
+            bacnet.read('2:5 analogInput 1 presentValue')
+        
+        will read controller with a MAC address of 5 in the network 2
         Will ask for the present Value of analog input 1 (AI:1)
         """
         if not self._started: raise Exception('App not running, use startApp() function')
@@ -83,7 +116,7 @@ class ReadProperty():
         data = None
         while True:
             try:
-                data, evt = self.this_application.ResponseQueue.get(timeout=2)
+                data, evt = self.this_application.ResponseQueue.get(timeout=self._TIMEOUT)
                 evt.set()
                 return data
             except Empty:
@@ -91,7 +124,22 @@ class ReadProperty():
                 return None
 
     def readMultiple(self, args):
-        """read <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )..."""
+        """ This function build a readMultiple request wait for the answer and 
+        return the value
+        
+        :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
+        :returns: data read from device (str representing data like 10 or True)
+        
+        *Example*::
+            
+            import BAC0
+            myIPAddr = '192.168.1.10'
+            bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)          
+            bacnet.readMultiple('2:5 analogInput 1 presentValue units')
+        
+        will read controller with a MAC address of 5 in the network 2
+        Will ask for the present Value and the units of analog input 1 (AI:1)
+        """        
         args = args.split()
         print_debug("readMultiple %r", args)
 
@@ -173,7 +221,7 @@ class ReadProperty():
         data = None
         while True:
             try:
-                data, evt = self.this_application.ResponseQueue.get(timeout=2)
+                data, evt = self.this_application.ResponseQueue.get(timeout=self._TIMEOUT)
                 evt.set()
                 return data
             except Empty:

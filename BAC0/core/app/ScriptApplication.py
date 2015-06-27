@@ -1,27 +1,37 @@
 #!/usr/bin/python
-
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+#
+# Licensed under LGPLv3, see file LICENSE in this source tree.
 """
-Built around a simple BIPSimpleApplication this class allows to create read and write
-requests and store read responses in a variables
+ScriptApplication
+=================
+Built around a simple BIPSimpleApplication this module deals with requests 
+created by a child app. It will prepare the requests and give them back to the
+stack.
 
-For 'read' commands it will create ReadPropertyRequest PDUs, then lines up the
-coorresponding ReadPropertyACK and return the value.
+This module will also listen for responses to requests (indication or 
+confirmation).
 
-For 'write' commands it will create WritePropertyRequst PDUs and prints out a simple
-acknowledgement.
+Response will be added to a Queue, we'll wait for the response to be processed
+by the caller, then resume.
+
+This object will be added to script objects and will be runned as thread
+
+See BAC0.scripts for more details.
+
 """
 
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
 from bacpypes.app import BIPSimpleApplication
 from bacpypes.object import get_datatype
-
 from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU, ReadPropertyRequest, \
-    ReadPropertyACK, ReadPropertyMultipleRequest, ReadPropertyMultipleACK, IAmRequest
-
+    ReadPropertyACK, ReadPropertyMultipleRequest, ReadPropertyMultipleACK, \
+    IAmRequest
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
-
 
 from collections import defaultdict
 from threading import Event
@@ -34,10 +44,16 @@ _log = ModuleLogger(globals())
 @bacpypes_debugging
 class ScriptApplication(BIPSimpleApplication):
     """
-    This class define the bacnet application that process requests
+    This class defines the bacnet application that process requests
     """
 
     def __init__(self, *args):
+        """Creation of the application. Adding properties to basic B/IP App.
+        
+        :param *args: local object device, local IP address
+        
+        See BAC0.scripts.BasicScript for more details.
+        """
         if _debug: ScriptApplication._debug("__init__ %r", args)
         BIPSimpleApplication.__init__(self, *args)
 
@@ -51,8 +67,10 @@ class ScriptApplication(BIPSimpleApplication):
 
     def request(self, apdu):
         """
-        Initialize class variables to None for the present request
+        Reset class variables to None for the present request
         Sends the apdu to the application request
+        
+        :param apdu: apdu
         """
         if _debug: ScriptApplication._debug("request %r", apdu)
 
@@ -68,7 +86,11 @@ class ScriptApplication(BIPSimpleApplication):
         BIPSimpleApplication.request(self, apdu)
 
     def indication(self, apdu):
-        """Given an I-Am request, cache it."""
+        """Given an I-Am request, cache it.
+        Indication will treat unconfirmed messages on the stack
+        
+        :param apdu: apdu
+        """
         if _debug: ScriptApplication._debug("do_IAmRequest %r", apdu)
         if isinstance(apdu, IAmRequest):
             # build a key from the source, just use the instance number
@@ -83,7 +105,21 @@ class ScriptApplication(BIPSimpleApplication):
 
     def confirmation(self, apdu):
         """
-        This function process answers from the stack and look for a returned value or an error.
+        This function process confirmed answers from the stack and looks for a returned 
+        value or an error.
+        If a valid value is found, it's stored in the ResponseQueue. We'll wait for the
+        response to be used by the caller then resume the function.
+        
+        How we deal with the Queue::
+            
+            # Creation of an event
+            evt = Event()
+            # Store the value and the event in the Queue
+            self.ResponseQueue.put((self.value, evt))
+            # Wait until the event is set by the caller (read function for example)
+            evt.wait()
+            
+        :param apdu: apdu
         """
         if _debug: ScriptApplication._debug("confirmation %r", apdu)
         if isinstance(apdu, Error):
@@ -142,7 +178,6 @@ class ScriptApplication(BIPSimpleApplication):
                     # here is the read result
                     readResult = element.readResult
 
-                    #sys.stdout.write(propertyIdentifier)
                     if propertyArrayIndex is not None:
                         #sys.stdout.write("[" + str(propertyArrayIndex) + "]")
                         pass
@@ -172,6 +207,7 @@ class ScriptApplication(BIPSimpleApplication):
                             value = propertyValue.cast_out(datatype)
                         if _debug: ScriptApplication._debug("    - value: %r", value)
                         self.values.append(value)
+            # Use a queue to store the response, wait for it to be used then resume
             evt = Event()
             self.ResponseQueue.put((self.values, evt))
             evt.wait()

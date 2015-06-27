@@ -1,32 +1,34 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+#
+# Licensed under LGPLv3, see file LICENSE in this source tree.
 """
-Module : Reap.py
-Author : Christian Tremblay, ing.
-Inspired a lot by the work of Joel Bender (joel@carrickbender.com)
-Email : christian.tremblay@servisys.com
+Definition of exceptions
 """
 
 class WritePropertyException(Exception):
     """
-    Write Exception
+    This exception is used when trying to write a property.
     """
     pass
 
 class WritePropertyCastError(Exception):
     """
-    Write Property Cast Exception
+    This exception is used when trying to write to a property and a cast error occurs.
     """
     pass
 
 class ReadPropertyException(Exception):
     """
-    Read Property Exception
+    This exception is used when trying to read a property.
     """
     pass
 
 class ReadPropertyMultipleException(Exception):
     """
-    Read Property Multiple Exception
+    This exception is used when trying to read multiple properties.
     """
     pass
 
