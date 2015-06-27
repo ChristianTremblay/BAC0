@@ -8,7 +8,7 @@ tool to test devices an interact with controllers.
 
 Where to download
 -----------------
-https://github.com/ChristianTremblay/bacnetScript
+https://github.com/ChristianTremblay/BAC0
 
 What you need
 -------------
@@ -33,4 +33,4 @@ Demo in a Jupyter Notebook
 When installed, module can be used to script communication with bacnet device.
 Jupyter Notebooks are an excellent way to test it
 
-https://github.com/ChristianTremblay/bacnetScript/blob/master/Jupyter/BAC0.ipynb
+https://github.com/ChristianTremblay/BAC0/blob/master/Jupyter/BAC0.ipynb
