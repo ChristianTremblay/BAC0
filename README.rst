@@ -8,7 +8,7 @@ tool to test devices an interact with controllers.
 
 Where to download
 -----------------
-https://github.com/ChristianTremblay/BAC0
+http://christiantremblay.github.io/BAC0/
 
 What you need
 -------------
