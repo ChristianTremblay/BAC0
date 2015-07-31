@@ -41,7 +41,7 @@ class ReadWriteScript(BasicScript,ReadProperty,WriteProperty):
     Once created, the object will call a ``whois()`` function to build a list of controllers available.
     
     """
-    def __init__(self, localIPAddr = '127.0.0.1', localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorID = '15' ):
+    def __init__(self, localIPAddr = '127.0.0.1', localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842' ):
         """
         Initialization requires information on the local device
 
@@ -49,7 +49,7 @@ class ReadWriteScript(BasicScript,ReadProperty,WriteProperty):
         :param Boid: Bacnet object ID. Remember that there must be only 1 instance of this ID on the entire bacnet network (range 0 to 4194304 ; default : 2015)'
         :param maxAPDULengthAccepted: default '1024'
         :param segmentationSupported: default 'segmentedBoth'
-        :param vendorID: default '15'
+        :param vendorId: default '842'
         :param localIPAddr: (str) '127.0.0.1'        
         
         Normally, the address must be in the same subnet than the bacnet network (if no BBMD or Foreign device is used)  
@@ -59,7 +59,7 @@ class ReadWriteScript(BasicScript,ReadProperty,WriteProperty):
         
         """     
         if _debug: _log.debug("Configurating app")
-        BasicScript.__init__(self, localIPAddr = localIPAddr, localObjName = localObjName, Boid = Boid,maxAPDULengthAccepted = maxAPDULengthAccepted,segmentationSupported = segmentationSupported, vendorID = vendorID )
+        BasicScript.__init__(self, localIPAddr = localIPAddr, localObjName = localObjName, Boid = Boid,maxAPDULengthAccepted = maxAPDULengthAccepted,segmentationSupported = segmentationSupported, vendorId = vendorId )
         
         # Force and gloab whois to find all devices on the network
         self.whois()

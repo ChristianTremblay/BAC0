@@ -11,5 +11,5 @@ Informations MetaData
 __author__ = 'Christian Tremblay, P.Eng.'
 __email__ = 'christian.tremblay@servisys.com'
 __url__ = 'http://www.servisys.com'
-__version__ = '0.9'
+__version__ = '0.92'
 __license__ = 'LGPLv3'
