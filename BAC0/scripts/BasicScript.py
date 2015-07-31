@@ -35,6 +35,7 @@ from queue import Queue
 
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.app.ScriptApplication import ScriptApplication
+#import BAC0.core.functions as fn
  
 
 # some debugging
@@ -47,10 +48,10 @@ class BasicScript(WhoisIAm):
     This class build a running bacnet application and will accept whois ans iam requests
     
     """
-    def __init__(self, localIPAddr = '127.0.0.1', localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorID = '15' ):
+    def __init__(self, localIPAddr = None, localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842' ):
         """
         Initialization requires information about the local device
-        Default values are localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorID = '15' )
+        Default values are localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842' )
         Local IP address must be given in a string.
         Normally, the address must be in the same subnet than the bacnet network (if no BBMD or Foreign device is used)
         Script doesn't support BBMD actually
@@ -60,12 +61,15 @@ class BasicScript(WhoisIAm):
         self._initialized = False
         self._started = False
         self._stopped = False
-        self.localIPAddr = localIPAddr
+        if localIPAddr:
+            self.localIPAddr = localIPAddr
+        else:
+            self.localIPAddr = '127.0.0.1'
         self.segmentationSupported = segmentationSupported
         self.localObjName = localObjName
         self.Boid = Boid
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
-        self.vendorID = vendorID
+        self.vendorId = vendorId
         self.discoveredDevices = None
         self.ResponseQueue = Queue()
         
