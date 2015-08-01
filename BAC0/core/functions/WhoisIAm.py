@@ -105,7 +105,7 @@ class WhoisIAm():
             request.iAmDeviceIdentifier = self.this_device.objectIdentifier
             request.maxAPDULengthAccepted = self.this_device.maxApduLengthAccepted
             request.segmentationSupported = self.this_device.segmentationSupported
-            request.vendorID = self.this_device.vendorIdentifier
+            request.vendorId = self.this_device.vendorId
             if _debug: WhoisIAm._debug("    - request: %r" % request)
 
             # give it to the application

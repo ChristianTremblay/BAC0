@@ -90,7 +90,7 @@ class BasicScript(WhoisIAm):
                 objectIdentifier=int(self.Boid),
                 maxApduLengthAccepted=int(self.maxAPDULengthAccepted),
                 segmentationSupported=self.segmentationSupported,
-                vendorIdentifier=int(self.vendorID),
+                vendorIdentifier=int(self.vendorId),
                 )
         
             # build a bit string that knows about the bit names
