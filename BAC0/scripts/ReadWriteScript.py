@@ -24,9 +24,10 @@ Once the class is created, create the object and use it::
 
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
-from BAC0.scripts.BasicScript import BasicScript
-from BAC0.core.io.Read import ReadProperty
-from BAC0.core.io.Write import WriteProperty
+from ..scripts.BasicScript import BasicScript
+from ..core.io.Read import ReadProperty
+from ..core.io.Write import WriteProperty
+from ..core.functions.GetIPAddr import getIPAddr as ip
 
 # some debugging
 _debug = 0
@@ -41,7 +42,7 @@ class ReadWriteScript(BasicScript,ReadProperty,WriteProperty):
     Once created, the object will call a ``whois()`` function to build a list of controllers available.
     
     """
-    def __init__(self, localIPAddr = '127.0.0.1', localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842' ):
+    def __init__(self, localIPAddr = ip(), localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842' ):
         """
         Initialization requires information on the local device
 
