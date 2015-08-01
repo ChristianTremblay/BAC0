@@ -53,7 +53,7 @@ class WhoisIAm():
             
         """
         if args:        
-            args = args.split()
+            args = args[0].split()
         if _debug: WhoisIAm._debug("do_whois %r" % args)
 
         try:
