@@ -42,7 +42,7 @@ class ReadWriteScript(BasicScript,ReadProperty,WriteProperty):
     Once created, the object will call a ``whois()`` function to build a list of controllers available.
     
     """
-    def __init__(self, localIPAddr = ip(), localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842' ):
+    def __init__(self, localIPAddr = ip()):
         """
         Initialization requires information on the local device
 
@@ -60,7 +60,7 @@ class ReadWriteScript(BasicScript,ReadProperty,WriteProperty):
         
         """     
         if _debug: _log.debug("Configurating app")
-        BasicScript.__init__(self, localIPAddr = localIPAddr, localObjName = localObjName, Boid = Boid,maxAPDULengthAccepted = maxAPDULengthAccepted,segmentationSupported = segmentationSupported, vendorId = vendorId )
+        BasicScript.__init__(self, localIPAddr = localIPAddr)
         
         # Force and gloab whois to find all devices on the network
         self.whois()
