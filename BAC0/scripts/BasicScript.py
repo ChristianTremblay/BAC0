@@ -35,6 +35,7 @@ from queue import Queue
 
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.app.ScriptApplication import ScriptApplication
+from ..core.functions.GetIPAddr import getIPAddr as ip
 #import BAC0.core.functions as fn
  
 
@@ -48,7 +49,7 @@ class BasicScript(WhoisIAm):
     This class build a running bacnet application and will accept whois ans iam requests
     
     """
-    def __init__(self, localIPAddr = None, localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842' ):
+    def __init__(self, localIPAddr = None, localObjName = 'name', Boid = '3056177',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842', vendorName = 'SERVISYS inc.', modelName = 'BAC0' ):
         """
         Initialization requires information about the local device
         Default values are localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842' )
@@ -70,6 +71,8 @@ class BasicScript(WhoisIAm):
         self.Boid = Boid
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
         self.vendorId = vendorId
+        self.vendorName = vendorName
+        self.modelName = modelName
         self.discoveredDevices = None
         self.ResponseQueue = Queue()
         
