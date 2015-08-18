@@ -27,13 +27,14 @@ from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 from BAC0.scripts.BasicScript import BasicScript
 from BAC0.core.io.Read import ReadProperty
 from BAC0.core.io.Write import WriteProperty
+from BAC0.core.io.Simulate import Simulation
 
 # some debugging
 _debug = 0
 _log = ModuleLogger(globals())
 
 @bacpypes_debugging
-class ReadWriteScript(BasicScript,ReadProperty,WriteProperty):
+class ReadWriteScript(BasicScript,ReadProperty,WriteProperty,Simulation):
     """ 
     This class build a running bacnet application and will accept read ans write requests
     Whois and IAm function are also possible as they are implemented in the BasicScript class.
@@ -69,7 +70,7 @@ class ReadWriteScript(BasicScript,ReadProperty,WriteProperty):
 #   __main__
 #
 if __name__ == '__main__':
-    bacnet = ReadWriteScript(localIPAddr = '192.168.210.63')
+    bacnet = ReadWriteScript()
 
 
 
