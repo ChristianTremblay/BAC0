@@ -7,6 +7,10 @@
 """
 This module define a way to simulate value of IO variables
 """
+
+from .IOExceptions import OutOfServiceNotSet, OutOfServiceSet, NoResponseFromController
+
+
 class Simulation():
     """
     Global informations regarding simulation
@@ -32,10 +36,17 @@ class Simulation():
         if self.read('%s %s %s outOfService' % (addr, obj_type, obj_inst)):
             self.write('%s %s %s %s %s' % (addr, obj_type, obj_inst,prop_id, value))
         else:
-            self.write('%s %s %s outOfService True' % (addr, obj_type, obj_inst,prop_id, value))
-            while not self.read('%s %s %s outOfService' % (addr, obj_type, obj_inst)):
+            try:            
+                self.write('%s %s %s outOfService True' % (addr, obj_type, obj_inst))
+            except NoResponseFromController:
                 pass
-            self.write('%s %s %s %s %s' % (addr, obj_type, obj_inst,prop_id, value))
+            try:
+                if self.read('%s %s %s outOfService' % (addr, obj_type, obj_inst)):                
+                    self.write('%s %s %s %s %s' % (addr, obj_type, obj_inst,prop_id, value))
+                else:
+                    raise OutOfServiceNotSet()
+            except NoResponseFromController:
+                pass
         
     
     def release(self,args):
@@ -49,5 +60,16 @@ class Simulation():
         if not self._started: raise Exception('App not running, use startApp() function')
         args = args.split()
         addr, obj_type, obj_inst = args[:3]
-        self.write('%s %s %s outOfService True' % (addr, obj_type, obj_inst))
+        try:
+            self.write('%s %s %s outOfService False' % (addr, obj_type, obj_inst))
+        except NoResponseFromController:
+            pass
+        try:
+            if self.read('%s %s %s outOfService' % (addr, obj_type, obj_inst)):                
+                raise OutOfServiceSet()
+            else:
+                "Everything is ok"
+                pass
+        except NoResponseFromController:
+            pass
 

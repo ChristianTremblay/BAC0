@@ -35,7 +35,7 @@ from bacpypes.constructeddata import Array, Any
 
 from queue import Empty
 
-from .IOExceptions import WritePropertyException, WritePropertyCastError
+from .IOExceptions import WritePropertyException, WritePropertyCastError, NoResponseFromController
 
 # some debugging
 _debug = 0
@@ -161,7 +161,7 @@ class WriteProperty():
                 evt.set()
                 return data
             except Empty:
-                print('No response from controller')
+                raise NoResponseFromController
                 return None
 
 def print_debug(msg, *args):

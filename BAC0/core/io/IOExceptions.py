@@ -32,3 +32,20 @@ class ReadPropertyMultipleException(Exception):
     """
     pass
 
+class NoResponseFromController(Exception):
+    """
+    This exception is used when trying to read or write and there is not answer.
+    """
+    pass 
+
+class OutOfServiceNotSet(Exception):
+    """
+    This exception is used when trying to simulate a point and the out of service property is false.
+    """
+    pass 
+
+class OutOfServiceSet(Exception):
+    """
+    This exception is used when trying to set the out of service property to false to release the simulation...and it doesn't work.
+    """
+    pass 
