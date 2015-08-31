@@ -16,6 +16,7 @@ setup(name='BAC0',
           'BAC0.core.app',
           'BAC0.core.io',
           'BAC0.core.functions',
+          'BAC0.core.devices',
           'BAC0.scripts'
           ],
       install_requires=[
