@@ -35,7 +35,7 @@ def discoverPoints(bacnetapp,address, devID):
     """
     pss = bacnetapp.read('%s device %s protocolServicesSupported' % (address,devID))
     deviceName = bacnetapp.read('%s device %s objectName' % (address,devID))
-    print('Found %s' % deviceName)
+    print('Found %s... building points list' % deviceName)
     objList = bacnetapp.read('%s device %s objectList' % (address,devID))
     newLine = []   
     result = []
@@ -53,6 +53,7 @@ def discoverPoints(bacnetapp,address, devID):
         df = pd.DataFrame(result, columns=['pointType','pointAddress','pointName','description','presentValue','units']).set_index(['pointName'])
     else:
         df = result
+    print('Ready!')
     return (deviceName,pss,objList,df)
 
 

@@ -29,7 +29,7 @@ from bacpypes.app import BIPSimpleApplication
 from bacpypes.object import get_datatype
 from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU, ReadPropertyRequest, \
     ReadPropertyACK, ReadPropertyMultipleRequest, ReadPropertyMultipleACK, \
-    IAmRequest
+    IAmRequest,WhoIsRequest
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
 
@@ -80,6 +80,7 @@ class ScriptApplication(BIPSimpleApplication):
         self.error = None
         self.values = []
         self.i_am_counter = defaultdict(int)
+        self.who_is_counter = defaultdict(int)
         #self.ResponseQueue = Queue()
 
         # forward it along
@@ -99,6 +100,17 @@ class ScriptApplication(BIPSimpleApplication):
             )
             # count the times this has been received
             self.i_am_counter[key] += 1
+        
+        if isinstance(apdu, WhoIsRequest):        
+        # build a key from the source and parameters
+            key = (str(apdu.pduSource),
+                apdu.deviceInstanceRangeLowLimit,
+                apdu.deviceInstanceRangeHighLimit,
+                )
+
+        # count the times this has been received
+            self.who_is_counter[key] += 1
+            BIPSimpleApplication.do_WhoIsRequest(self, apdu)
         # pass back to the default implementation
         BIPSimpleApplication.indication(self, apdu)
 

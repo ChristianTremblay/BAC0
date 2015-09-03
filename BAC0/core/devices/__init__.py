@@ -1,3 +1,3 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from . import SimpleDevice
+from . import Device
