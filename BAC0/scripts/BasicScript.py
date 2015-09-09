@@ -32,6 +32,7 @@ from bacpypes.basetypes import ServicesSupported
 from threading import Thread
 
 from queue import Queue
+import random
 
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.app.ScriptApplication import ScriptApplication
@@ -68,7 +69,7 @@ class BasicScript(WhoisIAm):
             self.localIPAddr = '127.0.0.1'
         self.segmentationSupported = segmentationSupported
         self.localObjName = localObjName
-        self.Boid = Boid
+        self.Boid = int(Boid) + random.uniform(0, 1000)
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
         self.vendorId = vendorId
         self.vendorName = vendorName

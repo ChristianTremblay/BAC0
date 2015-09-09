@@ -17,7 +17,8 @@ setup(name='BAC0',
           'BAC0.core.io',
           'BAC0.core.functions',
           'BAC0.core.devices',
-          'BAC0.scripts'
+          'BAC0.scripts',
+          'BAC0.tasks'
           ],
       install_requires=[
           'pandas',
