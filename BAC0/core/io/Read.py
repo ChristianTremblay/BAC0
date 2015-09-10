@@ -173,7 +173,7 @@ class ReadProperty():
                     else:
                         datatype = get_datatype(obj_type, prop_id)
                         if not datatype:
-                            raise ValueError("invalid property for object type")
+                            raise ValueError("invalid property for object type : %s | %s" % (obj_type, prop_id))
 
                     # build a property reference
                     prop_reference = PropertyReference(

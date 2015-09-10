@@ -41,7 +41,7 @@ def discoverPoints(bacnetapp,address, devID):
     result = []
     
     for each in objList:
-        if each[0] not in 'file calendar device schedule':
+        if each[0] not in 'file calendar device schedule notificationClass eventLog':
             if 'binary' not in each[0] and 'multiState' not in each[0]:
                 newLine = [each[0],each[1]]
                 newLine.extend(bacnetapp.readMultiple('%s %s %s objectName description presentValue units' % (address, each[0], each[1])))

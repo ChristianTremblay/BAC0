@@ -27,16 +27,17 @@ from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 from bacpypes.core import run as startBacnetIPApp
 from bacpypes.core import stop as stopBacnetIPApp
 from bacpypes.app import LocalDeviceObject
-from bacpypes.basetypes import ServicesSupported
-
+from bacpypes.basetypes import ServicesSupported, DeviceStatus
+from bacpypes.primitivedata import CharacterString
 from threading import Thread
 
 from queue import Queue
 import random
+import sys
 
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.app.ScriptApplication import ScriptApplication
-from ..core.functions.GetIPAddr import getIPAddr as ip
+from .. import infos
 #import BAC0.core.functions as fn
  
 
@@ -50,7 +51,7 @@ class BasicScript(WhoisIAm):
     This class build a running bacnet application and will accept whois ans iam requests
     
     """
-    def __init__(self, localIPAddr = None, localObjName = 'name', Boid = '3056177',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842', vendorName = 'SERVISYS inc.', modelName = 'BAC0' ):
+    def __init__(self, localIPAddr = None, localObjName = 'BAC0', Boid = None,maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth'):
         """
         Initialization requires information about the local device
         Default values are localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842' )
@@ -69,14 +70,17 @@ class BasicScript(WhoisIAm):
             self.localIPAddr = '127.0.0.1'
         self.segmentationSupported = segmentationSupported
         self.localObjName = localObjName
-        self.Boid = int(Boid) + random.uniform(0, 1000)
+        if Boid:
+            self.Boid = int(Boid)
+        else:
+            self.Boid = int('3056177') + random.uniform(0, 1000)
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
-        self.vendorId = vendorId
-        self.vendorName = vendorName
-        self.modelName = modelName
+        self.vendorId = '842'
+        self.vendorName = CharacterString('SERVISYS inc.')
+        self.modelName = CharacterString('BAC0 Scripting Tool')
         self.discoveredDevices = None
         self.ResponseQueue = Queue()
-        
+        self.systemStatus = DeviceStatus(1)
                 
         self.startApp()
             
@@ -95,6 +99,15 @@ class BasicScript(WhoisIAm):
                 maxApduLengthAccepted=int(self.maxAPDULengthAccepted),
                 segmentationSupported=self.segmentationSupported,
                 vendorIdentifier=int(self.vendorId),
+                vendorName=self.vendorName,
+                modelName = self.modelName,
+                systemStatus = self.systemStatus,
+                description = 'http://christiantremblay.github.io/BAC0/',
+                firmwareRevision = ''.join(sys.version.split('|')[:2]),
+                applicationSoftwareVersion = infos.__version__,
+                protocolVersion = 1,
+                protocolRevision = 0,
+                
                 )
         
             # build a bit string that knows about the bit names

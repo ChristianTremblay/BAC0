@@ -12,32 +12,24 @@ from threading import Thread, Lock
 import time
 import random
 
-class Global():
+class Manager():
     taskList = [];
     threadLock = Lock()
-# TODO : A task manager that could start a bunch of thread...or stop them...    
-#class TaskManager():
-#    
-#    threads = []
-#    
-#    def __init__(self):
-#        for each in taskList:
-#            self.threads.append(Task())
-#        
-#    def run_tasks(self)
-#        thread1 = repeat(1, "Thread-1",('2:5 analogInput 1 presentValue'),('2:5 analogInput 2 presentValue'),threadLock)
-#        thread2 = repeat(2, "Thread-2",('2:5 analogInput 3 presentValue'),('2:5 analogInput 4 presentValue'),threadLock)
-#    
-#        # Start new Threads
-#        thread1.start()
-#        thread2.start()
+    
+def stopAllTasks():
+    for each in Manager.taskList:
+        each.exitFlag = True
+    print('Stopping all threads')
+
 
 class Task(Thread):
     def __init__(self, delay = 5):
         Thread.__init__(self)
         self.exitFlag = False
-        self.lock = Global.threadLock
+        self.lock = Manager.threadLock
         self.delay = delay
+        if not self.name in Manager.taskList:
+            Manager.taskList.append(self)
     
     def run(self):
         # Get lock to synchronize threads
@@ -48,8 +40,10 @@ class Task(Thread):
             self.lock.release()
         except RuntimeError:
             pass
-        Global.numberOfThreads -= 1
+        #Global.numberOfThreads -= 1
         self.beforeStop()
+        if self in Manager.taskList:
+            Manager.taskList.remove(self)
         print("Exiting " + self.name)
     
     def process(self):
@@ -65,6 +59,9 @@ class Task(Thread):
         
     def stop(self):
         self.exitFlag = True
+        
+
+        
         
     def beforeStop(self):
         """

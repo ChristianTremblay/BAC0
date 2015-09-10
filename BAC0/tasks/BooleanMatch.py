@@ -15,8 +15,8 @@ class BooleanMatch(Task):
     """
     Will fit fan status with fan command
     """
-    def __init__(self, boolCommand, boolStatus, controller, delay = 2):
-        Task.__init__(self, delay = 5)
+    def __init__(self, boolCommand, boolStatus, controller, delay = 5):
+        Task.__init__(self, delay = delay)
         self.command = boolCommand
         self.status = boolStatus
         self.controller = controller
@@ -24,11 +24,11 @@ class BooleanMatch(Task):
             raise ValueError('controller bad type')
         
     def task(self):
-        if self.controller.read(self.boolCommand) == 'active':
-            self.controller.sim('%s %s' % (self.boolStatus, 'active'))
+        if self.controller.read(self.command) == 'active':
+            self.controller.sim('%s %s' % (self.status, 'active'))
         else:
-            self.controller.sim('%s %s' % (self.boolStatus, 'inactive'))
+            self.controller.sim('%s %s' % (self.status, 'inactive'))
             
     def beforeStop(self):
-        self.controller.release(self.boolStatus)
+        self.controller.release(self.status)
         
