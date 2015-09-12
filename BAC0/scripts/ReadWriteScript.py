@@ -27,7 +27,7 @@ from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 from ..scripts.BasicScript import BasicScript
 from ..core.io.Read import ReadProperty
 from ..core.io.Write import WriteProperty
-from ..core.functions.GetIPAddr import getIPAddr as ip
+from ..core.functions.GetIPAddr import HostIP
 from ..core.io.Simulate import Simulation
 
 # some debugging
@@ -43,7 +43,7 @@ class ReadWriteScript(BasicScript,ReadProperty,WriteProperty,Simulation):
     Once created, the object will call a ``whois()`` function to build a list of controllers available.
     
     """
-    def __init__(self, localIPAddr = ip()):
+    def __init__(self, localIPAddr = None):
         """
         Initialization requires information on the local device
 
@@ -61,7 +61,11 @@ class ReadWriteScript(BasicScript,ReadProperty,WriteProperty,Simulation):
         
         """     
         if _debug: _log.debug("Configurating app")
-        BasicScript.__init__(self, localIPAddr = localIPAddr)
+        if localIPAddr is None:        
+            ip = HostIP.getIPAddr()
+        else:
+            ip = localIPAddr
+        BasicScript.__init__(self, localIPAddr = ip)
         
         # Force and gloab whois to find all devices on the network
         self.whois()

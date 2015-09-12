@@ -1,26 +1,96 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+#
+# Licensed under LGPLv3, see file LICENSE in this source tree.
 """
-[Ref] : http://zeth.net/archive/2007/11/24/how-to-find-out-ip-address-in-python/
+Utility function to retrieve a functionnal IP and a correct broadcast IP
+address.
+Goal : not use 255.255.255.255 as a broadcast IP address as it is not
+accepted by every devices (>3.8.38.1 bacnet.jar of Tridium Jace for example)
 
 """
 
 import socket
+import subprocess
+import ipaddress
+import sys
 
-def getIPAddr():
+class HostIP():
     """
-    Retrieve the IP address connected to internet... used as
-    a default IP address when defining Script
-    
-    :returns: IP Adress as String
+    Special class to identify host IP informations
     """
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    try:    
-        s.connect(('google.com', 0))
-        addr = s.getsockname()[0]
-        print('Using ip : {addr}'.format(addr=addr))
-        s.close()
-    except socket.error :
-        print('Not connected to internet, using default IP Addr : 127.0.0.1')
-        addr = '127.0.0.1'
-    return addr
+    def __init__(self):
+        ip = self._findIPAddr()
+        mask = self._findSubnetMask(ip)
+        self.interface = ipaddress.IPv4Interface("%s/%s" %(ip,mask))
+
+
+    def getIPAddr(self):
+        return ('%s/%s' % (self.interface.ip.compressed,self.interface.exploded.split('/')[-1]))
+
+    def _findIPAddr(self):
+        """
+        Retrieve the IP address connected to internet... used as
+        a default IP address when defining Script
+        
+        :returns: IP Adress as String
+        """
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:    
+            s.connect(('google.com', 0))
+            addr = s.getsockname()[0]
+            print('Using ip : {addr}'.format(addr=addr))
+            s.close()
+        except socket.error :
+            raise Exception('Impossible to retrieve IP, please provide one manually')
+        return addr
     
+    def _findSubnetMask(self, ip):
+        """
+        Retrieve the broadcast IP address connected to internet... used as
+        a default IP address when defining Script
+        
+        :param ip: (str) optionnal IP address. If not provided, default to getIPAddr()
+        :param mask: (str) optionnal subnet mask. If not provided, will try to find one using ipconfig (Windows) or ifconfig (Linux or MAC)
+        
+        :returns: broadcast IP Adress as String
+        """
+        ip = ip
+
+        if 'win' in sys.platform:   
+            try:        
+                proc = subprocess.Popen('ipconfig',stdout=subprocess.PIPE)
+                while True:
+                    line = proc.stdout.readline()
+                    if ip.encode() in line:
+                        break
+                mask = proc.stdout.readline().rstrip().split(b':')[-1].replace(b' ',b'').decode()
+            except:
+                raise RuntimeError('Cannot read IP parameters from OS')
+        else:
+            """
+            This procedure could use more direct way of obtaining the broadcast IP 
+            as it is really simple in Unix
+            ifconfig gives Bcast directly for example
+            or use something like : 
+            iface = "eth0"
+            socket.inet_ntoa(fcntl.ioctl(socket.socket(socket.AF_INET, socket.SOCK_DGRAM), 35099, struct.pack('256s', iface))[20:24])
+            """
+            try:        
+                proc = subprocess.Popen('ifconfig',stdout=subprocess.PIPE)
+                while True:
+                    line = proc.stdout.readline()
+                    if ip.encode() in line:
+                        break
+                mask = line.rstrip().split(b':')[-1].replace(b' ',b'').decode()
+            except:
+                raise RuntimeError('Cannot read IP parameters from OS')
+            
+        return mask
+
+  
+if __name__ == '__main__':
+    h = HostIP()
+    print(h.getIPAddr())
