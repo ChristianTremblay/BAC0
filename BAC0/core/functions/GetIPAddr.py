@@ -11,6 +11,7 @@ Goal : not use 255.255.255.255 as a broadcast IP address as it is not
 accepted by every devices (>3.8.38.1 bacnet.jar of Tridium Jace for example)
 
 """
+from bacpypes.pdu import Address
 
 import socket
 import subprocess
@@ -29,6 +30,9 @@ class HostIP():
 
     def getIPAddr(self):
         return ('%s/%s' % (self.interface.ip.compressed,self.interface.exploded.split('/')[-1]))
+
+    def getAddress(self):
+        return (Address('%s/%s' % (self.interface.ip.compressed,self.interface.exploded.split('/')[-1])))
 
     def _findIPAddr(self):
         """
