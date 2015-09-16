@@ -45,12 +45,18 @@ def discoverPoints(bacnetapp,address, devID):
             if 'binary' not in each[0] and 'multiState' not in each[0]:
                 newLine = [each[0],each[1]]
                 newLine.extend(bacnetapp.readMultiple('%s %s %s objectName description presentValue units' % (address, each[0], each[1])))
-            else:
+            elif 'binary' in each[0]:
                 newLine = [each[0],each[1]]
-                newLine.extend(bacnetapp.readMultiple('%s %s %s objectName description presentValue' % (address, each[0], each[1])))
+                infos = (bacnetapp.readMultiple('%s %s %s objectName description presentValue inactiveText activeText' % (address, each[0], each[1])))
+                newLine.extend(infos[:-2])
+                newLine.extend([infos[-2:]])
+            elif 'multiState' in each[0]:
+                newLine = [each[0],each[1]]
+                newLine.extend(bacnetapp.readMultiple('%s %s %s objectName description presentValue stateText' % (address, each[0], each[1])))
+                      
             result.append(newLine)
     if _PANDA:       
-        df = pd.DataFrame(result, columns=['pointType','pointAddress','pointName','description','presentValue','units']).set_index(['pointName'])
+        df = pd.DataFrame(result, columns=['pointType','pointAddress','pointName','description','presentValue','units_state']).set_index(['pointName'])
     else:
         df = result
     print('Ready!')

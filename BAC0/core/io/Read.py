@@ -51,7 +51,7 @@ class ReadProperty():
     A timeout of 2 seconds allow detection of invalid device or communciation
     errors.
     """
-    _TIMEOUT = 2
+    _TIMEOUT = 5
     
     def __init__(self):
         """ This function is a fake one so spyder can see local variables

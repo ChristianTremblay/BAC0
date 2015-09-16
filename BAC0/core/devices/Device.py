@@ -6,6 +6,8 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 from ..functions.discoverPoints import discoverPoints
 
+from .Points import NumericPoint, BooleanPoint, EnumPoint
+
 class Device():
     """
     Bacnet device
@@ -52,7 +54,12 @@ class Device():
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
-        return val
+        if 'multiState' in self.points.ix[pointName].pointType:
+            return EnumPoint(val,self.points.ix[pointName].units_state)
+        elif 'binary' in self.points.ix[pointName].pointType:
+            return BooleanPoint(val,self.points.ix[pointName].units_state)
+        else:
+            return NumericPoint(val,self.points.ix[pointName].units_state)
         
     def write(self,args):
         """
@@ -128,6 +135,32 @@ class Device():
             self.bacnetApp.release('%s %s %s' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress)))
             if pointName in self.simPoints:
                 self.simPoints.remove(pointName)
+        except KeyError:
+            raise Exception('Unknown point name : %s' % pointName)
+            
+    def ovr(self,args):
+        """
+        Override the output (Make manual operator command on point at priority 8)
+
+        :param args: (str) pointName value (both info in same string)
+       
+        """
+        pointName, value = self.parseArgs(args)
+        try:                
+            self.bacnetApp.write('%s %s %s presentValue %s - 8' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress),value))
+        except KeyError:
+            raise Exception('Unknown point name : %s' % pointName)
+
+    def auto(self,args):
+        """
+        Release the override on the output (Write null on point at priority 8)
+
+        :param args: (str) pointName value (both info in same string)
+       
+        """
+        pointName, value = self.parseArgs(args)
+        try:                
+            self.bacnetApp.write('%s %s %s presentValue %s - 8' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress),value))
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 

@@ -48,7 +48,8 @@ class ScriptApplication(BIPSimpleApplication):
     """
 
     def __init__(self, *args):
-        """Creation of the application. Adding properties to basic B/IP App.
+        """
+        Creation of the application. Adding properties to basic B/IP App.
         
         :param *args: local object device, local IP address
         
@@ -79,6 +80,7 @@ class ScriptApplication(BIPSimpleApplication):
         self.value = None
         self.error = None
         self.values = []
+        # Those two variables serves training purposes
         self.i_am_counter = defaultdict(int)
         self.who_is_counter = defaultdict(int)
         #self.ResponseQueue = Queue()
@@ -87,12 +89,16 @@ class ScriptApplication(BIPSimpleApplication):
         BIPSimpleApplication.request(self, apdu)
 
     def indication(self, apdu):
-        """Given an I-Am request, cache it.
+        """
         Indication will treat unconfirmed messages on the stack
         
         :param apdu: apdu
         """
         if _debug: ScriptApplication._debug("do_IAmRequest %r", apdu)
+        """        
+        Given an I-Am request, cache it. 
+        This function serves no real purpose but training...
+        """
         if isinstance(apdu, IAmRequest):
             # build a key from the source, just use the instance number
             key = (str(apdu.pduSource),
@@ -100,17 +106,20 @@ class ScriptApplication(BIPSimpleApplication):
             )
             # count the times this has been received
             self.i_am_counter[key] += 1
-        
+        """        
+        Given an Who Is request, cache it. 
+        This function serves no real purpose but training...
+        """        
         if isinstance(apdu, WhoIsRequest):        
-        # build a key from the source and parameters
+            # build a key from the source and parameters
             key = (str(apdu.pduSource),
                 apdu.deviceInstanceRangeLowLimit,
                 apdu.deviceInstanceRangeHighLimit,
                 )
 
-        # count the times this has been received
+            # count the times this has been received
             self.who_is_counter[key] += 1
-            BIPSimpleApplication.do_WhoIsRequest(self, apdu)
+            #BIPSimpleApplication.do_WhoIsRequest(self, apdu)
         # pass back to the default implementation
         BIPSimpleApplication.indication(self, apdu)
 
