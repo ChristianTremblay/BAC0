@@ -12,24 +12,28 @@ class Point():
     Basic point
     """
     def __init__(self, val, units_state):
-        self.value = val
-        self.status = ''
-        self.units_state = units_state
+        self._value = val
+        self._status = ''
+        self._units_state = units_state
+        
     def value(self):
-        return self.value
+        raise Exception('Must be overridden')
+        
+    def units(self):
+        raise Exception('Must be overridden')
         
 class NumericPoint(Point):
     def __init__(self,val, units_state):
         Point.__init__(self,val, units_state)
         
     def value(self):
-        return self.value
+        return self._value
         
     def units(self):
-        return self.units_state
+        return self._units_state
         
     def __repr__(self):
-        return '%s %s' % (self.value, self.units_state)
+        return '%s %s' % (self._value, self._units_state)
 
 class BooleanPoint(Point):
     def __init__(self,val, units_state):
@@ -48,17 +52,17 @@ class BooleanPoint(Point):
         return None
         
     def __repr__(self):
-        return '%s %s' % (self.value, self.units_state[self._key])
+        return '%s' % (self._units_state[self._key])
         
 class EnumPoint(Point):
     def __init__(self,val, units_state):
         Point.__init__(self,val, units_state)
         
     def value(self):
-        return self.value
+        return self._value
         
     def units(self):
         return None
         
     def __repr__(self):
-        return '%s' % (self.units_state[self.value-1])
+        return '%s' % (self._units_state[self._value-1])
