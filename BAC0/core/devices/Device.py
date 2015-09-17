@@ -68,7 +68,7 @@ class Device():
         :param args: (str) pointName value (both info in same string)
        
         """
-        pointName, value = self.parseArgs(args)
+        pointName, value = self._convert_write_arguments(args)
         try:                
             self.bacnetApp.write('%s %s %s presentValue %s' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress),value))
         except KeyError:
@@ -81,7 +81,8 @@ class Device():
         :param args: (str) pointName value (both info in same string)
        
         """
-        pointName, value = self.parseArgs(args)
+        pointName, value = self._convert_write_arguments(args)
+        # Accept boolean value
         try:                
             self.bacnetApp.write('%s %s %s relinquishDefault %s' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress),value))
         except KeyError:
@@ -98,7 +99,7 @@ class Device():
         :param args: (str) pointName value (both info in same string)
 
         """
-        pointName, value = self.parseArgs(args)
+        pointName, value = self._convert_write_arguments(args)
         try:
             self.bacnetApp.sim('%s %s %s presentValue %s' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress),value))
             if pointName not in self.simPoints:
@@ -145,7 +146,7 @@ class Device():
         :param args: (str) pointName value (both info in same string)
        
         """
-        pointName, value = self.parseArgs(args)
+        pointName, value = self._convert_write_arguments(args)
         try:                
             self.bacnetApp.write('%s %s %s presentValue %s - 8' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress),value))
         except KeyError:
@@ -158,15 +159,31 @@ class Device():
         :param args: (str) pointName value (both info in same string)
        
         """
-        pointName, value = self.parseArgs(args)
+        pointName = args
         try:                
-            self.bacnetApp.write('%s %s %s presentValue %s - 8' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress),value))
+            self.bacnetApp.write('%s %s %s presentValue null - 8' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress)))
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
-                
-    def parseArgs(self,arg):
+
+            
+    def _parseArgs(self,arg):
         args = arg.split()
         pointName = ' '.join(args[:-1])
         value = args[-1]
         return (pointName, value)
+        
+    def _convert_write_arguments(self,args):
+        pointName, value = self._parseArgs(args)
+        # Accept boolean value
+        if 'binary' in self.points.ix[pointName].pointType:        
+            if value.lower() == 'false':
+                value = 'inactive'
+            elif value.lower() == 'true':
+                value = 'active'
+        # Accept states as value if multiState
+        if 'multiState' in self.points.ix[pointName].pointType:
+            state_list = [states.lower() for states in self.points.ix[pointName].units_state]
+            if value.lower() in state_list:
+                value = state_list.index(value.lower())+1
+        return (pointName,value)
