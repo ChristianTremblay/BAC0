@@ -35,9 +35,9 @@ class RepeatRead(Task):
             raise ValueError('controller bad type')
         
     def task(self):
-        value = self.controller.read(self.pointName)
+        res = self.controller.read(self.pointName)
         self.index.append(datetime.now())
-        self.values.append(value)
+        self.values.append(res.value())
              
     def getValues(self):
         ts = pd.Series(self.values, index=self.index)
