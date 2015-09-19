@@ -129,3 +129,7 @@ When installed, module can be used to script communication with bacnet device.
 Jupyter Notebooks are an excellent way to test it
 
 https://github.com/ChristianTremblay/BAC0/blob/master/Jupyter/BAC0.ipynb
+
+Doc
+===
+http://bac0.readthedocs.org/en/latest/

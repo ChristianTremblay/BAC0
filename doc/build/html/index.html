@@ -55,15 +55,15 @@
             
   <div class="section" id="welcome-to-baco-s-documentation">
 <h1>Welcome to BACØ&#8217;s documentation!<a class="headerlink" href="#welcome-to-baco-s-documentation" title="Permalink to this headline">¶</a></h1>
-<p>BACØ is a Python 3 scripting application that uses BACpypes to process bacnet messages on a IP network.
+<p>BAC0 is a Python 3 scripting application that uses BACpypes to process bacnet messages on a IP network.
 This library brings out simple commands to browse a bacnet network, read properties from bacnet devices or write to them.</p>
 <p>Python is a simple language to learn and a very powerful tool for data processing. Coupled to bacnet, it becomes a great
 tool to test devices an interact with controllers.</p>
 <div class="section" id="test-driven-development-tdd-for-ddc-controls">
 <h2>Test driven development (TDD) for DDC controls<a class="headerlink" href="#test-driven-development-tdd-for-ddc-controls" title="Permalink to this headline">¶</a></h2>
-<p>BACØ allows users to simply test an application even if sensors are not connected to the controller. Using the out_of_service
+<p>BAC0 allows users to simply test an application even if sensors are not connected to the controller. Using the out_of_service
 property, it&#8217;s easy to write a value to the input so the controller will think an input is conencted.</p>
-<p>Without a program like BACØ, you can rely on your DDC programming tool... but it is often slow and
+<p>Without a program like BAC0, you can rely on your DDC programming tool... but it is often slow and
 every test must be done manually.</p>
 <p>Now you can write your test and run them as often as you want.</p>
 </div>
@@ -71,33 +71,86 @@ every test must be done manually.</p>
 <h2>How to use it<a class="headerlink" href="#how-to-use-it" title="Permalink to this headline">¶</a></h2>
 <p>Example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">BAC0</span>
-<span class="n">bacnet</span> <span class="o">=</span> <span class="n">ReadWriteScript</span><span class="p">()</span>
+<span class="n">bacnet</span> <span class="o">=</span> <span class="n">BAC0</span><span class="o">.</span><span class="n">ReadWriteScript</span><span class="p">()</span>
+
 <span class="c"># Define a controller (this one is on MSTP #3, MAC addr 4, device ID 5504)</span>
 <span class="n">mycontroller</span> <span class="o">=</span> <span class="n">BAC0</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s">&#39;3:4&#39;</span><span class="p">,</span> <span class="mi">5504</span><span class="p">,</span> <span class="n">bacnet</span><span class="p">)</span>
+
 <span class="c"># Simulate an input (out_of_service -&gt; true)</span>
-<span class="c"># Use 1Ø as the value for pointName</span>
+<span class="c"># Use 10 as the value for pointName</span>
 <span class="n">mycontroller</span><span class="o">.</span><span class="n">sim</span><span class="p">(</span><span class="s">&#39;pointName 10&#39;</span><span class="p">)</span>
+
 <span class="c"># Release the simulation</span>
 <span class="n">mycontroller</span><span class="o">.</span><span class="n">release</span><span class="p">(</span><span class="s">&#39;pointName&#39;</span><span class="p">)</span>
+
 <span class="c"># Release all simulated points</span>
 <span class="n">mycontroller</span><span class="o">.</span><span class="n">releaseAll</span><span class="p">()</span>
+
 <span class="c"># Write to a point</span>
 <span class="n">mycontroller</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;pointName active&#39;</span><span class="p">)</span>
+
 <span class="c"># Write to relinquish default</span>
 <span class="n">mycontroller</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="s">&#39;pointName 120&#39;</span><span class="p">)</span>
+
 <span class="c"># Read</span>
 <span class="n">mycontroller</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;pointName can be more than one word&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Now you can build simple tests using assert syntax for example and make your DDC code stronger.</p>
 </div>
+<div class="section" id="assert">
+<h2>Assert ?<a class="headerlink" href="#assert" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s say your sequence is really simple. Something like this :</p>
+</div>
+</div>
+<div class="section" id="system-stopped">
+<h1>System stopped<a class="headerlink" href="#system-stopped" title="Permalink to this headline">¶</a></h1>
+<p>When system is stopped, fan must be off, dampers must be closed, heater cannot operate.</p>
+</div>
+<div class="section" id="system-started">
+<h1>System started<a class="headerlink" href="#system-started" title="Permalink to this headline">¶</a></h1>
+<p>When system starts, fan command will be on. Dampers will open to minimum position.
+If fan status turns on, heating sequence will starts.</p>
+<p>And so on...</p>
+<p>Controller is defined and its variable name is mycontroller
+Fan command = SF-C
+Fan Status = SF-S
+Dampers command = MAD-O
+Heater = RH-O
+Occupancy command = OCC-SCHEDULE</p>
+<p>System Stopped Test Code:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mycontroller</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;OCC-SCHEDULE Unoccupied&#39;</span><span class="p">)</span>
+<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">mycontroller</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;SF-C&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;Off&#39;</span>
+<span class="k">assert</span> <span class="n">mycontroller</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;MAD-O&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="k">assert</span> <span class="n">mycontroller</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;RH-O&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span>
+
+<span class="c"># Simulate fan status as SF-C is Off</span>
+<span class="n">mycontroller</span><span class="o">.</span><span class="n">sim</span><span class="p">(</span><span class="s">&#39;SF-S Off&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Sytstem Started Test Code:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mycontroller</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;OCC-SCHEDULE Occupied&#39;</span><span class="p">)</span>
+<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">mycontroller</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;SF-C&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;On&#39;</span>
+<span class="c"># Give status</span>
+<span class="n">mycontroller</span><span class="o">.</span><span class="n">sim</span><span class="p">(</span><span class="s">&#39;SF-S On&#39;</span><span class="p">)</span>
+<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">mycontroller</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;MAD-O&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="n">mycontroller</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;MADMIN-POS&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>And so on...</p>
+<p>You are now able to define any test you want. You will probably use more precise conditions
+instead of time.sleep() function (example read a value that tells actual mode is active)</p>
+<p>You can then test random temperature values, build functions that will simulate discharge air
+temperature depending on heatign or cooling stages... it&#8217;s up to you !</p>
 <div class="section" id="where-to-download">
 <h2>Where to download<a class="headerlink" href="#where-to-download" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="http://christiantremblay.github.io/BAC0/">http://christiantremblay.github.io/BAC0/</a></p>
 </div>
 <div class="section" id="what-you-need">
 <h2>What you need<a class="headerlink" href="#what-you-need" title="Permalink to this headline">¶</a></h2>
-<p>BACØ is based on BACpypes found here:</p>
+<p>BAC0 is based on BACpypes found here:</p>
 <div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/JoelBender/bacpypes.git
 </pre></div>
 </div>
@@ -105,8 +158,8 @@ every test must be done manually.</p>
 <p>You will also need Pandas as data processing is so easier with this !</p>
 <p>If running Python on Windows, I recommend the use of complete distributions like Anaconda or Enthought Canopy.</p>
 </div>
-<div class="section" id="how-to-install-baco">
-<h2>How to install BACØ<a class="headerlink" href="#how-to-install-baco" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="how-to-install-bac0">
+<h2>How to install BAC0<a class="headerlink" href="#how-to-install-bac0" title="Permalink to this headline">¶</a></h2>
 <p>Once the repo has been cloned, use:</p>
 <div class="highlight-python"><div class="highlight"><pre>python setup.py install
 </pre></div>
@@ -150,9 +203,14 @@ Jupyter Notebooks are an excellent way to test it</p>
 <li><a class="reference internal" href="#">Welcome to BACØ&#8217;s documentation!</a><ul>
 <li><a class="reference internal" href="#test-driven-development-tdd-for-ddc-controls">Test driven development (TDD) for DDC controls</a></li>
 <li><a class="reference internal" href="#how-to-use-it">How to use it</a></li>
+<li><a class="reference internal" href="#assert">Assert ?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#system-stopped">System stopped</a></li>
+<li><a class="reference internal" href="#system-started">System started</a><ul>
 <li><a class="reference internal" href="#where-to-download">Where to download</a></li>
 <li><a class="reference internal" href="#what-you-need">What you need</a></li>
-<li><a class="reference internal" href="#how-to-install-baco">How to install BACØ</a></li>
+<li><a class="reference internal" href="#how-to-install-bac0">How to install BAC0</a></li>
 <li><a class="reference internal" href="#demo-in-a-jupyter-notebook">Demo in a Jupyter Notebook</a></li>
 </ul>
 </li>
