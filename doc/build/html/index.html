@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Welcome to BACØ’s documentation! &mdash; BAC0 0.94 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.94',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="BAC0 0.94 documentation" href="#" />
+    <link rel="next" title="BAC0 package" href="BAC0.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="BAC0.html" title="BAC0 package"
+             accesskey="N">next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">BAC0 0.94 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-baco-s-documentation">
+<h1>Welcome to BACØ&#8217;s documentation!<a class="headerlink" href="#welcome-to-baco-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>BACØ is a Python 3 scripting application that uses BACpypes to process bacnet messages on a IP network.
+This library brings out simple commands to browse a bacnet network, read properties from bacnet devices or write to them.</p>
+<p>Python is a simple language to learn and a very powerful tool for data processing. Coupled to bacnet, it becomes a great
+tool to test devices an interact with controllers.</p>
+<div class="section" id="test-driven-development-tdd-for-ddc-controls">
+<h2>Test driven development (TDD) for DDC controls<a class="headerlink" href="#test-driven-development-tdd-for-ddc-controls" title="Permalink to this headline">¶</a></h2>
+<p>BACØ allows users to simply test an application even if sensors are not connected to the controller. Using the out_of_service
+property, it&#8217;s easy to write a value to the input so the controller will think an input is conencted.</p>
+<p>Without a program like BACØ, you can rely on your DDC programming tool... but it is often slow and
+every test must be done manually.</p>
+<p>Now you can write your test and run them as often as you want.</p>
+</div>
+<div class="section" id="how-to-use-it">
+<h2>How to use it<a class="headerlink" href="#how-to-use-it" title="Permalink to this headline">¶</a></h2>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">BAC0</span>
+<span class="n">bacnet</span> <span class="o">=</span> <span class="n">ReadWriteScript</span><span class="p">()</span>
+<span class="c"># Define a controller (this one is on MSTP #3, MAC addr 4, device ID 5504)</span>
+<span class="n">mycontroller</span> <span class="o">=</span> <span class="n">BAC0</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s">&#39;3:4&#39;</span><span class="p">,</span> <span class="mi">5504</span><span class="p">,</span> <span class="n">bacnet</span><span class="p">)</span>
+<span class="c"># Simulate an input (out_of_service -&gt; true)</span>
+<span class="c"># Use 1Ø as the value for pointName</span>
+<span class="n">mycontroller</span><span class="o">.</span><span class="n">sim</span><span class="p">(</span><span class="s">&#39;pointName 10&#39;</span><span class="p">)</span>
+<span class="c"># Release the simulation</span>
+<span class="n">mycontroller</span><span class="o">.</span><span class="n">release</span><span class="p">(</span><span class="s">&#39;pointName&#39;</span><span class="p">)</span>
+<span class="c"># Release all simulated points</span>
+<span class="n">mycontroller</span><span class="o">.</span><span class="n">releaseAll</span><span class="p">()</span>
+<span class="c"># Write to a point</span>
+<span class="n">mycontroller</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;pointName active&#39;</span><span class="p">)</span>
+<span class="c"># Write to relinquish default</span>
+<span class="n">mycontroller</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="s">&#39;pointName 120&#39;</span><span class="p">)</span>
+<span class="c"># Read</span>
+<span class="n">mycontroller</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;pointName can be more than one word&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now you can build simple tests using assert syntax for example and make your DDC code stronger.</p>
+</div>
+<div class="section" id="where-to-download">
+<h2>Where to download<a class="headerlink" href="#where-to-download" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="http://christiantremblay.github.io/BAC0/">http://christiantremblay.github.io/BAC0/</a></p>
+</div>
+<div class="section" id="what-you-need">
+<h2>What you need<a class="headerlink" href="#what-you-need" title="Permalink to this headline">¶</a></h2>
+<p>BACØ is based on BACpypes found here:</p>
+<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/JoelBender/bacpypes.git
+</pre></div>
+</div>
+<p>Bacpypes is now available for python 2.5, 2.7 and 3.4. You can also download it using Pypy.</p>
+<p>You will also need Pandas as data processing is so easier with this !</p>
+<p>If running Python on Windows, I recommend the use of complete distributions like Anaconda or Enthought Canopy.</p>
+</div>
+<div class="section" id="how-to-install-baco">
+<h2>How to install BACØ<a class="headerlink" href="#how-to-install-baco" title="Permalink to this headline">¶</a></h2>
+<p>Once the repo has been cloned, use:</p>
+<div class="highlight-python"><div class="highlight"><pre>python setup.py install
+</pre></div>
+</div>
+</div>
+<div class="section" id="demo-in-a-jupyter-notebook">
+<h2>Demo in a Jupyter Notebook<a class="headerlink" href="#demo-in-a-jupyter-notebook" title="Permalink to this headline">¶</a></h2>
+<p>When installed, module can be used to script communication with bacnet device.
+Jupyter Notebooks are an excellent way to test it</p>
+<p><a class="reference external" href="https://github.com/ChristianTremblay/BAC0/blob/master/Jupyter/BAC0.ipynb">https://github.com/ChristianTremblay/BAC0/blob/master/Jupyter/BAC0.ipynb</a></p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="BAC0.html">BAC0 package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="BAC0.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BAC0.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BAC0.html#module-BAC0.infos">BAC0.infos module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="BAC0.html#module-BAC0">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span>Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span>Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span>Search Page</span></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to BACØ&#8217;s documentation!</a><ul>
+<li><a class="reference internal" href="#test-driven-development-tdd-for-ddc-controls">Test driven development (TDD) for DDC controls</a></li>
+<li><a class="reference internal" href="#how-to-use-it">How to use it</a></li>
+<li><a class="reference internal" href="#where-to-download">Where to download</a></li>
+<li><a class="reference internal" href="#what-you-need">What you need</a></li>
+<li><a class="reference internal" href="#how-to-install-baco">How to install BACØ</a></li>
+<li><a class="reference internal" href="#demo-in-a-jupyter-notebook">Demo in a Jupyter Notebook</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="BAC0.html"
+                        title="next chapter">BAC0 package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/index.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Christian Tremblay, P.Eng..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="_sources/index.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>

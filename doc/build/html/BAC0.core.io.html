@@ -1,0 +1,383 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>BAC0.core.io package &mdash; BAC0 0.94 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.94',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="BAC0 0.94 documentation" href="index.html" />
+    <link rel="up" title="BAC0.core package" href="BAC0.core.html" />
+    <link rel="next" title="BAC0.scripts package" href="BAC0.scripts.html" />
+    <link rel="prev" title="BAC0.core.functions package" href="BAC0.core.functions.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="BAC0.scripts.html" title="BAC0.scripts package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="BAC0.core.functions.html" title="BAC0.core.functions package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">BAC0 0.94 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="BAC0.html" >BAC0 package</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="BAC0.core.html" accesskey="U">BAC0.core package</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="bac0-core-io-package">
+<h1>BAC0.core.io package<a class="headerlink" href="#bac0-core-io-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-BAC0.core.io.IOExceptions">
+<span id="bac0-core-io-ioexceptions-module"></span><h2>BAC0.core.io.IOExceptions module<a class="headerlink" href="#module-BAC0.core.io.IOExceptions" title="Permalink to this headline">¶</a></h2>
+<p>Definition of exceptions</p>
+<dl class="exception">
+<dt id="BAC0.core.io.IOExceptions.NoResponseFromController">
+<em class="property">exception </em><code class="descclassname">BAC0.core.io.IOExceptions.</code><code class="descname">NoResponseFromController</code><a class="headerlink" href="#BAC0.core.io.IOExceptions.NoResponseFromController" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>This exception is used when trying to read or write and there is not answer.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="BAC0.core.io.IOExceptions.OutOfServiceNotSet">
+<em class="property">exception </em><code class="descclassname">BAC0.core.io.IOExceptions.</code><code class="descname">OutOfServiceNotSet</code><a class="headerlink" href="#BAC0.core.io.IOExceptions.OutOfServiceNotSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>This exception is used when trying to simulate a point and the out of service property is false.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="BAC0.core.io.IOExceptions.OutOfServiceSet">
+<em class="property">exception </em><code class="descclassname">BAC0.core.io.IOExceptions.</code><code class="descname">OutOfServiceSet</code><a class="headerlink" href="#BAC0.core.io.IOExceptions.OutOfServiceSet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>This exception is used when trying to set the out of service property to false to release the simulation...and it doesn&#8217;t work.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="BAC0.core.io.IOExceptions.ReadPropertyException">
+<em class="property">exception </em><code class="descclassname">BAC0.core.io.IOExceptions.</code><code class="descname">ReadPropertyException</code><a class="headerlink" href="#BAC0.core.io.IOExceptions.ReadPropertyException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>This exception is used when trying to read a property.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="BAC0.core.io.IOExceptions.ReadPropertyMultipleException">
+<em class="property">exception </em><code class="descclassname">BAC0.core.io.IOExceptions.</code><code class="descname">ReadPropertyMultipleException</code><a class="headerlink" href="#BAC0.core.io.IOExceptions.ReadPropertyMultipleException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>This exception is used when trying to read multiple properties.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="BAC0.core.io.IOExceptions.WritePropertyCastError">
+<em class="property">exception </em><code class="descclassname">BAC0.core.io.IOExceptions.</code><code class="descname">WritePropertyCastError</code><a class="headerlink" href="#BAC0.core.io.IOExceptions.WritePropertyCastError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>This exception is used when trying to write to a property and a cast error occurs.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="BAC0.core.io.IOExceptions.WritePropertyException">
+<em class="property">exception </em><code class="descclassname">BAC0.core.io.IOExceptions.</code><code class="descname">WritePropertyException</code><a class="headerlink" href="#BAC0.core.io.IOExceptions.WritePropertyException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>This exception is used when trying to write a property.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-BAC0.core.io.Read">
+<span id="bac0-core-io-read-module"></span><h2>BAC0.core.io.Read module<a class="headerlink" href="#module-BAC0.core.io.Read" title="Permalink to this headline">¶</a></h2>
+<p>This module allows the creation of ReadProperty and ReadPropertyMultiple 
+requests by and app</p>
+<blockquote>
+<div><p>Must be used while defining an app
+Example:</p>
+<div class="highlight-python"><div class="highlight"><pre>class BasicScript(WhoisIAm, ReadProperty)
+</pre></div>
+</div>
+<p>Class:</p>
+<div class="highlight-python"><div class="highlight"><pre>ReadProperty()
+    def read()
+    def readMultiple()
+</pre></div>
+</div>
+<p>Functions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">print_debug</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<dl class="class">
+<dt id="BAC0.core.io.Read.ReadProperty">
+<em class="property">class </em><code class="descclassname">BAC0.core.io.Read.</code><code class="descname">ReadProperty</code><a class="headerlink" href="#BAC0.core.io.Read.ReadProperty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>This class defines functions to read bacnet messages.
+It handles readProperty, readPropertyMultiple
+Data exchange is made via a Queue object
+A timeout of 2 seconds allow detection of invalid device or communciation
+errors.</p>
+<dl class="method">
+<dt id="BAC0.core.io.Read.ReadProperty.read">
+<code class="descname">read</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.io.Read.ReadProperty.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function build a read request wait for the answer and 
+return the value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> &#8211; String with &lt;addr&gt; &lt;type&gt; &lt;inst&gt; &lt;prop&gt; [ &lt;indx&gt; ]</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">data read from device (str representing data like 10 or True)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Example</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">BAC0</span>
+<span class="n">myIPAddr</span> <span class="o">=</span> <span class="s">&#39;192.168.1.10&#39;</span>
+<span class="n">bacnet</span> <span class="o">=</span> <span class="n">BAC0</span><span class="o">.</span><span class="n">ReadWriteScript</span><span class="p">(</span><span class="n">localIPAddr</span> <span class="o">=</span> <span class="n">myIPAddr</span><span class="p">)</span>          
+<span class="n">bacnet</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s">&#39;2:5 analogInput 1 presentValue&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will read controller with a MAC address of 5 in the network 2
+Will ask for the present Value of analog input 1 (AI:1)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="BAC0.core.io.Read.ReadProperty.readMultiple">
+<code class="descname">readMultiple</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.io.Read.ReadProperty.readMultiple" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function build a readMultiple request wait for the answer and 
+return the value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> &#8211; String with &lt;addr&gt; ( &lt;type&gt; &lt;inst&gt; ( &lt;prop&gt; [ &lt;indx&gt; ] )... )...</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">data read from device (str representing data like 10 or True)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Example</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">BAC0</span>
+<span class="n">myIPAddr</span> <span class="o">=</span> <span class="s">&#39;192.168.1.10&#39;</span>
+<span class="n">bacnet</span> <span class="o">=</span> <span class="n">BAC0</span><span class="o">.</span><span class="n">ReadWriteScript</span><span class="p">(</span><span class="n">localIPAddr</span> <span class="o">=</span> <span class="n">myIPAddr</span><span class="p">)</span>          
+<span class="n">bacnet</span><span class="o">.</span><span class="n">readMultiple</span><span class="p">(</span><span class="s">&#39;2:5 analogInput 1 presentValue units&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will read controller with a MAC address of 5 in the network 2
+Will ask for the present Value and the units of analog input 1 (AI:1)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="BAC0.core.io.Read.print_debug">
+<code class="descclassname">BAC0.core.io.Read.</code><code class="descname">print_debug</code><span class="sig-paren">(</span><em>msg</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.io.Read.print_debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to print info to console when debug mode active</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-BAC0.core.io.Simulate">
+<span id="bac0-core-io-simulate-module"></span><h2>BAC0.core.io.Simulate module<a class="headerlink" href="#module-BAC0.core.io.Simulate" title="Permalink to this headline">¶</a></h2>
+<p>This module define a way to simulate value of IO variables</p>
+<dl class="class">
+<dt id="BAC0.core.io.Simulate.Simulation">
+<em class="property">class </em><code class="descclassname">BAC0.core.io.Simulate.</code><code class="descname">Simulation</code><a class="headerlink" href="#BAC0.core.io.Simulate.Simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Global informations regarding simulation</p>
+<dl class="method">
+<dt id="BAC0.core.io.Simulate.Simulation.release">
+<code class="descname">release</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.io.Simulate.Simulation.release" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function will turn out_of_service property to false so the
+point will resume it&#8217;s normal behaviour</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> &#8211; String with &lt;addr&gt; &lt;type&gt; &lt;inst&gt;</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="BAC0.core.io.Simulate.Simulation.sim">
+<code class="descname">sim</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.io.Simulate.Simulation.sim" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function allow the simulation of IO points by turning on the
+out_of_service property. When out_of_service, write the value to 
+the point</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> &#8211; String with &lt;addr&gt; &lt;type&gt; &lt;inst&gt; &lt;prop&gt; &lt;value&gt; [ &lt;indx&gt; ] [ &lt;priority&gt; ]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-BAC0.core.io.Write">
+<span id="bac0-core-io-write-module"></span><h2>BAC0.core.io.Write module<a class="headerlink" href="#module-BAC0.core.io.Write" title="Permalink to this headline">¶</a></h2>
+<p>This module allows the creation of WriteProperty requests by and app</p>
+<blockquote>
+<div><p>Must be used while defining an app
+Example:</p>
+<div class="highlight-python"><div class="highlight"><pre>class BasicScript(WhoisIAm, WriteProperty)
+</pre></div>
+</div>
+<p>Class:</p>
+<div class="highlight-python"><div class="highlight"><pre>WriteProperty()
+    def write()            
+</pre></div>
+</div>
+<p>Functions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">print_debug</span><span class="p">()</span>
+</pre></div>
+</div>
+</div></blockquote>
+<dl class="class">
+<dt id="BAC0.core.io.Write.WriteProperty">
+<em class="property">class </em><code class="descclassname">BAC0.core.io.Write.</code><code class="descname">WriteProperty</code><a class="headerlink" href="#BAC0.core.io.Write.WriteProperty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>This class define function to write to bacnet objects
+Will implement a Queue object waiting for an acknowledgment</p>
+<dl class="method">
+<dt id="BAC0.core.io.Write.WriteProperty.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.io.Write.WriteProperty.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function build a write request wait for an acknowledgment and 
+return a boolean status (True if ok, False if not)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>args</strong> &#8211; String with &lt;addr&gt; &lt;type&gt; &lt;inst&gt; &lt;prop&gt; &lt;value&gt; [ &lt;indx&gt; ] [ &lt;priority&gt; ]</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">data read from device (str representing data like 10 or True)</td>
+</tr>
+</tbody>
+</table>
+<p><em>Example</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">BAC0</span>
+<span class="n">myIPAddr</span> <span class="o">=</span> <span class="s">&#39;192.168.1.10&#39;</span>
+<span class="n">bacnet</span> <span class="o">=</span> <span class="n">BAC0</span><span class="o">.</span><span class="n">ReadWriteScript</span><span class="p">(</span><span class="n">localIPAddr</span> <span class="o">=</span> <span class="n">myIPAddr</span><span class="p">)</span>          
+<span class="n">bacnet</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;2:5 analogValue 1 presentValue 100&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will write 100 to AV:1 of a controller with a MAC address of 5 in the network 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="BAC0.core.io.Write.print_debug">
+<code class="descclassname">BAC0.core.io.Write.</code><code class="descname">print_debug</code><span class="sig-paren">(</span><em>msg</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.io.Write.print_debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to print info to console when debug mode active</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-BAC0.core.io">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-BAC0.core.io" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">BAC0.core.io package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-BAC0.core.io.IOExceptions">BAC0.core.io.IOExceptions module</a></li>
+<li><a class="reference internal" href="#module-BAC0.core.io.Read">BAC0.core.io.Read module</a></li>
+<li><a class="reference internal" href="#module-BAC0.core.io.Simulate">BAC0.core.io.Simulate module</a></li>
+<li><a class="reference internal" href="#module-BAC0.core.io.Write">BAC0.core.io.Write module</a></li>
+<li><a class="reference internal" href="#module-BAC0.core.io">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="BAC0.core.functions.html"
+                        title="previous chapter">BAC0.core.functions package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="BAC0.scripts.html"
+                        title="next chapter">BAC0.scripts package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/BAC0.core.io.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2015, Christian Tremblay, P.Eng..
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      
+      |
+      <a href="_sources/BAC0.core.io.txt"
+          rel="nofollow">Page source</a></li>
+    </div>
+
+    
+
+    
+  </body>
+</html>
