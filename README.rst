@@ -65,12 +65,12 @@ And so on...
 
 How would I test that ?
 ***********************
-*Controller is defined and its variable name is mycontroller
-*fan command = SF-C
-*Fan Status = SF-S
-*Dampers command = MAD-O
-*Heater = RH-O
-*Occupancy command = OCC-SCHEDULE
+* Controller is defined and its variable name is mycontroller
+* fan command = SF-C
+* Fan Status = SF-S
+* Dampers command = MAD-O
+* Heater = RH-O
+* Occupancy command = OCC-SCHEDULE
 
 System Stopped Test Code::
 
