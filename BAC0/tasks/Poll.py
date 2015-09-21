@@ -15,9 +15,8 @@ class Poll(Task):
     """
     Will fit fan status with fan command
     """
-    delay = 10
-    
-    def __init__(self, points):
+   
+    def __init__(self, points, delay = 60):
         """
         :param pointName: (str) name of the point to read
         :param controller: (BAC0.core.devices.Device) Device to read from
@@ -25,7 +24,7 @@ class Poll(Task):
         
         :returns: Nothing. Use task.value to read the last value read        
         """
-        Task.__init__(self,Poll.delay)
+        Task.__init__(self, delay)
         self.points = points
         
     def task(self):
