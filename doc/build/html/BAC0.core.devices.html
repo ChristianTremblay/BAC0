@@ -69,7 +69,7 @@
 <span id="bac0-core-devices-device-module"></span><h2>BAC0.core.devices.Device module<a class="headerlink" href="#module-BAC0.core.devices.Device" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="BAC0.core.devices.Device.Device">
-<em class="property">class </em><code class="descclassname">BAC0.core.devices.Device.</code><code class="descname">Device</code><span class="sig-paren">(</span><em>addr</em>, <em>devId</em>, <em>bacnetApp</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.devices.Device.Device" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">BAC0.core.devices.Device.</code><code class="descname">Device</code><span class="sig-paren">(</span><em>addr</em>, <em>devId</em>, <em>network</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.devices.Device.Device" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Bacnet device
 This class represents a controller. When defined, it allows
@@ -90,6 +90,14 @@ with the device on the network</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="BAC0.core.devices.Device.Device.buildPointList">
+<code class="descname">buildPointList</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.devices.Device.Device.buildPointList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read all points of the device and creates a dataframe (Pandas) to store
+the list and allow quick access.
+This list will be used to access variables based on point name</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="BAC0.core.devices.Device.Device.default">
 <code class="descname">default</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.devices.Device.Device.default" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write to relinquish default value of a point of a device</p>
@@ -104,11 +112,19 @@ with the device on the network</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="BAC0.core.devices.Device.Device.discover">
-<code class="descname">discover</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.devices.Device.Device.discover" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read all points of the device and creates a dataframe (Pandas) to store
-the list and allow quick access.
-This list will be used to access variables based on point name</p>
+<dt id="BAC0.core.devices.Device.Device.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.devices.Device.Device.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a point based on its name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; (str) pointName</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">(Point) the point (can be Numeric, Boolean or Enum)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">

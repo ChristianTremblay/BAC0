@@ -9,7 +9,6 @@ Repeat read function every delay
 """
 
 from .TaskManager import Task
-from ..core.devices.Device import Device
 
 import pandas as pd
 from datetime import datetime
@@ -31,8 +30,6 @@ class RepeatRead(Task):
         self.controller = controller
         self.values = []
         self.index = []
-        if not type(controller) == Device:
-            raise ValueError('controller bad type')
         
     def task(self):
         res = self.controller.read(self.pointName)

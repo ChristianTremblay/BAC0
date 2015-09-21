@@ -8,6 +8,8 @@
 This module define discoverPoints function
 """
 
+from ..devices.Points import EnumPoint, BooleanPoint, NumericPoint
+
 try:
     import pandas as pd
     _PANDA = True
@@ -39,28 +41,32 @@ def discoverPoints(bacnetapp,address, devID):
     objList = bacnetapp.read('%s device %s objectList' % (address,devID))
     newLine = []   
     result = []
+    points = []
     
-    for each in objList:
-        if each[0] not in 'file calendar device schedule notificationClass eventLog':
-            if 'binary' not in each[0] and 'multiState' not in each[0]:
-                newLine = [each[0],each[1]]
-                newLine.extend(bacnetapp.readMultiple('%s %s %s objectName description presentValue units' % (address, each[0], each[1])))
-            elif 'binary' in each[0]:
-                newLine = [each[0],each[1]]
-                infos = (bacnetapp.readMultiple('%s %s %s objectName description presentValue inactiveText activeText' % (address, each[0], each[1])))
+    for pointType, pointAddr in objList:
+        if pointType not in 'file calendar device schedule notificationClass eventLog':
+            if 'binary' not in pointType and 'multiState' not in pointType:
+                newLine = [pointType,pointAddr]
+                newLine.extend(bacnetapp.readMultiple('%s %s %s objectName description presentValue units' % (address, pointType, pointAddr)))
+                newPoint = NumericPoint(pointType = newLine[0],pointAddress=newLine[1],pointName = newLine[2],description = newLine[3],presentValue = newLine[4],units_state = newLine[5])
+            elif 'binary' in pointType:
+                newLine = [pointType,pointAddr]
+                infos = (bacnetapp.readMultiple('%s %s %s objectName description presentValue inactiveText activeText' % (address, pointType, pointAddr)))
                 newLine.extend(infos[:-2])
                 newLine.extend([infos[-2:]])
-            elif 'multiState' in each[0]:
-                newLine = [each[0],each[1]]
-                newLine.extend(bacnetapp.readMultiple('%s %s %s objectName description presentValue stateText' % (address, each[0], each[1])))
-                      
+                newPoint = BooleanPoint(pointType = newLine[0],pointAddress=newLine[1],pointName = newLine[2],description = newLine[3],presentValue = newLine[4],units_state = newLine[5])
+            elif 'multiState' in pointType:
+                newLine = [pointType,pointAddr]
+                newLine.extend(bacnetapp.readMultiple('%s %s %s objectName description presentValue stateText' % (address, pointType,pointAddr)))
+                newPoint = EnumPoint(pointType = newLine[0],pointAddress=newLine[1],pointName = newLine[2],description = newLine[3],presentValue = newLine[4],units_state = newLine[5])      
             result.append(newLine)
+            points.append(newPoint)
     if _PANDA:       
         df = pd.DataFrame(result, columns=['pointType','pointAddress','pointName','description','presentValue','units_state']).set_index(['pointName'])
     else:
         df = result
     print('Ready!')
-    return (deviceName,pss,objList,df)
+    return (deviceName,pss,objList,df, points)
 
 
 

@@ -144,6 +144,55 @@ Occupancy command = OCC-SCHEDULE</p>
 instead of time.sleep() function (example read a value that tells actual mode is active)</p>
 <p>You can then test random temperature values, build functions that will simulate discharge air
 temperature depending on heatign or cooling stages... it&#8217;s up to you !</p>
+</div>
+<div class="section" id="new">
+<h1>New<a class="headerlink" href="#new" title="Permalink to this headline">¶</a></h1>
+<p>Version 0.96+ allow the use of points linked to a device. It&#8217;s now possible to use BAC0
+in a more &#8220;framework&#8221; way. Once a device is created, all points are created inside the device.
+Each point also store a timeseries of every reading done since its creation so it is easy to
+know what happened.</p>
+<p>Define controller and access points:</p>
+<div class="highlight-python"><div class="highlight"><pre>import BAC0
+%matplotlib inline
+bacnet = BAC0.ReadWriteScript()
+
+controller = BAC0.device(&#39;2:5&#39;,5,bacnet)
+
+controller.get(&#39;nvoDO1&#39;)
+</pre></div>
+</div>
+<p>Create a polling thread that will read a list of points every 10 seconds:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">BAC0.tasks.Poll</span> <span class="kn">import</span> <span class="n">Poll</span>
+<span class="n">pointsToPoll</span> <span class="o">=</span> <span class="p">[</span><span class="n">controller</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;nvoAI1&#39;</span><span class="p">),</span> <span class="n">controller</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;nvoAI2&#39;</span><span class="p">),</span> <span class="n">controller</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;nvoDO1&#39;</span><span class="p">)]</span>
+<span class="n">polling</span> <span class="o">=</span> <span class="n">Poll</span><span class="p">(</span><span class="n">pointsToPoll</span><span class="p">)</span>
+<span class="n">polling</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Access a historyTable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">controller</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;nvoAI1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">showHistoryTable</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Result example</p>
+<div class="highlight-python"><div class="highlight"><pre>fx.get(&#39;nvoAI1&#39;).showHistoryTable()
+Out[8]:
+2015-09-20 21:41:37.093985    21.740000
+2015-09-20 21:42:23.672387    21.790001
+2015-09-20 21:42:34.358801    21.790001
+2015-09-20 21:42:45.841596    21.790001
+2015-09-20 21:42:56.308144    21.790001
+2015-09-20 21:43:06.897034    21.790001
+2015-09-20 21:43:17.593321    21.790001
+2015-09-20 21:43:28.087180    21.790001
+2015-09-20 21:43:38.597702    21.790001
+2015-09-20 21:43:48.815317    21.790001
+2015-09-20 21:44:00.353144    21.790001
+2015-09-20 21:44:10.871324    21.790001
+</pre></div>
+</div>
+<p>Show a chart:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">controller</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;nvoAI1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">chart</span><span class="p">()</span>
+</pre></div>
+</div>
 <div class="section" id="where-to-download">
 <h2>Where to download<a class="headerlink" href="#where-to-download" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="http://christiantremblay.github.io/BAC0/">http://christiantremblay.github.io/BAC0/</a></p>
@@ -170,6 +219,11 @@ temperature depending on heatign or cooling stages... it&#8217;s up to you !</p>
 <p>When installed, module can be used to script communication with bacnet device.
 Jupyter Notebooks are an excellent way to test it</p>
 <p><a class="reference external" href="https://github.com/ChristianTremblay/BAC0/blob/master/Jupyter/BAC0.ipynb">https://github.com/ChristianTremblay/BAC0/blob/master/Jupyter/BAC0.ipynb</a></p>
+</div>
+</div>
+<div class="section" id="doc">
+<h1>Doc<a class="headerlink" href="#doc" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="http://bac0.readthedocs.org/en/latest/">http://bac0.readthedocs.org/en/latest/</a></p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="BAC0.html">BAC0 package</a><ul>
@@ -180,7 +234,6 @@ Jupyter Notebooks are an excellent way to test it</p>
 </ul>
 </li>
 </ul>
-</div>
 </div>
 </div>
 <div class="section" id="indices-and-tables">
@@ -207,13 +260,15 @@ Jupyter Notebooks are an excellent way to test it</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#system-stopped">System stopped</a></li>
-<li><a class="reference internal" href="#system-started">System started</a><ul>
+<li><a class="reference internal" href="#system-started">System started</a></li>
+<li><a class="reference internal" href="#new">New</a><ul>
 <li><a class="reference internal" href="#where-to-download">Where to download</a></li>
 <li><a class="reference internal" href="#what-you-need">What you need</a></li>
 <li><a class="reference internal" href="#how-to-install-bac0">How to install BAC0</a></li>
 <li><a class="reference internal" href="#demo-in-a-jupyter-notebook">Demo in a Jupyter Notebook</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#doc">Doc</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 </ul>
 

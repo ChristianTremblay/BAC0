@@ -9,7 +9,6 @@ Change Fan status based on Fan Command
 """
 
 from .TaskManager import Task
-from ..core.devices.Device import Device
 
 class BooleanMatch(Task):
     """
@@ -20,8 +19,6 @@ class BooleanMatch(Task):
         self.command = boolCommand
         self.status = boolStatus
         self.controller = controller
-        if not type(controller) == Device:
-            raise ValueError('controller bad type')
         
     def task(self):
         if self.controller.read(self.command) == 'active':

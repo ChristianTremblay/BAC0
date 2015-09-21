@@ -43,6 +43,7 @@ class ReadWriteScript(BasicScript,ReadProperty,WriteProperty,Simulation):
     Once created, the object will call a ``whois()`` function to build a list of controllers available.
     
     """
+    
     def __init__(self, localIPAddr = None):
         """
         Initialization requires information on the local device

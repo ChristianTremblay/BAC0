@@ -4,9 +4,15 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 #
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-from ..functions.discoverPoints import discoverPoints
+#from ..functions.discoverPoints import discoverPoints
 
 from .Points import NumericPoint, BooleanPoint, EnumPoint
+
+try:
+    import pandas as pd
+    _PANDA = True
+except:
+    _PANDA= False
 
 class Device():
     """
@@ -15,7 +21,7 @@ class Device():
     the use of read, write, sim, release functions to communicate
     with the device on the network
     """
-    def __init__(self,addr,devId,bacnetApp):
+    def __init__(self,addr,devId,network):
         """
         Initialization require address, device id and bacnetApp (the script itself)
         :param addr: address of the device (ex. '2:5')
@@ -24,22 +30,29 @@ class Device():
         """
         self.addr = addr
         self.deviceID = devId
-        self.bacnetApp = bacnetApp
-        self.points = []
+        self.network = network
+        self.pollDelay = 10
+        self._pointsDF = []
         self.name = ''
-        self.discover()
+
         self.simPoints = []
+        self.points = []
+        
+        self.buildPointList()
+        
+
 
         
-    def discover(self):
+    def buildPointList(self):
         """
         Read all points of the device and creates a dataframe (Pandas) to store
         the list and allow quick access.
         This list will be used to access variables based on point name
         """
-        result = discoverPoints(self.bacnetApp,(self.addr),self.deviceID)
-        self.points = result[3]
+        result = self._discoverPoints()
+        self._pointsDF = result[3]
         self.name = result[0]
+        self.points = result[4]
         
     def read(self,args):
         """
@@ -50,16 +63,17 @@ class Device():
         """
         pointName = args
         try:
-            val = self.bacnetApp.read('%s %s %s presentValue' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress)))
+            val = self.network.read('%s %s %s presentValue' % (self.addr,self._pointsDF.ix[pointName].pointType,str(self._pointsDF.ix[pointName].pointAddress)))
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
-        if 'multiState' in self.points.ix[pointName].pointType:
-            return EnumPoint(val,self.points.ix[pointName].units_state)
-        elif 'binary' in self.points.ix[pointName].pointType:
-            return BooleanPoint(val,self.points.ix[pointName].units_state)
-        else:
-            return NumericPoint(val,self.points.ix[pointName].units_state)
+        #if 'multiState' in self._pointsDF.ix[pointName].pointType:
+        #    return EnumPoint(val,self._pointsDF.ix[pointName],self.addr)
+        #elif 'binary' in self._pointsDF.ix[pointName].pointType:
+        #    return BooleanPoint(val,self._pointsDF.ix[pointName],self.addr)
+        #else:
+        #    return NumericPoint(val,self._pointsDF.ix[pointName],self.addr)
+        return val
         
     def write(self,args):
         """
@@ -70,7 +84,7 @@ class Device():
         """
         pointName, value = self._convert_write_arguments(args)
         try:                
-            self.bacnetApp.write('%s %s %s presentValue %s' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress),value))
+            self.network.write('%s %s %s presentValue %s' % (self.addr,self._pointsDF.ix[pointName].pointType,str(self._pointsDF.ix[pointName].pointAddress),value))
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
@@ -84,7 +98,7 @@ class Device():
         pointName, value = self._convert_write_arguments(args)
         # Accept boolean value
         try:                
-            self.bacnetApp.write('%s %s %s relinquishDefault %s' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress),value))
+            self.network.write('%s %s %s relinquishDefault %s' % (self.addr,self._pointsDF.ix[pointName].pointType,str(self._pointsDF.ix[pointName].pointAddress),value))
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
@@ -101,13 +115,14 @@ class Device():
         """
         pointName, value = self._convert_write_arguments(args)
         try:
-            self.bacnetApp.sim('%s %s %s presentValue %s' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress),value))
+            self.network.sim('%s %s %s presentValue %s' % (self.addr,self._pointsDF.ix[pointName].pointType,str(self._pointsDF.ix[pointName].pointAddress),value))
             if pointName not in self.simPoints:
                 self.simPoints.append(pointName)
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
-            
+    #TODO : Move this function inside Point
+    # New function shoudl iterate points and call point.release        
     def releaseAllSim(self):
         """
         Release all points stored in the self.simPoints variable 
@@ -116,7 +131,7 @@ class Device():
         """
         for pointName in self.simPoints:
             try:
-                self.bacnetApp.release('%s %s %s' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress)))
+                self.network.release('%s %s %s' % (self.addr,self._pointsDF.ix[pointName].pointType,str(self._pointsDF.ix[pointName].pointAddress)))
                 if pointName in self.simPoints:
                     self.simPoints.pop(pointName)
             except KeyError:
@@ -133,7 +148,7 @@ class Device():
 
         pointName = args
         try:
-            self.bacnetApp.release('%s %s %s' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress)))
+            self.network.release('%s %s %s' % (self.addr,self._pointsDF.ix[pointName].pointType,str(self._pointsDF.ix[pointName].pointAddress)))
             if pointName in self.simPoints:
                 self.simPoints.remove(pointName)
         except KeyError:
@@ -148,7 +163,7 @@ class Device():
         """
         pointName, value = self._convert_write_arguments(args)
         try:                
-            self.bacnetApp.write('%s %s %s presentValue %s - 8' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress),value))
+            self.network.write('%s %s %s presentValue %s - 8' % (self.addr,self._pointsDF.ix[pointName].pointType,str(self._pointsDF.ix[pointName].pointAddress),value))
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
@@ -161,29 +176,110 @@ class Device():
         """
         pointName = args
         try:                
-            self.bacnetApp.write('%s %s %s presentValue null - 8' % (self.addr,self.points.ix[pointName].pointType,str(self.points.ix[pointName].pointAddress)))
+            self.network.write('%s %s %s presentValue null - 8' % (self.addr,self._pointsDF.ix[pointName].pointType,str(self._pointsDF.ix[pointName].pointAddress)))
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
+    def get(self,name):
+        """
+        Get a point based on its name
+        
+        :param name: (str) pointName
+        :returns: (Point) the point (can be Numeric, Boolean or Enum)
+        """
+        return self._findPoint(name)
 
             
     def _parseArgs(self,arg):
+        """
+        Given a string, will interpret the last word as the value, everything else
+        will be considered the point name
+        """
         args = arg.split()
         pointName = ' '.join(args[:-1])
         value = args[-1]
         return (pointName, value)
         
     def _convert_write_arguments(self,args):
+        """
+        This allow the use of enum state or boolean state for wirting to points
+        ex. device.write('name True') instead of device.write('name active')
+        """
         pointName, value = self._parseArgs(args)
         # Accept boolean value
-        if 'binary' in self.points.ix[pointName].pointType:        
+        if 'binary' in self._pointsDF.ix[pointName].pointType:        
             if value.lower() == 'false':
                 value = 'inactive'
             elif value.lower() == 'true':
                 value = 'active'
         # Accept states as value if multiState
-        if 'multiState' in self.points.ix[pointName].pointType:
-            state_list = [states.lower() for states in self.points.ix[pointName].units_state]
+        if 'multiState' in self._pointsDF.ix[pointName].pointType:
+            state_list = [states.lower() for states in self._pointsDF.ix[pointName].units_state]
             if value.lower() in state_list:
                 value = state_list.index(value.lower())+1
         return (pointName,value)
+        
+    def _discoverPoints(self):
+        """
+        This function allows the discovery of all bacnet points in a device
+    
+        :param bacnetApp: The app itself so we can call read
+        :param address: address of the device as a string (ex. '2:5')
+        :param devID: device ID of the bacnet device as a string (ex. '1001')    
+        
+        :returns: a tuple with deviceName, pss, objList, df
+        
+        *deviceName* : name of the device
+        *pss* : protocole service supported
+        *objList* : list of bacnet object (ex. analogInput, 1)
+        *df* : is a dataFrame containing pointType, pointAddress, pointName, description
+        presentValue and units
+    
+        If pandas can't be found, df will be a simple array    
+        
+        """
+        pss = self.network.read('%s device %s protocolServicesSupported' % (self.addr,self.deviceID))
+        deviceName = self.network.read('%s device %s objectName' % (self.addr,self.deviceID))
+        print('Found %s... building points list' % deviceName)
+        objList = self.network.read('%s device %s objectList' % (self.addr,self.deviceID))
+        newLine = []   
+        result = []
+        points = []
+        
+        for pointType, pointAddr in objList:
+            if pointType not in 'file calendar device schedule notificationClass eventLog':
+                if 'binary' not in pointType and 'multiState' not in pointType:
+                    newLine = [pointType,pointAddr]
+                    newLine.extend(self.network.readMultiple('%s %s %s objectName description presentValue units' % (self.addr, pointType, pointAddr)))
+                    points.append(NumericPoint(pointType = newLine[0],pointAddress=newLine[1],pointName = newLine[2],description = newLine[3],presentValue = newLine[4],units_state = newLine[5], device = self))
+                elif 'binary' in pointType:
+                    newLine = [pointType,pointAddr]
+                    infos = (self.network.readMultiple('%s %s %s objectName description presentValue inactiveText activeText' % (self.addr, pointType, pointAddr)))
+                    newLine.extend(infos[:-2])
+                    newLine.extend([infos[-2:]])
+                    points.append(BooleanPoint(pointType = newLine[0],pointAddress=newLine[1],pointName = newLine[2],description = newLine[3],presentValue = newLine[4],units_state = newLine[5], device = self))
+                elif 'multiState' in pointType:
+                    newLine = [pointType,pointAddr]
+                    newLine.extend(self.network.readMultiple('%s %s %s objectName description presentValue stateText' % (self.addr, pointType,pointAddr)))
+                    points.append(EnumPoint(pointType = newLine[0],pointAddress=newLine[1],pointName = newLine[2],description = newLine[3],presentValue = newLine[4],units_state = newLine[5], device = self))  
+                result.append(newLine)
+        
+        if _PANDA:       
+            df = pd.DataFrame(result, columns=['pointType','pointAddress','pointName','description','presentValue','units_state']).set_index(['pointName'])
+        else:
+            df = result
+
+        print('Ready!')
+        return (deviceName,pss,objList,df, points)
+        
+    def _findPoint(self,name):
+        """
+        Helper that retrieve point based on its name.
+        """
+        for point in self.points:
+            if point.name == name:
+                return point
+        return None
+        
+    def __repr__(self):
+        return '%s' % self.name

@@ -101,6 +101,55 @@ instead of time.sleep() function (example read a value that tells actual mode is
 You can then test random temperature values, build functions that will simulate discharge air
 temperature depending on heatign or cooling stages... it's up to you !
 
+New
+===
+Version 0.96+ allow the use of points linked to a device. It's now possible to use BAC0
+in a more "framework" way. Once a device is created, all points are created inside the device.
+Each point also store a timeseries of every reading done since its creation so it is easy to 
+know what happened.
+
+Define controller and access points::
+
+    import BAC0
+    %matplotlib inline 
+    bacnet = BAC0.ReadWriteScript()
+
+    controller = BAC0.device('2:5',5,bacnet)
+
+    controller.get('nvoDO1')
+
+Create a polling thread that will read a list of points every 10 seconds::
+
+    from BAC0.tasks.Poll import Poll
+    pointsToPoll = [controller.get('nvoAI1'), controller.get('nvoAI2'), controller.get('nvoDO1')]
+    polling = Poll(pointsToPoll)
+    polling.start()
+
+Access a historyTable::
+    
+    controller.get('nvoAI1').showHistoryTable()
+
+Result example ::
+
+    fx.get('nvoAI1').showHistoryTable()
+    Out[8]:
+    2015-09-20 21:41:37.093985    21.740000
+    2015-09-20 21:42:23.672387    21.790001
+    2015-09-20 21:42:34.358801    21.790001
+    2015-09-20 21:42:45.841596    21.790001
+    2015-09-20 21:42:56.308144    21.790001
+    2015-09-20 21:43:06.897034    21.790001
+    2015-09-20 21:43:17.593321    21.790001
+    2015-09-20 21:43:28.087180    21.790001
+    2015-09-20 21:43:38.597702    21.790001
+    2015-09-20 21:43:48.815317    21.790001
+    2015-09-20 21:44:00.353144    21.790001
+    2015-09-20 21:44:10.871324    21.790001
+
+Show a chart::
+
+    controller.get('nvoAI1').chart()
+
 Where to download
 -----------------
 http://christiantremblay.github.io/BAC0/
