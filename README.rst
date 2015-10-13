@@ -178,7 +178,15 @@ When installed, module can be used to script communication with bacnet device.
 Jupyter Notebooks are an excellent way to test it
 
 https://github.com/ChristianTremblay/BAC0/blob/master/Jupyter/BAC0.ipynb
-
+http://bac0.readthedocs.org/en/latest/
+https://readthedocs.org/projects/bac0/
 Doc
 ===
 http://bac0.readthedocs.org/en/latest/
+https://travis-ci.org/ChristianTremblay/BAC0
+.. |build-status| image:: https://travis-ci.org/ChristianTremblay/BAC0.svg?branch=master
+   :target: https://travis-ci.org/ChristianTremblay/BAC0
+   :alt: Build status
+.. |docs| image:: https://readthedocs.org/projects/bac0/badge/?version=latest
+   :target: http://bac0.readthedocs.org/
+   :alt: Documentation
