@@ -1,5 +1,5 @@
-.. BAC0 documentation master file
-
+BAC0 |build-status| |coverage-status| |docs|
+============================================
 BAC0 is a Python 3 scripting application that uses BACpypes to process bacnet messages on a IP network. 
 This library brings out simple commands to browse a bacnet network, read properties from bacnet devices or write to them.
 
