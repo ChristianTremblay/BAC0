@@ -1,0 +1,4 @@
+BAC0
+pandas>=0.14
+numpy>=1.9
+bacpypes>=0.13

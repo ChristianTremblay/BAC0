@@ -247,18 +247,18 @@ class Device():
         points = []
         
         for pointType, pointAddr in objList:
-            if pointType not in 'file calendar device schedule notificationClass eventLog':
-                if 'binary' not in pointType and 'multiState' not in pointType:
+            if str(pointType) not in 'file calendar device schedule notificationClass eventLog trendLog loop program eventEnrollment' and not isinstance(pointType,int) and pointType != None:
+                if 'binary' not in str(pointType) and 'multiState' not in str(pointType):
                     newLine = [pointType,pointAddr]
                     newLine.extend(self.network.readMultiple('%s %s %s objectName description presentValue units' % (self.addr, pointType, pointAddr)))
                     points.append(NumericPoint(pointType = newLine[0],pointAddress=newLine[1],pointName = newLine[2],description = newLine[3],presentValue = newLine[4],units_state = newLine[5], device = self))
-                elif 'binary' in pointType:
+                elif 'binary' in str(pointType):
                     newLine = [pointType,pointAddr]
                     infos = (self.network.readMultiple('%s %s %s objectName description presentValue inactiveText activeText' % (self.addr, pointType, pointAddr)))
                     newLine.extend(infos[:-2])
                     newLine.extend([infos[-2:]])
                     points.append(BooleanPoint(pointType = newLine[0],pointAddress=newLine[1],pointName = newLine[2],description = newLine[3],presentValue = newLine[4],units_state = newLine[5], device = self))
-                elif 'multiState' in pointType:
+                elif 'multiState' in str(pointType):
                     newLine = [pointType,pointAddr]
                     newLine.extend(self.network.readMultiple('%s %s %s objectName description presentValue stateText' % (self.addr, pointType,pointAddr)))
                     points.append(EnumPoint(pointType = newLine[0],pointAddress=newLine[1],pointName = newLine[2],description = newLine[3],presentValue = newLine[4],units_state = newLine[5], device = self))  
