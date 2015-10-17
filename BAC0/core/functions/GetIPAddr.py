@@ -90,7 +90,7 @@ class HostIP():
                         break
                 mask = line.rstrip().split(b':')[-1].replace(b' ',b'').decode()
             except:
-                raise RuntimeError('Cannot read IP parameters from OS')
+                mask = '255.255.255.255'
             
         return mask
 
