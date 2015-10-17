@@ -1,4 +1,4 @@
-BAC0 |build-status| |coverage-status| |docs|
+BAC0 |build-status| |docs|
 ============================================
 BAC0 is a Python 3 scripting application that uses BACpypes to process bacnet messages on a IP network. 
 This library brings out simple commands to browse a bacnet network, read properties from bacnet devices or write to them.
@@ -184,6 +184,7 @@ Doc
 ===
 http://bac0.readthedocs.org/en/latest/
 https://travis-ci.org/ChristianTremblay/BAC0
+
 .. |build-status| image:: https://travis-ci.org/ChristianTremblay/BAC0.svg?branch=master
    :target: https://travis-ci.org/ChristianTremblay/BAC0
    :alt: Build status
