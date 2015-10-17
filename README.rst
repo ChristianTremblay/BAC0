@@ -1,5 +1,5 @@
 BAC0 |build-status| |docs|
-============================================
+==========================
 BAC0 is a Python 3 scripting application that uses BACpypes to process bacnet messages on a IP network. 
 This library brings out simple commands to browse a bacnet network, read properties from bacnet devices or write to them.
 
@@ -7,7 +7,7 @@ Python is a simple language to learn and a very powerful tool for data processin
 tool to test devices an interact with controllers.
 
 Test driven development (TDD) for DDC controls
-----------------------------------------------
+==============================================
 BAC0 allows users to simply test an application even if sensors are not connected to the controller. Using the out_of_service
 property, it's easy to write a value to the input so the controller will think an input is conencted. 
 
@@ -17,7 +17,7 @@ every test must be done manually.
 Now you can write your test and run them as often as you want.
 
 How to use it
--------------
+=============
 
 Example::
 
@@ -49,7 +49,7 @@ Example::
 Now you can build simple tests using assert syntax for example and make your DDC code stronger.
 
 Assert ?
---------
+========
 Let's say your sequence is really simple. Something like this : 
 
 System stopped
@@ -64,7 +64,7 @@ If fan status turns on, heating sequence will starts.
 And so on...
 
 How would I test that ?
-***********************
+=======================
 * Controller is defined and its variable name is mycontroller
 * fan command = SF-C
 * Fan Status = SF-S
@@ -151,11 +151,11 @@ Show a chart::
     controller.get('nvoAI1').chart()
 
 Where to download
------------------
+=================
 http://christiantremblay.github.io/BAC0/
 
 What you need
--------------
+=============
 BAC0 is based on BACpypes found here::
 
     git clone https://github.com/JoelBender/bacpypes.git
@@ -167,13 +167,13 @@ You will also need Pandas as data processing is so easier with this !
 If running Python on Windows, I recommend the use of complete distributions like Anaconda or Enthought Canopy.
 
 How to install BAC0
--------------------
+===================
 Once the repo has been cloned, use::
 
     python setup.py install
 
 Demo in a Jupyter Notebook
---------------------------
+==========================
 When installed, module can be used to script communication with bacnet device.
 Jupyter Notebooks are an excellent way to test it
 
@@ -188,6 +188,7 @@ https://travis-ci.org/ChristianTremblay/BAC0
 .. |build-status| image:: https://travis-ci.org/ChristianTremblay/BAC0.svg?branch=master
    :target: https://travis-ci.org/ChristianTremblay/BAC0
    :alt: Build status
+     
 .. |docs| image:: https://readthedocs.org/projects/bac0/badge/?version=latest
    :target: http://bac0.readthedocs.org/
    :alt: Documentation
