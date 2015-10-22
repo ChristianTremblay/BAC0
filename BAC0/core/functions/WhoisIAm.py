@@ -22,7 +22,7 @@ from bacpypes.pdu import Address, GlobalBroadcast
 
 
 # some debugging
-_debug = 0
+_debug = 1
 _log = ModuleLogger(globals())
 
 @bacpypes_debugging
@@ -54,7 +54,13 @@ class WhoisIAm():
         """
         if args:        
             args = args[0].split()
-        if _debug: WhoisIAm._debug("do_whois %r" % args)
+        
+        if not args:
+            msg = "any"
+        else:
+            msg = args
+            
+        if _debug: WhoisIAm._debug("do_whois %r" % msg)
 
         try:
             # build a request

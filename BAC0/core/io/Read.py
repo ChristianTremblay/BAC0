@@ -48,7 +48,7 @@ class ReadProperty():
     This class defines functions to read bacnet messages.
     It handles readProperty, readPropertyMultiple
     Data exchange is made via a Queue object
-    A timeout of 2 seconds allow detection of invalid device or communciation
+    A timeout of 5 seconds allow detection of invalid device or communciation
     errors.
     """
     _TIMEOUT = 5

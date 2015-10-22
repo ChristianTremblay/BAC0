@@ -7,12 +7,11 @@
 """
 ScriptApplication
 =================
-Built around a simple BIPSimpleApplication this module deals with requests 
+Built around a simple BIPSimpleApplication this module deals with requests
 created by a child app. It will prepare the requests and give them back to the
 stack.
 
-This module will also listen for responses to requests (indication or 
-confirmation).
+This module will also listen for responses to requests (indication or confirmation).
 
 Response will be added to a Queue, we'll wait for the response to be processed
 by the caller, then resume.
@@ -29,16 +28,17 @@ from bacpypes.app import BIPSimpleApplication
 from bacpypes.object import get_datatype
 from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU, ReadPropertyRequest, \
     ReadPropertyACK, ReadPropertyMultipleRequest, ReadPropertyMultipleACK, \
-    IAmRequest,WhoIsRequest
+    IAmRequest, WhoIsRequest
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
+from bacpypes.pdu import Address
 
 from collections import defaultdict
 from threading import Event
 from queue import Queue
 
 # some debugging
-_debug = 0
+_debug = 1
 _log = ModuleLogger(globals())
 
 @bacpypes_debugging
@@ -50,9 +50,8 @@ class ScriptApplication(BIPSimpleApplication):
     def __init__(self, *args):
         """
         Creation of the application. Adding properties to basic B/IP App.
-        
+
         :param *args: local object device, local IP address
-        
         See BAC0.scripts.BasicScript for more details.
         """
         if _debug: ScriptApplication._debug("__init__ %r", args)
@@ -64,13 +63,23 @@ class ScriptApplication(BIPSimpleApplication):
         self.error = None
         self.values = []
         self.i_am_counter = defaultdict(int)
+        self.who_is_counter = defaultdict(int)
         self.ResponseQueue = Queue()
+
+        if isinstance(self.localAddress, Address):
+            self.local_unicast_tuple = self.localAddress.addrTuple
+            self.local_broadcast_tuple = self.localAddress.addrBroadcastTuple
+            self.canTestMulticast = True
+        else:
+            self.local_unicast_tuple = ('', 47808)
+            self.local_broadcast_tuple = ('255.255.255.255', 47808)
+            self.canTestMulticast = True
 
     def request(self, apdu):
         """
         Reset class variables to None for the present request
         Sends the apdu to the application request
-        
+
         :param apdu: apdu
         """
         if _debug: ScriptApplication._debug("request %r", apdu)
@@ -91,31 +100,47 @@ class ScriptApplication(BIPSimpleApplication):
     def indication(self, apdu):
         """
         Indication will treat unconfirmed messages on the stack
-        
+
         :param apdu: apdu
         """
         if _debug: ScriptApplication._debug("do_IAmRequest %r", apdu)
-        """        
+        """
+        Test UDP Multicast for Windows App
+        Goal : Test if can recognize own broadcast
+        """
+        if self.canTestMulticast:
+
+            if apdu.pduSource == self.local_unicast_tuple[0]:
+                if _debug: ScriptApplication._debug("received broadcast from self\n")
+            else:
+                if _debug:
+                    ScriptApplication._debug("received broadcast from %s (local:%s|source:%s)\n" % (
+                        apdu.pduSource,
+                        self.local_unicast_tuple,
+                        apdu.pduSource
+                        ))
+        else:
+            if _debug: ScriptApplication._debug("cannot test broadcast")
+        """
         Given an I-Am request, cache it. 
         This function serves no real purpose but training...
         """
         if isinstance(apdu, IAmRequest):
             # build a key from the source, just use the instance number
             key = (str(apdu.pduSource),
-                   apdu.iAmDeviceIdentifier[1],
-            )
+                   apdu.iAmDeviceIdentifier[1],)
             # count the times this has been received
             self.i_am_counter[key] += 1
-        """        
+        """
         Given an Who Is request, cache it. 
         This function serves no real purpose but training...
-        """        
-        if isinstance(apdu, WhoIsRequest):        
+        """
+        if isinstance(apdu, WhoIsRequest):
             # build a key from the source and parameters
             key = (str(apdu.pduSource),
-                apdu.deviceInstanceRangeLowLimit,
-                apdu.deviceInstanceRangeHighLimit,
-                )
+                    apdu.deviceInstanceRangeLowLimit,
+                    apdu.deviceInstanceRangeHighLimit,
+                    )
 
             # count the times this has been received
             self.who_is_counter[key] += 1
@@ -126,25 +151,40 @@ class ScriptApplication(BIPSimpleApplication):
 
     def confirmation(self, apdu):
         """
-        This function process confirmed answers from the stack and looks for a returned 
+        This function process confirmed answers from the stack and looks for a returned
         value or an error.
         If a valid value is found, it's stored in the ResponseQueue. We'll wait for the
         response to be used by the caller then resume the function.
-        
+
         How we deal with the Queue::
-            
+
             # Creation of an event
             evt = Event()
             # Store the value and the event in the Queue
             self.ResponseQueue.put((self.value, evt))
             # Wait until the event is set by the caller (read function for example)
             evt.wait()
-            
+
         :param apdu: apdu
         """
         if _debug: ScriptApplication._debug("confirmation %r", apdu)
+
+        """
+        Test UDP Multicast for Windows App
+        Goal : Test if can recognize own broadcast
+        """
+        if self.canTestMulticast:
+            if apdu.pduDestination == self.local_unicast_tuple:
+                if _debug: ScriptApplication._debug("received broadcast from self\n")
+            else:
+                if _debug: ScriptApplication._debug("received broadcast from %s\n" % (
+                    apdu.pduDestination,
+                    ))
+        else:
+            if _debug: ScriptApplication._debug("cannot test broadcast")
+
         if isinstance(apdu, Error):
-            self.error = "%s" % (apdu.errorCode,)   
+            self.error = "%s" % (apdu.errorCode,)
 
         elif isinstance(apdu, AbortPDU):
             pass

@@ -11,8 +11,8 @@ from .Points import NumericPoint, BooleanPoint, EnumPoint
 try:
     import pandas as pd
     _PANDA = True
-except:
-    _PANDA= False
+except ImportError:
+    _PANDA = False
 
 class Device():
     """
@@ -21,7 +21,7 @@ class Device():
     the use of read, write, sim, release functions to communicate
     with the device on the network
     """
-    def __init__(self,addr,devId,network):
+    def __init__(self, addr, devId, network):
         """
         Initialization require address, device id and bacnetApp (the script itself)
         :param addr: address of the device (ex. '2:5')
@@ -37,12 +37,9 @@ class Device():
 
         self.simPoints = []
         self.points = []
-        
+
         self.buildPointList()
-        
 
-
-        
     def buildPointList(self):
         """
         Read all points of the device and creates a dataframe (Pandas) to store
@@ -54,7 +51,7 @@ class Device():
         self.name = result[0]
         self.points = result[4]
         
-    def read(self,args):
+    def read(self, args):
         """
         Read a point from a device
         
@@ -75,7 +72,7 @@ class Device():
         #    return NumericPoint(val,self._pointsDF.ix[pointName],self.addr)
         return val
         
-    def write(self,args):
+    def write(self, args):
         """
         Write to present value of a point of a device
         
@@ -88,7 +85,7 @@ class Device():
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
-    def default(self,args):
+    def default(self, args):
         """
         Write to relinquish default value of a point of a device
         
@@ -102,7 +99,7 @@ class Device():
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
-    def sim(self,args):
+    def sim(self, args):
         """
         Simulate a value 
         Will write to out_of_service property (true)
@@ -137,7 +134,7 @@ class Device():
             except KeyError:
                 raise Exception('Unknown point name : %s' % pointName)
                 
-    def release(self,args):
+    def release(self, args):
         """
         Release points 
         Will write to out_of_service property (false)
@@ -154,7 +151,7 @@ class Device():
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
             
-    def ovr(self,args):
+    def ovr(self, args):
         """
         Override the output (Make manual operator command on point at priority 8)
 
@@ -167,7 +164,7 @@ class Device():
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
-    def auto(self,args):
+    def auto(self, args):
         """
         Release the override on the output (Write null on point at priority 8)
 
@@ -180,7 +177,7 @@ class Device():
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
 
-    def get(self,name):
+    def get(self, name):
         """
         Get a point based on its name
         
@@ -190,7 +187,7 @@ class Device():
         return self._findPoint(name)
 
             
-    def _parseArgs(self,arg):
+    def _parseArgs(self, arg):
         """
         Given a string, will interpret the last word as the value, everything else
         will be considered the point name
@@ -200,7 +197,7 @@ class Device():
         value = args[-1]
         return (pointName, value)
         
-    def _convert_write_arguments(self,args):
+    def _convert_write_arguments(self, args):
         """
         This allow the use of enum state or boolean state for wirting to points
         ex. device.write('name True') instead of device.write('name active')
@@ -272,7 +269,7 @@ class Device():
         print('Ready!')
         return (deviceName,pss,objList,df, points)
         
-    def _findPoint(self,name):
+    def _findPoint(self, name):
         """
         Helper that retrieve point based on its name.
         """
