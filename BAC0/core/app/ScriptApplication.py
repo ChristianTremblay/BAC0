@@ -38,8 +38,9 @@ from threading import Event
 from queue import Queue
 
 # some debugging
-_debug = 1
+_debug = 0
 _log = ModuleLogger(globals())
+
 
 @bacpypes_debugging
 class ScriptApplication(BIPSimpleApplication):
@@ -54,7 +55,8 @@ class ScriptApplication(BIPSimpleApplication):
         :param *args: local object device, local IP address
         See BAC0.scripts.BasicScript for more details.
         """
-        if _debug: ScriptApplication._debug("__init__ %r", args)
+        if _debug:
+            ScriptApplication._debug("__init__ %r", args)
         BIPSimpleApplication.__init__(self, *args)
 
         # keep track of requests to line up responses
@@ -82,7 +84,8 @@ class ScriptApplication(BIPSimpleApplication):
 
         :param apdu: apdu
         """
-        if _debug: ScriptApplication._debug("request %r", apdu)
+        if _debug:
+            ScriptApplication._debug("request %r", apdu)
 
         # save a copy of the request
         self._request = apdu
@@ -103,7 +106,8 @@ class ScriptApplication(BIPSimpleApplication):
 
         :param apdu: apdu
         """
-        if _debug: ScriptApplication._debug("do_IAmRequest %r", apdu)
+        if _debug:
+            ScriptApplication._debug("do_IAmRequest %r", apdu)
         """
         Test UDP Multicast for Windows App
         Goal : Test if can recognize own broadcast
@@ -111,18 +115,18 @@ class ScriptApplication(BIPSimpleApplication):
         if self.canTestMulticast:
 
             if apdu.pduSource == self.local_unicast_tuple[0]:
-                if _debug: ScriptApplication._debug("received broadcast from self\n")
+                if _debug:
+                    ScriptApplication._debug("received broadcast from self\n")
             else:
                 if _debug:
-                    ScriptApplication._debug("received broadcast from %s (local:%s|source:%s)\n" % (
-                        apdu.pduSource,
-                        self.local_unicast_tuple,
-                        apdu.pduSource
-                        ))
+                    ScriptApplication._debug(
+                        "received broadcast from %s (local:%s|source:%s)\n" %
+                        (apdu.pduSource, self.local_unicast_tuple, apdu.pduSource))
         else:
-            if _debug: ScriptApplication._debug("cannot test broadcast")
+            if _debug:
+                ScriptApplication._debug("cannot test broadcast")
         """
-        Given an I-Am request, cache it. 
+        Given an I-Am request, cache it.
         This function serves no real purpose but training...
         """
         if isinstance(apdu, IAmRequest):
@@ -132,22 +136,21 @@ class ScriptApplication(BIPSimpleApplication):
             # count the times this has been received
             self.i_am_counter[key] += 1
         """
-        Given an Who Is request, cache it. 
+        Given an Who Is request, cache it.
         This function serves no real purpose but training...
         """
         if isinstance(apdu, WhoIsRequest):
             # build a key from the source and parameters
             key = (str(apdu.pduSource),
-                    apdu.deviceInstanceRangeLowLimit,
-                    apdu.deviceInstanceRangeHighLimit,
-                    )
+                   apdu.deviceInstanceRangeLowLimit,
+                   apdu.deviceInstanceRangeHighLimit,
+                   )
 
             # count the times this has been received
             self.who_is_counter[key] += 1
             #BIPSimpleApplication.do_WhoIsRequest(self, apdu)
         # pass back to the default implementation
         BIPSimpleApplication.indication(self, apdu)
-
 
     def confirmation(self, apdu):
         """
@@ -167,7 +170,8 @@ class ScriptApplication(BIPSimpleApplication):
 
         :param apdu: apdu
         """
-        if _debug: ScriptApplication._debug("confirmation %r", apdu)
+        if _debug:
+            ScriptApplication._debug("confirmation %r", apdu)
 
         """
         Test UDP Multicast for Windows App
@@ -175,13 +179,16 @@ class ScriptApplication(BIPSimpleApplication):
         """
         if self.canTestMulticast:
             if apdu.pduDestination == self.local_unicast_tuple:
-                if _debug: ScriptApplication._debug("received broadcast from self\n")
+                if _debug:
+                    ScriptApplication._debug("received broadcast from self\n")
             else:
-                if _debug: ScriptApplication._debug("received broadcast from %s\n" % (
-                    apdu.pduDestination,
+                if _debug:
+                    ScriptApplication._debug("received broadcast from %s\n" % (
+                        apdu.pduDestination,
                     ))
         else:
-            if _debug: ScriptApplication._debug("cannot test broadcast")
+            if _debug:
+                ScriptApplication._debug("cannot test broadcast")
 
         if isinstance(apdu, Error):
             self.error = "%s" % (apdu.errorCode,)
@@ -195,16 +202,19 @@ class ScriptApplication(BIPSimpleApplication):
             evt.wait()
 
         elif (isinstance(self._request, ReadPropertyRequest)) \
-            and (isinstance(apdu, ReadPropertyACK)):
+                and (isinstance(apdu, ReadPropertyACK)):
 
             # find the datatype
-            datatype = get_datatype(apdu.objectIdentifier[0], apdu.propertyIdentifier)
-            if _debug: ScriptApplication._debug("    - datatype: %r", datatype)
+            datatype = get_datatype(apdu.objectIdentifier[
+                                    0], apdu.propertyIdentifier)
+            if _debug:
+                ScriptApplication._debug("    - datatype: %r", datatype)
             if not datatype:
                 raise TypeError("unknown datatype")
 
             # special case for array parts, others are managed by cast_out
-            if issubclass(datatype, Array) and (apdu.propertyArrayIndex is not None):
+            if issubclass(datatype, Array) and (
+                    apdu.propertyArrayIndex is not None):
                 if apdu.propertyArrayIndex == 0:
                     self.value = apdu.propertyValue.cast_out(Unsigned)
                 else:
@@ -217,24 +227,31 @@ class ScriptApplication(BIPSimpleApplication):
             self.ResponseQueue.put((self.value, evt))
             evt.wait()
 
-            if _debug: ScriptApplication._debug("    - value: %r", self.value)
+            if _debug:
+                ScriptApplication._debug("    - value: %r", self.value)
 
         elif (isinstance(self._request, ReadPropertyMultipleRequest)) \
-            and (isinstance(apdu, ReadPropertyMultipleACK)):
+                and (isinstance(apdu, ReadPropertyMultipleACK)):
 
             # loop through the results
             for result in apdu.listOfReadAccessResults:
                 # here is the object identifier
                 objectIdentifier = result.objectIdentifier
-                if _debug: ScriptApplication._debug("    - objectIdentifier: %r", objectIdentifier)
+                if _debug:
+                    ScriptApplication._debug(
+                        "    - objectIdentifier: %r", objectIdentifier)
 
                 # now come the property values per object
                 for element in result.listOfResults:
                     # get the property and array index
                     propertyIdentifier = element.propertyIdentifier
-                    if _debug: ScriptApplication._debug("    - propertyIdentifier: %r", propertyIdentifier)
+                    if _debug:
+                        ScriptApplication._debug(
+                            "    - propertyIdentifier: %r", propertyIdentifier)
                     propertyArrayIndex = element.propertyArrayIndex
-                    if _debug: ScriptApplication._debug("    - propertyArrayIndex: %r", propertyArrayIndex)
+                    if _debug:
+                        ScriptApplication._debug(
+                            "    - propertyArrayIndex: %r", propertyArrayIndex)
 
                     # here is the read result
                     readResult = element.readResult
@@ -253,22 +270,31 @@ class ScriptApplication(BIPSimpleApplication):
                         propertyValue = readResult.propertyValue
 
                         # find the datatype
-                        datatype = get_datatype(objectIdentifier[0], propertyIdentifier)
-                        if _debug: ScriptApplication._debug("    - datatype: %r", datatype)
+                        datatype = get_datatype(
+                            objectIdentifier[0], propertyIdentifier)
+                        if _debug:
+                            ScriptApplication._debug(
+                                "    - datatype: %r", datatype)
                         if not datatype:
                             raise TypeError("unknown datatype")
 
-                        # special case for array parts, others are managed by cast_out
-                        if issubclass(datatype, Array) and (propertyArrayIndex is not None):
+                        # special case for array parts, others are managed by
+                        # cast_out
+                        if issubclass(datatype, Array) and (
+                                propertyArrayIndex is not None):
                             if propertyArrayIndex == 0:
-                                self.values.append(propertyValue.cast_out(Unsigned))
+                                self.values.append(
+                                    propertyValue.cast_out(Unsigned))
                             else:
-                                self.values.append(propertyValue.cast_out(datatype.subtype))
+                                self.values.append(
+                                    propertyValue.cast_out(datatype.subtype))
                         else:
                             value = propertyValue.cast_out(datatype)
-                        if _debug: ScriptApplication._debug("    - value: %r", value)
+                        if _debug:
+                            ScriptApplication._debug("    - value: %r", value)
                         self.values.append(value)
-            # Use a queue to store the response, wait for it to be used then resume
+            # Use a queue to store the response, wait for it to be used then
+            # resume
             evt = Event()
             self.ResponseQueue.put((self.values, evt))
             evt.wait()
