@@ -192,6 +192,7 @@ https://travis-ci.org/ChristianTremblay/BAC0
 .. |docs| image:: https://readthedocs.org/projects/bac0/badge/?version=latest
    :target: http://bac0.readthedocs.org/
    :alt: Documentation
+   
 .. |coverage| image:: https://coveralls.io/repos/ChristianTremblay/BAC0/badge.svg?branch=master&service=github 
    :target: https://coveralls.io/github/ChristianTremblay/BAC0?branch=master
    :alt: Coverage
