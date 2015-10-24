@@ -22,7 +22,7 @@ See BAC0.scripts for more details.
 
 """
 
-from bacpypes.debugging import bacpypes_debugging, ModuleLogger
+from bacpypes.debugging import bacpypes_debugging
 
 from bacpypes.app import BIPSimpleApplication
 from bacpypes.object import get_datatype
@@ -38,8 +38,7 @@ from threading import Event
 from queue import Queue
 
 # some debugging
-_debug = 0
-_log = ModuleLogger(globals())
+_DEBUG = 0
 
 
 @bacpypes_debugging
@@ -55,8 +54,9 @@ class ScriptApplication(BIPSimpleApplication):
         :param *args: local object device, local IP address
         See BAC0.scripts.BasicScript for more details.
         """
-        if _debug:
-            ScriptApplication._debug("__init__ %r", args)
+
+        log_debug("__init__ %r", args)
+
         BIPSimpleApplication.__init__(self, *args)
 
         # keep track of requests to line up responses
@@ -71,11 +71,9 @@ class ScriptApplication(BIPSimpleApplication):
         if isinstance(self.localAddress, Address):
             self.local_unicast_tuple = self.localAddress.addrTuple
             self.local_broadcast_tuple = self.localAddress.addrBroadcastTuple
-            self.canTestMulticast = True
         else:
             self.local_unicast_tuple = ('', 47808)
             self.local_broadcast_tuple = ('255.255.255.255', 47808)
-            self.canTestMulticast = True
 
     def request(self, apdu):
         """
@@ -84,8 +82,7 @@ class ScriptApplication(BIPSimpleApplication):
 
         :param apdu: apdu
         """
-        if _debug:
-            ScriptApplication._debug("request %r", apdu)
+        log_debug("request %r", apdu)
 
         # save a copy of the request
         self._request = apdu
@@ -106,39 +103,33 @@ class ScriptApplication(BIPSimpleApplication):
 
         :param apdu: apdu
         """
-        if _debug:
-            ScriptApplication._debug("do_IAmRequest %r", apdu)
-        """
-        Test UDP Multicast for Windows App
-        Goal : Test if can recognize own broadcast
-        """
-        if self.canTestMulticast:
 
+        log_debug("do_IAmRequest %r", apdu)
+
+        # Test UDP Multicast for Windows App
+        # Goal : Test if can recognize own broadcast
+
+        if _DEBUG:
             if apdu.pduSource == self.local_unicast_tuple[0]:
-                if _debug:
-                    ScriptApplication._debug("received broadcast from self\n")
+                log_debug("indication:received broadcast from self\n")
             else:
-                if _debug:
-                    ScriptApplication._debug(
-                        "received broadcast from %s (local:%s|source:%s)\n" %
-                        (apdu.pduSource, self.local_unicast_tuple, apdu.pduSource))
+                log_debug("indication:received broadcast from %s (local:%s|source:%s)\n" %
+                          (apdu.pduSource, self.local_unicast_tuple, apdu.pduSource))
         else:
-            if _debug:
-                ScriptApplication._debug("cannot test broadcast")
-        """
-        Given an I-Am request, cache it.
-        This function serves no real purpose but training...
-        """
+            log_debug("cannot test broadcast")
+
+        # Given an I-Am request, cache it.
+        # This function serves no real purpose but training...
         if isinstance(apdu, IAmRequest):
             # build a key from the source, just use the instance number
             key = (str(apdu.pduSource),
                    apdu.iAmDeviceIdentifier[1],)
             # count the times this has been received
             self.i_am_counter[key] += 1
-        """
-        Given an Who Is request, cache it.
-        This function serves no real purpose but training...
-        """
+
+        # Given an Who Is request, cache it.
+        # This function serves no real purpose but training...
+
         if isinstance(apdu, WhoIsRequest):
             # build a key from the source and parameters
             key = (str(apdu.pduSource),
@@ -170,25 +161,7 @@ class ScriptApplication(BIPSimpleApplication):
 
         :param apdu: apdu
         """
-        if _debug:
-            ScriptApplication._debug("confirmation %r", apdu)
-
-        """
-        Test UDP Multicast for Windows App
-        Goal : Test if can recognize own broadcast
-        """
-        if self.canTestMulticast:
-            if apdu.pduDestination == self.local_unicast_tuple:
-                if _debug:
-                    ScriptApplication._debug("received broadcast from self\n")
-            else:
-                if _debug:
-                    ScriptApplication._debug("received broadcast from %s\n" % (
-                        apdu.pduDestination,
-                    ))
-        else:
-            if _debug:
-                ScriptApplication._debug("cannot test broadcast")
+        log_debug("confirmation from %r", apdu.pduSource)
 
         if isinstance(apdu, Error):
             self.error = "%s" % (apdu.errorCode,)
@@ -205,10 +178,11 @@ class ScriptApplication(BIPSimpleApplication):
                 and (isinstance(apdu, ReadPropertyACK)):
 
             # find the datatype
-            datatype = get_datatype(apdu.objectIdentifier[
-                                    0], apdu.propertyIdentifier)
-            if _debug:
-                ScriptApplication._debug("    - datatype: %r", datatype)
+            datatype = get_datatype(
+                apdu.objectIdentifier[0],
+                apdu.propertyIdentifier)
+            log_debug("    - datatype: %r", datatype)
+
             if not datatype:
                 raise TypeError("unknown datatype")
 
@@ -227,8 +201,7 @@ class ScriptApplication(BIPSimpleApplication):
             self.ResponseQueue.put((self.value, evt))
             evt.wait()
 
-            if _debug:
-                ScriptApplication._debug("    - value: %r", self.value)
+            log_debug("    - value: %r", self.value)
 
         elif (isinstance(self._request, ReadPropertyMultipleRequest)) \
                 and (isinstance(apdu, ReadPropertyMultipleACK)):
@@ -237,21 +210,20 @@ class ScriptApplication(BIPSimpleApplication):
             for result in apdu.listOfReadAccessResults:
                 # here is the object identifier
                 objectIdentifier = result.objectIdentifier
-                if _debug:
-                    ScriptApplication._debug(
-                        "    - objectIdentifier: %r", objectIdentifier)
+                log_debug("    - objectIdentifier: %r", objectIdentifier)
 
                 # now come the property values per object
                 for element in result.listOfResults:
                     # get the property and array index
                     propertyIdentifier = element.propertyIdentifier
-                    if _debug:
-                        ScriptApplication._debug(
-                            "    - propertyIdentifier: %r", propertyIdentifier)
+                    log_debug(
+                        "    - propertyIdentifier: %r",
+                        propertyIdentifier)
+
                     propertyArrayIndex = element.propertyArrayIndex
-                    if _debug:
-                        ScriptApplication._debug(
-                            "    - propertyArrayIndex: %r", propertyArrayIndex)
+                    log_debug(
+                        "    - propertyArrayIndex: %r",
+                        propertyArrayIndex)
 
                     # here is the read result
                     readResult = element.readResult
@@ -272,9 +244,8 @@ class ScriptApplication(BIPSimpleApplication):
                         # find the datatype
                         datatype = get_datatype(
                             objectIdentifier[0], propertyIdentifier)
-                        if _debug:
-                            ScriptApplication._debug(
-                                "    - datatype: %r", datatype)
+                        log_debug("    - datatype: %r", datatype)
+
                         if not datatype:
                             raise TypeError("unknown datatype")
 
@@ -290,11 +261,24 @@ class ScriptApplication(BIPSimpleApplication):
                                     propertyValue.cast_out(datatype.subtype))
                         else:
                             value = propertyValue.cast_out(datatype)
-                        if _debug:
-                            ScriptApplication._debug("    - value: %r", value)
+                        log_debug("    - value: %r", value)
+
                         self.values.append(value)
             # Use a queue to store the response, wait for it to be used then
             # resume
             evt = Event()
             self.ResponseQueue.put((self.values, evt))
             evt.wait()
+
+
+def log_debug(txt, *args):
+    """
+    Helper function to log debug messages
+    """
+    if _DEBUG:
+        if args:
+            msg = txt % args
+        else:
+            msg = txt
+        # pylint: disable=E1101,W0212
+        ScriptApplication._debug(msg)

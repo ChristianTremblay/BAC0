@@ -5,7 +5,7 @@
 #
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 """
-This Script object is an extended version of the basicScript. 
+This Script object is an extended version of the basicScript.
 As everything is handled by the BasicScript, you only need to select the features
 you want::
 
@@ -19,10 +19,10 @@ Once the class is created, create the object and use it::
 
     bacnet = ReadWriteScript(localIPAddr = '192.168.1.10')
     bacnet.read('2:5 analogInput 1 presentValue)
-    
+
 """
 
-from bacpypes.debugging import bacpypes_debugging, ModuleLogger
+from bacpypes.debugging import bacpypes_debugging
 
 from ..scripts.BasicScript import BasicScript
 from ..core.io.Read import ReadProperty
@@ -31,20 +31,20 @@ from ..core.functions.GetIPAddr import HostIP
 from ..core.io.Simulate import Simulation
 
 # some debugging
-_debug = 0
-_log = ModuleLogger(globals())
+_DEBUG = 0
+
 
 @bacpypes_debugging
-class ReadWriteScript(BasicScript,ReadProperty,WriteProperty,Simulation):
-    """ 
+class ReadWriteScript(BasicScript, ReadProperty, WriteProperty, Simulation):
+    """
     This class build a running bacnet application and will accept read ans write requests
     Whois and IAm function are also possible as they are implemented in the BasicScript class.
-    
+
     Once created, the object will call a ``whois()`` function to build a list of controllers available.
-    
+
     """
-    
-    def __init__(self, localIPAddr = None):
+
+    def __init__(self, localIPAddr=None):
         """
         Initialization requires information on the local device
 
@@ -53,32 +53,46 @@ class ReadWriteScript(BasicScript,ReadProperty,WriteProperty,Simulation):
         :param maxAPDULengthAccepted: default '1024'
         :param segmentationSupported: default 'segmentedBoth'
         :param vendorId: default '842'
-        :param localIPAddr: (str) '127.0.0.1'        
-        
-        Normally, the address must be in the same subnet than the bacnet network (if no BBMD or Foreign device is used)  
+        :param localIPAddr: (str) '127.0.0.1'
+
+        Normally, the address must be in the same subnet than the bacnet network (if no BBMD or Foreign device is used)
         Actual app doesn't support BBMD or FD
-        
+
         You need to pass the args to the parent BasicScript
-        
-        """     
-        if _debug: _log.debug("Configurating app")
+
+        """
+        log_debug("Configurating app")
         if localIPAddr is None:
             host = HostIP()
-            ip = host.getAddress()
+            ip_addr = host.getAddress()
         else:
-            ip = localIPAddr
-        BasicScript.__init__(self, localIPAddr = ip)
-        
+            ip_addr = localIPAddr
+        BasicScript.__init__(self, localIPAddr=ip_addr)
+
         # Force and gloab whois to find all devices on the network
         self.whois()
-   
-            
-#
-#   __main__
-#
-if __name__ == '__main__':
-    bacnet = ReadWriteScript()
 
 
+def log_debug(txt, *args):
+    """
+    Helper function to log debug messages
+    """
+    if _DEBUG:
+        if args:
+            msg = txt % args
+        else:
+            msg = txt
+        # pylint: disable=E1101,W0212
+        BasicScript._debug(msg)
 
 
+def log_exception(txt, *args):
+    """
+    Helper function to log debug messages
+    """
+    if args:
+        msg = txt % args
+    else:
+        msg = txt
+    # pylint: disable=E1101,W0212
+    BasicScript._exception(msg)

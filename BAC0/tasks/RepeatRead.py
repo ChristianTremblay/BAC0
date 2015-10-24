@@ -13,33 +13,34 @@ from .TaskManager import Task
 import pandas as pd
 from datetime import datetime
 
+
 class RepeatRead(Task):
     """
     Will fit fan status with fan command
     """
-    def __init__(self,pointName, controller, delay = 10):
+
+    def __init__(self, pointName, controller, delay=10):
         """
         :param pointName: (str) name of the point to read
         :param controller: (BAC0.core.devices.Device) Device to read from
         :param delay: (int) Delay between reads in seconds, defaults = 10sec
-        
-        :returns: Nothing. Use task.value to read the last value read        
+
+        :returns: Nothing. Use task.value to read the last value read
         """
-        Task.__init__(self, delay = delay)
+        Task.__init__(self, delay=delay)
         self.pointName = pointName
         self.controller = controller
         self.values = []
         self.index = []
-        
+
     def task(self):
         res = self.controller.read(self.pointName)
         self.index.append(datetime.now())
         self.values.append(res.value())
-             
+
     def getValues(self):
         ts = pd.Series(self.values, index=self.index)
         return ts
-        
+
     def getValue(self):
         return self.getValues()[-1]
-        

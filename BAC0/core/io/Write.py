@@ -9,14 +9,14 @@ This module allows the creation of WriteProperty requests by and app
 
     Must be used while defining an app
     Example::
-    
+
         class BasicScript(WhoisIAm, WriteProperty)
-    
+
     Class::
-    
+
         WriteProperty()
-            def write()            
-    
+            def write()
+
     Functions::
 
         print_debug()
@@ -41,6 +41,7 @@ from .IOExceptions import WritePropertyException, WritePropertyCastError, NoResp
 _debug = 0
 _LOG = ModuleLogger(globals())
 
+
 @bacpypes_debugging
 class WriteProperty():
     """
@@ -55,29 +56,31 @@ class WriteProperty():
     errors.
     """
     _TIMEOUT = 2
-    
+
     def __init__(self):
         """ This function is a fake one so spyder can see local variables
         """
         self.this_application = None
+        self._started = None
 
     def write(self, args):
-        """ This function build a write request wait for an acknowledgment and 
+        """ This function build a write request wait for an acknowledgment and
         return a boolean status (True if ok, False if not)
-        
+
         :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]
         :returns: data read from device (str representing data like 10 or True)
-        
+
         *Example*::
-            
+
             import BAC0
             myIPAddr = '192.168.1.10'
-            bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)          
+            bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)
             bacnet.write('2:5 analogValue 1 presentValue 100')
-        
+
         will write 100 to AV:1 of a controller with a MAC address of 5 in the network 2
         """
-        if not self._started: raise Exception('App not running, use startApp() function')
+        if not self._started:
+            raise Exception('App not running, use startApp() function')
         args = args.split()
         print_debug("do_write %r", args)
 
@@ -103,7 +106,8 @@ class WriteProperty():
             datatype = get_datatype(obj_type, prop_id)
             print_debug("    - datatype: %r", datatype)
 
-            # change atomic values into something encodeable, null is a special case
+            # change atomic values into something encodeable, null is a special
+            # case
             if value == 'null':
                 value = Null()
             elif issubclass(datatype, Atomic):
@@ -120,16 +124,20 @@ class WriteProperty():
                 elif issubclass(datatype.subtype, Atomic):
                     value = datatype.subtype(value)
                 elif not isinstance(value, datatype.subtype):
-                    raise TypeError("invalid result datatype, expecting %s" % (datatype.subtype.__name__,))
+                    raise TypeError(
+                        "invalid result datatype, expecting %s" %
+                        (datatype.subtype.__name__,))
             elif not isinstance(value, datatype):
-                raise TypeError("invalid result datatype, expecting %s" % (datatype.__name__,))
+                raise TypeError(
+                    "invalid result datatype, expecting %s" %
+                    (datatype.__name__,))
             print_debug("    - encodeable value: %r %s", value, type(value))
 
             # build a request
             request = WritePropertyRequest(
                 objectIdentifier=(obj_type, obj_inst),
                 propertyIdentifier=prop_id
-                )
+            )
             request.pduDestination = Address(addr)
 
             # save the value
@@ -157,12 +165,13 @@ class WriteProperty():
 
         while True:
             try:
-                data, evt = self.this_application.ResponseQueue.get(timeout=self._TIMEOUT)
+                data, evt = self.this_application.ResponseQueue.get(
+                    timeout=self._TIMEOUT)
                 evt.set()
                 return data
             except Empty:
                 raise NoResponseFromController
-                return None
+
 
 def print_debug(msg, *args):
     """

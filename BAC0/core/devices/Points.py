@@ -11,15 +11,17 @@ Definition of points so operations will be easier on read result
 import pandas as pd
 from datetime import datetime
 
+
 class Point():
     """
     This represents a point inside a device. This base class will be used to build NumericPoint, BooleanPoint and EnumPoints
 
     Each point implement a history feature. Each time the point is read, the value with timstampe is added to a
     history table. It's then possible to look what happened since the creation of the point.
-        
+
     """
-    def __init__(self, device = None, pointType = None, pointAddress=None, pointName = None, description = None, presentValue = None, units_state = None): 
+
+    def __init__(self, device=None, pointType=None, pointAddress=None, pointName=None, description=None, presentValue=None, units_state=None):
         #self._value = presentValue
         #self._status = ''
         self._units_state = units_state
@@ -27,17 +29,17 @@ class Point():
         self._history.append(presentValue)
         self._historyIndex = []
         self._historyIndex.append(datetime.now())
-        
+
         self.simulated = False
         self.overridden = False
-        
+
         self.device = device
         self.name = pointName
         self.pointType = pointType
         self.pointAddr = pointAddress
         self.description = description
-        
-    @property     
+
+    @property
     def value(self):
         """
         Retrieve value of the point
@@ -49,48 +51,52 @@ class Point():
 
     # Is this truly necessary ????
     @value.setter
-    def value(self,value):
+    def value(self, value):
         raise AttributeError('Must be set from network request')
-    
-    
-    @property         
+
+    @property
     def units(self):
         raise Exception('Must be overridden')
-        
+
     @property
     def lastValue(self):
         return self._history[-1]
-            
+
     def showHistoryTable(self):
         ts = pd.Series(self._history, index=self._historyIndex)
         return ts
-        
+
     def chart(self):
         return self.showHistoryTable().plot()
 
-        
+
 class NumericPoint(Point):
     """
     Representation of a Numeric information
     """
-    def __init__(self, device = None, pointType = None, pointAddress=None, pointName = None, description = None, presentValue = None, units_state = None):
-        Point.__init__(self, device = device, pointType = pointType, pointAddress=pointAddress, pointName = pointName, description = description, presentValue = presentValue, units_state = units_state)
-    
-    @property         
+
+    def __init__(self, device=None, pointType=None, pointAddress=None, pointName=None, description=None, presentValue=None, units_state=None):
+        Point.__init__(self, device=device, pointType=pointType, pointAddress=pointAddress,
+                       pointName=pointName, description=description, presentValue=presentValue, units_state=units_state)
+
+    @property
     def units(self):
         return self._units_state
-        
+
     def __repr__(self):
         return '%s : %s %s' % (self.name, self.value, self._units_state)
+
 
 class BooleanPoint(Point):
     """
     Representation of a Boolean Information
     """
-    def __init__(self, device = None, pointType = None, pointAddress=None, pointName = None, description = None, presentValue = None, units_state = None):
-        Point.__init__(self, device = device, pointType = pointType, pointAddress=pointAddress, pointName = pointName, description = description, presentValue = presentValue, units_state = units_state)
 
-    @property     
+    def __init__(self, device=None, pointType=None, pointAddress=None, pointName=None, description=None, presentValue=None, units_state=None):
+        Point.__init__(self, device=device, pointType=pointType, pointAddress=pointAddress,
+                       pointName=pointName, description=description, presentValue=presentValue, units_state=units_state)
+
+    @property
     def value(self):
         res = self.device.read(self.name)
         self._historyIndex.append(datetime.now())
@@ -100,7 +106,7 @@ class BooleanPoint(Point):
             self._boolKey = False
         else:
             self._key = 1
-            self._boolKey = True        
+            self._boolKey = True
         return res
 
     @property
@@ -112,31 +118,33 @@ class BooleanPoint(Point):
             self._key = 0
             self._boolKey = False
         return self._boolKey
-                    
-    
-    @property     
+
+    @property
     def units(self):
         return None
-        
+
     def __repr__(self):
-        #return '%s : %s' % (self.name, self._units_state[self._key])
+        # return '%s : %s' % (self.name, self._units_state[self._key])
         return '%s : %s' % (self.name, self.boolValue)
-        
+
+
 class EnumPoint(Point):
     """
     Representation of an Enumerated Information (multiState)
     """
-    def __init__(self, device = None, pointType = None, pointAddress=None, pointName = None, description = None, presentValue = None, units_state = None):
-        Point.__init__(self, device = device, pointType = pointType, pointAddress=pointAddress, pointName = pointName, description = description, presentValue = presentValue, units_state = units_state)
-    
+
+    def __init__(self, device=None, pointType=None, pointAddress=None, pointName=None, description=None, presentValue=None, units_state=None):
+        Point.__init__(self, device=device, pointType=pointType, pointAddress=pointAddress,
+                       pointName=pointName, description=description, presentValue=presentValue, units_state=units_state)
+
     @property
     def enumValue(self):
-        return self._units_state[int(self.value)-1]
+        return self._units_state[int(self.value) - 1]
 
-    @property     
+    @property
     def units(self):
         return None
-        
+
     def __repr__(self):
-        #return '%s : %s' % (self.name, )
+        # return '%s : %s' % (self.name, )
         return '%s : %s' % (self.name, self.enumValue)

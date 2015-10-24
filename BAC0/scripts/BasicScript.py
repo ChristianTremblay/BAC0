@@ -39,27 +39,30 @@ from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.app.ScriptApplication import ScriptApplication
 from .. import infos
 #import BAC0.core.functions as fn
- 
+
 
 # some debugging
-_debug = 0
-_log = ModuleLogger(globals())
+_DEBUG = 0
+
 
 @bacpypes_debugging
 class BasicScript(WhoisIAm):
-    """ 
-    This class build a running bacnet application and will accept whois ans iam requests
-    
     """
-    def __init__(self, localIPAddr = None, localObjName = 'BAC0', Boid = None,maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth'):
+    This class build a running bacnet application and will accept whois ans iam requests
+
+    """
+
+    def __init__(self, localIPAddr=None, localObjName='BAC0', Boid=None,
+                 maxAPDULengthAccepted='1024', segmentationSupported='segmentedBoth'):
         """
         Initialization requires information about the local device
         Default values are localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842' )
         Local IP address must be given in a string.
         Normally, the address must be in the same subnet than the bacnet network (if no BBMD or Foreign device is used)
         Script doesn't support BBMD actually
-        """     
-        if _debug: _log.debug("Configurating app")
+        """
+        log_debug("Configurating app")
+
         self.response = None
         self._initialized = False
         self._started = False
@@ -81,16 +84,15 @@ class BasicScript(WhoisIAm):
         self.discoveredDevices = None
         self.ResponseQueue = Queue()
         self.systemStatus = DeviceStatus(1)
-                
+
         self.startApp()
-            
-            
+
     def startApp(self):
         """
         This function is used to define the local device, including services supported.
         Once the application is defined, calls the _startAppThread which will handle the thread creation
         """
-        if _debug: _log.debug("App initialization")
+        log_debug("App initialization")
         try:
             # make a device object
             self.this_device = LocalDeviceObject(
@@ -100,40 +102,39 @@ class BasicScript(WhoisIAm):
                 segmentationSupported=self.segmentationSupported,
                 vendorIdentifier=int(self.vendorId),
                 vendorName=self.vendorName,
-                modelName = self.modelName,
-                systemStatus = self.systemStatus,
-                description = 'http://christiantremblay.github.io/BAC0/',
-                firmwareRevision = ''.join(sys.version.split('|')[:2]),
-                applicationSoftwareVersion = infos.__version__,
-                protocolVersion = 1,
-                protocolRevision = 0,
-                
-                )
-        
+                modelName=self.modelName,
+                systemStatus=self.systemStatus,
+                description='http://christiantremblay.github.io/BAC0/',
+                firmwareRevision=''.join(sys.version.split('|')[:2]),
+                applicationSoftwareVersion=infos.__version__,
+                protocolVersion=1,
+                protocolRevision=0,
+
+            )
+
             # build a bit string that knows about the bit names
             pss = ServicesSupported()
             pss['whoIs'] = 1
             pss['iAm'] = 1
             pss['readProperty'] = 1
             pss['writeProperty'] = 1
-        
+
             # set the property value to be just the bits
             self.this_device.protocolServicesSupported = pss.value
-        
+
             # make a simple application
-            self.this_application = ScriptApplication(self.this_device, self.localIPAddr)
-            
-        
-            if _debug: _log.debug("Starting")
+            self.this_application = ScriptApplication(
+                self.this_device, self.localIPAddr)
+
+            log_debug("Starting")
             self._initialized = True
             self._startAppThread()
-            if _debug: _log.debug("Running")
-        except Exception as e:
-            _log.exception("an error has occurred: %s", e)
+            log_debug("Running")
+        except Exception as error:
+            log_exception("an error has occurred: %s", error)
         finally:
-            _log.debug("finally")
-    
-            
+            log_debug("finally")
+
     def stopApp(self):
         """
         Used to stop the application
@@ -146,16 +147,16 @@ class BasicScript(WhoisIAm):
             self.this_application.mux.directPort.handle_close()
         except:
             self.this_application.mux.broadcastPort.handle_close()
-        
-        # Stopping Core        
+
+        # Stopping Core
         stopBacnetIPApp()
-        self._stopped = True        
+        self._stopped = True
         # Stopping thread
-        #print(Thread.is_alive)
+        # print(Thread.is_alive)
         self.t.join()
         self._started = False
         print('App stopped')
-        
+
     def _startAppThread(self):
         """
         Starts the application in its own thread so requests can be processed.
@@ -166,3 +167,28 @@ class BasicScript(WhoisIAm):
         self.t.start()
         self._started = True
         print('App started')
+
+
+def log_debug(txt, *args):
+    """
+    Helper function to log debug messages
+    """
+    if _DEBUG:
+        if args:
+            msg = txt % args
+        else:
+            msg = txt
+        # pylint: disable=E1101,W0212
+        BasicScript._debug(msg)
+
+
+def log_exception(txt, *args):
+    """
+    Helper function to log debug messages
+    """
+    if args:
+        msg = txt % args
+    else:
+        msg = txt
+    # pylint: disable=E1101,W0212
+    BasicScript._exception(msg)
