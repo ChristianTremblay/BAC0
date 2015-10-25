@@ -15,15 +15,14 @@ Class : WhoisIAm
 
 """
 
-from bacpypes.debugging import bacpypes_debugging, ModuleLogger
+from bacpypes.debugging import bacpypes_debugging
 from bacpypes.apdu import WhoIsRequest, IAmRequest
 
 from bacpypes.pdu import Address, GlobalBroadcast
 
 
 # some debugging
-_debug = 1
-_log = ModuleLogger(globals())
+_DEBUG = 0
 
 
 @bacpypes_debugging
@@ -63,8 +62,7 @@ class WhoisIAm():
         else:
             msg = args
 
-        if _debug:
-            WhoisIAm._debug("do_whois %r" % msg)
+        log_debug("do_whois %r" % msg)
 
         try:
             # build a request
@@ -78,14 +76,13 @@ class WhoisIAm():
             if len(args) == 2:
                 request.deviceInstanceRangeLowLimit = int(args[0])
                 request.deviceInstanceRangeHighLimit = int(args[1])
-            if _debug:
-                WhoisIAm._debug("    - request: %r" % request)
+            log_debug("    - request: %r" % request)
 
             # give it to the application
             self.this_application.request(request)
 
         except Exception as error:
-            WhoisIAm._exception("exception: %r" % error)
+            log_exception("exception: %r" % error)
 
         self.discoveredDevices = self.this_application.i_am_counter
 
@@ -105,8 +102,7 @@ class WhoisIAm():
             iam()
         """
 
-        if _debug:
-            WhoisIAm._debug("do_iam")
+        log_debug("do_iam")
 
         try:
             # build a request
@@ -118,13 +114,37 @@ class WhoisIAm():
             request.maxAPDULengthAccepted = self.this_device.maxApduLengthAccepted
             request.segmentationSupported = self.this_device.segmentationSupported
             request.vendorID = self.this_device.vendorIdentifier
-            if _debug:
-                WhoisIAm._debug("    - request: %r" % request)
+            log_debug("    - request: %r" % request)
 
             # give it to the application
             self.this_application.request(request)
             return True
 
         except Exception as error:
-            WhoisIAm._exception("exception: %r" % error)
+            log_exception("exception: %r" % error)
             return False
+
+
+def log_debug(txt, *args):
+    """
+    Helper function to log debug messages
+    """
+    if _DEBUG:
+        if args:
+            msg = txt % args
+        else:
+            msg = txt
+        # pylint: disable=E1101,W0212
+        WhoisIAm._debug(msg)
+
+
+def log_exception(txt, *args):
+    """
+    Helper function to log debug messages
+    """
+    if args:
+        msg = txt % args
+    else:
+        msg = txt
+    # pylint: disable=E1101,W0212
+    WhoisIAm._exception(msg)

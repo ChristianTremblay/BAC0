@@ -23,14 +23,14 @@ class WritePropertyCastError(Exception):
     pass
 
 
-class ReadPropertyException(Exception):
+class ReadPropertyException(ValueError):
     """
     This exception is used when trying to read a property.
     """
     pass
 
 
-class ReadPropertyMultipleException(Exception):
+class ReadPropertyMultipleException(ValueError):
     """
     This exception is used when trying to read multiple properties.
     """

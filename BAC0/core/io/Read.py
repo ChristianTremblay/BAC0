@@ -26,7 +26,7 @@ requests by and app
 
 """
 
-from bacpypes.debugging import bacpypes_debugging, ModuleLogger
+from bacpypes.debugging import bacpypes_debugging
 
 from bacpypes.pdu import Address
 from bacpypes.object import get_object_class, get_datatype
@@ -38,9 +38,9 @@ from queue import Queue, Empty
 
 from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException
 
+
 # some debugging
-_debug = 0
-_LOG = ModuleLogger(globals())
+_DEBUG = 1
 
 
 @bacpypes_debugging
@@ -54,11 +54,12 @@ class ReadProperty():
     """
     _TIMEOUT = 5
 
-    def __init__(self):
+    def __init__(self, *args):
         """ This function is a fake one so spyder can see local variables
         """
         self.this_application = None
         self.this_application.ResponseQueue = Queue()
+        self._started = False
 
     def read(self, args):
         """ This function build a read request wait for the answer and
@@ -81,7 +82,7 @@ class ReadProperty():
             raise Exception('App not running, use startApp() function')
         args = args.split()
         self.this_application.value is None
-        print_debug("do_read %r", args)
+        log_debug("do_read %r", args)
 
         try:
             addr, obj_type, obj_inst, prop_id = args[:4]
@@ -106,13 +107,13 @@ class ReadProperty():
 
             if len(args) == 5:
                 request.propertyArrayIndex = int(args[4])
-            print_debug("    - request: %r", request)
+            log_debug("    - request: %r", request)
 
             # give it to the application
             self.this_application.request(request)
 
         except ReadPropertyException as error:
-            ReadProperty._exception("exception: %r", error)
+            log_exception("exception: %r", error)
 
         # Share response with Queue
         data = None
@@ -123,7 +124,7 @@ class ReadProperty():
                 evt.set()
                 return data
             except Empty:
-                print('No response from controller')
+                log_exception('No response from controller')
                 return None
 
     def readMultiple(self, args):
@@ -144,7 +145,7 @@ class ReadProperty():
         Will ask for the present Value and the units of analog input 1 (AI:1)
         """
         args = args.split()
-        print_debug("readMultiple %r", args)
+        log_debug("readMultiple %r", args)
 
         try:
             i = 0
@@ -216,13 +217,13 @@ class ReadProperty():
                 listOfReadAccessSpecs=read_access_spec_list,
             )
             request.pduDestination = Address(addr)
-            print_debug("    - request: %r", request)
+            log_debug("    - request: %r", request)
 
             # give it to the application
             self.this_application.request(request)
 
         except ReadPropertyMultipleException as error:
-            ReadProperty._exception("exception: %r", error)
+            log_exception("exception: %r", error)
 
         data = None
         while True:
@@ -236,9 +237,26 @@ class ReadProperty():
                 return None
 
 
-def print_debug(msg, *args):
+def log_debug(txt, *args):
     """
-    Used to print info to console when debug mode active
+    Helper function to log debug messages
     """
-    if _debug:
-        ReadProperty._debug(msg, args)
+    if _DEBUG:
+        if args:
+            msg = txt % args
+        else:
+            msg = txt
+        # pylint: disable=E1101,W0212
+        ReadProperty._debug(msg)
+
+
+def log_exception(txt, *args):
+    """
+    Helper function to log debug messages
+    """
+    if args:
+        msg = txt % args
+    else:
+        msg = txt
+    # pylint: disable=E1101,W0212
+    ReadProperty._exception(msg)

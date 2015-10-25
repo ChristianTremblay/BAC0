@@ -56,6 +56,7 @@ class ScriptApplication(BIPSimpleApplication):
         """
 
         log_debug("__init__ %r", args)
+        self.localAddress = None
 
         BIPSimpleApplication.__init__(self, *args)
 
