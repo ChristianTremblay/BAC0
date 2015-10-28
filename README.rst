@@ -1,6 +1,6 @@
 BAC0 |build-status| |coverage| |docs|
 =====================================
-BAC0 is a Python 3 (3.3 and over) scripting application that uses BACpypes to process bacnet messages on a IP network. 
+BAC0 is a Python 3 (3.3 and over) scripting application that uses bacpypes_ to process bacnet messages on a IP network. 
 This library brings out simple commands to browse a bacnet network, read properties from bacnet devices or write to them.
 
 Python is a simple language to learn and a very powerful tool for data processing. Coupled to bacnet, it becomes a great 
@@ -196,3 +196,5 @@ https://travis-ci.org/ChristianTremblay/BAC0
 .. |coverage| image:: https://coveralls.io/repos/ChristianTremblay/BAC0/badge.svg?branch=master&service=github 
    :target: https://coveralls.io/github/ChristianTremblay/BAC0?branch=master
    :alt: Coverage
+
+.. _bacpypes : https://github.com/JoelBender/bacpypes
