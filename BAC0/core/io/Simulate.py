@@ -22,6 +22,7 @@ class Simulation():
         self.this_application = None
         self.simulatedPoints = []
 
+
     def sim(self, args):
         """
         This function allow the simulation of IO points by turning on the

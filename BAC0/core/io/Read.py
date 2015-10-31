@@ -18,12 +18,6 @@ requests by and app
         ReadProperty()
             def read()
             def readMultiple()
-
-
-    Functions::
-
-        print_debug()
-
 """
 
 from bacpypes.debugging import bacpypes_debugging
@@ -82,7 +76,7 @@ class ReadProperty():
             raise Exception('App not running, use startApp() function')
         args = args.split()
         self.this_application.value is None
-        log_debug(ReadProperty,"do_read %r", args)
+        log_debug(ReadProperty, "do_read %r", args)
 
         try:
             addr, obj_type, obj_inst, prop_id = args[:4]
@@ -107,7 +101,7 @@ class ReadProperty():
 
             if len(args) == 5:
                 request.propertyArrayIndex = int(args[4])
-            log_debug(ReadProperty,"    - request: %r", request)
+            log_debug(ReadProperty, "    - request: %r", request)
 
             # give it to the application
             self.this_application.request(request)
@@ -124,7 +118,7 @@ class ReadProperty():
                 evt.set()
                 return data
             except Empty:
-                log_exception('No response from controller')
+                log_exception(ReadProperty, 'No response from controller')
                 return None
 
     def readMultiple(self, args):
@@ -145,7 +139,7 @@ class ReadProperty():
         Will ask for the present Value and the units of analog input 1 (AI:1)
         """
         args = args.split()
-        log_debug(ReadProperty,"readMultiple %r", args)
+        log_debug(ReadProperty, "readMultiple %r", args)
 
         try:
             i = 0
@@ -217,13 +211,13 @@ class ReadProperty():
                 listOfReadAccessSpecs=read_access_spec_list,
             )
             request.pduDestination = Address(addr)
-            log_debug(ReadProperty,"    - request: %r", request)
+            log_debug(ReadProperty, "    - request: %r", request)
 
             # give it to the application
             self.this_application.request(request)
 
         except ReadPropertyMultipleException as error:
-            log_exception("exception: %r", error)
+            log_exception(ReadProperty, "exception: %r", error)
 
         data = None
         while True:
@@ -235,5 +229,3 @@ class ReadProperty():
             except Empty:
                 print('No response from controller')
                 return None
-
-

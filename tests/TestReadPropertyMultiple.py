@@ -20,7 +20,7 @@ from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
 from bacpypes.basetypes import PropertyIdentifier
 
 from threading import Event
-from queue import Queue, Empty
+from queue import Empty
 
 
 class TestScriptApplication(ScriptApplication):
@@ -67,7 +67,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
 
     def test_verify_return_value(self):
         """
-        Value returned must be 32
+        Value returned must be 21 and units should be degreesCelcius
         """
         self.assertEqual(
             self.read_property.readMultiple(
@@ -89,31 +89,43 @@ class TestReadPropertyMultiple(unittest.TestCase):
         self.assertEqual(
             self.arg_used_in_call.debug_contents(),
             self.base_request.debug_contents())
-            
+
     def test_wrong_datatype(self):
+        """
+        test_wrong_datatype
+        """
         self.req = '2:5 analogVal 1 presentValue units'
         with self.assertRaises(ValueError):
             self.read_property.readMultiple(self.req)
         self.req = '2:5 analogValue 1 presValue units'
         with self.assertRaises(ValueError):
             self.read_property.readMultiple(self.req)
-    
+
     def test_no_prop(self):
+        """
+        No property
+        """
         self.req = '2:5 1 presentValue units'
         with self.assertRaises(ValueError):
             self.read_property.readMultiple(self.req)
 
     def test_no_response_from_controller(self):
-        self.req = '2:5 analogValue 1 presentValue units'     
+        """
+        No response from controller should raise Empty and return None
+        """
+        self.req = '2:5 analogValue 1 presentValue units'
         self.read_property.this_application.ResponseQueue.get.side_effect = Empty()
-        self.assertEqual(self.read_property.readMultiple(self.req),None)
+        self.assertEqual(self.read_property.readMultiple(self.req), None)
 
     def test_not_started(self):
+        """
+        If application not started, raise Exception
+        """
         self.req = '2:5 1 presentValue units'
         self.read_property._started = False
         with self.assertRaises(Exception):
             self.read_property.readMultiple(self.req)
-        
+
 
 def create_ReadPropertyMultipleRequest(args):
     """
