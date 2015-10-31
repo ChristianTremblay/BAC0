@@ -49,17 +49,23 @@ class Point():
         self._history.append(res)
         return res
 
-    # Is this truly necessary ????
-    @value.setter
-    def value(self, value):
-        raise AttributeError('Must be set from network request')
+#    # Is this truly necessary ????
+#    @value.setter
+#    def value(self, value):
+#        raise AttributeError('Must be set from network request')
 
     @property
     def units(self):
+        """
+        Should return units
+        """
         raise Exception('Must be overridden')
 
     @property
     def lastValue(self):
+        """
+        returns: last value read
+        """
         return self._history[-1]
 
     def showHistoryTable(self):

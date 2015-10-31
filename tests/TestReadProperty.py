@@ -11,7 +11,6 @@ from BAC0.core.app.ScriptApplication import ScriptApplication
 from BAC0.core.io.IOExceptions import ReadPropertyException, ReadPropertyMultipleException
 
 
-
 from mock import Mock, patch, call
 import unittest
 
@@ -89,7 +88,7 @@ class TestReadProperty(unittest.TestCase):
         self.assertEqual(
             self.arg_used_in_call.debug_contents(),
             self.base_request.debug_contents())
-   
+
     def test_wrong_datatype(self):
         self.req = '2:5 analogVal 1 presentValue'
         with self.assertRaises(ValueError):
@@ -97,19 +96,19 @@ class TestReadProperty(unittest.TestCase):
         self.req = '2:5 analogValue 1 presValue units'
         with self.assertRaises(ValueError):
             self.read_property.read(self.req)
-            
+
 #    def test_ReadPropertyException(self):
 #        self.req = 'a very bad request'
 #        with self.assertRaises(ReadPropertyException):
 #            self.read_property.read(self.req)
-    
+
     def test_no_prop(self):
         self.req = '2:5 1 presentValue units'
         with self.assertRaises(ValueError):
             self.read_property.read(self.req)
 
 #    def test_no_response_from_controller(self):
-#        self.req = '2:5 analogValue 1 presentValue'     
+#        self.req = '2:5 analogValue 1 presentValue'
 #        self.read_property.this_application.ResponseQueue.get.side_effect = Empty
 #        self.assertEqual(self.read_property.read(self.req),None)
 
@@ -118,7 +117,7 @@ class TestReadProperty(unittest.TestCase):
         self.read_property._started = False
         with self.assertRaises(Exception):
             self.read_property.read(self.req)
-        
+
 
 def create_ReadPropertyRequest(args):
     """

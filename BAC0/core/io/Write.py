@@ -35,7 +35,9 @@ from bacpypes.constructeddata import Array, Any
 
 from queue import Empty
 
-from .IOExceptions import WritePropertyException, WritePropertyCastError, NoResponseFromController
+from .IOExceptions import WritePropertyCastError, NoResponseFromController, WritePropertyException
+from ..functions.debug import log_debug, log_exception
+
 
 # some debugging
 _debug = 0
@@ -82,7 +84,7 @@ class WriteProperty():
         if not self._started:
             raise Exception('App not running, use startApp() function')
         args = args.split()
-        print_debug("do_write %r", args)
+        log_debug(WriteProperty, "do_write %r", args)
 
         try:
             addr, obj_type, obj_inst, prop_id = args[:4]
@@ -95,16 +97,16 @@ class WriteProperty():
             if len(args) >= 6:
                 if args[5] != "-":
                     indx = int(args[5])
-            print_debug("    - indx: %r", indx)
+            log_debug(WriteProperty, "    - indx: %r", indx)
 
             priority = None
             if len(args) >= 7:
                 priority = int(args[6])
-            print_debug("    - priority: %r", priority)
+            log_debug(WriteProperty, "    - priority: %r", priority)
 
             # get the datatype
             datatype = get_datatype(obj_type, prop_id)
-            print_debug("    - datatype: %r", datatype)
+            log_debug(WriteProperty, "    - datatype: %r", datatype)
 
             # change atomic values into something encodeable, null is a special
             # case
@@ -131,7 +133,11 @@ class WriteProperty():
                 raise TypeError(
                     "invalid result datatype, expecting %s" %
                     (datatype.__name__,))
-            print_debug("    - encodeable value: %r %s", value, type(value))
+            log_debug(
+                WriteProperty,
+                "    - encodeable value: %r %s",
+                value,
+                type(value))
 
             # build a request
             request = WritePropertyRequest(
@@ -145,7 +151,7 @@ class WriteProperty():
             try:
                 request.propertyValue.cast_in(value)
             except WritePropertyCastError as error:
-                WriteProperty._exception("WriteProperty cast error: %r", error)
+                log_exception("WriteProperty cast error: %r", error)
 
             # optional array index
             if indx is not None:
@@ -155,13 +161,13 @@ class WriteProperty():
             if priority is not None:
                 request.priority = priority
 
-            print_debug("    - request: %r", request)
+            log_debug(WriteProperty, "    - request: %r", request)
 
             # give it to the application
             self.this_application.request(request)
 
         except WritePropertyException as error:
-            WriteProperty._exception("exception: %r", error)
+            log_exception("exception: %r", error)
 
         while True:
             try:
@@ -171,11 +177,3 @@ class WriteProperty():
                 return data
             except Empty:
                 raise NoResponseFromController
-
-
-def print_debug(msg, *args):
-    """
-    Used to print info to console when debug mode active
-    """
-    if _debug:
-        WriteProperty._debug(msg, args)
