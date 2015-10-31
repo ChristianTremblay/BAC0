@@ -37,10 +37,10 @@ from bacpypes.basetypes import PropertyIdentifier
 from queue import Queue, Empty
 
 from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException
-
+from ..functions.debug import log_debug, log_exception
 
 # some debugging
-_DEBUG = 1
+_DEBUG = 0
 
 
 @bacpypes_debugging
@@ -82,7 +82,7 @@ class ReadProperty():
             raise Exception('App not running, use startApp() function')
         args = args.split()
         self.this_application.value is None
-        log_debug("do_read %r", args)
+        log_debug(ReadProperty,"do_read %r", args)
 
         try:
             addr, obj_type, obj_inst, prop_id = args[:4]
@@ -107,7 +107,7 @@ class ReadProperty():
 
             if len(args) == 5:
                 request.propertyArrayIndex = int(args[4])
-            log_debug("    - request: %r", request)
+            log_debug(ReadProperty,"    - request: %r", request)
 
             # give it to the application
             self.this_application.request(request)
@@ -145,7 +145,7 @@ class ReadProperty():
         Will ask for the present Value and the units of analog input 1 (AI:1)
         """
         args = args.split()
-        log_debug("readMultiple %r", args)
+        log_debug(ReadProperty,"readMultiple %r", args)
 
         try:
             i = 0
@@ -217,7 +217,7 @@ class ReadProperty():
                 listOfReadAccessSpecs=read_access_spec_list,
             )
             request.pduDestination = Address(addr)
-            log_debug("    - request: %r", request)
+            log_debug(ReadProperty,"    - request: %r", request)
 
             # give it to the application
             self.this_application.request(request)
@@ -237,26 +237,3 @@ class ReadProperty():
                 return None
 
 
-def log_debug(txt, *args):
-    """
-    Helper function to log debug messages
-    """
-    if _DEBUG:
-        if args:
-            msg = txt % args
-        else:
-            msg = txt
-        # pylint: disable=E1101,W0212
-        ReadProperty._debug(msg)
-
-
-def log_exception(txt, *args):
-    """
-    Helper function to log debug messages
-    """
-    if args:
-        msg = txt % args
-    else:
-        msg = txt
-    # pylint: disable=E1101,W0212
-    ReadProperty._exception(msg)
