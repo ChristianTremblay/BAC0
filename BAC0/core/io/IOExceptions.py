@@ -57,3 +57,10 @@ class OutOfServiceSet(Exception):
     false to release the simulation...and it doesn't work.
     """
     pass
+
+class NetworkInterfaceException(Exception):
+    """
+    This exception covers different network related exc eption (like finding IP 
+    or subnet mask...)
+    """    
+    pass

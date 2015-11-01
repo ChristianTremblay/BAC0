@@ -13,6 +13,8 @@ accepted by every devices (>3.8.38.1 bacnet.jar of Tridium Jace for example)
 """
 from bacpypes.pdu import Address
 
+from ..io.IOExceptions import NetworkInterfaceException
+
 import socket
 import subprocess
 import ipaddress
@@ -28,12 +30,20 @@ class HostIP():
         ip = self._findIPAddr()
         mask = self._findSubnetMask(ip)
         self.interface = ipaddress.IPv4Interface("%s/%s" % (ip, mask))
-
-    def getIPAddr(self):
+    
+    @property    
+    def ip_address(self):
+        """
+        IP Address/subnet
+        """
         return ('%s/%s' % (self.interface.ip.compressed,
                            self.interface.exploded.split('/')[-1]))
 
-    def getAddress(self):
+    @property
+    def address(self):
+        """
+        IP Address using bacpypes Address format
+        """
         return (Address('%s/%s' % (self.interface.ip.compressed,
                                    self.interface.exploded.split('/')[-1])))
 
@@ -51,7 +61,7 @@ class HostIP():
             print('Using ip : {addr}'.format(addr=addr))
             s.close()
         except socket.error:
-            raise Exception(
+            raise NetworkInterfaceException(
                 'Impossible to retrieve IP, please provide one manually')
         return addr
 
@@ -77,7 +87,7 @@ class HostIP():
                 mask = proc.stdout.readline().rstrip().split(
                     b':')[-1].replace(b' ', b'').decode()
             except:
-                raise RuntimeError('Cannot read IP parameters from OS')
+                raise NetworkInterfaceException('Cannot read IP parameters from OS')
         else:
             """
             This procedure could use more direct way of obtaining the broadcast IP
@@ -103,4 +113,4 @@ class HostIP():
 
 if __name__ == '__main__':
     h = HostIP()
-    print(h.getIPAddr())
+    print(h.ip_address)

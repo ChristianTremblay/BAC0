@@ -64,7 +64,7 @@ class ReadWriteScript(BasicScript, ReadProperty, WriteProperty, Simulation):
         log_debug("Configurating app")
         if localIPAddr is None:
             host = HostIP()
-            ip_addr = host.getAddress()
+            ip_addr = host.address
         else:
             ip_addr = localIPAddr
         BasicScript.__init__(self, localIPAddr=ip_addr)

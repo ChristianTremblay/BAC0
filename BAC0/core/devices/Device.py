@@ -55,7 +55,7 @@ class Device():
 
     def read(self, args):
         """
-        Read a point from a device
+        Read presentValue of a point from a device
 
         :param args: point name
         :returns: value read
@@ -68,13 +68,6 @@ class Device():
                     self._pointsDF.ix[pointName].pointAddress)))
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
-
-        # if 'multiState' in self._pointsDF.ix[pointName].pointType:
-        #    return EnumPoint(val,self._pointsDF.ix[pointName],self.addr)
-        # elif 'binary' in self._pointsDF.ix[pointName].pointType:
-        #    return BooleanPoint(val,self._pointsDF.ix[pointName],self.addr)
-        # else:
-        #    return NumericPoint(val,self._pointsDF.ix[pointName],self.addr)
         return val
 
     def write(self, args):
@@ -350,7 +343,7 @@ class Device():
         Helper that retrieve point based on its name.
         """
         for point in self.points:
-            if point.name == name:
+            if point.properties.name == name:
                 return point
         return None
 
