@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>BAC0.core.app package &mdash; BAC0 0.94 documentation</title>
+    <title>BAC0.core.app package &mdash; BAC0  documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.94',
+        VERSION:     '',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="BAC0 0.94 documentation" href="index.html" />
+    <link rel="top" title="BAC0  documentation" href="index.html" />
     <link rel="up" title="BAC0.core package" href="BAC0.core.html" />
     <link rel="next" title="BAC0.core.devices package" href="BAC0.core.devices.html" />
     <link rel="prev" title="BAC0.core package" href="BAC0.core.html" />
@@ -49,7 +49,7 @@
         <li class="right" >
           <a href="BAC0.core.html" title="BAC0.core package"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">BAC0 0.94 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">BAC0  documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="BAC0.html" >BAC0 package</a> &raquo;</li>
           <li class="nav-item nav-item-2"><a href="BAC0.core.html" accesskey="U">BAC0.core package</a> &raquo;</li> 
       </ul>
@@ -69,11 +69,10 @@
 <span id="bac0-core-app-scriptapplication-module"></span><h2>BAC0.core.app.ScriptApplication module<a class="headerlink" href="#module-BAC0.core.app.ScriptApplication" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="scriptapplication">
 <h3>ScriptApplication<a class="headerlink" href="#scriptapplication" title="Permalink to this headline">¶</a></h3>
-<p>Built around a simple BIPSimpleApplication this module deals with requests 
+<p>Built around a simple BIPSimpleApplication this module deals with requests
 created by a child app. It will prepare the requests and give them back to the
 stack.</p>
-<p>This module will also listen for responses to requests (indication or 
-confirmation).</p>
+<p>This module will also listen for responses to requests (indication or confirmation).</p>
 <p>Response will be added to a Queue, we&#8217;ll wait for the response to be processed
 by the caller, then resume.</p>
 <p>This object will be added to script objects and will be runned as thread</p>
@@ -86,7 +85,7 @@ by the caller, then resume.</p>
 <dl class="method">
 <dt id="BAC0.core.app.ScriptApplication.ScriptApplication.confirmation">
 <code class="descname">confirmation</code><span class="sig-paren">(</span><em>apdu</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.app.ScriptApplication.ScriptApplication.confirmation" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function process confirmed answers from the stack and looks for a returned 
+<dd><p>This function process confirmed answers from the stack and looks for a returned
 value or an error.
 If a valid value is found, it&#8217;s stored in the ResponseQueue. We&#8217;ll wait for the
 response to be used by the caller then resume the function.</p>
@@ -138,6 +137,12 @@ Sends the apdu to the application request</p>
 </table>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="function">
+<dt id="BAC0.core.app.ScriptApplication.log_debug">
+<code class="descclassname">BAC0.core.app.ScriptApplication.</code><code class="descname">log_debug</code><span class="sig-paren">(</span><em>txt</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.app.ScriptApplication.log_debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to log debug messages</p>
 </dd></dl>
 
 </div>

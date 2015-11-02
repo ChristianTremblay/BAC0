@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>BAC0.scripts package &mdash; BAC0 0.94 documentation</title>
+    <title>BAC0.scripts package &mdash; BAC0  documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.94',
+        VERSION:     '',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="BAC0 0.94 documentation" href="index.html" />
+    <link rel="top" title="BAC0  documentation" href="index.html" />
     <link rel="up" title="BAC0 package" href="BAC0.html" />
     <link rel="prev" title="BAC0.core.io package" href="BAC0.core.io.html" />
    
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="BAC0.core.io.html" title="BAC0.core.io package"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">BAC0 0.94 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">BAC0  documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="BAC0.html" accesskey="U">BAC0 package</a> &raquo;</li> 
       </ul>
     </div>  
@@ -97,10 +97,22 @@ Stop the thread</p>
 
 </dd></dl>
 
+<dl class="function">
+<dt id="BAC0.scripts.BasicScript.log_debug">
+<code class="descclassname">BAC0.scripts.BasicScript.</code><code class="descname">log_debug</code><span class="sig-paren">(</span><em>txt</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.scripts.BasicScript.log_debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to log debug messages</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="BAC0.scripts.BasicScript.log_exception">
+<code class="descclassname">BAC0.scripts.BasicScript.</code><code class="descname">log_exception</code><span class="sig-paren">(</span><em>txt</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.scripts.BasicScript.log_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to log debug messages</p>
+</dd></dl>
+
 </div>
 <div class="section" id="module-BAC0.scripts.ReadWriteScript">
 <span id="bac0-scripts-readwritescript-module"></span><h2>BAC0.scripts.ReadWriteScript module<a class="headerlink" href="#module-BAC0.scripts.ReadWriteScript" title="Permalink to this headline">¶</a></h2>
-<p>This Script object is an extended version of the basicScript. 
+<p>This Script object is an extended version of the basicScript.
 As everything is handled by the BasicScript, you only need to select the features
 you want:</p>
 <div class="highlight-python"><div class="highlight"><pre># Create a class that will implement a basic script with read and write functions
@@ -122,6 +134,18 @@ bacnet.read(&#39;2:5 analogInput 1 presentValue)
 <p>This class build a running bacnet application and will accept read ans write requests
 Whois and IAm function are also possible as they are implemented in the BasicScript class.</p>
 <p>Once created, the object will call a <code class="docutils literal"><span class="pre">whois()</span></code> function to build a list of controllers available.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="BAC0.scripts.ReadWriteScript.log_debug">
+<code class="descclassname">BAC0.scripts.ReadWriteScript.</code><code class="descname">log_debug</code><span class="sig-paren">(</span><em>txt</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.scripts.ReadWriteScript.log_debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to log debug messages</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="BAC0.scripts.ReadWriteScript.log_exception">
+<code class="descclassname">BAC0.scripts.ReadWriteScript.</code><code class="descname">log_exception</code><span class="sig-paren">(</span><em>txt</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.scripts.ReadWriteScript.log_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to log debug messages</p>
 </dd></dl>
 
 </div>

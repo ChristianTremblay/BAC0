@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>BAC0.core.functions package &mdash; BAC0 0.94 documentation</title>
+    <title>BAC0.core.functions package &mdash; BAC0  documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.94',
+        VERSION:     '',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="BAC0 0.94 documentation" href="index.html" />
+    <link rel="top" title="BAC0  documentation" href="index.html" />
     <link rel="up" title="BAC0.core package" href="BAC0.core.html" />
     <link rel="next" title="BAC0.core.io package" href="BAC0.core.io.html" />
     <link rel="prev" title="BAC0.core.devices package" href="BAC0.core.devices.html" />
@@ -49,7 +49,7 @@
         <li class="right" >
           <a href="BAC0.core.devices.html" title="BAC0.core.devices package"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">BAC0 0.94 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">BAC0  documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="BAC0.html" >BAC0 package</a> &raquo;</li>
           <li class="nav-item nav-item-2"><a href="BAC0.core.html" accesskey="U">BAC0.core package</a> &raquo;</li> 
       </ul>
@@ -76,15 +76,17 @@ accepted by every devices (&gt;3.8.38.1 bacnet.jar of Tridium Jace for example)<
 <em class="property">class </em><code class="descclassname">BAC0.core.functions.GetIPAddr.</code><code class="descname">HostIP</code><a class="headerlink" href="#BAC0.core.functions.GetIPAddr.HostIP" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/library/functions.html#object" title="(in Python v2.7)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
 <p>Special class to identify host IP informations</p>
-<dl class="method">
-<dt id="BAC0.core.functions.GetIPAddr.HostIP.getAddress">
-<code class="descname">getAddress</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.functions.GetIPAddr.HostIP.getAddress" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dl class="attribute">
+<dt id="BAC0.core.functions.GetIPAddr.HostIP.address">
+<code class="descname">address</code><a class="headerlink" href="#BAC0.core.functions.GetIPAddr.HostIP.address" title="Permalink to this definition">¶</a></dt>
+<dd><p>IP Address using bacpypes Address format</p>
+</dd></dl>
 
-<dl class="method">
-<dt id="BAC0.core.functions.GetIPAddr.HostIP.getIPAddr">
-<code class="descname">getIPAddr</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.functions.GetIPAddr.HostIP.getIPAddr" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dl class="attribute">
+<dt id="BAC0.core.functions.GetIPAddr.HostIP.ip_address">
+<code class="descname">ip_address</code><a class="headerlink" href="#BAC0.core.functions.GetIPAddr.HostIP.ip_address" title="Permalink to this definition">¶</a></dt>
+<dd><p>IP Address/subnet</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -105,7 +107,7 @@ Email : <a class="reference external" href="mailto:christian&#46;tremblay&#37;&#
 <div class="section" id="module-BAC0.core.functions.WhoisIAm">
 <span id="bac0-core-functions-whoisiam-module"></span><h2>BAC0.core.functions.WhoisIAm module<a class="headerlink" href="#module-BAC0.core.functions.WhoisIAm" title="Permalink to this headline">¶</a></h2>
 <p>This module allows the creation of Whois and IAm requests by and app</p>
-<p>Usage 
+<p>Usage
 Must be used while defining an app
 ex.: class BasicScript(WhoisIAm):</p>
 <p>Class : WhoisIAm</p>
@@ -151,9 +153,9 @@ Requets is given to the app</p>
 </tbody>
 </table>
 <p>Example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">whois</span><span class="p">()</span> 
+<div class="highlight-python"><div class="highlight"><pre><span class="n">whois</span><span class="p">()</span>
 <span class="c">#will create a broadcast whois request and every device will response by a Iam</span>
-<span class="n">whois</span><span class="p">(</span><span class="s">&#39;2:5&#39;</span><span class="p">)</span> 
+<span class="n">whois</span><span class="p">(</span><span class="s">&#39;2:5&#39;</span><span class="p">)</span>
 <span class="c">#will create a whois request aimed at device 5</span>
 <span class="n">whois</span><span class="p">(</span><span class="s">&#39;10 1000&#39;</span><span class="p">)</span>
 <span class="c">#will create a whois request looking for device ID 10 to 1000</span>
@@ -161,6 +163,18 @@ Requets is given to the app</p>
 </div>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="function">
+<dt id="BAC0.core.functions.WhoisIAm.log_debug">
+<code class="descclassname">BAC0.core.functions.WhoisIAm.</code><code class="descname">log_debug</code><span class="sig-paren">(</span><em>txt</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.functions.WhoisIAm.log_debug" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to log debug messages</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="BAC0.core.functions.WhoisIAm.log_exception">
+<code class="descclassname">BAC0.core.functions.WhoisIAm.</code><code class="descname">log_exception</code><span class="sig-paren">(</span><em>txt</em>, <em>*args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.functions.WhoisIAm.log_exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to log debug messages</p>
 </dd></dl>
 
 </div>
