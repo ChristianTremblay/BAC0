@@ -96,10 +96,15 @@ class Point():
         """
         Way to get points... presentValue, status, flags, etc...
 
-        :param name: (str) pointName
-        :returns: (Point) the point (can be Numeric, Boolean or Enum)
+        :param key: state
+        :returns: list of enum states
         """
-        raise Exception('Not implemented yet')
+        if str(key).lower() in ['unit', 'units', 'state', 'states']:
+            key = 'units_state'
+        try:
+            return getattr(self.properties,key)
+        except AttributeError:
+            raise ValueError('Wrong property')
 
     def write(self, value, *, prop='presentValue', priority=''):
         """
@@ -122,6 +127,8 @@ class Point():
             '%s %s %s %s %s %s' %
             (self.properties.device.addr, self.properties.type, str(
                 self.properties.address), prop, str(value), str(priority)))
+        # Read after the write so history gets updated.
+        self.value
 
     def default(self, value):
         self.write(value, prop='relinquishDefault')
@@ -172,14 +179,22 @@ class Point():
         AnalogOutput are overridden
         """
         if 'Value' in self.properties.type:
+            if str(value).lower() == 'auto':
+                raise ValueError('Value was not simulated or overridden, cannot release to auto')
             # analog value must be written to
             self.write(value)
         elif 'Output' in self.properties.type:
             # analog output must be overridden
-            self.ovr(value)
+            if str(value).lower() == 'auto':
+                self.auto()
+            else:
+                self.ovr(value)
         else:
             # input are left... must be simulated
-            self.sim(value)
+            if str(value).lower() == 'auto':
+                self.release()
+            else:
+                self.sim(value)
 
     def _set(self, value):
         """
@@ -189,38 +204,6 @@ class Point():
         device['point'] = value
         """
         raise Exception('Must be overridden')
-
-#    def _parseArgs(self, arg):
-#        """
-#        Given a string, will interpret the last word as the value, everything else
-#        will be considered the point name
-#        """
-#        args = arg.split()
-#        pointName = ' '.join(args[:-1])
-#        value = args[-1]
-#        return (pointName, value)
-#
-#    def _convert_write_arguments(self, args):
-#        """
-#        This allow the use of enum state or boolean state for wirting to points
-#        ex. device.write('name True') instead of device.write('name active')
-#        """
-#        #TODO : Verify value is float or int for analog
-#        pointName, value = self._parseArgs(args)
-#        # Accept boolean value
-#        if 'binary' in self._pointsDF.ix[pointName].pointType:
-#            if value.lower() == 'false':
-#                value = 'inactive'
-#            elif value.lower() == 'true':
-#                value = 'active'
-#        # Accept states as value if multiState
-#        if 'multiState' in self._pointsDF.ix[pointName].pointType:
-#            state_list = [states.lower() for states in self._pointsDF.ix[
-#                pointName].units_state]
-#            if value.lower() in state_list:
-#                value = state_list.index(value.lower()) + 1
-#        return (pointName, value)
-
 
 class NumericPoint(Point):
     """
@@ -247,10 +230,16 @@ class NumericPoint(Point):
         return self.properties.units_state
 
     def _set(self, value):
-        if isinstance(float(value), float):
-            self._setitem(value)
-        else:
-            raise ValueError('Value must be numeric')
+        try:    
+            val = float(value)
+            if isinstance(val, float):
+                self._setitem(value)
+        except:
+            val = str(value)
+            if (val.lower() == 'auto'):
+                self._setitem(value)
+            else:
+                raise ValueError('Value must be numeric')
 
     def __repr__(self):
         return '%s : %.2f %s' % (self.properties.name, self.value, self.properties.units_state)
@@ -308,6 +297,16 @@ class BooleanPoint(Point):
         """
         return None
 
+    def _set(self, value):
+        if value == True:
+            self._setitem('active')
+        elif value == False:
+            self._setitem('inactive')
+        elif str(value) in ['inactive','active'] or str(value).lower() == 'auto':
+            self._setitem(value) 
+        else:
+            raise ValueError('Value must be boolean True, False or "active"/"inactive"')
+
     def __repr__(self):
         # return '%s : %s' % (self.name, self._units_state[self._key])
         return '%s : %s' % (self.properties.name, self.boolValue)
@@ -343,6 +342,16 @@ class EnumPoint(Point):
     @property
     def units(self):
         return None
+        
+    def _set(self,value):
+        if isinstance(value,int):
+            self._setitem(value)
+        elif str(value) in self.properties.units_state:
+            self._setitem(self.properties.units_state.index(value)+1)
+        elif str(value).lower() == 'auto':
+            self._setitem('auto')            
+        else:
+            raise ValueError('Value must be integer or correct enum state : %s' % self.properties.units_state)
 
     def __repr__(self):
         # return '%s : %s' % (self.name, )
