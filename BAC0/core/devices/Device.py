@@ -40,9 +40,18 @@ class Device():
         self.simPoints = []
         self.points = []
 
-        self.buildPointList()
+        self._buildPointList()
+    
+    @property
+    def simulated_points(self):
+        """
+        Return a list of simulated points
+        Could be a generator ?
+        Nice way to test
+        """
+        raise Exception('Not implemented yet')
 
-    def buildPointList(self):
+    def _buildPointList(self):
         """
         Read all points of the device and creates a dataframe (Pandas) to store
         the list and allow quick access.
@@ -204,6 +213,21 @@ class Device():
         :returns: (Point) the point (can be Numeric, Boolean or Enum)
         """
         return self._findPoint(name)
+        
+    def __getitem__(self,key):
+        """
+        Get a point based on its name
+
+        :param name: (str) pointName
+        :returns: (Point) the point (can be Numeric, Boolean or Enum)
+        """
+        return self._findPoint(key)
+        
+    def __setitem__(self, key, value):
+        """
+        Write, sim or ovr value
+        """
+        self._findPoint(key)._set(value)
 
     def _parseArgs(self, arg):
         """
@@ -220,6 +244,7 @@ class Device():
         This allow the use of enum state or boolean state for wirting to points
         ex. device.write('name True') instead of device.write('name active')
         """
+        #TODO : Verify value is float or int for analog        
         pointName, value = self._parseArgs(args)
         # Accept boolean value
         if 'binary' in self._pointsDF.ix[pointName].pointType:

@@ -9,38 +9,30 @@ Repeat read function every delay
 """
 
 from .TaskManager import Task
-
-import pandas as pd
-from datetime import datetime
-
+from ..core.devices.Points import Point
 
 class RepeatRead(Task):
     """
     Will fit fan status with fan command
     """
 
-    def __init__(self, pointName, controller, delay=10):
+    def __init__(self, point, *, delay=10):
         """
-        :param pointName: (str) name of the point to read
-        :param controller: (BAC0.core.devices.Device) Device to read from
+        :param point: (BAC0.core.device.Points.Point) name of the point to read
         :param delay: (int) Delay between reads in seconds, defaults = 10sec
+        
+        A delay cannot be < 0.5sec (there are risks of overloading the device)
 
-        :returns: Nothing. Use task.value to read the last value read
+        :returns: Nothing
         """
-        Task.__init__(self, delay=delay)
-        self.pointName = pointName
-        self.controller = controller
-        self.values = []
-        self.index = []
+        if delay < 0.5:
+            delay = 0.5
+        if isinstance(point,Point):
+            Task.__init__(self, delay=delay)
+            self.pointName = point.properties.name
+            self.controller = point.properties.device
+        else:
+            raise ValueError('Should provide a point object')
 
     def task(self):
-        res = self.controller.read(self.pointName)
-        self.index.append(datetime.now())
-        self.values.append(res.value())
-
-    def getValues(self):
-        ts = pd.Series(self.values, index=self.index)
-        return ts
-
-    def getValue(self):
-        return self.getValues()[-1]
+        self.controller.get(self.pointName)
