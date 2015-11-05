@@ -10,6 +10,7 @@ Informations MetaData
 
 __author__ = 'Christian Tremblay, P.Eng.'
 __email__ = 'christian.tremblay@servisys.com'
-__url__ = 'http://www.servisys.com'
-__version__ = '0.98'
+__url__ = 'https://github.com/ChristianTremblay/BAC0'
+__download_url__ = 'https://github.com/ChristianTremblay/BAC0/archive/master.zip'
+__version__ = '0.98.1'
 __license__ = 'LGPLv3'
