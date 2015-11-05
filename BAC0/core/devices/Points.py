@@ -411,7 +411,6 @@ class BooleanPoint(Point):
                 'Value must be boolean True, False or "active"/"inactive"')
 
     def __repr__(self):
-        # return '%s : %s' % (self.name, self._units_state[self._key])
         return '%s : %s' % (self.properties.name, self.boolValue)
         
     def __or__(self,other):
@@ -471,3 +470,6 @@ class EnumPoint(Point):
     def __repr__(self):
         # return '%s : %s' % (self.name, )
         return '%s : %s' % (self.properties.name, self.enumValue)
+
+    def __eq__(self,other):
+        return self.value == other
