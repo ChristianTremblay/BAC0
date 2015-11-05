@@ -9,25 +9,28 @@ Repeat read function every delay
 """
 
 from .TaskManager import Task
-#from ..core.devices.Points import Point
-
 
 class Poll(Task):
     """
     Will fit fan status with fan command
     """
 
-    def __init__(self, points, delay=60):
+    def __init__(self, point, *, delay=10):
         """
-        :param pointName: (str) name of the point to read
-        :param controller: (BAC0.core.devices.Device) Device to read from
+        :param point: (BAC0.core.device.Points.Point) name of the point to read
         :param delay: (int) Delay between reads in seconds, defaults = 10sec
+        
+        A delay cannot be < 0.5sec (there are risks of overloading the device)
 
-        :returns: Nothing. Use task.value to read the last value read
+        :returns: Nothing
         """
-        Task.__init__(self, delay)
-        self.points = points
+        if delay < 0.5:
+            delay = 0.5
+        if point.properties:
+            self._point = point
+            Task.__init__(self, delay=delay)
+        else:
+            raise ValueError('Should provide a point object')
 
     def task(self):
-        for point in self.points:
-            point.value
+        self._point.value

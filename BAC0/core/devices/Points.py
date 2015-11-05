@@ -11,6 +11,11 @@ Definition of points so operations will be easier on read result
 import pandas as pd
 from datetime import datetime
 from collections import namedtuple
+import time
+
+from ...tasks.Poll import Poll
+from ...tasks.Match import Match
+from ..io.IOExceptions import NoResponseFromController
 
 
 class Point():
@@ -39,6 +44,14 @@ class Point():
                                       'address', 'description', 'units',
                                       'simulated', 'overridden'])
 
+        self._polling_task = namedtuple('_polling_task', ['task', 'running'])
+        self._polling_task.task = None
+        self._polling_task.running = False
+
+        self._match_task = namedtuple('_match_task', ['task', 'running'])
+        self._match_task.task = None
+        self._match_task.running = False
+
         self._history.timestamp = []
         self._history.value = []
         self._history.value.append(presentValue)
@@ -50,8 +63,8 @@ class Point():
         self.properties.address = pointAddress
         self.properties.description = description
         self.properties.units_state = units_state
-        self.properties.simulated = False
-        self.properties.overridden = False
+        self.properties.simulated = (False, 0)
+        self.properties.overridden = (False, 0)
 
     @property
     def value(self):
@@ -90,7 +103,7 @@ class Point():
         """
         Simple shortcut to plot function
         """
-        return self.history.plot(*args)
+        return self.history.replace(['inactive', 'active', False, True], [0, 1, 0, 1]).plot(args, title='%s / %s' % (self.properties.name, self.properties.description))
 
     def __getitem__(self, key):
         """
@@ -102,7 +115,7 @@ class Point():
         if str(key).lower() in ['unit', 'units', 'state', 'states']:
             key = 'units_state'
         try:
-            return getattr(self.properties,key)
+            return getattr(self.properties, key)
         except AttributeError:
             raise ValueError('Wrong property')
 
@@ -123,17 +136,21 @@ class Point():
             else:
                 raise ValueError('Priority must be a number between 1 and 16')
 
-        self.properties.device.network.write(
-            '%s %s %s %s %s %s' %
+        try:
+            self.properties.device.network.write(
+            '%s %s %s %s %s' %
             (self.properties.device.addr, self.properties.type, str(
                 self.properties.address), prop, str(value), str(priority)))
+        except Exception:
+           raise NoResponseFromController
+        
         # Read after the write so history gets updated.
         self.value
 
     def default(self, value):
         self.write(value, prop='relinquishDefault')
 
-    def sim(self, value):
+    def sim(self, value, *, force=False):
         """
         Simulate a value
         Will write to out_of_service property (true)
@@ -144,11 +161,16 @@ class Point():
         :param value: (float) value to simulate
 
         """
-        self.properties.device.network.sim(
-            '%s %s %s presentValue %s' %
-            (self.properties.device.addr, self.properties.type, str(
-                self.properties.address), str(value)))
-        self.properties.simulated = True
+        if self.properties.simulated[0] \
+                and self.properties.simulated[1] == value \
+                and force == False:
+            pass
+        else:
+            self.properties.device.network.sim(
+                '%s %s %s presentValue %s' %
+                (self.properties.device.addr, self.properties.type, str(
+                    self.properties.address), str(value)))
+            self.properties.simulated = (True, value)
 
     def release(self):
         """
@@ -164,11 +186,11 @@ class Point():
 
     def ovr(self, value):
         self.write(value, priority=8)
-        self.properties.overridden = True
+        self.properties.overridden = (True, value)
 
     def auto(self):
         self.write('null', priority=8)
-        self.properties.overridden = False
+        self.properties.overridden = (False, 0)
 
     def _setitem(self, value):
         """
@@ -180,9 +202,15 @@ class Point():
         """
         if 'Value' in self.properties.type:
             if str(value).lower() == 'auto':
-                raise ValueError('Value was not simulated or overridden, cannot release to auto')
+                raise ValueError(
+                    'Value was not simulated or overridden, cannot release to auto')
             # analog value must be written to
-            self.write(value)
+            try:
+                self.write(value)
+            except NoResponseFromController:
+                self.default(value)
+            else:
+                raise NoResponseFromController
         elif 'Output' in self.properties.type:
             # analog output must be overridden
             if str(value).lower() == 'auto':
@@ -204,6 +232,54 @@ class Point():
         device['point'] = value
         """
         raise Exception('Must be overridden')
+
+    def poll(self, command='start', *, delay=10):
+        """
+        Enable polling of a variable. Will be read every x seconds (delay=x sec)
+        Can be stopped by using point.poll('stop') or .poll(0) or .poll(False)
+        or by setting a delay = 0
+        """
+        if str(command).lower() == 'stop' \
+                or command == False \
+                or command == 0 \
+                or delay == 0:
+            if isinstance(self._polling_task.task, Poll):
+                self._polling_task.task.stop()
+                self._polling_task.task = None
+                self._polling_task.running = False
+        elif self._polling_task.task is None:
+            self._polling_task.task = Poll(self, delay=delay)
+            self._polling_task.task.start()
+            self._polling_task.running = True
+        elif self._polling_task.running:
+            self._polling_task.task.stop()
+            self._polling_task.running = False
+            self._polling_task.task = Poll(self, delay=delay)
+            self._polling_task.task.start()
+            self._polling_task.running = True
+        else:
+            raise RuntimeError('Stop polling before redefining it')
+
+    def match(self, point, *, delay=5):
+        if self._match_task.task is None:
+            self._match_task.task = Match(
+                command=point, status=self, delay=delay)
+            self._match_task.task.start()
+            self._match_task.running = True
+        elif self._match_task.running:
+            self._match_task.task.stop()
+            self._match_task.running = False
+            time.sleep(1)
+            self._match_task.task = Match(
+                command=point, status=self, delay=delay)
+            self._match_task.task.start()
+            self._match_task.running = True
+        else:
+            raise RuntimeError('Stop task before redefining it')
+            
+    def __len__(self):
+        return len(self.history)
+
 
 class NumericPoint(Point):
     """
@@ -230,7 +306,7 @@ class NumericPoint(Point):
         return self.properties.units_state
 
     def _set(self, value):
-        try:    
+        try:
             val = float(value)
             if isinstance(val, float):
                 self._setitem(value)
@@ -243,8 +319,34 @@ class NumericPoint(Point):
 
     def __repr__(self):
         return '%s : %.2f %s' % (self.properties.name, self.value, self.properties.units_state)
+        
+    def __add__(self,other):
+        return self.value + other
 
+    def __sub__(self,other):
+        return self.value - other
+        
+    def __mul__(self,other):
+        return self.value * other
 
+    def __truediv__(self,other):
+        return self.value / other
+        
+    def __lt__(self,other):
+        return self.value < other
+
+    def __le__(self,other):
+        return self.value <= other
+
+    def __eq__(self,other):
+        return self.value == other
+
+    def __gt__(self,other):
+        return self.value > other
+
+    def __ge__(self,other):
+        return self.value >= other
+        
 class BooleanPoint(Point):
     """
     Representation of a Boolean Information
@@ -302,15 +404,27 @@ class BooleanPoint(Point):
             self._setitem('active')
         elif value == False:
             self._setitem('inactive')
-        elif str(value) in ['inactive','active'] or str(value).lower() == 'auto':
-            self._setitem(value) 
+        elif str(value) in ['inactive', 'active'] or str(value).lower() == 'auto':
+            self._setitem(value)
         else:
-            raise ValueError('Value must be boolean True, False or "active"/"inactive"')
+            raise ValueError(
+                'Value must be boolean True, False or "active"/"inactive"')
 
     def __repr__(self):
         # return '%s : %s' % (self.name, self._units_state[self._key])
         return '%s : %s' % (self.properties.name, self.boolValue)
+        
+    def __or__(self,other):
+        return self.boolValue | other
 
+    def __and__(self,other):
+        return self.boolValue & other
+
+    def __xor__(self,other):
+        return self.boolValue ^ other    
+
+    def __eq__(self,other):
+        return self.boolValue == other
 
 class EnumPoint(Point):
     """
@@ -342,16 +456,17 @@ class EnumPoint(Point):
     @property
     def units(self):
         return None
-        
-    def _set(self,value):
-        if isinstance(value,int):
+
+    def _set(self, value):
+        if isinstance(value, int):
             self._setitem(value)
         elif str(value) in self.properties.units_state:
-            self._setitem(self.properties.units_state.index(value)+1)
+            self._setitem(self.properties.units_state.index(value) + 1)
         elif str(value).lower() == 'auto':
-            self._setitem('auto')            
+            self._setitem('auto')
         else:
-            raise ValueError('Value must be integer or correct enum state : %s' % self.properties.units_state)
+            raise ValueError(
+                'Value must be integer or correct enum state : %s' % self.properties.units_state)
 
     def __repr__(self):
         # return '%s : %s' % (self.name, )

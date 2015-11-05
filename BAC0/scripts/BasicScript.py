@@ -135,7 +135,7 @@ class BasicScript(WhoisIAm):
         finally:
             log_debug("finally")
 
-    def stopApp(self):
+    def disconnect(self):
         """
         Used to stop the application
         Free the socket using ``handle_close()`` function

@@ -44,16 +44,11 @@ class ReadWriteScript(BasicScript, ReadProperty, WriteProperty, Simulation):
 
     """
 
-    def __init__(self, localIPAddr=None):
+    def __init__(self, ip=None):
         """
         Initialization requires information on the local device
 
-        :param localObjName: Name of the local device (default is 'name')
-        :param Boid: Bacnet object ID. Remember that there must be only 1 instance of this ID on the entire bacnet network (range 0 to 4194304 ; default : 2015)'
-        :param maxAPDULengthAccepted: default '1024'
-        :param segmentationSupported: default 'segmentedBoth'
-        :param vendorId: default '842'
-        :param localIPAddr: (str) '127.0.0.1'
+        :param ip: (str) '127.0.0.1'
 
         Normally, the address must be in the same subnet than the bacnet network (if no BBMD or Foreign device is used)
         Actual app doesn't support BBMD or FD
@@ -62,11 +57,11 @@ class ReadWriteScript(BasicScript, ReadProperty, WriteProperty, Simulation):
 
         """
         log_debug("Configurating app")
-        if localIPAddr is None:
+        if ip is None:
             host = HostIP()
             ip_addr = host.address
         else:
-            ip_addr = localIPAddr
+            ip_addr = ip
         BasicScript.__init__(self, localIPAddr=ip_addr)
 
         # Force and gloab whois to find all devices on the network

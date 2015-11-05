@@ -221,6 +221,9 @@ class Device():
         :param name: (str) pointName
         :returns: (Point) the point (can be Numeric, Boolean or Enum)
         """
+        # Read point value and store it
+        self._findPoint(key).value
+        # return the point itself
         return self._findPoint(key)
         
     def __setitem__(self, key, value):
@@ -228,6 +231,9 @@ class Device():
         Write, sim or ovr value
         """
         self._findPoint(key)._set(value)
+
+    def __len__(self):
+        return len(self.points)
 
     def _parseArgs(self, arg):
         """
@@ -370,7 +376,7 @@ class Device():
         for point in self.points:
             if point.properties.name == name:
                 return point
-        return None
-
+        raise ValueError("%s doesn't exist in controller" % name)
+        
     def __repr__(self):
         return '%s' % self.name

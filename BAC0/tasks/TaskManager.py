@@ -35,7 +35,7 @@ class Task(Thread):
 
     def run(self):
         # Get lock to synchronize threads
-        print("Starting " + self.name)
+        #print("Starting " + self.name)
         # print_time(self.name)
         self.process()
         try:
@@ -46,7 +46,7 @@ class Task(Thread):
         self.beforeStop()
         if self in Manager.taskList:
             Manager.taskList.remove(self)
-        print("Exiting " + self.name)
+        #print("Exiting " + self.name)
 
     def process(self):
         # if self.started = True
