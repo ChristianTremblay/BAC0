@@ -37,7 +37,7 @@ from collections import defaultdict
 from threading import Event
 from queue import Queue
 
-from ..io.IOExceptions import WriteAccessDenied
+from ..io.IOExceptions import WriteAccessDenied, NoResponseFromController
 
 # some debugging
 _DEBUG = 0
@@ -174,13 +174,14 @@ class ScriptApplication(BIPSimpleApplication):
                 evt = Event()
                 self.ResponseQueue.put((None, evt))
                 evt.wait()
-                raise WriteAccessDenied
+                raise WriteAccessDenied('Cannot write to point')
 
         elif isinstance(apdu, AbortPDU):
             print('Abort PDU')
             evt = Event()
             self.ResponseQueue.put((None, evt))
             evt.wait()
+            raise NoResponseFromController('Abort PDU received')
 
         if isinstance(apdu, SimpleAckPDU):
             evt = Event()

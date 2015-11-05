@@ -25,5 +25,7 @@ class Match(Task):
     def task(self):
         self.status._setitem(self.command.value)        
         
-    def beforeStop(self):
-        self.status = 'auto'
+    def stop(self):
+        self.status._setitem('auto')
+        self.exitFlag = True
+

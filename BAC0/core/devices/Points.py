@@ -143,7 +143,7 @@ class Point():
             (self.properties.device.addr, self.properties.type, str(
                 self.properties.address), prop, str(value), str(priority)))
         except Exception:
-           raise NoResponseFromController
+           raise NoResponseFromController()
         
         # Read after the write so history gets updated.
         self.value
@@ -263,7 +263,7 @@ class Point():
                 command=point, status=self, delay=delay)
             self._match_task.task.start()
             self._match_task.running = True
-        elif self._match_task.running:
+        elif self._match_task.running and delay > 0:
             self._match_task.task.stop()
             self._match_task.running = False
             time.sleep(1)
@@ -271,6 +271,9 @@ class Point():
                 command=point, status=self, delay=delay)
             self._match_task.task.start()
             self._match_task.running = True
+        elif self._match_task.running and delay == 0:
+            self._match_task.task.stop()
+            self._match_task.running = False
         else:
             raise RuntimeError('Stop task before redefining it')
             
@@ -307,6 +310,8 @@ class NumericPoint(Point):
                 self._setitem(value)
         else:
             try:
+                if isinstance(value,Point):
+                    value = value.history[-1]
                 val = float(value)
                 if isinstance(val, float):
                     self._setitem(value)
@@ -314,7 +319,7 @@ class NumericPoint(Point):
                 raise ValueError('Value must be numeric')
 
     def __repr__(self):
-        return '%s : %.2f %s' % (self.properties.name, self.value, self.properties.units_state)
+        return '%s : %.2f %s' % (self.properties.name, self.history[-1], self.properties.units_state)
         
     def __add__(self,other):
         return self.value + other
@@ -381,7 +386,7 @@ class BooleanPoint(Point):
         """
         returns : (boolean) Value
         """
-        if self.value == 'active':
+        if self.history[-1] == 'active':
             self._key = 1
             self._boolKey = True
         else:
@@ -446,7 +451,7 @@ class EnumPoint(Point):
         """
         returns: (str) Enum state value
         """
-        return self.properties.units_state[int(self.value) - 1]
+        return self.properties.units_state[int(self.history[-1]) - 1]
 
     @property
     def units(self):
@@ -468,4 +473,4 @@ class EnumPoint(Point):
         return '%s : %s' % (self.properties.name, self.enumValue)
 
     def __eq__(self,other):
-        return self.value == other
+        return self.value == self.properties.units_state.index(other) + 1

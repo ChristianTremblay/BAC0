@@ -7,6 +7,7 @@
 #from ..functions.discoverPoints import discoverPoints
 
 from .Points import NumericPoint, BooleanPoint, EnumPoint
+from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied
 
 try:
     import pandas as pd
@@ -222,7 +223,7 @@ class Device():
         :returns: (Point) the point (can be Numeric, Boolean or Enum)
         """
         # Read point value and store it
-        self._findPoint(key).value
+        #self._findPoint(key).value
         # return the point itself
         return self._findPoint(key)
         
@@ -285,9 +286,13 @@ class Device():
         If pandas can't be found, df will be a simple array
 
         """
-        pss = self.network.read(
-            '%s device %s protocolServicesSupported' %
-            (self.addr, self.deviceID))
+        try:
+            pss = self.network.read(
+                '%s device %s protocolServicesSupported' %
+                (self.addr, self.deviceID))
+        except NoResponseFromController as error:
+            print('Controller not found, aborting. (%s)' % error)
+            return ('Not Found', '', [], [], [])
         deviceName = self.network.read(
             '%s device %s objectName' %
             (self.addr, self.deviceID))
@@ -375,6 +380,7 @@ class Device():
         """
         for point in self.points:
             if point.properties.name == name:
+                point.value
                 return point
         raise ValueError("%s doesn't exist in controller" % name)
         
