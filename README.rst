@@ -22,29 +22,41 @@ How to use it
 Example::
 
     import BAC0
-    bacnet = BAC0.ReadWriteScript()
+    bacnet = BAC0.connect()
+    # or specify the IP you want to use / bacnet = BAC0.connect(ip='192.168.1.10')
 
     # Define a controller (this one is on MSTP #3, MAC addr 4, device ID 5504)    
     mycontroller = BAC0.device('3:4', 5504, bacnet)
 
-    # Simulate an input (out_of_service -> true)
-    # Use 10 as the value for pointName
-    mycontroller.sim('pointName 10')
+    """
+    Access point value
+    """
+    mycontroller['point_name']
 
-    # Release the simulation
-    mycontroller.release('pointName')
+    """
+    Write to point value
+    If the point is an analog/multistate or binary value, it will try to write to the present value.
+    If this fails, it'll try with the relinquish default
+    
+    If the point is an input of some kind, it'll try a simulation which is :
+        - write out_of_service = True
+        - write to the present_value
 
-    # Release all simulated points
-    mycontroller.releaseAll()
+    If the point is an output of some kind, it'll override the point writing
+    to priority 8
+    """
+    mycontroller['point_name'] = value
 
-    # Write to a point
-    mycontroller.write('pointName active')
+    """
+    Automatic history
+    Each time a point is read or written to, the value is added to a history
+    table (a pandas Series). You can then easily see what happened to the 
+    point while your were making tests.
 
-    # Write to relinquish default
-    mycontroller.default('pointName 120')
-
-    # Read
-    mycontroller.read('pointName can be more than one word')
+    It's also easy to plot the result
+    """
+    his = mycontroller['point_name'].history
+    his.plot(ylim=[0,100])
 
 Now you can build simple tests using assert syntax for example and make your DDC code stronger.
 
@@ -74,24 +86,24 @@ How would I test that ?
 
 System Stopped Test Code::
 
-    mycontroller.write('OCC-SCHEDULE Unoccupied')
+    mycontroller['OCC-SCHEDULE'] = Unoccupied
     time.sleep(10)
-    assert mycontroller.read('SF-C').value() == 'Off'
-    assert mycontroller.read('MAD-O').value() == 0
-    assert mycontroller.read('RH-O').value() == 0
+    assert mycontroller['SF-C'] == False
+    assert mycontroller['MAD-O'] == 0
+    assert mycontroller['RH-O'] == 0
 
     # Simulate fan status as SF-C is Off
-    mycontroller.sim('SF-S Off')
+    mycontroller['SF-S'] = 'Off'
 
 Sytstem Started Test Code::
 
-    mycontroller.write('OCC-SCHEDULE Occupied')
+    mycontroller['OCC-SCHEDULE'] = 'Occupied'
     time.sleep(10)
-    assert mycontroller.read('SF-C').value() == 'On'
+    assert mycontroller['SF-C'] == 'On'
     # Give status
-    mycontroller.sim('SF-S On')
+    mycontroller['SF-S'] = 'On'
     time.sleep(15)
-    assert mycontroller.read('MAD-O') == mycontroller.read('MADMIN-POS')
+    assert mycontroller['MAD-O'] == mycontroller['MADMIN-POS']
 
 And so on...
 
@@ -101,37 +113,25 @@ instead of time.sleep() function (example read a value that tells actual mode is
 You can then test random temperature values, build functions that will simulate discharge air
 temperature depending on heatign or cooling stages... it's up to you !
 
-New
-===
-Version 0.96+ allow the use of points linked to a device. It's now possible to use BAC0
-in a more "framework" way. Once a device is created, all points are created inside the device.
-Each point also store a timeseries of every reading done since its creation so it is easy to 
-know what happened.
+Tasks
+=====
+POLLING
+Let's say you want to poll a point every 5 seconds to see later how the point reacted.
 
-Define controller and access points::
+mycontroller['point_name'].poll(delay=5)
 
-    import BAC0
-    %matplotlib inline 
-    bacnet = BAC0.ReadWriteScript()
+MATCH
+Let's say you want to automatically match the status of a point with the command
 
-    controller = BAC0.device('2:5',5,bacnet)
-
-    controller.get('nvoDO1')
-
-Create a polling thread that will read a list of points every 10 seconds::
-
-    from BAC0.tasks.Poll import Poll
-    pointsToPoll = [controller.get('nvoAI1'), controller.get('nvoAI2'), controller.get('nvoDO1')]
-    polling = Poll(pointsToPoll)
-    polling.start()
+mycontroller['status'].match(mycontroller['command'])
 
 Access a historyTable::
     
-    controller.get('nvoAI1').showHistoryTable()
+    controller['nvoAI1'].history
 
 Result example ::
 
-    fx.get('nvoAI1').showHistoryTable()
+    controller['nvoAI1'].history
     Out[8]:
     2015-09-20 21:41:37.093985    21.740000
     2015-09-20 21:42:23.672387    21.790001
@@ -148,11 +148,11 @@ Result example ::
 
 Show a chart::
 
-    controller.get('nvoAI1').chart()
+    controller['nvoAI1'].history.plot()
 
 Where to download
 =================
-http://christiantremblay.github.io/BAC0/
+https://github.com/ChristianTremblay/BAC0/
 
 What you need
 =============
