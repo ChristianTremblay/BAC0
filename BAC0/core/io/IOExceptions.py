@@ -43,6 +43,11 @@ class NoResponseFromController(Exception):
     """
     pass
 
+class WriteAccessDenied(Exception):
+    """
+    This exception is used when trying to write and controller refuse it.
+    """
+    pass
 
 class OutOfServiceNotSet(Exception):
     """

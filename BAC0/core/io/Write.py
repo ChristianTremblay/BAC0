@@ -35,7 +35,7 @@ from bacpypes.constructeddata import Array, Any
 
 from queue import Empty
 
-from .IOExceptions import WritePropertyCastError, NoResponseFromController, WritePropertyException
+from .IOExceptions import WritePropertyCastError, NoResponseFromController, WritePropertyException, WriteAccessDenied
 from ..functions.debug import log_debug, log_exception
 
 
@@ -57,7 +57,7 @@ class WriteProperty():
     A timeout of 2 seconds allow detection of invalid device or communciation
     errors.
     """
-    _TIMEOUT = 2
+    _TIMEOUT = 10
 
     def __init__(self):
         """ This function is a fake one so spyder can see local variables

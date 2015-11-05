@@ -37,6 +37,8 @@ from collections import defaultdict
 from threading import Event
 from queue import Queue
 
+from ..io.IOExceptions import WriteAccessDenied
+
 # some debugging
 _DEBUG = 0
 
@@ -166,9 +168,19 @@ class ScriptApplication(BIPSimpleApplication):
 
         if isinstance(apdu, Error):
             self.error = "%s" % (apdu.errorCode,)
+            
+            if self.error == 'writeAccessDenied':
+                print('%s : Try writing to relinquish default.' % self.error)
+                evt = Event()
+                self.ResponseQueue.put((None, evt))
+                evt.wait()
+                raise WriteAccessDenied
 
         elif isinstance(apdu, AbortPDU):
-            pass
+            print('Abort PDU')
+            evt = Event()
+            self.ResponseQueue.put((None, evt))
+            evt.wait()
 
         if isinstance(apdu, SimpleAckPDU):
             evt = Event()

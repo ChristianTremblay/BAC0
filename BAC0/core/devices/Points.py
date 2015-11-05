@@ -15,7 +15,7 @@ import time
 
 from ...tasks.Poll import Poll
 from ...tasks.Match import Match
-from ..io.IOExceptions import NoResponseFromController
+from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied
 
 
 class Point():
@@ -103,7 +103,8 @@ class Point():
         """
         Simple shortcut to plot function
         """
-        return self.history.replace(['inactive', 'active', False, True], [0, 1, 0, 1]).plot(args, title='%s / %s' % (self.properties.name, self.properties.description))
+        args = args.split()
+        return self.history.replace(['inactive', 'active', False, True], [0, 1, 0, 1]).plot('%s, title = %s / %s' % (args, self.properties.name, self.properties.description))
 
     def __getitem__(self, key):
         """
@@ -138,7 +139,7 @@ class Point():
 
         try:
             self.properties.device.network.write(
-            '%s %s %s %s %s' %
+            '%s %s %s %s %s %s' %
             (self.properties.device.addr, self.properties.type, str(
                 self.properties.address), prop, str(value), str(priority)))
         except Exception:
@@ -205,12 +206,8 @@ class Point():
                 raise ValueError(
                     'Value was not simulated or overridden, cannot release to auto')
             # analog value must be written to
-            try:
-                self.write(value)
-            except NoResponseFromController:
-                self.default(value)
-            else:
-                raise NoResponseFromController
+            self.write(value)
+                
         elif 'Output' in self.properties.type:
             # analog output must be overridden
             if str(value).lower() == 'auto':
@@ -306,15 +303,14 @@ class NumericPoint(Point):
         return self.properties.units_state
 
     def _set(self, value):
-        try:
-            val = float(value)
-            if isinstance(val, float):
+        if str(value).lower() == 'auto':
                 self._setitem(value)
-        except:
-            val = str(value)
-            if (val.lower() == 'auto'):
-                self._setitem(value)
-            else:
+        else:
+            try:
+                val = float(value)
+                if isinstance(val, float):
+                    self._setitem(value)
+            except:
                 raise ValueError('Value must be numeric')
 
     def __repr__(self):
