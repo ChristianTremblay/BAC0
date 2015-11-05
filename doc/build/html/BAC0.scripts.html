@@ -81,18 +81,18 @@ are allowed by inheritance as the class will extend WhoisIAm class.</p>
 <dd><p>Bases: <a class="reference internal" href="BAC0.core.functions.html#BAC0.core.functions.WhoisIAm.WhoisIAm" title="BAC0.core.functions.WhoisIAm.WhoisIAm"><code class="xref py py-class docutils literal"><span class="pre">BAC0.core.functions.WhoisIAm.WhoisIAm</span></code></a></p>
 <p>This class build a running bacnet application and will accept whois ans iam requests</p>
 <dl class="method">
+<dt id="BAC0.scripts.BasicScript.BasicScript.disconnect">
+<code class="descname">disconnect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.scripts.BasicScript.BasicScript.disconnect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to stop the application
+Free the socket using <code class="docutils literal"><span class="pre">handle_close()</span></code> function
+Stop the thread</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="BAC0.scripts.BasicScript.BasicScript.startApp">
 <code class="descname">startApp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.scripts.BasicScript.BasicScript.startApp" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is used to define the local device, including services supported.
 Once the application is defined, calls the _startAppThread which will handle the thread creation</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="BAC0.scripts.BasicScript.BasicScript.stopApp">
-<code class="descname">stopApp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.scripts.BasicScript.BasicScript.stopApp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Used to stop the application
-Free the socket using <code class="docutils literal"><span class="pre">handle_close()</span></code> function
-Stop the thread</p>
 </dd></dl>
 
 </dd></dl>
@@ -129,7 +129,7 @@ bacnet.read(&#39;2:5 analogInput 1 presentValue)
 </div>
 <dl class="class">
 <dt id="BAC0.scripts.ReadWriteScript.ReadWriteScript">
-<em class="property">class </em><code class="descclassname">BAC0.scripts.ReadWriteScript.</code><code class="descname">ReadWriteScript</code><span class="sig-paren">(</span><em>localIPAddr=None</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.scripts.ReadWriteScript.ReadWriteScript" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">BAC0.scripts.ReadWriteScript.</code><code class="descname">ReadWriteScript</code><span class="sig-paren">(</span><em>ip=None</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.scripts.ReadWriteScript.ReadWriteScript" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#BAC0.scripts.BasicScript.BasicScript" title="BAC0.scripts.BasicScript.BasicScript"><code class="xref py py-class docutils literal"><span class="pre">BAC0.scripts.BasicScript.BasicScript</span></code></a>, <a class="reference internal" href="BAC0.core.io.html#BAC0.core.io.Read.ReadProperty" title="BAC0.core.io.Read.ReadProperty"><code class="xref py py-class docutils literal"><span class="pre">BAC0.core.io.Read.ReadProperty</span></code></a>, <a class="reference internal" href="BAC0.core.io.html#BAC0.core.io.Write.WriteProperty" title="BAC0.core.io.Write.WriteProperty"><code class="xref py py-class docutils literal"><span class="pre">BAC0.core.io.Write.WriteProperty</span></code></a>, <a class="reference internal" href="BAC0.core.io.html#BAC0.core.io.Simulate.Simulation" title="BAC0.core.io.Simulate.Simulation"><code class="xref py py-class docutils literal"><span class="pre">BAC0.core.io.Simulate.Simulation</span></code></a></p>
 <p>This class build a running bacnet application and will accept read ans write requests
 Whois and IAm function are also possible as they are implemented in the BasicScript class.</p>

@@ -90,14 +90,6 @@ with the device on the network</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="BAC0.core.devices.Device.Device.buildPointList">
-<code class="descname">buildPointList</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.devices.Device.Device.buildPointList" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read all points of the device and creates a dataframe (Pandas) to store
-the list and allow quick access.
-This list will be used to access variables based on point name</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="BAC0.core.devices.Device.Device.default">
 <code class="descname">default</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.devices.Device.Device.default" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write to relinquish default value of a point of a device</p>
@@ -144,7 +136,7 @@ This list will be used to access variables based on point name</p>
 <dl class="method">
 <dt id="BAC0.core.devices.Device.Device.read">
 <code class="descname">read</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="headerlink" href="#BAC0.core.devices.Device.Device.read" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read a point from a device</p>
+<dd><p>Read presentValue of a point from a device</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -197,6 +189,14 @@ The point name will be added to the list of simulated points
 </tr>
 </tbody>
 </table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="BAC0.core.devices.Device.Device.simulated_points">
+<code class="descname">simulated_points</code><a class="headerlink" href="#BAC0.core.devices.Device.Device.simulated_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of simulated points
+Could be a generator ?
+Nice way to test</p>
 </dd></dl>
 
 <dl class="method">
