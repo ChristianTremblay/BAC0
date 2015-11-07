@@ -8,6 +8,9 @@
 
 from .Points import NumericPoint, BooleanPoint, EnumPoint
 from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied
+from ...tasks.Poll import DevicePoll
+
+from collections import namedtuple
 
 try:
     import pandas as pd
@@ -40,6 +43,10 @@ class Device():
 
         self.simPoints = []
         self.points = []
+        
+        self._polling_task = namedtuple('_polling_task', ['task', 'running'])
+        self._polling_task.task = None
+        self._polling_task.running = False
 
         self._buildPointList()
     
@@ -79,6 +86,38 @@ class Device():
         except KeyError:
             raise Exception('Unknown point name : %s' % pointName)
         return val
+        
+    def read_multiple(self, point_list, chunk_length=25):  
+        def chunks(thing, chunk_length):
+            """Iterate through thing in chunks of size chunk_length.
+        
+            Note that the last chunk can be smaller than chunk_length.
+            """
+            for i in range(0, len(thing), chunk_length):
+                yield thing[i:i+chunk_length]                              
+        
+        for batch in chunks(point_list,chunk_length): 
+            request = ''
+            points = []
+            str_list = []
+            for each in batch:
+                point = self._findPoint(each, force_read = False)
+                points.append(point)
+                str_list.append(' ' + point.properties.type)
+                str_list.append(' ' + str(point.properties.address))
+                str_list.append(' presentValue')
+                rpm_param = (''.join(str_list))  
+                request = '%s %s' % (self.addr, rpm_param)
+                #print('Request : %s' % request)
+            try:
+                val = self.network.readMultiple(request)
+            except KeyError as error:
+                raise Exception('Unknown point name : %s' % error)
+            points_values = zip(points, val)
+            for each in points_values:
+                each[0]._trend(each[1])
+        
+            
 
     def write(self, args):
         """
@@ -214,6 +253,33 @@ class Device():
         :returns: (Point) the point (can be Numeric, Boolean or Enum)
         """
         return self._findPoint(name)
+
+    def poll(self, command='start', *, delay=10):
+        """
+        Enable polling of a variable. Will be read every x seconds (delay=x sec)
+        Can be stopped by using point.poll('stop') or .poll(0) or .poll(False)
+        or by setting a delay = 0
+        """
+        if str(command).lower() == 'stop' \
+                or command == False \
+                or command == 0 \
+                or delay == 0:
+            if isinstance(self._polling_task.task, DevicePoll):
+                self._polling_task.task.stop()
+                self._polling_task.task = None
+                self._polling_task.running = False
+        elif self._polling_task.task is None:
+            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task.start()
+            self._polling_task.running = True
+        elif self._polling_task.running:
+            self._polling_task.task.stop()
+            self._polling_task.running = False
+            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task.start()
+            self._polling_task.running = True
+        else:
+            raise RuntimeError('Stop polling before redefining it')
         
     def __getitem__(self,key):
         """
@@ -226,6 +292,9 @@ class Device():
         #self._findPoint(key).value
         # return the point itself
         return self._findPoint(key)
+        
+    def __iter__(self):
+        pass
         
     def __setitem__(self, key, value):
         """
@@ -374,13 +443,14 @@ class Device():
         print('Ready!')
         return (deviceName, pss, objList, df, points)
 
-    def _findPoint(self, name):
+    def _findPoint(self, name, force_read = True):
         """
         Helper that retrieve point based on its name.
         """
         for point in self.points:
             if point.properties.name == name:
-                point.value
+                if force_read:
+                    point.value
                 return point
         raise ValueError("%s doesn't exist in controller" % name)
         

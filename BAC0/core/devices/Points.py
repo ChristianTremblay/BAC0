@@ -13,7 +13,7 @@ from datetime import datetime
 from collections import namedtuple
 import time
 
-from ...tasks.Poll import Poll
+from ...tasks.Poll import SimplePoll as Poll
 from ...tasks.Match import Match
 from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied
 
@@ -72,9 +72,12 @@ class Point():
         Retrieve value of the point
         """
         res = self.properties.device.read(self.properties.name)
+        self._trend(res)
+        return res
+        
+    def _trend(self, res):
         self._history.timestamp.append(datetime.now())
         self._history.value.append(res)
-        return res
 
     @property
     def units(self):

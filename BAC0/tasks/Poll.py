@@ -10,9 +10,9 @@ Repeat read function every delay
 
 from .TaskManager import Task
 
-class Poll(Task):
+class SimplePoll(Task):
     """
-    Will fit fan status with fan command
+    Start a polling task which is in fact a recurring read of the point.
     """
 
     def __init__(self, point, *, delay=10):
@@ -34,3 +34,26 @@ class Poll(Task):
 
     def task(self):
         self._point.value
+
+class DevicePoll(Task):
+    """
+    Start a polling task which is in fact a recurring read of 
+    a list of point using read property multiple.
+    """
+
+    def __init__(self, device, delay=10):
+        """
+        :param point: (BAC0.core.device.Points.Point) name of the point to read
+        :param delay: (int) Delay between reads in seconds, defaults = 10sec
+        
+        A delay cannot be < 5sec (there are risks of overloading the device)
+
+        :returns: Nothing
+        """
+        if delay < 5:
+            delay = 5
+        self._device = device
+        Task.__init__(self, delay=delay)
+
+    def task(self):
+        self._device.read_multiple(list(self._device._pointsDF.index), chunk_length=25)
