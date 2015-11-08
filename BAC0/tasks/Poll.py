@@ -56,4 +56,4 @@ class DevicePoll(Task):
         Task.__init__(self, delay=delay)
 
     def task(self):
-        self._device.read_multiple(list(self._device._pointsDF.index), chunk_length=25)
+        self._device.read_multiple(list(self._device.points_name), points_per_request=25)

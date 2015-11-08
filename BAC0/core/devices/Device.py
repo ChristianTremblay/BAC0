@@ -78,30 +78,30 @@ class Device():
         self.name = result[0]
         self.points = result[4]
 
-    def read(self, point_name):
-        """
-        Read presentValue of a point from a device
-        
-        Read will make requests for 1 point at a time which can lead to
-        bandwidth issues.
-
-        :param point_name: point name
-        :type point_name: str
-        :return: value read
-        :rtype: float
-        
-        :Example:
-        
-        device.read('point_name')
-        """
-        try:
-            val = self.network.read(
-                '%s %s %s presentValue' %
-                (self.addr, self._pointsDF.ix[point_name].pointType, str(
-                    self._pointsDF.ix[point_name].pointAddress)))
-        except KeyError:
-            raise Exception('Unknown point name : %s' % point_name)
-        return val
+#    def read(self, point_name):
+#        """
+#        Read presentValue of a point from a device
+#        
+#        Read will make requests for 1 point at a time which can lead to
+#        bandwidth issues.
+#
+#        :param point_name: point name
+#        :type point_name: str
+#        :return: value read
+#        :rtype: float
+#        
+#        :Example:
+#        
+#        device.read('point_name')
+#        """
+#        try:
+#            val = self.network.read(
+#                '%s %s %s presentValue' %
+#                (self.addr, self._pointsDF.ix[point_name].pointType, str(
+#                    self._pointsDF.ix[point_name].pointAddress)))
+#        except KeyError:
+#            raise Exception('Unknown point name : %s' % point_name)
+#        return val
         
     def _batches(self,request, points_per_request):
         """
@@ -117,17 +117,16 @@ class Device():
             
     def _rpm_request_by_name(self, point_list):
             points = []
-            str_list = []
             requests = []
             for each in point_list:
+                str_list = []
                 point = self._findPoint(each, force_read=False)
                 points.append(point)
                 str_list.append(' ' + point.properties.type)
                 str_list.append(' ' + str(point.properties.address))
                 str_list.append(' presentValue')
                 rpm_param = (''.join(str_list))
-                requests.append('%s %s' % (self.address, rpm_param))
-                #print('Request : %s' % request)
+                requests.append(rpm_param)
             return ((requests, points))
 
     def read_multiple(self, points_list, *, points_per_request=25, discover_request = (None,6)):
@@ -168,6 +167,7 @@ class Device():
             for request in self._batches(big_request[0],
                                          points_per_request):
                 try:
+                    request = ('%s %s' % (self.addr, ''.join(request)))
                     val = self.network.readMultiple(request)
                 except KeyError as error:
                     raise Exception('Unknown point name : %s' % error)
@@ -367,6 +367,14 @@ class Device():
         for each in self.points:
             yield each
 
+    @property
+    def points_name(self):
+        """
+        When iterating a device, iterate points of it.
+        """
+        for each in self.points:
+            yield each.properties.name
+
     def __setitem__(self, point_name, value):
         """
         Write, sim or ovr value
@@ -463,7 +471,7 @@ class Device():
             analog_request.append('%s %s objectName description presentValue units ' % 
                 (analog_points, address))
         #print(analog_request)
-        analog_points_info = self.read_multiple('',discover_request=(analog_request,4))
+        analog_points_info = self.read_multiple('',discover_request=(analog_request,4),points_per_request=5)
         #analog_points_info = zip(list_of_analog, analog_points_info)       
         #print(analog_points_info)
         i = 0
@@ -472,13 +480,8 @@ class Device():
             point_address = str(each[1])
             point_infos = str(analog_points_info[i]).replace("'",'').replace('[','').replace(']','').replace(',','')
             point = ('%s %s %s' % (point_type, point_address,point_infos))
-            #print(point)
             point = point.split()
-#            points.append(merge)
             i += 1
-#        for point in analog_points_info:
-            #print('New point : %s' % point)
-#            point
             points.append(
                         NumericPoint(
                             pointType=point[0],
@@ -495,17 +498,24 @@ class Device():
             multistate_request.append('%s %s objectName description presentValue stateText ' % 
                 (multistate_points, address))        
 
-        multistate_points_info = self.read_multiple('',discover_request=(multistate_request,4))
-        multistate_points_info = zip(list_of_multistate, multistate_points_info)
-        for point in multistate_points_info:
+        multistate_points_info = self.read_multiple('',discover_request=(multistate_request,4), points_per_request=5)
+
+        i = 0
+        for each in retrieve_type(objList, 'multi'):
+            point_type = str(each[0])
+            point_address = str(each[1])
+            point_infos = str(multistate_points_info[i]).replace("'",'').replace('[','').replace(']','').replace(',','')
+            point = ('%s %s %s' % (point_type, point_address,point_infos))
+            point = point.split()
+            i += 1
             points.append(
                         EnumPoint(
                             pointType=point[0],
                             pointAddress=point[1],
                             pointName=point[2],
                             description=point[3],
-                            presentValue=point[4],
-                            units_state=point[5],
+                            presentValue=(point[4]),
+                            units_state=point[5:],
                             device=self))
 
         binary_request = []
@@ -514,18 +524,25 @@ class Device():
             binary_request.append('%s %s objectName description presentValue inactiveText activeText ' % 
                 (binary_points, address))
                 
-        binary_points_info = self.read_multiple('',discover_request=(binary_request,5))
-        binary_points_info = zip(list_of_binary,binary_points_info)        
-        for point in binary_points_info:
+        binary_points_info = self.read_multiple('',discover_request=(binary_request,5), points_per_request=5)
+
+        i = 0
+        for each in retrieve_type(objList, 'binary'):
+            point_type = str(each[0])
+            point_address = str(each[1])
+            point_infos = str(binary_points_info[i]).replace("'",'').replace('[','').replace(']','').replace(',','')
+            point = ('%s %s %s' % (point_type, point_address,point_infos))
+            point = point.split()
+            i += 1
             points.append(
                         BooleanPoint(
                             pointType=point[0],
                             pointAddress=point[1],
                             pointName=point[2],
                             description=point[3],
-                            presentValue=point[4],
+                            presentValue=(point[4]),
                             units_state=(point[5], point[6]),
-                            device=self))        
+                            device=self))     
 
 #        for pointType, pointAddr in objList:
 #            if str(pointType) not in 'file calendar device schedule notificationClass eventLog trendLog loop program eventEnrollment' and not isinstance(

@@ -71,8 +71,15 @@ class Point():
         """
         Retrieve value of the point
         """
-        res = self.properties.device.read(self.properties.name)
-        self._trend(res)
+        try:
+            res = self.properties.device.network.read(
+                '%s %s %s presentValue' %
+                (self.properties.device.addr, self.properties.type, str(
+                    self.properties.address)))
+            self._trend(res)
+        except Exception:
+            raise Exception('Problem reading : %s' % self.properties.name)        
+        
         return res
         
     def _trend(self, res):
