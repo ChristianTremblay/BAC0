@@ -43,8 +43,8 @@ class DevicePoll(Task):
 
     def __init__(self, device, delay=10):
         """
-        :param point: (BAC0.core.device.Points.Point) name of the point to read
-        :param delay: (int) Delay between reads in seconds, defaults = 10sec
+        :param device: (BAC0.core.devices.Device.Device) device to poll
+        :param delay: (int) Delay between polls in seconds, defaults = 10sec
         
         A delay cannot be < 5sec (there are risks of overloading the device)
 

@@ -5,6 +5,9 @@
 #
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #from ..functions.discoverPoints import discoverPoints
+"""
+How to describe a bacnet device
+"""
 
 from .Points import NumericPoint, BooleanPoint, EnumPoint
 from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied
@@ -27,15 +30,18 @@ class Device():
     with the device on the network
     """
 
-    def __init__(self, addr, devId, network):
+    def __init__(self, address, device_id, network):
         """
         Initialization require address, device id and bacnetApp (the script itself)
         :param addr: address of the device (ex. '2:5')
-        :param devId: bacnet device ID (boid)
-        :param bacnetApp: the script itself
+        :param device_id: bacnet device ID (boid)
+        :param network: defined by BAC0.connect()
+        :type address: (str)
+        :type device_id: int
+        :type network: BAC0.scripts.ReadWriteScript.ReadWriteScript
         """
-        self.addr = addr
-        self.deviceID = devId
+        self.addr = address
+        self.device_id = device_id
         self.network = network
         self.pollDelay = 10
         self._pointsDF = pd.DataFrame()
@@ -43,21 +49,23 @@ class Device():
 
         self.simPoints = []
         self.points = []
-        
+
         self._polling_task = namedtuple('_polling_task', ['task', 'running'])
         self._polling_task.task = None
         self._polling_task.running = False
 
         self._buildPointList()
-    
+
     @property
     def simulated_points(self):
         """
-        Return a list of simulated points
-        Could be a generator ?
-        Nice way to test
+        iterate over simulated points
+        :returns: points if simulated (out_of_service == True)
+        :rtype: BAC0.core.devices.Points.Point
         """
-        raise Exception('Not implemented yet')
+        for each in self.points:
+            if each.properties.simulated:
+                yield each
 
     def _buildPointList(self):
         """
@@ -70,195 +78,234 @@ class Device():
         self.name = result[0]
         self.points = result[4]
 
-    def read(self, args):
+    def read(self, point_name):
         """
         Read presentValue of a point from a device
+        
+        Read will make requests for 1 point at a time which can lead to
+        bandwidth issues.
 
-        :param args: point name
-        :returns: value read
+        :param point_name: point name
+        :type point_name: str
+        :return: value read
+        :rtype: float
+        
+        :Example:
+        
+        device.read('point_name')
         """
-        pointName = args
         try:
             val = self.network.read(
                 '%s %s %s presentValue' %
-                (self.addr, self._pointsDF.ix[pointName].pointType, str(
-                    self._pointsDF.ix[pointName].pointAddress)))
+                (self.addr, self._pointsDF.ix[point_name].pointType, str(
+                    self._pointsDF.ix[point_name].pointAddress)))
         except KeyError:
-            raise Exception('Unknown point name : %s' % pointName)
+            raise Exception('Unknown point name : %s' % point_name)
         return val
+
+    def read_multiple(self, point_list, points_per_request=25):
+        """
+        Functions to read points from a device using the read property
+        multiple request.
+        Using readProperty request can be very slow to read a lot of data.
         
-    def read_multiple(self, point_list, chunk_length=25):  
-        def chunks(thing, chunk_length):
-            """Iterate through thing in chunks of size chunk_length.
+        :param point_list: (list) a list of all point_name as str
+        :param points_per_request: (int) number of points in the request
         
-            Note that the last chunk can be smaller than chunk_length.
+        Using too many points will create big requests needing segmentation.
+        It's better to use just enough request so the message will not require
+        segmentation. 
+        
+        :Example:
+        
+        device.read_multiple(['point1', 'point2', 'point3'], points_per_request = 10)
+        """        
+        def _batches(request, points_per_request):
             """
-            for i in range(0, len(thing), chunk_length):
-                yield thing[i:i+chunk_length]                              
-        
-        for batch in chunks(point_list,chunk_length): 
+            Generator that creates request batches. 
+            Each batch will contain a maximum of
+            "points_per_request" points to read.
+            :params: request a list of point_name as a list
+            :params: (int) points_per_request
+            :returns: (iter) list of point_name of size <= points_per_request
+            """
+            for i in range(0, len(request), points_per_request):
+                yield request[i:i + points_per_request]
+
+        for batch in _batches(point_list, points_per_request):
             request = ''
             points = []
             str_list = []
             for each in batch:
-                point = self._findPoint(each, force_read = False)
+                point = self._findPoint(each, force_read=False)
                 points.append(point)
                 str_list.append(' ' + point.properties.type)
                 str_list.append(' ' + str(point.properties.address))
                 str_list.append(' presentValue')
-                rpm_param = (''.join(str_list))  
+                rpm_param = (''.join(str_list))
                 request = '%s %s' % (self.addr, rpm_param)
                 #print('Request : %s' % request)
             try:
                 val = self.network.readMultiple(request)
             except KeyError as error:
                 raise Exception('Unknown point name : %s' % error)
+            # Save each value to history of each point
             points_values = zip(points, val)
             for each in points_values:
                 each[0]._trend(each[1])
-        
-            
 
-    def write(self, args):
-        """
-        Write to present value of a point of a device
+#    def write(self, args):
+#        """
+#        Write to present value of a point of a device
+#
+#        :param args: (str) pointName value (both info in same string)
+#
+#        """
+#        pointName, value = self._convert_write_arguments(args)
+#        try:
+#            self.network.write(
+#                '%s %s %s presentValue %s' %
+#                (self.addr, self._pointsDF.ix[pointName].pointType, str(
+#                    self._pointsDF.ix[pointName].pointAddress), value))
+#        except KeyError:
+#            raise Exception('Unknown point name : %s' % pointName)
+#
+#    def default(self, args):
+#        """
+#        Write to relinquish default value of a point of a device
+#
+#        :param args: (str) pointName value (both info in same string)
+#
+#        """
+#        pointName, value = self._convert_write_arguments(args)
+#        # Accept boolean value
+#        try:
+#            self.network.write(
+#                '%s %s %s relinquishDefault %s' %
+#                (self.addr, self._pointsDF.ix[pointName].pointType, str(
+#                    self._pointsDF.ix[pointName].pointAddress), value))
+#        except KeyError:
+#            raise Exception('Unknown point name : %s' % pointName)
+#
+#    def sim(self, args):
+#        """
+#        Simulate a value
+#        Will write to out_of_service property (true)
+#        Will then write the presentValue so the controller will use that value
+#        The point name will be added to the list of simulated points
+#        (self.simPoints)
+#
+#        :param args: (str) pointName value (both info in same string)
+#
+#        """
+#        pointName, value = self._convert_write_arguments(args)
+#        try:
+#            self.network.sim(
+#                '%s %s %s presentValue %s' %
+#                (self.addr, self._pointsDF.ix[pointName].pointType, str(
+#                    self._pointsDF.ix[pointName].pointAddress), value))
+#            if pointName not in self.simPoints:
+#                self.simPoints.append(pointName)
+#        except KeyError:
+#            raise Exception('Unknown point name : %s' % pointName)
+#
+#    # TODO : Move this function inside Point
+#    # New function shoudl iterate points and call point.release
+#    def releaseAllSim(self):
+#        """
+#        Release all points stored in the self.simPoints variable
+#        Will write to out_of_service property (false)
+#        The controller will take control back of the presentValue
+#        """
+#        for pointName in self.simPoints:
+#            try:
+#                self.network.release(
+#                    '%s %s %s' %
+#                    (self.addr, self._pointsDF.ix[pointName].pointType, str(
+#                        self._pointsDF.ix[pointName].pointAddress)))
+#                if pointName in self.simPoints:
+#                    self.simPoints.pop(pointName)
+#            except KeyError:
+#                raise Exception('Unknown point name : %s' % pointName)
+#
+#    def release(self, args):
+#        """
+#        Release points
+#        Will write to out_of_service property (false)
+#        The controller will take control back of the presentValue
+#
+#        :param args: (str) pointName
+#        """
+#
+#        pointName = args
+#        try:
+#            self.network.release(
+#                '%s %s %s' %
+#                (self.addr, self._pointsDF.ix[pointName].pointType, str(
+#                    self._pointsDF.ix[pointName].pointAddress)))
+#            if pointName in self.simPoints:
+#                self.simPoints.remove(pointName)
+#        except KeyError:
+#            raise Exception('Unknown point name : %s' % pointName)
+#
+#    def ovr(self, args):
+#        """
+#        Override the output (Make manual operator command on point at priority 8)
+#
+#        :param args: (str) pointName value (both info in same string)
+#
+#        """
+#        pointName, value = self._convert_write_arguments(args)
+#        try:
+#            self.network.write(
+#                '%s %s %s presentValue %s - 8' %
+#                (self.addr, self._pointsDF.ix[pointName].pointType, str(
+#                    self._pointsDF.ix[pointName].pointAddress), value))
+#        except KeyError:
+#            raise Exception('Unknown point name : %s' % pointName)
+#
+#    def auto(self, args):
+#        """
+#        Release the override on the output (Write null on point at priority 8)
+#
+#        :param args: (str) pointName value (both info in same string)
+#
+#        """
+#        pointName = args
+#        try:
+#            self.network.write(
+#                '%s %s %s presentValue null - 8' %
+#                (self.addr, self._pointsDF.ix[pointName].pointType, str(
+#                    self._pointsDF.ix[pointName].pointAddress)))
+#        except KeyError:
+#            raise Exception('Unknown point name : %s' % pointName)
 
-        :param args: (str) pointName value (both info in same string)
-
-        """
-        pointName, value = self._convert_write_arguments(args)
-        try:
-            self.network.write(
-                '%s %s %s presentValue %s' %
-                (self.addr, self._pointsDF.ix[pointName].pointType, str(
-                    self._pointsDF.ix[pointName].pointAddress), value))
-        except KeyError:
-            raise Exception('Unknown point name : %s' % pointName)
-
-    def default(self, args):
-        """
-        Write to relinquish default value of a point of a device
-
-        :param args: (str) pointName value (both info in same string)
-
-        """
-        pointName, value = self._convert_write_arguments(args)
-        # Accept boolean value
-        try:
-            self.network.write(
-                '%s %s %s relinquishDefault %s' %
-                (self.addr, self._pointsDF.ix[pointName].pointType, str(
-                    self._pointsDF.ix[pointName].pointAddress), value))
-        except KeyError:
-            raise Exception('Unknown point name : %s' % pointName)
-
-    def sim(self, args):
-        """
-        Simulate a value
-        Will write to out_of_service property (true)
-        Will then write the presentValue so the controller will use that value
-        The point name will be added to the list of simulated points
-        (self.simPoints)
-
-        :param args: (str) pointName value (both info in same string)
-
-        """
-        pointName, value = self._convert_write_arguments(args)
-        try:
-            self.network.sim(
-                '%s %s %s presentValue %s' %
-                (self.addr, self._pointsDF.ix[pointName].pointType, str(
-                    self._pointsDF.ix[pointName].pointAddress), value))
-            if pointName not in self.simPoints:
-                self.simPoints.append(pointName)
-        except KeyError:
-            raise Exception('Unknown point name : %s' % pointName)
-
-    # TODO : Move this function inside Point
-    # New function shoudl iterate points and call point.release
-    def releaseAllSim(self):
-        """
-        Release all points stored in the self.simPoints variable
-        Will write to out_of_service property (false)
-        The controller will take control back of the presentValue
-        """
-        for pointName in self.simPoints:
-            try:
-                self.network.release(
-                    '%s %s %s' %
-                    (self.addr, self._pointsDF.ix[pointName].pointType, str(
-                        self._pointsDF.ix[pointName].pointAddress)))
-                if pointName in self.simPoints:
-                    self.simPoints.pop(pointName)
-            except KeyError:
-                raise Exception('Unknown point name : %s' % pointName)
-
-    def release(self, args):
-        """
-        Release points
-        Will write to out_of_service property (false)
-        The controller will take control back of the presentValue
-
-        :param args: (str) pointName
-        """
-
-        pointName = args
-        try:
-            self.network.release(
-                '%s %s %s' %
-                (self.addr, self._pointsDF.ix[pointName].pointType, str(
-                    self._pointsDF.ix[pointName].pointAddress)))
-            if pointName in self.simPoints:
-                self.simPoints.remove(pointName)
-        except KeyError:
-            raise Exception('Unknown point name : %s' % pointName)
-
-    def ovr(self, args):
-        """
-        Override the output (Make manual operator command on point at priority 8)
-
-        :param args: (str) pointName value (both info in same string)
-
-        """
-        pointName, value = self._convert_write_arguments(args)
-        try:
-            self.network.write(
-                '%s %s %s presentValue %s - 8' %
-                (self.addr, self._pointsDF.ix[pointName].pointType, str(
-                    self._pointsDF.ix[pointName].pointAddress), value))
-        except KeyError:
-            raise Exception('Unknown point name : %s' % pointName)
-
-    def auto(self, args):
-        """
-        Release the override on the output (Write null on point at priority 8)
-
-        :param args: (str) pointName value (both info in same string)
-
-        """
-        pointName = args
-        try:
-            self.network.write(
-                '%s %s %s presentValue null - 8' %
-                (self.addr, self._pointsDF.ix[pointName].pointType, str(
-                    self._pointsDF.ix[pointName].pointAddress)))
-        except KeyError:
-            raise Exception('Unknown point name : %s' % pointName)
-
-    def get(self, name):
-        """
-        Get a point based on its name
-
-        :param name: (str) pointName
-        :returns: (Point) the point (can be Numeric, Boolean or Enum)
-        """
-        return self._findPoint(name)
+#    def get(self, point_name):
+#        """
+#        Get a point based on its name
+#
+#        :param point_name: (str) Name of the point
+#        :type point_name: str        
+#       :returns: (Point) the point (can be Numeric, Boolean or Enum)
+#        """
+#        return self._findPoint(point_name)
 
     def poll(self, command='start', *, delay=10):
         """
         Enable polling of a variable. Will be read every x seconds (delay=x sec)
         Can be stopped by using point.poll('stop') or .poll(0) or .poll(False)
         or by setting a delay = 0
+        
+        :param command: (str) start or stop polling
+        :param delay: (int) time delay between polls in seconds
+        :type command: str
+        :type delay: int
+        
+        :Example:
+        
+        device.poll()
+        device.poll('stop')
+        device.poll(delay = 5)
         """
         if str(command).lower() == 'stop' \
                 or command == False \
@@ -280,29 +327,38 @@ class Device():
             self._polling_task.running = True
         else:
             raise RuntimeError('Stop polling before redefining it')
-        
-    def __getitem__(self,key):
+
+    def __getitem__(self, point_name):
         """
         Get a point based on its name
 
-        :param name: (str) pointName
+        :param point_name: (str) name of the point
+        :type point_name: str        
         :returns: (Point) the point (can be Numeric, Boolean or Enum)
         """
-        # Read point value and store it
-        #self._findPoint(key).value
-        # return the point itself
-        return self._findPoint(key)
-        
+        return self._findPoint(point_name)
+
     def __iter__(self):
-        pass
-        
-    def __setitem__(self, key, value):
+        """
+        When iterating a device, iterate points of it.
+        """
+        for each in self.points:
+            yield each
+
+    def __setitem__(self, point_name, value):
         """
         Write, sim or ovr value
+        :param point_name: Name of the point to set
+        :param value: value to write to the point
+        :type point_name: str
+        :type value: float
         """
-        self._findPoint(key)._set(value)
+        self._findPoint(point_name)._set(value)
 
     def __len__(self):
+        """
+        Will return number of points available
+        """
         return len(self.points)
 
     def _parseArgs(self, arg):
@@ -315,37 +371,34 @@ class Device():
         value = args[-1]
         return (pointName, value)
 
-    def _convert_write_arguments(self, args):
-        """
-        This allow the use of enum state or boolean state for wirting to points
-        ex. device.write('name True') instead of device.write('name active')
-        """
-        #TODO : Verify value is float or int for analog        
-        pointName, value = self._parseArgs(args)
-        # Accept boolean value
-        if 'binary' in self._pointsDF.ix[pointName].pointType:
-            if value.lower() == 'false':
-                value = 'inactive'
-            elif value.lower() == 'true':
-                value = 'active'
-        # Accept states as value if multiState
-        if 'multiState' in self._pointsDF.ix[pointName].pointType:
-            state_list = [states.lower() for states in self._pointsDF.ix[
-                pointName].units_state]
-            if value.lower() in state_list:
-                value = state_list.index(value.lower()) + 1
-        return (pointName, value)
+#    def _convert_write_arguments(self, args):
+#        """
+#        This allow the use of enum state or boolean state for wirting to points
+#        ex. device.write('name True') instead of device.write('name active')
+#        """
+#        # TODO : Verify value is float or int for analog
+#        pointName, value = self._parseArgs(args)
+#        # Accept boolean value
+#        if 'binary' in self._pointsDF.ix[pointName].pointType:
+#            if value.lower() == 'false':
+#                value = 'inactive'
+#            elif value.lower() == 'true':
+#                value = 'active'
+#        # Accept states as value if multiState
+#        if 'multiState' in self._pointsDF.ix[pointName].pointType:
+#            state_list = [states.lower() for states in self._pointsDF.ix[
+#                pointName].units_state]
+#            if value.lower() in state_list:
+#                value = state_list.index(value.lower()) + 1
+#        return (pointName, value)
 
     def _discoverPoints(self):
         """
         This function allows the discovery of all bacnet points in a device
 
-        :param bacnetApp: The app itself so we can call read
-        :param address: address of the device as a string (ex. '2:5')
-        :param devID: device ID of the bacnet device as a string (ex. '1001')
-
-        :returns: a tuple with deviceName, pss, objList, df
-
+        :returns: (deviceName, pss, objList, df)
+        :rtype: tuple
+        
         *deviceName* : name of the device
         *pss* : protocole service supported
         *objList* : list of bacnet object (ex. analogInput, 1)
@@ -358,17 +411,17 @@ class Device():
         try:
             pss = self.network.read(
                 '%s device %s protocolServicesSupported' %
-                (self.addr, self.deviceID))
+                (self.addr, self.device_id))
         except NoResponseFromController as error:
             print('Controller not found, aborting. (%s)' % error)
             return ('Not Found', '', [], [], [])
         deviceName = self.network.read(
             '%s device %s objectName' %
-            (self.addr, self.deviceID))
+            (self.addr, self.device_id))
         print('Found %s... building points list' % deviceName)
         objList = self.network.read(
             '%s device %s objectList' %
-            (self.addr, self.deviceID))
+            (self.addr, self.device_id))
         newLine = []
         result = []
         points = []
@@ -435,17 +488,24 @@ class Device():
                     'pointName',
                     'description',
                     'presentValue',
-                    'units_state']).set_index(
-                ['pointName'])
+                    'units_state']).set_index(['pointName'])
         else:
             df = result
 
         print('Ready!')
         return (deviceName, pss, objList, df, points)
 
-    def _findPoint(self, name, force_read = True):
+    def _findPoint(self, name, force_read=True):
         """
         Helper that retrieve point based on its name.
+        
+        :param name: (str) name of the point
+        :param force_read: (bool) read value of the point each time the func
+                            is called.
+        :returns: Point object
+        :rtype: BAC0.core.devices.Point.Point (NumericPoint, EnumPoint or
+        BooleanPoint)
+        
         """
         for point in self.points:
             if point.properties.name == name:
@@ -453,6 +513,6 @@ class Device():
                     point.value
                 return point
         raise ValueError("%s doesn't exist in controller" % name)
-        
+
     def __repr__(self):
         return '%s' % self.name
