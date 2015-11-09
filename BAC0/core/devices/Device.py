@@ -24,12 +24,13 @@ class Device():
     with the device on the network
     """
 
-    def __init__(self, address, device_id, network):
+    def __init__(self, address, device_id, network, *, poll=10):
         """
         Initialization require address, device id and bacnetApp (the script itself)
         :param addr: address of the device (ex. '2:5')
         :param device_id: bacnet device ID (boid)
         :param network: defined by BAC0.connect()
+        :param poll: (int) if > 0, will poll every points each x seconds.
         :type address: (str)
         :type device_id: int
         :type network: BAC0.scripts.ReadWriteScript.ReadWriteScript
@@ -52,6 +53,8 @@ class Device():
         self._polling_task.running = False
         
         self._buildPointList()
+        if poll > 0:
+            self.poll()
 
     @property
     def simulated_points(self):
@@ -146,17 +149,20 @@ class Device():
             return values
         else:
             big_request = self._rpm_request_by_name(points_list)
+            i = 0
             for request in self._batches(big_request[0],
                                          points_per_request):
                 try:
                     request = ('%s %s' % (self.properties.address, ''.join(request)))
                     val = self.properties.network.readMultiple(request)
+                    points_values = zip(big_request[1][i:i+len(val)], val)
+                    i += len(val)
+                    for each in points_values:
+                        each[0]._trend(each[1])
                 except KeyError as error:
                     raise Exception('Unknown point name : %s' % error)
                 # Save each value to history of each point
-                points_values = zip(big_request[1], val)
-                for each in points_values:
-                    each[0]._trend(each[1])
+                
 
     def poll(self, command='start', *, delay=10):
         """
@@ -183,18 +189,22 @@ class Device():
                 self._polling_task.task.stop()
                 self._polling_task.task = None
                 self._polling_task.running = False
+                print('Polling stopped')
         elif self._polling_task.task is None:
             self._polling_task.task = DevicePoll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
+            print('Polling started, every values read each %s seconds' % delay)
         elif self._polling_task.running:
             self._polling_task.task.stop()
             self._polling_task.running = False
             self._polling_task.task = DevicePoll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
+            print('Polling started, every values read each %s seconds' % delay)
         else:
             raise RuntimeError('Stop polling before redefining it')
+        
 
     def __getitem__(self, point_name):
         """
