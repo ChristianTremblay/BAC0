@@ -72,9 +72,9 @@ class Point():
         Retrieve value of the point
         """
         try:
-            res = self.properties.device.network.read(
+            res = self.properties.device.properties.network.read(
                 '%s %s %s presentValue' %
-                (self.properties.device.addr, self.properties.type, str(
+                (self.properties.device.properties.address, self.properties.type, str(
                     self.properties.address)))
             self._trend(res)
         except Exception:
@@ -148,9 +148,9 @@ class Point():
                 raise ValueError('Priority must be a number between 1 and 16')
 
         try:
-            self.properties.device.network.write(
+            self.properties.device.properties.network.write(
             '%s %s %s %s %s %s' %
-            (self.properties.device.addr, self.properties.type, str(
+            (self.properties.device.properties.address, self.properties.type, str(
                 self.properties.address), prop, str(value), str(priority)))
         except Exception:
            raise NoResponseFromController()
@@ -177,9 +177,9 @@ class Point():
                 and force == False:
             pass
         else:
-            self.properties.device.network.sim(
+            self.properties.device.properties.network.sim(
                 '%s %s %s presentValue %s' %
-                (self.properties.device.addr, self.properties.type, str(
+                (self.properties.device.properties.address, self.properties.type, str(
                     self.properties.address), str(value)))
             self.properties.simulated = (True, value)
 
@@ -189,9 +189,9 @@ class Point():
         Will write to out_of_service property (false)
         The controller will take control back of the presentValue
         """
-        self.properties.device.network.release(
+        self.properties.device.properties.network.release(
             '%s %s %s' %
-            (self.properties.device.addr, self.properties.type, str(
+            (self.properties.device.properties.address, self.properties.type, str(
                 self.properties.address)))
         self.properties.simulated = False
 
@@ -380,9 +380,15 @@ class BooleanPoint(Point):
 
     @property
     def value(self):
-        res = self.properties.device.read(self.properties.name)
-        self._history.timestamp.append(datetime.now())
-        self._history.value.append(res)
+        try:
+            res = self.properties.device.properties.network.read(
+                '%s %s %s presentValue' %
+                (self.properties.device.properties.address, self.properties.type, str(
+                    self.properties.address)))
+            self._trend(res)
+        except Exception:
+            raise Exception('Problem reading : %s' % self.properties.name)        
+        
         if res == 'inactive':
             self._key = 0
             self._boolKey = False
