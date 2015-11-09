@@ -20,10 +20,11 @@ class Match(Task):
     def __init__(self, command = None, status = None, delay=5):        
         self.command = command
         self.status = status
-        Task.__init__(self, delay=(delay+randint(0,9)/10))
+        Task.__init__(self, delay=delay)
 
     def task(self):
-        self.status._setitem(self.command.value)        
+        if  self.status.history[-1] != self.command.history[-1]:
+            self.status._setitem(self.command.history[-1])        
         
     def stop(self):
         self.status._setitem('auto')

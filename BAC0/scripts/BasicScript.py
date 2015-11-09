@@ -118,6 +118,7 @@ class BasicScript(WhoisIAm):
             pss['iAm'] = 1
             pss['readProperty'] = 1
             pss['writeProperty'] = 1
+            pss['readPropertyMultiple'] = 1
 
             # set the property value to be just the bits
             self.this_device.protocolServicesSupported = pss.value

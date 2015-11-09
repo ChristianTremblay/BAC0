@@ -25,7 +25,7 @@ class Device():
     with the device on the network
     """
 
-    def __init__(self, address, device_id, network, *, poll=0):
+    def __init__(self, address, device_id, network, *, poll=10):
         """
         Initialization require address, device id and bacnetApp (the script itself)
         :param addr: address of the device (ex. '2:5')
@@ -85,7 +85,7 @@ class Device():
             '%s device %s objectName' %
             (self.properties.address, self.properties.device_id))
         print('Found %s... building points list' % self.properties.name)
-        self.object_list, self.points = self._discoverPoints()
+        self.properties.objects_list, self.points = self._discoverPoints()
 
     def _batches(self, request, points_per_request):
         """
@@ -144,8 +144,10 @@ class Device():
             for request in self._batches(big_request,
                                          points_per_request):
                 try:
+                    
                     request = ('%s %s' %
                                (self.properties.address, ''.join(request)))
+                                        
                     val = self.properties.network.readMultiple(request)
                 except KeyError as error:
                     raise Exception('Unknown point name : %s' % error)
@@ -296,7 +298,7 @@ class Device():
         analog_request = []
         list_of_analog = retrieve_type(objList, 'analog')
         for analog_points, address in list_of_analog:
-            analog_request.append('%s %s objectName description presentValue units ' %
+            analog_request.append('%s %s objectName presentValue units description ' %
                                   (analog_points, address))
         analog_points_info = self.read_multiple(
             '', discover_request=(analog_request, 4), points_per_request=5)
@@ -304,25 +306,22 @@ class Device():
         for each in retrieve_type(objList, 'analog'):
             point_type = str(each[0])
             point_address = str(each[1])
-            point_infos = str(analog_points_info[i]).replace(
-                "'", '').replace('[', '').replace(']', '').replace(',', '')
-            point = ('%s %s %s' % (point_type, point_address, point_infos))
-            point = point.split()
+            point_infos = analog_points_info[i]
             i += 1
             points.append(
                 NumericPoint(
-                    pointType=point[0],
-                    pointAddress=point[1],
-                    pointName=point[2],
-                    description=point[3],
-                    presentValue=float(point[4]),
-                    units_state=point[5],
+                    pointType=point_type,
+                    pointAddress=point_address,
+                    pointName=point_infos[0],
+                    description=point_infos[3],
+                    presentValue=float(point_infos[1]),
+                    units_state=point_infos[2],
                     device=self))
 
         multistate_request = []
         list_of_multistate = retrieve_type(objList, 'multi')
         for multistate_points, address in list_of_multistate:
-            multistate_request.append('%s %s objectName description presentValue stateText ' %
+            multistate_request.append('%s %s objectName presentValue stateText description ' %
                                       (multistate_points, address))
 
         multistate_points_info = self.read_multiple(
@@ -332,25 +331,22 @@ class Device():
         for each in retrieve_type(objList, 'multi'):
             point_type = str(each[0])
             point_address = str(each[1])
-            point_infos = str(multistate_points_info[i]).replace(
-                "'", '').replace('[', '').replace(']', '').replace(',', '')
-            point = ('%s %s %s' % (point_type, point_address, point_infos))
-            point = point.split()
+            point_infos = multistate_points_info[i]
             i += 1
             points.append(
                 EnumPoint(
-                    pointType=point[0],
-                    pointAddress=point[1],
-                    pointName=point[2],
-                    description=point[3],
-                    presentValue=(point[4]),
-                    units_state=point[5:],
+                    pointType=point_type,
+                    pointAddress=point_address,
+                    pointName=point_infos[0],
+                    description=point_infos[3],
+                    presentValue=point_infos[1],
+                    units_state=point_infos[2],
                     device=self))
 
         binary_request = []
         list_of_binary = retrieve_type(objList, 'binary')
         for binary_points, address in list_of_binary:
-            binary_request.append('%s %s objectName description presentValue inactiveText activeText ' %
+            binary_request.append('%s %s objectName presentValue inactiveText activeText description ' %
                                   (binary_points, address))
 
         binary_points_info = self.read_multiple(
@@ -360,19 +356,16 @@ class Device():
         for each in retrieve_type(objList, 'binary'):
             point_type = str(each[0])
             point_address = str(each[1])
-            point_infos = str(binary_points_info[i]).replace(
-                "'", '').replace('[', '').replace(']', '').replace(',', '')
-            point = ('%s %s %s' % (point_type, point_address, point_infos))
-            point = point.split()
+            point_infos = binary_points_info[i]
             i += 1
             points.append(
                 BooleanPoint(
-                    pointType=point[0],
-                    pointAddress=point[1],
-                    pointName=point[2],
-                    description=point[3],
-                    presentValue=(point[4]),
-                    units_state=(point[5], point[6]),
+                    pointType=point_type,
+                    pointAddress=point_address,
+                    pointName=point_infos[0],
+                    description=point_infos[4],
+                    presentValue=point_infos[1],
+                    units_state=(point_infos[2], point_infos[3]),
                     device=self))
         print('Ready!')
         return (objList, points)
