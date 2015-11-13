@@ -61,6 +61,11 @@ class Device():
 
         self._notes = namedtuple('_notes',
                                    ['timestamp', 'notes'])
+
+        self._notes.timestamp = []
+        self._notes.notes = []
+        self._notes.notes.append("Controller initialized")
+        self._notes.timestamp.append(datetime.now())
             
     @property
     def notes(self):
