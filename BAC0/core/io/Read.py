@@ -29,6 +29,7 @@ from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
 from bacpypes.basetypes import PropertyIdentifier
 
 from queue import Queue, Empty
+import time
 
 from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException
 from ..functions.debug import log_debug, log_exception
@@ -53,6 +54,7 @@ class ReadProperty():
         """
         self.this_application = None
         self.this_application.ResponseQueue = Queue()
+        self.this_application._lock = False
         self._started = False
 
     def read(self, args):
@@ -74,6 +76,9 @@ class ReadProperty():
         """
         if not self._started:
             raise Exception('App not running, use startApp() function')
+        while self.this_application._lock:
+            time.sleep(0.5)
+        self.this_application._lock = True
         args = args.split()
         self.this_application.value is None
         log_debug(ReadProperty, "do_read %r", args)
@@ -116,9 +121,11 @@ class ReadProperty():
                 data, evt = self.this_application.ResponseQueue.get(
                     timeout=self._TIMEOUT)
                 evt.set()
+                self.this_application._lock = False
                 return data
             except Empty:
                 log_exception(ReadProperty, 'No response from controller')
+                self.this_application._lock = False
                 return None
 
     def readMultiple(self, args):
@@ -138,6 +145,9 @@ class ReadProperty():
         will read controller with a MAC address of 5 in the network 2
         Will ask for the present Value and the units of analog input 1 (AI:1)
         """
+        while self.this_application._lock:
+            time.sleep(0.5)
+        self.this_application._lock = True
         args = args.split()
         log_debug(ReadProperty, "readMultiple %r", args)
 
@@ -225,7 +235,9 @@ class ReadProperty():
                 data, evt = self.this_application.ResponseQueue.get(
                     timeout=self._TIMEOUT)
                 evt.set()
+                self.this_application._lock = False
                 return data
             except Empty:
                 print('No response from controller')
+                self.this_application._lock = False
                 return None

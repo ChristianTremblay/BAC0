@@ -34,19 +34,17 @@ class Task(Thread):
             Manager.taskList.append(self)
 
     def run(self):
-        # Get lock to synchronize threads
-        #print("Starting " + self.name)
-        # print_time(self.name)
         self.process()
-        try:
-            self.lock.release()
-        except RuntimeError:
-            pass
-        #Global.numberOfThreads -= 1
-        self.beforeStop()
-        if self in Manager.taskList:
-            Manager.taskList.remove(self)
-        #print("Exiting " + self.name)
+        if self.lock.release():
+            print('Task too fast...slow down, last call not finisehd yet...')
+        else:
+            try:
+                self.lock.release()
+            except RuntimeError:
+                pass
+            self.beforeStop()
+            if self in Manager.taskList:
+                Manager.taskList.remove(self)
 
     def process(self):
         # if self.started = True

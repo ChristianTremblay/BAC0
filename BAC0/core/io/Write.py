@@ -34,6 +34,7 @@ from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
 from bacpypes.constructeddata import Array, Any
 
 from queue import Empty
+import time
 
 from .IOExceptions import WritePropertyCastError, NoResponseFromController, WritePropertyException, WriteAccessDenied
 from ..functions.debug import log_debug, log_exception
@@ -83,6 +84,9 @@ class WriteProperty():
         """
         if not self._started:
             raise Exception('App not running, use startApp() function')
+        while self.this_application._lock:
+            time.sleep(0.5)
+        self.this_application._lock = True
         args = args.split()
         log_debug(WriteProperty, "do_write %r", args)
 
@@ -174,6 +178,8 @@ class WriteProperty():
                 data, evt = self.this_application.ResponseQueue.get(
                     timeout=self._TIMEOUT)
                 evt.set()
+                self.this_application._lock = False
                 return data
             except Empty:
+                self.this_application._lock = False
                 raise NoResponseFromController

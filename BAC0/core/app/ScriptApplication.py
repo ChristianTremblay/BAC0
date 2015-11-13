@@ -61,8 +61,11 @@ class ScriptApplication(BIPSimpleApplication):
         self.localAddress = None
 
         BIPSimpleApplication.__init__(self, *args)
-
-        # keep track of requests to line up responses
+        
+        # _lock will be used by read/write operation to wait for answer before 
+        # making another request
+        self._lock = False
+        
         self._request = None
         self.value = None
         self.error = None
@@ -92,10 +95,10 @@ class ScriptApplication(BIPSimpleApplication):
         self.value = None
         self.error = None
         self.values = []
-        # Those two variables serves training purposes
+        
+        # Will store responses to IAm and Whois
         self.i_am_counter = defaultdict(int)
         self.who_is_counter = defaultdict(int)
-        #self.ResponseQueue = Queue()
 
         # forward it along
         BIPSimpleApplication.request(self, apdu)
@@ -106,11 +109,7 @@ class ScriptApplication(BIPSimpleApplication):
 
         :param apdu: apdu
         """
-
         log_debug("do_IAmRequest %r", apdu)
-
-        # Test UDP Multicast for Windows App
-        # Goal : Test if can recognize own broadcast
 
         if _DEBUG:
             if apdu.pduSource == self.local_unicast_tuple[0]:
@@ -122,7 +121,6 @@ class ScriptApplication(BIPSimpleApplication):
             log_debug("cannot test broadcast")
 
         # Given an I-Am request, cache it.
-        # This function serves no real purpose but training...
         if isinstance(apdu, IAmRequest):
             # build a key from the source, just use the instance number
             key = (str(apdu.pduSource),
@@ -131,8 +129,6 @@ class ScriptApplication(BIPSimpleApplication):
             self.i_am_counter[key] += 1
 
         # Given an Who Is request, cache it.
-        # This function serves no real purpose but training...
-
         if isinstance(apdu, WhoIsRequest):
             # build a key from the source and parameters
             key = (str(apdu.pduSource),
@@ -142,7 +138,7 @@ class ScriptApplication(BIPSimpleApplication):
 
             # count the times this has been received
             self.who_is_counter[key] += 1
-            #BIPSimpleApplication.do_WhoIsRequest(self, apdu)
+            
         # pass back to the default implementation
         BIPSimpleApplication.indication(self, apdu)
 
@@ -283,7 +279,6 @@ class ScriptApplication(BIPSimpleApplication):
             evt = Event()
             self.ResponseQueue.put((self.values, evt))
             evt.wait()
-
 
 def log_debug(txt, *args):
     """
