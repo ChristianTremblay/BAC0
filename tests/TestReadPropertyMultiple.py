@@ -46,6 +46,7 @@ class TestReadPropertyClass(ReadProperty):
 
     def __init__(self):
         self.this_application = TestScriptApplication()
+        self.this_application._lock = True
 
 
 class TestReadPropertyMultiple(unittest.TestCase):
@@ -69,6 +70,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
         """
         Value returned must be 21 and units should be degreesCelcius
         """
+        self.read_property.this_application._lock = False
         self.assertEqual(
             self.read_property.readMultiple(
                 self.req), [
@@ -78,6 +80,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
         """
         Request used for method call should be equivalent to base_request
         """
+        self.read_property.this_application._lock = False
         self.read_property.readMultiple(self.req)
         assert self.read_property.this_application.request.called
         self.arg_used_in_call = (
@@ -94,10 +97,12 @@ class TestReadPropertyMultiple(unittest.TestCase):
         """
         test_wrong_datatype
         """
+        self.read_property.this_application._lock = False
         self.req = '2:5 analogVal 1 presentValue units'
         with self.assertRaises(ValueError):
             self.read_property.readMultiple(self.req)
         self.req = '2:5 analogValue 1 presValue units'
+        self.read_property.this_application._lock = False
         with self.assertRaises(ValueError):
             self.read_property.readMultiple(self.req)
 
@@ -105,6 +110,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
         """
         No property
         """
+        self.read_property.this_application._lock = False
         self.req = '2:5 1 presentValue units'
         with self.assertRaises(ValueError):
             self.read_property.readMultiple(self.req)
@@ -113,6 +119,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
         """
         No response from controller should raise Empty and return None
         """
+        self.read_property.this_application._lock = False
         self.req = '2:5 analogValue 1 presentValue units'
         self.read_property.this_application.ResponseQueue.get.side_effect = Empty()
         self.assertEqual(self.read_property.readMultiple(self.req), None)
@@ -121,6 +128,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
         """
         If application not started, raise Exception
         """
+        self.read_property.this_application._lock = False
         self.req = '2:5 1 presentValue units'
         self.read_property._started = False
         with self.assertRaises(Exception):

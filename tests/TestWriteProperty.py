@@ -49,6 +49,7 @@ class TestWritePropertyClass(WriteProperty):
 
     def __init__(self):
         self.this_application = TestScriptApplication()
+        self.this_application._lock = True
 
 
 class TestWriteProperty(unittest.TestCase):
@@ -74,12 +75,14 @@ class TestWriteProperty(unittest.TestCase):
         """
         Value returned must be None
         """
+        self.write_property.this_application._lock = False
         self.assertEqual(self.write_property.write(self.req), None)
 
     def test_write_null(self):
         """
         Value returned must be None
         """
+        self.write_property.this_application._lock = False
         self.req = '2:5 analogValue 1 presentValue null'
         self.assertEqual(self.write_property.write(self.req), None)
 
@@ -87,6 +90,7 @@ class TestWriteProperty(unittest.TestCase):
         """
         Request used for method call should be equivalent to base_request
         """
+        self.write_property.this_application._lock = False
         self.write_property.write(self.req)
         assert self.write_property.this_application.request.called
         self.arg_used_in_call = (
@@ -98,9 +102,11 @@ class TestWriteProperty(unittest.TestCase):
             self.base_request.debug_contents())
 
     def test_wrong_datatype(self):
+        self.write_property.this_application._lock = False
         self.req = '2:5 analValue 1 presentValue 100'
         with self.assertRaises(TypeError):
             self.write_property.write(self.req)
+        self.write_property.this_application._lock = False
         self.req = '2:5 analValue 1 presValue 100'
         with self.assertRaises(TypeError):
             self.write_property.write(self.req)
@@ -111,6 +117,7 @@ class TestWriteProperty(unittest.TestCase):
 #            self.write_property.write(self.req)
 
     def test_no_prop(self):
+        self.write_property.this_application._lock = False
         self.req = '2:5 1 presentValue 100'
         with self.assertRaises(ValueError):
             self.write_property.write(self.req)
@@ -121,6 +128,7 @@ class TestWriteProperty(unittest.TestCase):
 #        self.assertEqual(self.write_property.write(self.req),None)
 
     def test_not_started(self):
+        self.write_property.this_application._lock = False
         self.req = '2:5 analValue 1 presentValue 100'
         self.write_property._started = False
         with self.assertRaises(Exception):

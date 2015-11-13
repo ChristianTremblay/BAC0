@@ -15,6 +15,8 @@ from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleExce
 from ...tasks.Poll import DevicePoll
 
 from collections import namedtuple
+import pandas as pd
+from datetime import datetime
 
 
 class Device():
@@ -56,6 +58,21 @@ class Device():
         self._buildPointList()
         if poll > 0:
             self.poll()
+
+        self._notes = namedtuple('_notes',
+                                   ['timestamp', 'notes'])
+            
+    @property
+    def notes(self):
+        notes_table = pd.Series(self._notes.notes,
+                              index=self._notes.timestamp)
+        return notes_table
+        
+    @notes.setter
+    def notes(self,note):
+        self._notes.timestamp.append(datetime.now())
+        self._notes.notes.append(note)
+        
 
     @property
     def simulated_points(self):
