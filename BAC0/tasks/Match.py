@@ -20,7 +20,7 @@ class Match(Task):
     def __init__(self, command = None, status = None, delay=5):        
         self.command = command
         self.status = status
-        Task.__init__(self, delay=delay)
+        Task.__init__(self, delay=delay, daemon = True)
 
     def task(self):
         if  self.status.history[-1] != self.command.history[-1]:

@@ -64,8 +64,11 @@ class ReadWriteScript(BasicScript, ReadProperty, WriteProperty, Simulation):
             ip_addr = ip
         BasicScript.__init__(self, localIPAddr=ip_addr)
 
-        # Force and gloab whois to find all devices on the network
+        # Force and global whois to find all devices on the network
         self.whois()
+
+    def __repr__(self):
+        return 'Bacnet Network using ip %s with device id %s' % (self.localIPAddr, self.Boid)
 
 
 def log_debug(txt, *args):

@@ -56,7 +56,7 @@ class DevicePoll(Task):
         if delay < 5:
             delay = 5
         self._device = device
-        Task.__init__(self, delay=delay)
+        Task.__init__(self, delay=delay, daemon = True)
 
     def task(self):
         self._device.read_multiple(list(self._device.points_name), points_per_request=25)

@@ -69,15 +69,48 @@ class Device():
             
     @property
     def notes(self):
+        """
+        Notes allow the user to add text notes to the device.
+        Notes are stored as timeseries (same than points)
+        :returns: pd.Series
+        """
         notes_table = pd.Series(self._notes.notes,
                               index=self._notes.timestamp)
         return notes_table
         
     @notes.setter
     def notes(self,note):
+        """
+        Setter for notes
+        :param note: (str)
+        """
         self._notes.timestamp.append(datetime.now())
         self._notes.notes.append(note)
         
+    def df(self, list_of_points):
+        """
+        df is a way to build a pandas DataFrame from a list of points
+        DataFrame can be used to present data or analysis
+        
+        :param list_of_points: a list of point names as str
+        :returns: pd.DataFrame
+        """
+        his = []
+        for point in list_of_points:
+            his.append(self._findPoint(point).history)
+    
+        return pd.DataFrame(dict(zip(list_of_points,his)))
+        
+    def chart(self, list_of_points, resample='1min', **kwargs):
+        """
+        chart offers a way to draw a chart from a list of points.
+        It allows to pass args to the pandas plot() functions
+        refer to the pandas and matplotlib doc for details.
+        :param list_of_points: a list of point name as str
+        :param plot_args: arg for plot function
+        :returns: plot()
+        """
+        return self.df(list_of_points).resample(resample).plot(**kwargs)
 
     @property
     def simulated_points(self):

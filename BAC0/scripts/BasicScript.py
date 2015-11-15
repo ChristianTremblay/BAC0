@@ -30,6 +30,7 @@ from bacpypes.app import LocalDeviceObject
 from bacpypes.basetypes import ServicesSupported, DeviceStatus
 from bacpypes.primitivedata import CharacterString
 from threading import Thread
+import pandas as pd
 
 from queue import Queue
 import random
@@ -76,7 +77,7 @@ class BasicScript(WhoisIAm):
         if Boid:
             self.Boid = int(Boid)
         else:
-            self.Boid = int('3056177') + random.uniform(0, 1000)
+            self.Boid = int('3056177') + int(random.uniform(0, 1000))
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
         self.vendorId = '842'
         self.vendorName = CharacterString('SERVISYS inc.')
@@ -168,6 +169,18 @@ class BasicScript(WhoisIAm):
         self.t.start()
         self._started = True
         print('App started')
+        
+    @property
+    def devices(self):
+        lst = []
+        #self.whois()
+        print(self.discoveredDevices)
+        for device in self.discoveredDevices:
+            deviceName, vendorName = self.readMultiple('%s device %s objectName vendorName' % (device[0], device[1]))
+            lst.append((deviceName, vendorName, device[0], device[1]))
+            
+        return pd.DataFrame(lst, columns=['Name', 'Manufacturer', 'Address',' Device ID']).set_index('Name')
+
 
 
 def log_debug(txt, *args):

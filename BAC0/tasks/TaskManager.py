@@ -25,8 +25,8 @@ def stopAllTasks():
 
 class Task(Thread):
 
-    def __init__(self, delay=5):
-        Thread.__init__(self)
+    def __init__(self, delay=5, daemon = True):
+        Thread.__init__(self, daemon = daemon)
         self.exitFlag = False
         self.lock = Manager.threadLock
         self.delay = delay

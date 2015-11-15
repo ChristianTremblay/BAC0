@@ -17,7 +17,7 @@ class BooleanMatch(Task):
     """
 
     def __init__(self, boolCommand, boolStatus, controller, delay=5):
-        Task.__init__(self, delay=delay)
+        Task.__init__(self, delay=delay, daemon = True)
         self.command = boolCommand
         self.status = boolStatus
         self.controller = controller
