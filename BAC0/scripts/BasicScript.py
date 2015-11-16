@@ -165,7 +165,7 @@ class BasicScript(WhoisIAm):
         Once started, socket will be reserved.
         """
         print('Starting app...')
-        self.t = Thread(target=startBacnetIPApp)
+        self.t = Thread(target=startBacnetIPApp, daemon = True)
         self.t.start()
         self._started = True
         print('App started')
