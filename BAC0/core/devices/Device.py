@@ -276,7 +276,10 @@ class Device():
         :type point_name: str     
         :returns: (Point) the point (can be Numeric, Boolean or Enum)
         """
-        return self._findPoint(point_name)
+        if isinstance(point_name,list):
+            return self.df(point_name)
+        else:
+            return self._findPoint(point_name)
 
     def __iter__(self):
         """
