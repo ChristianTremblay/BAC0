@@ -271,10 +271,11 @@ class Device():
     def __getitem__(self, point_name):
         """
         Get a point based on its name
+        If a list is passed, will return a dataframe
 
-        :param point_name: (str) name of the point
+        :param point_name: (str) name of the point or list of point_names
         :type point_name: str     
-        :returns: (Point) the point (can be Numeric, Boolean or Enum)
+        :returns: (Point) the point (can be Numeric, Boolean or Enum) or pd.DataFrame
         """
         if isinstance(point_name,list):
             return self.df(point_name)
@@ -287,6 +288,10 @@ class Device():
         """
         for each in self.points:
             yield each
+            
+    def __contains__(self, value):
+        "When using in..."
+        return value in self.points_name
 
     @property
     def points_name(self):
