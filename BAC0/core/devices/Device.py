@@ -13,6 +13,7 @@ from bacpypes.basetypes import ServicesSupported
 from .Points import NumericPoint, BooleanPoint, EnumPoint
 from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException
 from ...tasks.Poll import DevicePoll
+from ...tasks.BokehRenderer import BokehRenderer
 
 from collections import namedtuple
 import pandas as pd
@@ -40,7 +41,8 @@ class Device():
         """
         self.properties = namedtuple('properties',
                                      ['name', 'address', 'device_id', 'network',
-                                      'pollDelay', 'objects_list', 'pss'])
+                                      'pollDelay', 'objects_list', 'pss',
+                                      'serving_chart', 'charts', 'multistates'])
         self.properties.address = address
         self.properties.device_id = device_id
         self.properties.network = network
@@ -48,6 +50,9 @@ class Device():
         self.properties.name = ''
         self.properties.objects_list = []
         self.properties.pss = ServicesSupported()
+        self.properties.serving_chart = {}
+        self.properties.charts = []
+        self.properties.multistates = {}
 
         self.points = []
 
@@ -101,7 +106,7 @@ class Device():
     
         return pd.DataFrame(dict(zip(list_of_points,his)))
         
-    def chart(self, list_of_points, resample='1min', **kwargs):
+    def chart(self, list_of_points, *, title = 'New'):
         """
         chart offers a way to draw a chart from a list of points.
         It allows to pass args to the pandas plot() functions
@@ -110,8 +115,13 @@ class Device():
         :param plot_args: arg for plot function
         :returns: plot()
         """
-        return self.df(list_of_points).resample(resample).plot(**kwargs)
-
+        if title in self.properties.charts:
+            self.properties.serving_chart[title].exitFlag = True
+            del self.properties.serving_chart[title]
+        else:
+            self.properties.serving_chart[title] = BokehRenderer(self,list_of_points, title = title)
+            self.properties.serving_chart[title].start()
+            
     @property
     def simulated_points(self):
         """
@@ -326,6 +336,36 @@ class Device():
         pointName = ' '.join(args[:-1])
         value = args[-1]
         return (pointName, value)
+
+    @property
+    def analog_units(self):
+        au = []
+        us = []
+        for each in self.points:
+            if isinstance(each, NumericPoint):
+                au.append(each.properties.name)
+                us.append(each.properties.units_state)
+        return dict(zip(au,us))
+        
+    @property
+    def multi_states(self):
+        ms = []
+        us = []
+        for each in self.points:
+            if isinstance(each, EnumPoint):
+                ms.append(each.properties.name)
+                us.append(each.properties.units_state)
+        return dict(zip(ms,us))
+        
+    @property
+    def binary_states(self):
+        bs = []
+        us = []
+        for each in self.points:
+            if isinstance(each, BooleanPoint):
+                bs.append(each.properties.name)
+                us.append(each.properties.units_state)
+        return dict(zip(bs,us))
 
     def _discoverPoints(self):
         """

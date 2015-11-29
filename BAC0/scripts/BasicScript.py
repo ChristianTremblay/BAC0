@@ -39,6 +39,7 @@ import sys
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.app.ScriptApplication import ScriptApplication
 from .. import infos
+from ..core.io.IOExceptions import NoResponseFromController
 #import BAC0.core.functions as fn
 
 
@@ -174,11 +175,14 @@ class BasicScript(WhoisIAm):
     def devices(self):
         lst = []
         #self.whois()
-        print(self.discoveredDevices)
+        #print(self.discoveredDevices)
         for device in self.discoveredDevices:
-            deviceName, vendorName = self.readMultiple('%s device %s objectName vendorName' % (device[0], device[1]))
-            lst.append((deviceName, vendorName, device[0], device[1]))
-            
+            try:
+                deviceName, vendorName = self.readMultiple('%s device %s objectName vendorName' % (device[0], device[1]))
+                lst.append((deviceName, vendorName, device[0], device[1]))
+            except NoResponseFromController:
+                #print('No response from %s' % device)
+                continue
         return pd.DataFrame(lst, columns=['Name', 'Manufacturer', 'Address',' Device ID']).set_index('Name')
 
 

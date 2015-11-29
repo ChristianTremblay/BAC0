@@ -31,7 +31,7 @@ from bacpypes.basetypes import PropertyIdentifier
 from queue import Queue, Empty
 import time
 
-from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException
+from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController
 from ..functions.debug import log_debug, log_exception
 
 # some debugging
@@ -240,4 +240,5 @@ class ReadProperty():
             except Empty:
                 print('No response from controller')
                 self.this_application._lock = False
-                return None
+                raise NoResponseFromController
+                #return None
