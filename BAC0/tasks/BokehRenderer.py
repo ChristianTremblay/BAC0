@@ -12,20 +12,22 @@ from threading import Thread
 
 import time
 import random
-from bokeh._legacy_charts import TimeSeries 
-from bokeh.plotting import figure, output_server, cursession, show, ColumnDataSource
-from bokeh.charts import Line
-from bokeh._legacy_charts import Step
+from bokeh.plotting import figure, output_server, cursession, show, ColumnDataSource, curdoc
 from bokeh.models import HoverTool
+from bokeh.io import gridplot, vplot
+from bokeh.embed import autoload_server
+from bokeh.session import Session
 from bokeh.document import Document
+#from bokeh.client import push_session
 
 from collections import OrderedDict
 import logging
 import math
-
-
+import weakref
 
 class BokehRenderer(Thread):
+    #figures = {}
+    _instances = set()
 
     def __init__(self, device, points_list, *, title = 'My title', daemon = True):
         Thread.__init__(self, daemon = daemon)
@@ -34,12 +36,42 @@ class BokehRenderer(Thread):
         self.points_list = points_list
         self.title = title
         self.units = {}
+        logging.getLogger("requests").setLevel(logging.INFO)
         
-        logging.getLogger("requests").setLevel(logging.WARNING)
-        output_server('Commissionning %s / %s' % (self.device.properties.name, self.title))
+        for obj in BokehRenderer.getinstances():
+            if obj.title == title:
+                print('Chart already exist, stopping thread and deleting it')
+                obj.stop()
+                del obj
+
         TOOLS = "resize,hover,save,pan,box_zoom,wheel_zoom,reset"
-        self.p = figure(plot_width=800, plot_height=600, x_axis_type="datetime", title = self.title, tools = TOOLS)
+        self.p = figure(plot_width=500, plot_height=450, x_axis_type="datetime", title = self.title, tools = TOOLS)
+        #BokehRenderer.figures[title] = self.p
+        #BokehRenderer.render_threads[title] = self
+        self._instances.add(weakref.ref(self)) 
+ 
+        output_server('Commissionning %s' % (self.device.properties.name))
+       
+        #if not title in BokehRenderer.figures.keys():        
+        #    TOOLS = "resize,hover,save,pan,box_zoom,wheel_zoom,reset"
+        #    self.p = figure(plot_width=600, plot_height=500, x_axis_type="datetime", title = self.title, tools = TOOLS)
+        #    BokehRenderer.figures[title] = self.p
+        #    BokehRenderer.render_threads[title] = self
+        #else:
+        #    self.p = BokehRenderer.figures[title]
+                    
         cursession().publish()
+        
+    @classmethod
+    def getinstances(cls):
+        dead = set()
+        for ref in cls._instances:
+            obj = ref()
+            if obj is not None:
+                yield obj
+            else:
+                dead.add(ref)
+        cls._instances -= dead
         
     def run(self):
         self.process()
@@ -65,14 +97,38 @@ class BokehRenderer(Thread):
                                           
             df = df.reset_index()
             df['name'] = 'nameToReplace'
-            df['units'] = 'unit or state'
+            df['units'] = 'waiting for refresh'
             return df
-            
+
+        def read_notes():
+            notes_df = self.device.notes.reset_index()
+            notes_df['value'] = 100
+            notes_df['desc'] = 'Notes'
+            return notes_df
+        
         df = read_lst()
+        notes_df = read_notes()
+
+       
+
+        notes_source = ColumnDataSource(
+                    data=dict(
+                        x = notes_df['index'],
+                        y = notes_df['value'],
+                        desc = notes_df['desc'],
+                        units = notes_df[0]
+                    )
+                )
+        self.p.asterisk('x', 
+                        'y',
+                        source = notes_source,
+                        name = 'Notes',
+                        color = "#%06x" % random.randint(0x000000, 0x777777), 
+                        legend='Notes',
+                        size = 40) 
 
         for each in lst:
             df['name'] = df['name'].replace('nameToReplace', ('%s / %s' % (each, self.device[each]['description'])))            
-#            df['units'] = '.'
             source = ColumnDataSource(
                         data=dict(
                             x = df['index'],
@@ -104,16 +160,16 @@ class BokehRenderer(Thread):
                             source = source,
                             name = each,
                             color = "#%06x" % random.randint(0x000000, 0x777777),
-                            legend=each, 
+                            legend=each,
                             line_width = 2)
-        
+        self.p.legend.orientation = 'top_left'
         hover = self.p.select(dict(type=HoverTool))
         hover.tooltips = OrderedDict([
             ('name', '@desc'),
             ('value', '@y'),
             ('units', '@units'),
         ])
-        show(self.p)
+        self.make_grid()
         
         while not self.exitFlag:
             # Update y data of the source object
@@ -129,20 +185,46 @@ class BokehRenderer(Thread):
                     glyph_renderer.data_source.data['desc'] = df['name']
                     if name in multi_states:
                         glyph_renderer.data_source.data['units'] = [multi_states[name][int(math.fabs(x-1))] for x in df[name]]
-                        #df['units'] = 'multi'
                     elif name in binary_states:
                         glyph_renderer.data_source.data['y'] = df[name]
                         glyph_renderer.data_source.data['units'] = [binary_states[name][int(x/50)] for x in df[name]]
-                        #df['units'] = 'binaire'
                     else:
                         df['units'] = analog_units[name]
                         glyph_renderer.data_source.data['units'] = df['units']
-                    #df['units'] = df['units'].replace('unit', ('%s' % self.device[each]['units']))
-                    #glyph_renderer.data_source.data['units'] = df['units']
-                    # store the updated source on the server
+                    cursession().store_objects(glyph_renderer.data_source)
+                elif name == 'Notes':
+                    notes_df = read_notes()
+                    glyph_renderer = renderer
+                    glyph_renderer.data_source.data['x'] = notes_df['index']
+                    glyph_renderer.data_source.data['y'] = notes_df['value']
+                    glyph_renderer.data_source.data['desc'] = notes_df['desc']
+                    glyph_renderer.data_source.data['units'] = notes_df[0]
                     cursession().store_objects(glyph_renderer.data_source)
             
             time.sleep(1)
+    
+    @classmethod        
+    def make_grid(cls):
+        cursession().publish()
+        figs = []        
+        for obj in BokehRenderer.getinstances():
+            figs.append(obj.p)
+       
+        if len(figs) > 1:
+            number_of_rows = int(round(len(figs) / 2))
+            rows = []
+            number_of_columns = 2
+            i = 0
+            for each in range(number_of_rows):
+                rows.append(list(fig for fig in figs[i:i+number_of_columns]))
+                i += number_of_columns
+            layout = gridplot(rows)
+
+        else:
+            layout = vplot(figs[0])
+        
+        show(layout)
+
 
     def stop(self):
         self.exitFlag = True

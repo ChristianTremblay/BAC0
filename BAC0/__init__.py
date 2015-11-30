@@ -8,3 +8,4 @@ from .scripts.ReadWriteScript import ReadWriteScript as connect
 from .core.devices.Device import Device as device
 from .tasks.Poll import SimplePoll as poll
 from .tasks.Match import Match as match
+from .tasks.BokehRenderer import BokehRenderer as chart

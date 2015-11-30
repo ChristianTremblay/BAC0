@@ -115,12 +115,9 @@ class Device():
         :param plot_args: arg for plot function
         :returns: plot()
         """
-        if title in self.properties.charts:
-            self.properties.serving_chart[title].exitFlag = True
-            del self.properties.serving_chart[title]
-        else:
-            self.properties.serving_chart[title] = BokehRenderer(self,list_of_points, title = title)
-            self.properties.serving_chart[title].start()
+        self.properties.serving_chart[title] = BokehRenderer(self,list_of_points, title = title)
+        self.properties.serving_chart[title].start()
+
             
     @property
     def simulated_points(self):
