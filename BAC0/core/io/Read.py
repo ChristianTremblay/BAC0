@@ -121,6 +121,8 @@ class ReadProperty():
         will read controller with a MAC address of 5 in the network 2
         Will ask for the present Value and the units of analog input 1 (AI:1)
         """
+        if not self._started:
+            raise Exception('App not running, use startApp() function')
         with self.this_application._lock:
             #time.sleep(0.5)
         #self.this_application._lock = True

@@ -21,7 +21,7 @@ from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
     ReadPropertyRequest, ReadPropertyMultipleRequest
 from bacpypes.basetypes import PropertyIdentifier
 
-from threading import Event
+from threading import Event, Lock
 from queue import Queue, Empty
 
 
@@ -49,7 +49,7 @@ class TestReadPropertyClass(ReadProperty):
 
     def __init__(self):
         self.this_application = TestScriptApplication()
-        self.this_application._lock = False
+        self.this_application._lock = Lock()
 
 
 class TestReadProperty(unittest.TestCase):
@@ -76,7 +76,7 @@ class TestReadProperty(unittest.TestCase):
         test_verify_return_value
         Value returned must be 32
         """
-        self.read_property.this_application._lock = False
+        #self.read_property.this_application._lock = False
         self.assertEqual(self.read_property.read(self.req), 32)
 
     def test_request_is_correct(self):
@@ -84,7 +84,7 @@ class TestReadProperty(unittest.TestCase):
         test_request_is_correct
         Request used for method call should be equivalent to base request
         """
-        self.read_property.this_application._lock = False
+        #self.read_property.this_application._lock = False
         self.read_property.read(self.req)
         assert self.read_property.this_application.request.called
         self.arg_used_in_call = (
@@ -96,11 +96,11 @@ class TestReadProperty(unittest.TestCase):
             self.base_request.debug_contents())
 
     def test_wrong_datatype(self):
-        self.read_property.this_application._lock = False
+        #self.read_property.this_application._lock = False
         self.req = '2:5 analogVal 1 presentValue'
         with self.assertRaises(ValueError):
             self.read_property.read(self.req)
-        self.read_property.this_application._lock = False
+        #self.read_property.this_application._lock = False
         self.req = '2:5 analogValue 1 presValue units'
         with self.assertRaises(ValueError):
             self.read_property.read(self.req)
@@ -111,7 +111,7 @@ class TestReadProperty(unittest.TestCase):
 #            self.read_property.read(self.req)
 
     def test_no_prop(self):
-        self.read_property.this_application._lock = False
+        #self.read_property.this_application._lock = False
         self.req = '2:5 1 presentValue units'
         with self.assertRaises(ValueError):
             self.read_property.read(self.req)
@@ -122,7 +122,7 @@ class TestReadProperty(unittest.TestCase):
 #        self.assertEqual(self.read_property.read(self.req),None)
 
     def test_not_started(self):
-        self.read_property.this_application._lock = False
+        #self.read_property.this_application._lock = False
         self.req = '2:5 1 presentValue units'
         self.read_property._started = False
         with self.assertRaises(Exception):
