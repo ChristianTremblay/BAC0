@@ -34,7 +34,7 @@ from bacpypes.constructeddata import Array
 from bacpypes.pdu import Address
 
 from collections import defaultdict
-from threading import Event
+from threading import Event, Lock
 from queue import Queue
 
 from ..io.IOExceptions import WriteAccessDenied, NoResponseFromController
@@ -64,7 +64,7 @@ class ScriptApplication(BIPSimpleApplication):
         
         # _lock will be used by read/write operation to wait for answer before 
         # making another request
-        self._lock = False
+        self._lock = Lock()
         
         self._request = None
         self.value = None

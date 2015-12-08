@@ -123,7 +123,10 @@ class BokehRenderer(Thread):
                         size = 40) 
 
         for each in lst:
-            df['name'] = df['name'].replace('nameToReplace', ('%s / %s' % (each, self.device[each]['description'])))            
+            try:
+                df['name'] = df['name'].replace('nameToReplace', ('%s / %s' % (each, self.device[each]['description'])))            
+            except TypeError:
+                continue
             source = ColumnDataSource(
                         data=dict(
                             x = df['index'],

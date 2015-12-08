@@ -54,7 +54,7 @@ class ReadProperty():
         """
         self.this_application = None
         self.this_application.ResponseQueue = Queue()
-        self.this_application._lock = False
+        #self.this_application._lock = False
         self._started = False
 
     def read(self, args):
@@ -76,57 +76,33 @@ class ReadProperty():
         """
         if not self._started:
             raise Exception('App not running, use startApp() function')
-        while self.this_application._lock:
-            time.sleep(0.5)
-        self.this_application._lock = True
-        args = args.split()
-        self.this_application.value is None
-        log_debug(ReadProperty, "do_read %r", args)
-
-        try:
-            addr, obj_type, obj_inst, prop_id = args[:4]
-
-            if obj_type.isdigit():
-                obj_type = int(obj_type)
-            elif not get_object_class(obj_type):
-                raise ValueError("unknown object type")
-
-            obj_inst = int(obj_inst)
-
-            datatype = get_datatype(obj_type, prop_id)
-            if not datatype:
-                raise ValueError("invalid property for object type")
-
-            # build a request
-            request = ReadPropertyRequest(
-                objectIdentifier=(obj_type, obj_inst),
-                propertyIdentifier=prop_id,
-            )
-            request.pduDestination = Address(addr)
-
-            if len(args) == 5:
-                request.propertyArrayIndex = int(args[4])
-            log_debug(ReadProperty, "    - request: %r", request)
-
-            # give it to the application
-            self.this_application.request(request)
-
-        except ReadPropertyException as error:
-            log_exception("exception: %r", error)
-
-        # Share response with Queue
-        data = None
-        while True:
+        with self.this_application._lock:
+            #time.sleep(0.5)
+        #self.this_application._lock = True
+            args = args.split()
+            self.this_application.value is None
+            log_debug(ReadProperty, "do_read %r", args)
+    
             try:
-                data, evt = self.this_application.ResponseQueue.get(
-                    timeout=self._TIMEOUT)
-                evt.set()
-                self.this_application._lock = False
-                return data
-            except Empty:
-                log_exception(ReadProperty, 'No response from controller')
-                self.this_application._lock = False
-                return None
+                # give it to the application
+                self.this_application.request(self.build_rp_request(args))
+    
+            except ReadPropertyException as error:
+                log_exception("exception: %r", error)
+    
+            # Share response with Queue
+            data = None
+            while True:
+                try:
+                    data, evt = self.this_application.ResponseQueue.get(
+                        timeout=self._TIMEOUT)
+                    evt.set()
+                    #self.this_application._lock = False
+                    return data
+                except Empty:
+                    log_exception(ReadProperty, 'No response from controller')
+                    #self.this_application._lock = False
+                    return None
 
     def readMultiple(self, args):
         """ This function build a readMultiple request wait for the answer and
@@ -145,100 +121,133 @@ class ReadProperty():
         will read controller with a MAC address of 5 in the network 2
         Will ask for the present Value and the units of analog input 1 (AI:1)
         """
-        while self.this_application._lock:
-            time.sleep(0.5)
-        self.this_application._lock = True
-        args = args.split()
-        log_debug(ReadProperty, "readMultiple %r", args)
+        with self.this_application._lock:
+            #time.sleep(0.5)
+        #self.this_application._lock = True
+            args = args.split()
+            log_debug(ReadProperty, "readMultiple %r", args)
+    
+            try:
+                # give it to the application
+                self.this_application.request(self.build_rpm_request(args))
+    
+            except ReadPropertyMultipleException as error:
+                log_exception(ReadProperty, "exception: %r", error)
+    
+            data = None
+            while True:
+                try:
+                    data, evt = self.this_application.ResponseQueue.get(
+                        timeout=self._TIMEOUT)
+                    evt.set()
+                    #self.this_application._lock = False
+                    return data
+                except Empty:
+                    print('No response from controller')
+                    #self.this_application._lock = False
+                    raise NoResponseFromController
+                    #return None
+                
+    def build_rp_request(self, args):
+        addr, obj_type, obj_inst, prop_id = args[:4]
 
-        try:
-            i = 0
-            addr = args[i]
+        if obj_type.isdigit():
+            obj_type = int(obj_type)
+        elif not get_object_class(obj_type):
+            raise ValueError("unknown object type")
+
+        obj_inst = int(obj_inst)
+
+        datatype = get_datatype(obj_type, prop_id)
+        if not datatype:
+            raise ValueError("invalid property for object type")
+
+        # build a request
+        request = ReadPropertyRequest(
+            objectIdentifier=(obj_type, obj_inst),
+            propertyIdentifier=prop_id,
+        )
+        request.pduDestination = Address(addr)
+
+        if len(args) == 5:
+            request.propertyArrayIndex = int(args[4])
+        log_debug(ReadProperty, "    - request: %r", request)
+
+        return request              
+                
+    def build_rpm_request(self, args):
+        """
+        Build request from args
+        """
+        i = 0
+        addr = args[i]
+        i += 1
+
+        read_access_spec_list = []
+        while i < len(args):
+            obj_type = args[i]
             i += 1
 
-            read_access_spec_list = []
+            if obj_type.isdigit():
+                obj_type = int(obj_type)
+            elif not get_object_class(obj_type):
+                raise ValueError("unknown object type")
+
+            obj_inst = int(args[i])
+            i += 1
+
+            prop_reference_list = []
             while i < len(args):
-                obj_type = args[i]
+                prop_id = args[i]
+                if prop_id not in PropertyIdentifier.enumerations:
+                    break
+
                 i += 1
+                if prop_id in ('all', 'required', 'optional'):
+                    pass
+                else:
+                    datatype = get_datatype(obj_type, prop_id)
+                    if not datatype:
+                        raise ValueError(
+                            "invalid property for object type : %s | %s" %
+                            (obj_type, prop_id))
 
-                if obj_type.isdigit():
-                    obj_type = int(obj_type)
-                elif not get_object_class(obj_type):
-                    raise ValueError("unknown object type")
-
-                obj_inst = int(args[i])
-                i += 1
-
-                prop_reference_list = []
-                while i < len(args):
-                    prop_id = args[i]
-                    if prop_id not in PropertyIdentifier.enumerations:
-                        break
-
-                    i += 1
-                    if prop_id in ('all', 'required', 'optional'):
-                        pass
-                    else:
-                        datatype = get_datatype(obj_type, prop_id)
-                        if not datatype:
-                            raise ValueError(
-                                "invalid property for object type : %s | %s" %
-                                (obj_type, prop_id))
-
-                    # build a property reference
-                    prop_reference = PropertyReference(
-                        propertyIdentifier=prop_id,
-                    )
-
-                    # check for an array index
-                    if (i < len(args)) and args[i].isdigit():
-                        prop_reference.propertyArrayIndex = int(args[i])
-                        i += 1
-
-                    # add it to the list
-                    prop_reference_list.append(prop_reference)
-
-                # check for at least one property
-                if not prop_reference_list:
-                    raise ValueError("provide at least one property")
-
-                # build a read access specification
-                read_access_spec = ReadAccessSpecification(
-                    objectIdentifier=(obj_type, obj_inst),
-                    listOfPropertyReferences=prop_reference_list,
+                # build a property reference
+                prop_reference = PropertyReference(
+                    propertyIdentifier=prop_id,
                 )
 
+                # check for an array index
+                if (i < len(args)) and args[i].isdigit():
+                    prop_reference.propertyArrayIndex = int(args[i])
+                    i += 1
+
                 # add it to the list
-                read_access_spec_list.append(read_access_spec)
+                prop_reference_list.append(prop_reference)
 
-            # check for at least one
-            if not read_access_spec_list:
-                raise RuntimeError(
-                    "at least one read access specification required")
+            # check for at least one property
+            if not prop_reference_list:
+                raise ValueError("provide at least one property")
 
-            # build the request
-            request = ReadPropertyMultipleRequest(
-                listOfReadAccessSpecs=read_access_spec_list,
+            # build a read access specification
+            read_access_spec = ReadAccessSpecification(
+                objectIdentifier=(obj_type, obj_inst),
+                listOfPropertyReferences=prop_reference_list,
             )
-            request.pduDestination = Address(addr)
-            log_debug(ReadProperty, "    - request: %r", request)
 
-            # give it to the application
-            self.this_application.request(request)
+            # add it to the list
+            read_access_spec_list.append(read_access_spec)
 
-        except ReadPropertyMultipleException as error:
-            log_exception(ReadProperty, "exception: %r", error)
+        # check for at least one
+        if not read_access_spec_list:
+            raise RuntimeError(
+                "at least one read access specification required")
 
-        data = None
-        while True:
-            try:
-                data, evt = self.this_application.ResponseQueue.get(
-                    timeout=self._TIMEOUT)
-                evt.set()
-                self.this_application._lock = False
-                return data
-            except Empty:
-                print('No response from controller')
-                self.this_application._lock = False
-                raise NoResponseFromController
-                #return None
+        # build the request
+        request = ReadPropertyMultipleRequest(
+            listOfReadAccessSpecs=read_access_spec_list,
+        )
+        request.pduDestination = Address(addr)
+        log_debug(ReadProperty, "    - request: %r", request)
+            
+        return request

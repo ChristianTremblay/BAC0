@@ -104,7 +104,11 @@ class Device():
         """
         his = []
         for point in list_of_points:
-            his.append(self._findPoint(point, force_read = force_read).history)
+            try:
+                his.append(self._findPoint(point, force_read = force_read).history)
+            except ValueError as ve:
+                print('%s' % ve)                
+                continue
     
         return pd.DataFrame(dict(zip(list_of_points,his)))
         
@@ -117,7 +121,15 @@ class Device():
         :param plot_args: arg for plot function
         :returns: plot()
         """
-        self.properties.serving_chart[title] = BokehRenderer(self,list_of_points, title = title)
+        lst = []
+        for point in list_of_points:
+            if point in self.points_name:
+                print('Add %s to list' % point)
+                lst.append(point)
+            else:
+                print('Wrong name, removing %s from list' % point)
+                
+        self.properties.serving_chart[title] = BokehRenderer(self,lst, title = title)
         self.properties.serving_chart[title].start()
 
             
@@ -286,10 +298,13 @@ class Device():
         :type point_name: str     
         :returns: (Point) the point (can be Numeric, Boolean or Enum) or pd.DataFrame
         """
-        if isinstance(point_name,list):
-            return self.df(point_name)
-        else:
-            return self._findPoint(point_name)
+        try:
+            if isinstance(point_name,list):
+                return self.df(point_name)
+            else:
+                return self._findPoint(point_name)
+        except ValueError as ve:
+            print('%s' % ve)
 
     def __iter__(self):
         """
@@ -336,7 +351,10 @@ class Device():
         :type point_name: str
         :type value: float
         """
-        self._findPoint(point_name)._set(value)
+        try:
+            self._findPoint(point_name)._set(value)
+        except ValueError as ve:
+            print('%s' % ve)
 
     def __len__(self):
         """

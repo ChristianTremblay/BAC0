@@ -84,102 +84,104 @@ class WriteProperty():
         """
         if not self._started:
             raise Exception('App not running, use startApp() function')
-        while self.this_application._lock:
-            time.sleep(0.5)
-        self.this_application._lock = True
-        args = args.split()
-        log_debug(WriteProperty, "do_write %r", args)
+        with self.this_application._lock:
+        #    time.sleep(0.5)
+        #self.this_application._lock = True
+            args = args.split()
+            log_debug(WriteProperty, "do_write %r", args)
+    
+            try:
+                # give it to the application
+                self.this_application.request(self.build_wp_request(args))
+    
+            except WritePropertyException as error:
+                log_exception("exception: %r", error)
+    
+            while True:
+                try:
+                    data, evt = self.this_application.ResponseQueue.get(
+                        timeout=self._TIMEOUT)
+                    evt.set()
+                    #self.this_application._lock = False
+                    return data
+                except Empty:
+                    #self.this_application._lock = False
+                    raise NoResponseFromController
+                
+    def build_wp_request(self, args):
+        addr, obj_type, obj_inst, prop_id = args[:4]
+        if obj_type.isdigit():
+            obj_type = int(obj_type)
+        obj_inst = int(obj_inst)
+        value = args[4]
 
-        try:
-            addr, obj_type, obj_inst, prop_id = args[:4]
-            if obj_type.isdigit():
-                obj_type = int(obj_type)
-            obj_inst = int(obj_inst)
-            value = args[4]
+        indx = None
+        if len(args) >= 6:
+            if args[5] != "-":
+                indx = int(args[5])
+        log_debug(WriteProperty, "    - indx: %r", indx)
 
-            indx = None
-            if len(args) >= 6:
-                if args[5] != "-":
-                    indx = int(args[5])
-            log_debug(WriteProperty, "    - indx: %r", indx)
+        priority = None
+        if len(args) >= 7:
+            priority = int(args[6])
+        log_debug(WriteProperty, "    - priority: %r", priority)
 
-            priority = None
-            if len(args) >= 7:
-                priority = int(args[6])
-            log_debug(WriteProperty, "    - priority: %r", priority)
+        # get the datatype
+        datatype = get_datatype(obj_type, prop_id)
+        log_debug(WriteProperty, "    - datatype: %r", datatype)
 
-            # get the datatype
-            datatype = get_datatype(obj_type, prop_id)
-            log_debug(WriteProperty, "    - datatype: %r", datatype)
-
-            # change atomic values into something encodeable, null is a special
-            # case
-            if value == 'null':
-                value = Null()
-            elif issubclass(datatype, Atomic):
-                if datatype is Integer:
-                    value = int(value)
-                elif datatype is Real:
-                    value = float(value)
-                elif datatype is Unsigned:
-                    value = int(value)
-                value = datatype(value)
-            elif issubclass(datatype, Array) and (indx is not None):
-                if indx == 0:
-                    value = Integer(value)
-                elif issubclass(datatype.subtype, Atomic):
-                    value = datatype.subtype(value)
-                elif not isinstance(value, datatype.subtype):
-                    raise TypeError(
-                        "invalid result datatype, expecting %s" %
-                        (datatype.subtype.__name__,))
-            elif not isinstance(value, datatype):
+        # change atomic values into something encodeable, null is a special
+        # case
+        if value == 'null':
+            value = Null()
+        elif issubclass(datatype, Atomic):
+            if datatype is Integer:
+                value = int(value)
+            elif datatype is Real:
+                value = float(value)
+            elif datatype is Unsigned:
+                value = int(value)
+            value = datatype(value)
+        elif issubclass(datatype, Array) and (indx is not None):
+            if indx == 0:
+                value = Integer(value)
+            elif issubclass(datatype.subtype, Atomic):
+                value = datatype.subtype(value)
+            elif not isinstance(value, datatype.subtype):
                 raise TypeError(
                     "invalid result datatype, expecting %s" %
-                    (datatype.__name__,))
-            log_debug(
-                WriteProperty,
-                "    - encodeable value: %r %s",
-                value,
-                type(value))
+                    (datatype.subtype.__name__,))
+        elif not isinstance(value, datatype):
+            raise TypeError(
+                "invalid result datatype, expecting %s" %
+                (datatype.__name__,))
+        log_debug(
+            WriteProperty,
+            "    - encodeable value: %r %s",
+            value,
+            type(value))
 
-            # build a request
-            request = WritePropertyRequest(
-                objectIdentifier=(obj_type, obj_inst),
-                propertyIdentifier=prop_id
-            )
-            request.pduDestination = Address(addr)
+        # build a request
+        request = WritePropertyRequest(
+            objectIdentifier=(obj_type, obj_inst),
+            propertyIdentifier=prop_id
+        )
+        request.pduDestination = Address(addr)
 
-            # save the value
-            request.propertyValue = Any()
-            try:
-                request.propertyValue.cast_in(value)
-            except WritePropertyCastError as error:
-                log_exception("WriteProperty cast error: %r", error)
+        # save the value
+        request.propertyValue = Any()
+        try:
+            request.propertyValue.cast_in(value)
+        except WritePropertyCastError as error:
+            log_exception("WriteProperty cast error: %r", error)
 
-            # optional array index
-            if indx is not None:
-                request.propertyArrayIndex = indx
+        # optional array index
+        if indx is not None:
+            request.propertyArrayIndex = indx
 
-            # optional priority
-            if priority is not None:
-                request.priority = priority
+        # optional priority
+        if priority is not None:
+            request.priority = priority
 
-            log_debug(WriteProperty, "    - request: %r", request)
-
-            # give it to the application
-            self.this_application.request(request)
-
-        except WritePropertyException as error:
-            log_exception("exception: %r", error)
-
-        while True:
-            try:
-                data, evt = self.this_application.ResponseQueue.get(
-                    timeout=self._TIMEOUT)
-                evt.set()
-                self.this_application._lock = False
-                return data
-            except Empty:
-                self.this_application._lock = False
-                raise NoResponseFromController
+        log_debug(WriteProperty, "    - request: %r", request)
+        return request

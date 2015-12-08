@@ -34,6 +34,7 @@ class Simulation():
         """
         if not self._started:
             raise Exception('App not running, use startApp() function')
+        #with self.this_application._lock: if use lock...won't be able to call read...
         args = args.split()
         addr, obj_type, obj_inst, prop_id, value = args[:5]
         if self.read('%s %s %s outOfService' % (addr, obj_type, obj_inst)):
