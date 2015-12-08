@@ -19,6 +19,8 @@ from collections import namedtuple
 import pandas as pd
 from datetime import datetime
 
+from xlwings import Workbook, Sheet, Range, Chart
+
 
 class Device():
     """
@@ -92,7 +94,7 @@ class Device():
         self._notes.timestamp.append(datetime.now())
         self._notes.notes.append(note)
         
-    def df(self, list_of_points):
+    def df(self, list_of_points, force_read = True):
         """
         df is a way to build a pandas DataFrame from a list of points
         DataFrame can be used to present data or analysis
@@ -102,7 +104,7 @@ class Device():
         """
         his = []
         for point in list_of_points:
-            his.append(self._findPoint(point).history)
+            his.append(self._findPoint(point, force_read = force_read).history)
     
         return pd.DataFrame(dict(zip(list_of_points,his)))
         
@@ -307,6 +309,24 @@ class Device():
         """
         for each in self.points:
             yield each.properties.name
+            
+    def save_to_excel(self):
+        """
+        Using xlwings, make a dataframe of all histories and save it 
+        """
+        his = {}
+        for name in list(self.points_name):
+            try:
+                his[name] = self._findPoint(name, force_read=False).history.replace(['inactive', 'active'], [0, 1]).resample('1ms')
+            except TypeError:
+                his[name] = self._findPoint(name, force_read=False).history.resample('1ms')
+        
+        his['Notes'] = self.notes
+        df = pd.DataFrame(his).fillna(method='ffill').fillna(method='bfill')
+        
+        wb = Workbook()
+        Range('A1').value = df
+
 
     def __setitem__(self, point_name, value):
         """

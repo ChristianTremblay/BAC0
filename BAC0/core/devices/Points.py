@@ -114,7 +114,7 @@ class Point():
         Simple shortcut to plot function
         """
         args = args.split()
-        return self.history.replace(['inactive', 'active', False, True], [0, 1, 0, 1]).plot('%s, title = %s / %s' % (args, self.properties.name, self.properties.description))
+        return self.history.replace(['inactive', 'active'], [0, 1]).plot('%s, title = %s / %s' % (args, self.properties.name, self.properties.description))
 
     def __getitem__(self, key):
         """

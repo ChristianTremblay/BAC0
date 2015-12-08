@@ -37,12 +37,15 @@ class BokehRenderer(Thread):
         self.title = title
         self.units = {}
         logging.getLogger("requests").setLevel(logging.INFO)
+        logging.getLogger("bokeh").setLevel(logging.INFO)
         
         for obj in BokehRenderer.getinstances():
             if obj.title == title:
                 print('Chart already exist, stopping thread and deleting it')
                 obj.stop()
                 del obj
+        #clean instances
+        list(self.getinstances())
 
         TOOLS = "resize,hover,save,pan,box_zoom,wheel_zoom,reset"
         self.p = figure(plot_width=500, plot_height=450, x_axis_type="datetime", title = self.title, tools = TOOLS)
@@ -51,14 +54,6 @@ class BokehRenderer(Thread):
         self._instances.add(weakref.ref(self)) 
  
         output_server('Commissionning %s' % (self.device.properties.name))
-       
-        #if not title in BokehRenderer.figures.keys():        
-        #    TOOLS = "resize,hover,save,pan,box_zoom,wheel_zoom,reset"
-        #    self.p = figure(plot_width=600, plot_height=500, x_axis_type="datetime", title = self.title, tools = TOOLS)
-        #    BokehRenderer.figures[title] = self.p
-        #    BokehRenderer.render_threads[title] = self
-        #else:
-        #    self.p = BokehRenderer.figures[title]
                     
         cursession().publish()
         
@@ -205,7 +200,7 @@ class BokehRenderer(Thread):
     
     @classmethod        
     def make_grid(cls):
-        cursession().publish()
+
         figs = []        
         for obj in BokehRenderer.getinstances():
             figs.append(obj.p)
@@ -222,7 +217,8 @@ class BokehRenderer(Thread):
 
         else:
             layout = vplot(figs[0])
-        
+
+        cursession().publish()        
         show(layout)
 
 

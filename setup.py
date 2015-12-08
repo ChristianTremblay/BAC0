@@ -24,6 +24,8 @@ setup(name='BAC0',
           ],
       install_requires=[
           'pandas',
+          'xlwings',
+          'bokeh',
           ],
       dependency_links=[
           'git://github.com/ChristianTremblay/bacnetScript.git#egg=package-0.11.34.7'
