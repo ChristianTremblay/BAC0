@@ -19,8 +19,12 @@ from collections import namedtuple
 import pandas as pd
 from datetime import datetime
 
-from xlwings import Workbook, Sheet, Range, Chart
-
+try:
+    from xlwings import Workbook, Sheet, Range, Chart
+    _XLWINGS = True
+except ImportError:
+    print('xlwings not installed. If using Windows or OSX, install to get more features.')
+    _XLWINGS = False
 
 class Device():
     """
@@ -338,10 +342,12 @@ class Device():
         
         his['Notes'] = self.notes
         df = pd.DataFrame(his).fillna(method='ffill').fillna(method='bfill')
-        
-        wb = Workbook()
-        Range('A1').value = df
 
+        if _XLWINGS:        
+            wb = Workbook()
+            Range('A1').value = df
+        else:
+            df.to_csv()
 
     def __setitem__(self, point_name, value):
         """
