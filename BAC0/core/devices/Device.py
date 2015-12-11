@@ -387,6 +387,18 @@ class Device():
                 au.append(each.properties.name)
                 us.append(each.properties.units_state)
         return dict(zip(au,us))
+
+    @property
+    def temperatures(self):
+        for each in self.analog_units.items():
+            if "deg" in each[1]:
+                yield each
+
+    @property
+    def percent(self):
+        for each in self.analog_units.items():
+            if "percent" in each[1]:
+                yield each
         
     @property
     def multi_states(self):

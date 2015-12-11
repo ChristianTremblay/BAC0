@@ -12,12 +12,15 @@ from threading import Thread
 
 import time
 import random
-from bokeh.plotting import figure, output_server, cursession, show, ColumnDataSource, curdoc
-from bokeh.models import HoverTool
-from bokeh.io import gridplot, vplot
-from bokeh.embed import autoload_server
-from bokeh.session import Session
-from bokeh.document import Document
+from bokeh.plotting import Figure, ColumnDataSource
+from bokeh.models import HoverTool, LinearAxis, Range1d
+from bokeh.io import gridplot, vplot, curdoc
+#from bokeh.embed import autoload_server
+#from bokeh.session import Session
+#from bokeh.document import Document
+
+from bokeh.plotting import figure
+from bokeh.client import push_session
 #from bokeh.client import push_session
 
 from collections import OrderedDict
@@ -48,14 +51,27 @@ class BokehRenderer(Thread):
         list(self.getinstances())
 
         TOOLS = "resize,hover,save,pan,box_zoom,wheel_zoom,reset"
-        self.p = figure(plot_width=500, plot_height=450, x_axis_type="datetime", title = self.title, tools = TOOLS)
+        self.p = Figure(plot_width=500, plot_height=450, x_axis_type="datetime", title = self.title, tools = TOOLS)
+#        self.p.extra_y_ranges = {"binary": Range1d(start=0, end=110)}
+#        self.p.extra_y_ranges = {"percent": Range1d(start=0, end=100)}
+#        self.p.extra_y_ranges = {"temperature": Range1d(start=-50, end=50)}
+#        self.p.extra_y_ranges = {"multistates": Range1d(start=0, end=10)}
+#        self.p.add_layout(LinearAxis(y_range_name="temperature"), 'left')
+#        self.p.add_layout(LinearAxis(y_range_name="percent"), 'left')
+#        self.p.add_layout(LinearAxis(y_range_name="binary"), 'right')
+#        self.p.add_layout(LinearAxis(y_range_name="multistates"), 'right')
+
         #BokehRenderer.figures[title] = self.p
         #BokehRenderer.render_threads[title] = self
         self._instances.add(weakref.ref(self)) 
  
-        output_server('Commissionning %s' % (self.device.properties.name))
-                    
-        cursession().publish()
+#        output_server('Commissionning %s' % (self.device.properties.name))                   
+#        cursession().publish()
+        # Open a session which will keep our local doc in sync with server
+        session = push_session(curdoc())
+        
+        # Open the session in a browser
+        session.show()
         
     @classmethod
     def getinstances(cls):
@@ -121,6 +137,8 @@ class BokehRenderer(Thread):
                         color = "#%06x" % random.randint(0x000000, 0x777777), 
                         legend='Notes',
                         size = 40) 
+                        
+
 
         for each in lst:
             try:
@@ -137,6 +155,7 @@ class BokehRenderer(Thread):
                     )
 
             if each in binary_states:
+                
                 self.p.circle('x', 
                             'y',
                             source = source,
@@ -204,26 +223,40 @@ class BokehRenderer(Thread):
     @classmethod        
     def make_grid(cls):
 
-        figs = []        
+        figs = []
+        layout = None
+        # clean
+        BokehRenderer.getinstances()
+        # reset
         for obj in BokehRenderer.getinstances():
             figs.append(obj.p)
        
-        if len(figs) > 1:
-            number_of_rows = int(round(len(figs) / 2))
-            rows = []
-            number_of_columns = 2
-            i = 0
-            for each in range(number_of_rows):
-                rows.append(list(fig for fig in figs[i:i+number_of_columns]))
-                i += number_of_columns
-            layout = gridplot(rows)
+#        if len(figs) > 1:
+#            number_of_rows = int(round(len(figs) / 2))
+#            rows = []
+#            number_of_columns = 2
+#            i = 0
+#            for each in range(number_of_rows):
+#                rows.append(list(fig for fig in figs[i:i+number_of_columns]))
+#                i += number_of_columns
+#            layout = gridplot(rows)
 
-        else:
-            layout = vplot(figs[0])
+#        else:
+        layout = vplot(*figs)
 
         cursession().publish()        
         show(layout)
 
+    def choose_y_axis(self, point_name):
+        """
+        Could be use to select the y axis... not working yet...
+        """
+        if point_name in list(self.device.temperatures):
+            return 'temperature'
+        elif point_name in list(self.device.percent):
+            return 'percent'
+        else:
+            return None
 
     def stop(self):
         self.exitFlag = True
