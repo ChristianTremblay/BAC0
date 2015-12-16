@@ -9,3 +9,4 @@ from .core.devices.Device import Device as device
 from .tasks.Poll import SimplePoll as poll
 from .tasks.Match import Match as match
 from .tasks.BokehRenderer import BokehRenderer as chart
+from .infos import __version__ as version

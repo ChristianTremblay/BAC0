@@ -13,11 +13,10 @@ import random
 from bokeh.plotting import Figure
 from bokeh.models import ColumnDataSource, HoverTool
 from bokeh.io import curdoc, vplot
-from bokeh.models.widgets import VBox, HBox, Slider, TextInput, VBoxForm
-from bokeh.client import push_session, pull_session
+from bokeh.models.widgets import HBox, Slider, TextInput, VBoxForm
+
 
 from bokeh.document import Document
-import bokeh.embed as embed
 
 from collections import OrderedDict
 import logging
@@ -36,19 +35,13 @@ class BokehRenderer(object):
 #        self.app = Application()
         self.lst = self.points_list
         
-#        self.doc = Document()
+        self.doc = Document()
         self.multi_states = self.device.multi_states
         self.binary_states = self.device.binary_states
-        self.analog_units = self.device.analog_units
-        self.document = Document()
-        #self.session = pull_session(url='http://localhost:5006', app_path='/')
-        print('Building')
-        self.build_plot()
-        self.session = push_session(self.document)
+        self.analog_units = self.device.analog_units 
         
         # Get data
     def read_lst(self):
-        print('Reading list')
         df = self.device[self.lst]
         try:
             df = df.fillna(method='ffill').fillna(method='bfill').replace(['inactive', 'active'], [0, 50])
@@ -58,15 +51,12 @@ class BokehRenderer(object):
         df = df.reset_index()
         df['name'] = 'nameToReplace'
         df['units'] = 'waiting for refresh'
-        df['time_s'] = df['index'].apply(str)
         return df
 
     def read_notes(self):
-        print('Reading notes')
         notes_df = self.device.notes.reset_index()
         notes_df['value'] = 100
         notes_df['desc'] = 'Notes'
-        notes_df['time_s'] = notes_df['index'].apply(str)
         return notes_df
 
     def build_plot(self):        
@@ -82,7 +72,6 @@ class BokehRenderer(object):
                     data=dict(
                         x = notes_df['index'],
                         y = notes_df['value'],
-                        time = notes_df['time_s'],
                         desc = notes_df['desc'],
                         units = notes_df[0]
                     )
@@ -105,22 +94,18 @@ class BokehRenderer(object):
             ('name', '@desc'),
             ('value', '@y'),
             ('units', '@units'),
-            ('time', '@time'),
         ])
         
-        # Build a plot for each point in list
-        self.sources = {}               
+        # Build a plot for each point in list                
         for each in self.lst:
-            
             try:
                 df['name'] = df['name'].replace('nameToReplace', ('%s / %s' % (each, self.device[each]['description'])))            
             except TypeError:
                 continue
-            self.sources[each] = ColumnDataSource(
+            source = ColumnDataSource(
                             data=dict(
                             x = df['index'],
                             y = df[each],
-                            time = df['time_s'],
                             desc = df['name'],
                             units = df['units']
                         )
@@ -130,7 +115,7 @@ class BokehRenderer(object):
                 
                 self.p.circle('x', 
                             'y',
-                            source = self.sources[each],
+                            source = source,
                             name = each,
                             color = "#%06x" % random.randint(0x000000, 0x777777), 
                             legend=each,
@@ -138,7 +123,7 @@ class BokehRenderer(object):
             elif each in self.multi_states:
                 self.p.diamond('x', 
                             'y',
-                            source = self.sources[each],
+                            source = source,
                             name = each,
                             color = "#%06x" % random.randint(0x000000, 0x777777), 
                             legend=each,
@@ -146,78 +131,64 @@ class BokehRenderer(object):
             else:
                 self.p.line('x',
                             'y',
-                            source = self.sources[each],
+                            source = source,
                             name = each,
                             color = "#%06x" % random.randint(0x000000, 0x777777),
                             legend=each,
                             line_width = 2)
             
-        layout = VBox(self.p)
-        self.document.add_root(self.p)
-        #self.document.add_periodic_callback(self.update_data, 100)     
-        #srv = embed.autoload_server(layout)   
+        layout = vplot(self.p)
+        curdoc().add_root(layout)
+        curdoc().add_periodic_callback(self.update_data, 1000)     
+            
         
 
     def update_data(self):
-        print('Running update')
-#        for renderer in self.p.renderers:
-#            name = renderer.name
-#            if name in self.lst:
-#                df = self.read_lst()                
-#                
- #               glyph_renderer = renderer
- #               df['name'] = df['name'].replace('nameToReplace', ('%s / %s' % (name, self.device[name]['description'])))
- #               glyph_renderer.data_source.data['x'] = df['index']
- #               glyph_renderer.data_source.data['y'] = df[name]
- #               glyph_renderer.data_source.data['desc'] = df['name']
- #               if name in self.multi_states:
- #                   glyph_renderer.data_source.data['units'] = [self.multi_states[name][int(math.fabs(x-1))] for x in df[name]]
- #               elif name in self.binary_states:
- #                   glyph_renderer.data_source.data['y'] = df[name]
- #                   glyph_renderer.data_source.data['units'] = [self.binary_states[name][int(x/50)] for x in df[name]]
- #               else:
- #                   df['units'] = self.analog_units[name]
- #                   glyph_renderer.data_source.data['units'] = df['units']
- #           elif name == 'Notes':
- #               notes_df = self.read_notes()
- #               glyph_renderer = renderer
- #               glyph_renderer.data_source.data['x'] = notes_df['index']
- #               glyph_renderer.data_source.data['y'] = notes_df['value']
- #               glyph_renderer.data_source.data['desc'] = notes_df['desc']
- #               glyph_renderer.data_source.data['units'] = notes_df[0]
-        for key, value in self.sources.items():
-            df = self.read_lst()
-            try:
-                df['name'] = df['name'].replace('nameToReplace', ('%s / %s' % (key, self.device[key]['description'])))            
-            except TypeError:
-                continue
-            self.sources[key] = ColumnDataSource(
-                            data=dict(
-                            x = df['index'],
-                            y = df[key],
-                            time = df['time_s'],
-                            desc = df['name'],
-                            units = df['units']
-                        )
-                    )
+        for renderer in self.p.renderers:
+            name = renderer.name
+            if name in self.lst:
+                df = self.read_lst()                
+                
+                glyph_renderer = renderer
+                df['name'] = df['name'].replace('nameToReplace', ('%s / %s' % (name, self.device[name]['description'])))
+                glyph_renderer.data_source.data['x'] = df['index']
+                glyph_renderer.data_source.data['y'] = df[name]
+                glyph_renderer.data_source.data['desc'] = df['name']
+                if name in self.multi_states:
+                    glyph_renderer.data_source.data['units'] = [self.multi_states[name][int(math.fabs(x-1))] for x in df[name]]
+                elif name in self.binary_states:
+                    glyph_renderer.data_source.data['y'] = df[name]
+                    glyph_renderer.data_source.data['units'] = [self.binary_states[name][int(x/50)] for x in df[name]]
+                else:
+                    df['units'] = self.analog_units[name]
+                    glyph_renderer.data_source.data['units'] = df['units']
+            elif name == 'Notes':
+                notes_df = self.read_notes()
+                glyph_renderer = renderer
+                glyph_renderer.data_source.data['x'] = notes_df['index']
+                glyph_renderer.data_source.data['y'] = notes_df['value']
+                glyph_renderer.data_source.data['desc'] = notes_df['desc']
+                glyph_renderer.data_source.data['units'] = notes_df[0]
+
+    
 
 
-#    def choose_y_axis(self, point_name):
-#        """
-#        Could be use to select the y axis... not working yet...
-#        """
-#        if point_name in list(self.device.temperatures):
-#            return 'temperature'
-#        elif point_name in list(self.device.percent):
-#            return 'percent'
-#        else:
-#            return None
+    def choose_y_axis(self, point_name):
+        """
+        Could be use to select the y axis... not working yet...
+        """
+        if point_name in list(self.device.temperatures):
+            return 'temperature'
+        elif point_name in list(self.device.percent):
+            return 'percent'
+        else:
+            return None
 
-#    def stop(self):
-#        self.exitFlag = True
+    def stop(self):
+        self.exitFlag = True
 
-#    def beforeStop(self):
-#        """
-#        Action done when closing thread
-#        """
-#        pass
+    def beforeStop(self):
+        """
+        Action done when closing thread
+        """
+        pass

@@ -134,7 +134,7 @@ class Device():
                 print('Wrong name, removing %s from list' % point)
                 
         self.properties.serving_chart[title] = BokehRenderer(self,lst, title = title)
-        self.properties.serving_chart[title].start()
+        #self.properties.serving_chart[title].start()
 
             
     @property
