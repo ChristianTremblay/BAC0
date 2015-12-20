@@ -304,7 +304,7 @@ class Device():
         """
         try:
             if isinstance(point_name,list):
-                return self.df(point_name)
+                return self.df(point_name, force_read = False)
             else:
                 return self._findPoint(point_name)
         except ValueError as ve:

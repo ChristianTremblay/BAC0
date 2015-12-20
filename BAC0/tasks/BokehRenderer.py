@@ -45,7 +45,9 @@ class BokehRenderer(object):
         layout = self.build_plot()
         self.session = push_session(self.document)
         self.document.add_root(layout)
-        self.document.add_periodic_callback(self.update_data, 100)     
+        self.document.add_periodic_callback(self.update_data, 100)   
+        self.session_id = self.session.id
+        print('http://localhost:5006/?bokeh-session-id=%s' % self.session_id)
 
         
         # Get data
