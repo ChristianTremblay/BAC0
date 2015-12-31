@@ -29,6 +29,7 @@ from ..core.io.Read import ReadProperty
 from ..core.io.Write import WriteProperty
 from ..core.functions.GetIPAddr import HostIP
 from ..core.io.Simulate import Simulation
+from ..tasks.BokehRenderer import BokehSession, BokehDocument
 
 # some debugging
 _DEBUG = 0
@@ -66,6 +67,12 @@ class ReadWriteScript(BasicScript, ReadProperty, WriteProperty, Simulation):
 
         # Force and global whois to find all devices on the network
         self.whois()
+        self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
+        self.new_bokeh_session()
+        self.bokeh_session.loop()
+
+    def new_bokeh_session(self):
+        self.bokeh_session = BokehSession(self.bokeh_document.document)
 
     def __repr__(self):
         return 'Bacnet Network using ip %s with device id %s' % (self.localIPAddr, self.Boid)

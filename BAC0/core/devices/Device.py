@@ -13,7 +13,7 @@ from bacpypes.basetypes import ServicesSupported
 from .Points import NumericPoint, BooleanPoint, EnumPoint
 from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException
 from ...tasks.Poll import DevicePoll
-from ...tasks.BokehRenderer import BokehRenderer
+from ...tasks.BokehRenderer import BokehPlot
 
 from collections import namedtuple
 import pandas as pd
@@ -116,7 +116,7 @@ class Device():
     
         return pd.DataFrame(dict(zip(list_of_points,his)))
         
-    def chart(self, list_of_points, *, title = 'Live Trending of %s' % self.properties.name):
+    def chart(self, list_of_points, *, title = 'Live Trending'):
         """
         chart offers a way to draw a chart from a list of points.
         It allows to pass args to the pandas plot() functions
@@ -133,7 +133,7 @@ class Device():
             else:
                 print('Wrong name, removing %s from list' % point)
                 
-        self.properties.serving_chart[title] = BokehRenderer(self,lst, title = title)
+        self.properties.serving_chart[title] = BokehPlot(self,lst, title = title)
         #self.properties.serving_chart[title].start()
 
             

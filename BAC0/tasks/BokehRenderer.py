@@ -24,51 +24,18 @@ import weakref
 
 from .BokehLoopUntilClosed import BokehLoopUntilClosed
 
-class BokehSession(object):
-    
-
-class BokehRenderer(object):
-    
+class InstancesMixin(object):
     _instances = set()
-
-    def __init__(self, device, points_list, *, title = 'My title'):
-        self.device = device
-        self.points_list = points_list
-        self.title = title
-        self.units = {}
-        
-        for obj in BokehRenderer.getinstances():
+    
+    def checkInstances(self, cls):
+        for obj in cls.getinstances():
             if obj.title == self.title:
-                obj.stop()
                 del obj        
         #clean instances
         list(self.getinstances())
 
         self._instances.add(weakref.ref(self)) 
         
-
-        logging.getLogger("requests").setLevel(logging.INFO)
-        logging.getLogger("bokeh").setLevel(logging.INFO)
-
-        self.lst = self.points_list
-
-        self.multi_states = self.device.multi_states
-        self.binary_states = self.device.binary_states
-        self.analog_units = self.device.analog_units
-        self.document = Document(title = 'BAC0 - Live trending')
-        self.document.clear()
-        print('Building')
-        plot = self.build_plot()
-        layout = VBox(plot)
-        
-        self.session = push_session(self.document)
-        self.document.add_root(layout)
-        self.document.add_periodic_callback(self.update_data, 100)   
-        self.session_id = self.session.id
-        print('http://localhost:5006/?bokeh-session-id=%s' % self.session_id)
-        loop = BokehLoopUntilClosed(self.session)
-        loop.start()
-
     @classmethod
     def getinstances(cls):
         dead = set()
@@ -78,10 +45,68 @@ class BokehRenderer(object):
                 yield obj
             else:
                 dead.add(ref)
-        cls._instances -= dead       
-        # Get data
+        cls._instances -= dead
+        
+class BokehDocument(InstancesMixin):
+    def __init__(self, title = 'Live Trending'):
+        self.document = Document(title = 'BAC0 - Live trending')
+        self.plots = []
+        
+    def add_plot(self, plot):
+        self.document.clear()
+        self.plots.append(plot)
+        layout = VBox(self.plots)
+        self.document.add_root(layout)
+        
+    def add_periodic_callback(self, cb, update = 100):
+        self.document.add_periodic_callback(cb,update)
+
+class BokehSession(object):
+    _session = None
+    _loop = None
+    def __init__(self, document):
+        if BokehSession._session == None:
+            BokehSession._session = push_session(document)
+        else:
+            pass
+        self.session_id = BokehSession._session.id
+        print('http://localhost:5006/?bokeh-session-id=%s' % self.session_id)
+    
+    def loop(self):
+        if BokehSession._loop == None:
+            BokehSession._loop = BokehLoopUntilClosed(BokehSession._session)
+            BokehSession._loop.start() 
+        else:
+            BokehSession._loop.stop()
+            BokehSession._loop = BokehLoopUntilClosed(BokehSession._session)
+            BokehSession._loop.start()
+
+class BokehPlot(object):
+    def __init__(self, device, points_list, *, title = 'My title'):
+        self.device = device
+        self.points_list = points_list
+        self.title = title
+        self.units = {}
+
+        #self.checkInstances(BokehPlot)
+        
+        logging.getLogger("requests").setLevel(logging.INFO)
+        logging.getLogger("bokeh").setLevel(logging.INFO)
+
+        self.lst = self.points_list
+
+        self.multi_states = self.device.multi_states
+        self.binary_states = self.device.binary_states
+        self.analog_units = self.device.analog_units
+
+        print('Building')
+        plot = self.build_plot()
+
+        self.device.properties.network.bokeh_document.add_plot(plot)
+        self.device.properties.network.bokeh_document.add_periodic_callback(self.update_data, 100)   
+        
+     # Get data
     def read_lst(self):
-        print('Reading list')
         df = self.device[self.lst]
         try:
             df = df.fillna(method='ffill').fillna(method='bfill').replace(['inactive', 'active'], [0, 50])
@@ -95,7 +120,6 @@ class BokehRenderer(object):
         return df
 
     def read_notes(self):
-        print('Reading notes')
         notes_df = self.device.notes.reset_index()
         notes_df['value'] = 100
         notes_df['desc'] = 'Notes'
@@ -130,8 +154,6 @@ class BokehRenderer(object):
                         legend='Notes',
                         size = 40) 
 
-        # plot = plot ?
-#        self.p = self.p
         self.p.legend.location = 'top_left'
         hover = self.p.select(dict(type=HoverTool))
         hover.tooltips = OrderedDict([
@@ -188,7 +210,6 @@ class BokehRenderer(object):
         return self.p
 
     def update_data(self):
-        print('Running update')
         df = self.read_lst()
         for renderer in self.p.renderers:
             name = renderer.name
@@ -215,52 +236,3 @@ class BokehRenderer(object):
                 glyph_renderer.data_source.data['desc'] = notes_df['desc']
                 glyph_renderer.data_source.data['units'] = notes_df[0]
                 glyph_renderer.data_source.data['time'] = notes_df['time_s']
-
-#        df = self.read_lst() 
-#        notes_df = self.read_notes()
-#        
-#        for key, value in self.sources.items():            
-#            try:
-#                df['name'] = df['name'].replace('nameToReplace', ('%s / %s' % (key, self.device[key]['description'])))            
-#            except TypeError:
-#                continue
-#            self.sources[key].data = ColumnDataSource(
-#                            data=dict(
-#                            x = df['index'],
-#                            y = df[key],
-#                            time = df['time_s'],
-#                            desc = df['name'],
-#                            units = df['units']
-#                        )
-#                    )       
-#        self.notes_source.data = ColumnDataSource(
-#                        data=dict(
-#                        x = notes_df['index'],
-#                        y = notes_df[key],
-#                        time = notes_df['time_s'],
-#                        desc = notes_df['name'],
-#                        units = notes_df['units']
-#                    )
-#                )
-
-
-
-#    def choose_y_axis(self, point_name):
-#        """
-#        Could be use to select the y axis... not working yet...
-#        """
-#        if point_name in list(self.device.temperatures):
-#            return 'temperature'
-#        elif point_name in list(self.device.percent):
-#            return 'percent'
-#        else:
-#            return None
-
-#    def stop(self):
-#        self.exitFlag = True
-
-#    def beforeStop(self):
-#        """
-#        Action done when closing thread
-#        """
-#        pass
