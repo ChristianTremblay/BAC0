@@ -116,7 +116,7 @@ class Device():
     
         return pd.DataFrame(dict(zip(list_of_points,his)))
         
-    def chart(self, list_of_points, *, title = 'New'):
+    def chart(self, list_of_points, *, title = 'Live Trending of %s' % self.properties.name):
         """
         chart offers a way to draw a chart from a list of points.
         It allows to pass args to the pandas plot() functions

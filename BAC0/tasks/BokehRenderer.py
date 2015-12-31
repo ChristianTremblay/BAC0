@@ -12,25 +12,41 @@ import time
 import random
 from bokeh.plotting import Figure
 from bokeh.models import ColumnDataSource, HoverTool
-from bokeh.io import curdoc, vplot
 from bokeh.models.widgets import VBox, HBox, Slider, TextInput, VBoxForm
 from bokeh.client import push_session, pull_session
-
+from bokeh.driving import repeat
 from bokeh.document import Document
-import bokeh.embed as embed
 
 from collections import OrderedDict
 import logging
 import math
 import weakref
 
-class BokehRenderer(object):
+from .BokehLoopUntilClosed import BokehLoopUntilClosed
 
-    def __init__(self, device, points_list, *, title = 'My title', daemon = True):
+class BokehSession(object):
+    
+
+class BokehRenderer(object):
+    
+    _instances = set()
+
+    def __init__(self, device, points_list, *, title = 'My title'):
         self.device = device
         self.points_list = points_list
         self.title = title
         self.units = {}
+        
+        for obj in BokehRenderer.getinstances():
+            if obj.title == self.title:
+                obj.stop()
+                del obj        
+        #clean instances
+        list(self.getinstances())
+
+        self._instances.add(weakref.ref(self)) 
+        
+
         logging.getLogger("requests").setLevel(logging.INFO)
         logging.getLogger("bokeh").setLevel(logging.INFO)
 
@@ -39,17 +55,30 @@ class BokehRenderer(object):
         self.multi_states = self.device.multi_states
         self.binary_states = self.device.binary_states
         self.analog_units = self.device.analog_units
-        self.document = Document(title = 'Salut !')
+        self.document = Document(title = 'BAC0 - Live trending')
         self.document.clear()
         print('Building')
-        layout = self.build_plot()
+        plot = self.build_plot()
+        layout = VBox(plot)
+        
         self.session = push_session(self.document)
         self.document.add_root(layout)
         self.document.add_periodic_callback(self.update_data, 100)   
         self.session_id = self.session.id
         print('http://localhost:5006/?bokeh-session-id=%s' % self.session_id)
+        loop = BokehLoopUntilClosed(self.session)
+        loop.start()
 
-        
+    @classmethod
+    def getinstances(cls):
+        dead = set()
+        for ref in cls._instances:
+            obj = ref()
+            if obj is not None:
+                yield obj
+            else:
+                dead.add(ref)
+        cls._instances -= dead       
         # Get data
     def read_lst(self):
         print('Reading list')
@@ -77,10 +106,10 @@ class BokehRenderer(object):
         df = self.read_lst()
         notes_df = self.read_notes()
 
-        TOOLS = "resize,save,pan,box_zoom,wheel_zoom,reset"
+        TOOLS = "hover,resize,save,pan,box_zoom,wheel_zoom,reset"
         
         # Generate a figure container for notes
-        self.p = Figure(plot_width=500, plot_height=450, x_axis_type="datetime", title = self.title, tools = TOOLS)
+        self.p = Figure(plot_width=800, plot_height=600, x_axis_type="datetime", title = self.title, tools = TOOLS)
 
         self.notes_source = ColumnDataSource(
                     data=dict(
@@ -125,7 +154,7 @@ class BokehRenderer(object):
                             x = df['index'],
                             y = df[each],
                             time = df['time_s'],
-                            desc = df['name'],
+                            name = df['name'],
                             units = df['units']
                         )
                     )
@@ -156,9 +185,7 @@ class BokehRenderer(object):
                             legend=each,
                             line_width = 2)
             
-        return VBox(self.p)
-        #srv = embed.autoload_server(layout)   
-        
+        return self.p
 
     def update_data(self):
         print('Running update')
@@ -167,10 +194,11 @@ class BokehRenderer(object):
             name = renderer.name
             if name in self.points_list:
                 glyph_renderer = renderer
-                df['name'] = df['name'].replace('nameToReplace', ('%s / %s' % (name, self.device[name]['description'])))
+                df['name'] = ('%s / %s' % (name, self.device[name]['description']))
                 glyph_renderer.data_source.data['x'] = df['index']
                 glyph_renderer.data_source.data['y'] = df[name]
                 glyph_renderer.data_source.data['desc'] = df['name']
+                glyph_renderer.data_source.data['time'] = df['time_s']
                 if name in self.multi_states:
                     glyph_renderer.data_source.data['units'] = [self.multi_states[name][int(math.fabs(x-1))] for x in df[name]]
                 elif name in self.binary_states:
@@ -186,6 +214,7 @@ class BokehRenderer(object):
                 glyph_renderer.data_source.data['y'] = notes_df['value']
                 glyph_renderer.data_source.data['desc'] = notes_df['desc']
                 glyph_renderer.data_source.data['units'] = notes_df[0]
+                glyph_renderer.data_source.data['time'] = notes_df['time_s']
 
 #        df = self.read_lst() 
 #        notes_df = self.read_notes()
