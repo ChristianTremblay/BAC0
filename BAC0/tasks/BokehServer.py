@@ -10,19 +10,13 @@ tasks for simulation purposes
 """
 from threading import Thread
 
-import time
-import random
-from bokeh.plotting import Figure, ColumnDataSource
-from bokeh.models import HoverTool, LinearAxis, Range1d
-from bokeh.io import gridplot, vplot, curdoc
-#from bokeh.embed import autoload_server
-#from bokeh.session import Session
-#from bokeh.document import Document
-
 from bokeh.application import Application
-from bokeh.document import Document
 from bokeh.server.server import Server
-
+from tornado.ioloop import IOLoop
+import os
+import subprocess
+from subprocess import PIPE
+import shlex
 
 class BokehServer(Thread):
 
@@ -30,8 +24,9 @@ class BokehServer(Thread):
     def __init__(self, *, daemon = True):
         Thread.__init__(self, daemon = daemon)
         self.exitFlag = False
-        self.app = Application()
-        
+        #self.app = Application()
+        #self.server = Server(Application(), io_loop= IOLoop(), extra_patterns=None, port=5006)
+                
     def run(self):
         self.process()
 
@@ -40,9 +35,30 @@ class BokehServer(Thread):
         while not self.exitFlag:
             self.task()
 
-    def task(self):
+    def launchWithoutConsole(self, command, args):
+        #os.environ['__compat_layer'] = 'RUNASINVOKER'
+        """Launches 'command' windowless and waits until finished"""
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        return subprocess.Popen([command] + args, startupinfo=startupinfo).wait()
 
-        self.bokeh_server = Server(self.app)
+    def startProcess(self, commandToExecute):
+        """
+        c:\\JCI\\FXWorkbench-6.0\\bin\\wb.exe
+        arg = "-profile:jciFxDriverAppliance:JciFullApplianceProfile -locale:fr"
+         C:\JCI\FXWorkbench-6.0\bin\wb.exe
+        """
+        cmdargs = shlex.split(commandToExecute)
+        print('Starting process : %s' % cmdargs)
+        p = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE)
+        output, errors = p.communicate()
+        if p.returncode:
+            return('Failed running %s' % commandToExecute)
+            #raise Exception(errors)
+        return output.decode('utf-8')
+    
+    def task(self):
+        self.startProcess('C:\\Users\\ctremblay.SERVISYS\\AppData\\Local\\Continuum\\Anaconda3\\bs.bat')
 
     def stop(self):
         self.bokeh_server.stop()
