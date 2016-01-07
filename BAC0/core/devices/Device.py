@@ -125,16 +125,20 @@ class Device():
         :param plot_args: arg for plot function
         :returns: plot()
         """
-        lst = []
-        for point in list_of_points:
-            if point in self.points_name:
-                print('Add %s to list' % point)
-                lst.append(point)
-            else:
-                print('Wrong name, removing %s from list' % point)
-                
-        self.properties.serving_chart[title] = BokehPlot(self,lst, title = title, show_notes = show_notes)
-        #self.properties.serving_chart[title].start()
+        if self.properties.network.bokehserver:
+            lst = []
+            for point in list_of_points:
+                if point in self.points_name:
+                    #print('Add %s to list' % point)
+                    lst.append(point)
+                else:
+                    print('Wrong name, removing %s from list' % point)
+            try:                    
+                self.properties.serving_chart[title] = BokehPlot(self,lst, title = title, show_notes = show_notes)
+            except Exception as error:
+                print('A problem ocurred : %s' % error)
+        else:
+            print("No bokeh server running, can't display chart")
 
             
     @property

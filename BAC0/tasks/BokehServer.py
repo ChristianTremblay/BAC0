@@ -9,11 +9,15 @@ This module allows the creation of threads that will be used as repetitive
 tasks for simulation purposes
 """
 from threading import Thread
+import time
 
 from bokeh.application import Application
 from bokeh.server.server import Server
+from bokeh.command.bootstrap import main as bokehserve
+
 from tornado.ioloop import IOLoop
 import os
+import sys
 import subprocess
 from subprocess import PIPE
 import shlex
@@ -35,30 +39,28 @@ class BokehServer(Thread):
         while not self.exitFlag:
             self.task()
 
-    def launchWithoutConsole(self, command, args):
-        #os.environ['__compat_layer'] = 'RUNASINVOKER'
-        """Launches 'command' windowless and waits until finished"""
-        startupinfo = subprocess.STARTUPINFO()
-        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        return subprocess.Popen([command] + args, startupinfo=startupinfo).wait()
-
-    def startProcess(self, commandToExecute):
-        """
-        c:\\JCI\\FXWorkbench-6.0\\bin\\wb.exe
-        arg = "-profile:jciFxDriverAppliance:JciFullApplianceProfile -locale:fr"
-         C:\JCI\FXWorkbench-6.0\bin\wb.exe
-        """
+    def startServer(self):
+        if 'win' in sys.platform:
+            commandToExecute = "bokeh.bat serve"
+        else:
+            commandToExecute = "bokeh serve"
         cmdargs = shlex.split(commandToExecute)
-        print('Starting process : %s' % cmdargs)
+        #showDebug("EXECUTE BOKEH SERVE COMMAND '%s'" % cmdargs)
         p = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE)
         output, errors = p.communicate()
         if p.returncode:
-            return('Failed running %s' % commandToExecute)
-            #raise Exception(errors)
+            print('Failed running %s' % commandToExecute)
+            raise Exception(errors)
         return output.decode('utf-8')
     
     def task(self):
-        self.startProcess('C:\\Users\\ctremblay.SERVISYS\\AppData\\Local\\Continuum\\Anaconda3\\bs.bat')
+        #self.startProcess('C:\\Users\\ctremblay.SERVISYS\\AppData\\Local\\Continuum\\Anaconda3\\bs.bat')
+        try:
+            self.startServer()
+        except Exception:
+            print('Bokeh server already running')
+            self.exitFlag = True
+        #bokehserve(['','serve'])
 
     def stop(self):
         self.bokeh_server.stop()

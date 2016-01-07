@@ -8,23 +8,18 @@
 This module allows the creation of threads that will be used as repetitive
 tasks for simulation purposes
 """
-import time
 import random
 from bokeh.plotting import Figure
-from bokeh.charts.glyphs import StepGlyph
-from bokeh.models import ColumnDataSource, HoverTool, CustomJS
-from bokeh.models.widgets import VBox, HBox, Slider, TextInput, VBoxForm
-from bokeh.client import push_session, pull_session
-from bokeh.driving import repeat
+from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models.widgets import VBox
+from bokeh.client import push_session
 from bokeh.document import Document
-from bokeh.io import gridplot, vplot
+from bokeh.io import gridplot
 
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 import logging
 import math
 import weakref
-import uuid
-from itertools import zip_longest
 
 from .BokehLoopUntilClosed import BokehLoopUntilClosed
 
@@ -34,8 +29,7 @@ class InstancesMixin(object):
     def checkInstances(self, cls):
         for obj in cls.getinstances():
             if obj.title == self.title:
-                del obj        
-        #clean instances
+                del obj
         list(self.getinstances())
 
         self._instances.add(weakref.ref(self)) 
@@ -53,11 +47,15 @@ class InstancesMixin(object):
         
 class BokehDocument(InstancesMixin):
     def __init__(self, title = 'Live Trending'):
-        self.document = Document(title = 'BAC0 - Live trending')
+        self.document = Document(title = title)
         self.plots = []
+        logging.getLogger("requests").setLevel(logging.INFO)
+        logging.getLogger("bokeh").setLevel(logging.INFO)
         
     def add_plot(self, new_plot, linked_x_axis = True):
         self.document.clear()
+        new_plot.x_range.bounds = None
+        new_plot.y_range.bounds = None
         for key, plot in enumerate(self.plots):
             if new_plot.title == plot.title:
                 self.plots.pop(key)
@@ -68,26 +66,9 @@ class BokehDocument(InstancesMixin):
         if linked_x_axis:
             for plot in self.plots[1:]:
                 plot.x_range = self.plots[0].x_range
+                plot.x_range.bounds = None
+                plot.y_range.bounds = None
                 
-#        yrange_callback = CustomJS(args=dict(source=source), code="""
-#            var data = source.get('data');
-#            var start = cb_obj.get('frame').get('y_range').get('start');
-#            var end = cb_obj.get('frame').get('y_range').get('end');
-#            data['y'] = [start + (end - start) / 2];
-#            data['height'] = [end - start];
-#            source.trigger('change');
-#        """)
-#        self.p.y_range.callback = yrange_callback  
-#        for plot in self.plots
-        #
-#        def grouper(iterable, n, fillvalue=None):
-#            "Collect data into fixed-length chunks or blocks"
-#            # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
-#            args = [iter(iterable)] * n
-#            return zip_longest(*args, fillvalue=fillvalue)
-#        
-#        rows = [] 
-#        [rows.append(HBox(x)) for x in grouper(self.plots, 2)]
         if len(self.plots) > 1:
             number_of_rows = int(round(len(self.plots) / 2))
             rows = []
@@ -99,7 +80,7 @@ class BokehDocument(InstancesMixin):
             layout = gridplot(rows)
         else:
            layout = VBox(self.plots)            
-#        layout = VBox(self.plots)
+
         self.document.add_root(layout)
         
     def add_periodic_callback(self, cb, update = 100):
@@ -114,6 +95,7 @@ class BokehSession(object):
         else:
             pass
         self.session_id = BokehSession._session.id
+        print('Click here to open Live Trending Web Page')
         print('http://localhost:5006/?bokeh-session-id=%s' % self.session_id)
     
     def loop(self):
@@ -133,22 +115,17 @@ class BokehPlot(object):
         self.units = {}
         self.show_notes = show_notes
 
-        #self.checkInstances(BokehPlot)
-        
-        logging.getLogger("requests").setLevel(logging.INFO)
-        logging.getLogger("bokeh").setLevel(logging.INFO)
-
         self.lst = self.points_list
 
         self.multi_states = self.device.multi_states
         self.binary_states = self.device.binary_states
         self.analog_units = self.device.analog_units
 
-        print('Building')
         plot = self.build_plot()
 
         self.device.properties.network.bokeh_document.add_plot(plot)
         self.device.properties.network.bokeh_document.add_periodic_callback(self.update_data, 100)   
+        print('Please reload your web page to see changes')
         
      # Get data
     def read_lst(self):
@@ -189,8 +166,7 @@ class BokehPlot(object):
                         units = notes_df[0]
                     )
                 )
-                    
-    
+
             self.p.asterisk('x', 
                             'y',
                             source = self.notes_source,
@@ -207,8 +183,7 @@ class BokehPlot(object):
             ('units', '@units'),
             ('time', '@time'),
         ])
-        
-        # Build a plot for each point in list
+
         self.sources = {}               
         for each in self.lst:
             
@@ -227,14 +202,6 @@ class BokehPlot(object):
                     )
 
             if each in self.binary_states:
-                #step = StepGlyph('x', 
-                #            'y',
-                #            source = self.sources[each],
-                #            name = each,
-                #            color = "#%06x" % random.randint(0x000000, 0x777777),
-                #            legend=each,
-                #            width = 4)               
-                #self.p.add_glyph(step)
                 self.p.circle('x', 
                             'y',
                             source = self.sources[each],
@@ -260,7 +227,7 @@ class BokehPlot(object):
                             line_width = 2)
             
         return self.p
-
+    
     def update_data(self):
         df = self.read_lst()
         for renderer in self.p.renderers:

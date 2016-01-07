@@ -65,14 +65,24 @@ class ReadWriteScript(BasicScript, ReadProperty, WriteProperty, Simulation):
         else:
             ip_addr = ip
         BasicScript.__init__(self, localIPAddr=ip_addr)
-
+        self.bokehserver = False
         # Force and global whois to find all devices on the network
         self.whois()
-        #self.BokehServer = BokehServer()
-        #self.BokehServer.start()
-        self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
-        self.new_bokeh_session()
-        self.bokeh_session.loop()
+        self.start_bokeh()
+        
+    def start_bokeh(self):
+        try:
+            self.BokehServer = BokehServer()
+            self.BokehServer.start()
+            self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
+            self.new_bokeh_session()
+            self.bokeh_session.loop()
+            self.bokehserver = True
+        except OSError as error:
+            print('Please start bokeh serve to use trending features')
+            print('controller.chart will not work')
+        except RuntimeError as rterror:
+            print('Server already running')           
 
     def new_bokeh_session(self):
         self.bokeh_session = BokehSession(self.bokeh_document.document)
