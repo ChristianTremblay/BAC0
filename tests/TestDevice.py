@@ -27,7 +27,6 @@ from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
     ReadPropertyMultipleRequest
 from bacpypes.basetypes import PropertyIdentifier
 
-@bacpypes_debugging
 class TestReadWriteScript(ReadWriteScript):
     def __init__(self):
         self.bokehserver = False

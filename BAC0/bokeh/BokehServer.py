@@ -28,14 +28,11 @@ class BokehServer(Thread):
     def __init__(self, *, daemon = True):
         Thread.__init__(self, daemon = daemon)
         self.exitFlag = False
-        #self.app = Application()
-        #self.server = Server(Application(), io_loop= IOLoop(), extra_patterns=None, port=5006)
                 
     def run(self):
         self.process()
 
     def process(self):
-        # if self.started = True
         while not self.exitFlag:
             self.task()
 
@@ -45,7 +42,6 @@ class BokehServer(Thread):
         else:
             commandToExecute = "bokeh serve"
         cmdargs = shlex.split(commandToExecute)
-        #showDebug("EXECUTE BOKEH SERVE COMMAND '%s'" % cmdargs)
         p = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE)
         output, errors = p.communicate()
         if p.returncode:
@@ -54,13 +50,11 @@ class BokehServer(Thread):
         return output.decode('utf-8')
     
     def task(self):
-        #self.startProcess('C:\\Users\\ctremblay.SERVISYS\\AppData\\Local\\Continuum\\Anaconda3\\bs.bat')
         try:
             self.startServer()
         except Exception:
             print('Bokeh server already running')
             self.exitFlag = True
-        #bokehserve(['','serve'])
 
     def stop(self):
         self.bokeh_server.stop()
