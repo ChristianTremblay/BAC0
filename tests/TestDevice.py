@@ -118,7 +118,11 @@ class TestDevice(unittest.TestCase):
         self.assertTrue(isinstance(self.fake_device['bv1'].history, pd.Series))
         self.assertTrue(isinstance(self.fake_device['mv1'].history, pd.Series))
 
+    def test_dataframe_from_list_of_points(self):
+        self.assertTrue(isinstance(self.fake_device.df(['av1','bv1','mv1']), pd.DataFrame))
 
+    def test_chart_from_list_of_points(self):
+        self.fake_device.chart(['av1','bv1','mv1'])
 
 #class TestReadPropertyClass(ReadProperty):
 #    """
