@@ -45,7 +45,6 @@ class BokehLoopUntilClosed(Thread):
         self.process()
 
     def process(self):
-        # if self.started = True
         while not self.exitFlag:
             self.task()
 

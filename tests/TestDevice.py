@@ -8,10 +8,12 @@ Test Device
 
 from BAC0.core.io.Read import ReadProperty
 from BAC0.core.app.ScriptApplication import ScriptApplication
-from BAC0.core.io.IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController
+from BAC0.core.io.IOExceptions import BokehServerCantStart, ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController
 from BAC0.core.devices.Device import Device
 from BAC0.core.devices.Points import NumericPoint, BooleanPoint, EnumPoint
 from BAC0.scripts import ReadWriteScript
+from BAC0.bokeh.BokehServer import BokehServer
+from BAC0.bokeh.BokehRenderer import BokehSession, BokehDocument
 
 from mock import Mock, patch, call
 import unittest
@@ -19,6 +21,9 @@ from threading import Event, Lock
 from queue import Empty
 import random
 import pandas as pd
+import logging
+import time
+import requests
 
 from bacpypes.app import BIPSimpleApplication
 from bacpypes.pdu import Address
@@ -27,10 +32,40 @@ from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
     ReadPropertyMultipleRequest
 from bacpypes.basetypes import PropertyIdentifier
 
-class TestReadWriteScript(ReadWriteScript):
+class TestReadWriteScript(object):
     def __init__(self):
         self.bokehserver = False
         self.start_bokeh()
+    def start_bokeh(self):
+        try:
+            logging.getLogger("requests").setLevel(logging.INFO)
+            self.BokehServer = BokehServer()
+            self.BokehServer.start()
+            self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
+            self.new_bokeh_session()
+            self.bokeh_session.loop()
+            attemptedConnections = 0
+            while requests.get('http://localhost:5006').status_code != 200:
+                time.sleep(0.1)
+                attemptedConnections += 1
+                if attemptedConnections > 10:
+                    raise BokehServerCantStart
+            self.bokehserver = True
+        except OSError as error:
+            self.bokehserver = False
+            print('Please start bokeh serve to use trending features')
+            print('controller.chart will not work')
+        except RuntimeError as rterror:
+            self.bokehserver = False
+            print('Server already running')
+        except BokehServerCantStart:
+            self.bokehserver = False
+            print("Can't start Bokeh Server")
+            print('controller.chart will not work')
+
+    def new_bokeh_session(self):
+        self.bokeh_session = BokehSession(self.bokeh_document.document)
+
 
 class TestScriptApplication(ScriptApplication):
     """
