@@ -8,7 +8,7 @@ Test Simulation
 
 from BAC0.core.io.Simulate import Simulation
 from BAC0.core.app.ScriptApplication import ScriptApplication
-from BAC0.core.io.IOExceptions import OutOfServiceNotSet, OutOfServiceSet
+from BAC0.core.io.IOExceptions import OutOfServiceNotSet, OutOfServiceSet, ApplicationNotStarted
 
 from mock import Mock, patch, call
 import unittest
@@ -83,11 +83,11 @@ class TestSimulate(unittest.TestCase):
 
     def test_not_started_sim(self):
         """
-        Simulation / If application not started, raise Exception
+        Simulation / If application not started, raise ApplicationNotStarted exception
         """
         self.req = '2:5 analogValue 1 presentValue 100'
         self.simulation._started = False
-        with self.assertRaises(Exception):
+        with self.assertRaises(ApplicationNotStarted):
             self.simulation.sim(self.req)
             
     def test_not_started_release(self):

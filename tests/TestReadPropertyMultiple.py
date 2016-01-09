@@ -22,7 +22,7 @@ from bacpypes.basetypes import PropertyIdentifier
 from threading import Event, Lock
 from queue import Empty
 
-from BAC0.core.io.IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController
+from BAC0.core.io.IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted
 
 
 
@@ -71,7 +71,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
 
     def test_verify_return_value(self):
         """
-        Value returned must be 21 and units should be degreesCelcius
+        TestReadPropertyMultiple / Value returned must be 21 and units should be degreesCelcius to fit fake value
         """
         #self.read_property.this_application._lock = False
         self.assertEqual(
@@ -81,7 +81,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
 
     def test_request_is_correct(self):
         """
-        Request used for method call should be equivalent to base_request
+        TestReadPropertyMultiple / Request used for method call should be equivalent to base_request
         """
         #self.read_property.this_application._lock = False
         self.read_property.readMultiple(self.req)
@@ -98,7 +98,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
 
     def test_wrong_datatype(self):
         """
-        test_wrong_datatype
+        TestReadPropertyMultiple / Wrong type or property should raise ValueError exception
         """
         #self.read_property.this_application._lock = False
         self.req = '2:5 analogVal 1 presentValue units'
@@ -111,7 +111,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
 
     def test_no_prop(self):
         """
-        No property
+        TestReadPropertyMultiple / No property provided should raise ValueError Exception
         """
         #self.read_property.this_application._lock = False
         self.req = '2:5 1 presentValue units'
@@ -120,7 +120,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
 
     def test_no_response_from_controller(self):
         """
-        No response from controller should raise Empty and return None
+        TestReadPropertyMultiple / No response from controller should raise NoResponseFromController exception
         """
         #self.read_property.this_application._lock = False
         self.req = '2:5 analogValue 1 presentValue units'
@@ -130,12 +130,12 @@ class TestReadPropertyMultiple(unittest.TestCase):
 
     def test_not_started(self):
         """
-        If application not started, raise Exception
+        TestReadPropertyMultiple / If application not started, raise ApplicationNotStarted exception
         """
         #self.read_property.this_application._lock = False
         self.req = '2:5 1 presentValue units'
         self.read_property._started = False
-        with self.assertRaises(Exception):
+        with self.assertRaises(ApplicationNotStarted):
             self.read_property.readMultiple(self.req)
 
 

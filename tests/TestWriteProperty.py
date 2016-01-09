@@ -8,7 +8,7 @@ Test Read Property
 
 from BAC0.core.io.Write import WriteProperty
 from BAC0.core.app.ScriptApplication import ScriptApplication
-from BAC0.core.io.IOExceptions import WritePropertyException, WritePropertyCastError, NoResponseFromController
+from BAC0.core.io.IOExceptions import WritePropertyException, WritePropertyCastError, NoResponseFromController, ApplicationNotStarted
 
 from mock import Mock, patch, call
 import unittest
@@ -73,14 +73,14 @@ class TestWriteProperty(unittest.TestCase):
 
     def test_verify_return_value(self):
         """
-        Value returned must be None
+        TestWriteProperty / Write 100@8 Value returned must be None
         """
         #self.write_property.this_application._lock = False
         self.assertEqual(self.write_property.write(self.req), None)
 
     def test_write_null(self):
         """
-        Value returned must be None
+        TestWriteProperty / Write Null Value returned must be None
         """
         #self.write_property.this_application._lock = False
         self.req = '2:5 analogValue 1 presentValue null'
@@ -88,7 +88,7 @@ class TestWriteProperty(unittest.TestCase):
 
     def test_request_is_correct(self):
         """
-        Request used for method call should be equivalent to base_request
+        TestWriteProperty / Request used for method call should be equivalent to base_request
         """
         #self.write_property.this_application._lock = False
         self.write_property.write(self.req)
@@ -102,6 +102,9 @@ class TestWriteProperty(unittest.TestCase):
             self.base_request.debug_contents())
 
     def test_wrong_datatype(self):
+        """
+        TestWriteProperty / Wrong type or property should raise TypeError exception
+        """
         #self.write_property.this_application._lock = False
         self.req = '2:5 analValue 1 presentValue 100'
         with self.assertRaises(TypeError):
@@ -117,8 +120,14 @@ class TestWriteProperty(unittest.TestCase):
 #            self.write_property.write(self.req)
 
     def test_no_prop(self):
+        """
+        TestWriteProperty / No type or property should raise ValueError exception
+        """
         #self.write_property.this_application._lock = False
         self.req = '2:5 1 presentValue 100'
+        with self.assertRaises(ValueError):
+            self.write_property.write(self.req)
+        self.req = '2:5 1 analogValue 100'
         with self.assertRaises(ValueError):
             self.write_property.write(self.req)
 
@@ -128,10 +137,13 @@ class TestWriteProperty(unittest.TestCase):
 #        self.assertEqual(self.write_property.write(self.req),None)
 
     def test_not_started(self):
+        """
+        TestWriteProperty / If application not started, should raise ApplicationNotStarted exception
+        """
         #self.write_property.this_application._lock = False
         self.req = '2:5 analValue 1 presentValue 100'
         self.write_property._started = False
-        with self.assertRaises(Exception):
+        with self.assertRaises(ApplicationNotStarted):
             self.write_property.write(self.req)
 
 

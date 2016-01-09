@@ -8,7 +8,7 @@
 This module define a way to simulate value of IO variables
 """
 
-from .IOExceptions import OutOfServiceNotSet, OutOfServiceSet, NoResponseFromController
+from .IOExceptions import OutOfServiceNotSet, OutOfServiceSet, NoResponseFromController, ApplicationNotStarted
 
 
 class Simulation():
@@ -33,7 +33,7 @@ class Simulation():
 
         """
         if not self._started:
-            raise Exception('App not running, use startApp() function')
+            raise ApplicationNotStarted('App not running, use startApp() function')
         #with self.this_application._lock: if use lock...won't be able to call read...
         args = args.split()
         addr, obj_type, obj_inst, prop_id, value = args[:5]
@@ -67,7 +67,7 @@ class Simulation():
 
         """
         if not self._started:
-            raise Exception('App not running, use startApp() function')
+            raise ApplicationNotStarted('App not running, use startApp() function')
         args = args.split()
         addr, obj_type, obj_inst = args[:3]
         try:

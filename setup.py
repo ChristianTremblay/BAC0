@@ -20,7 +20,8 @@ setup(name='BAC0',
           'BAC0.core.functions',
           'BAC0.core.devices',
           'BAC0.scripts',
-          'BAC0.tasks'
+          'BAC0.tasks',
+          'BAC0.bokeh'
           ],
       install_requires=[
           'pandas',

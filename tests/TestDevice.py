@@ -8,9 +8,17 @@ Test Device
 
 from BAC0.core.io.Read import ReadProperty
 from BAC0.core.app.ScriptApplication import ScriptApplication
+from BAC0.core.io.IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController
+from BAC0.core.devices.Device import Device
+from BAC0.core.devices.Points import NumericPoint, BooleanPoint, EnumPoint
+from BAC0.scripts import ReadWriteScript
 
 from mock import Mock, patch, call
 import unittest
+from threading import Event, Lock
+from queue import Empty
+import random
+import pandas as pd
 
 from bacpypes.app import BIPSimpleApplication
 from bacpypes.pdu import Address
@@ -19,15 +27,25 @@ from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
     ReadPropertyMultipleRequest
 from bacpypes.basetypes import PropertyIdentifier
 
-from threading import Event, Lock
-from queue import Empty
-import random
-import pandas as pd
+@bacpypes_debugging
+class TestReadWriteScript(ReadWriteScript):
+    def __init__(self):
+        self.bokehserver = False
+        self.start_bokeh()
 
-from BAC0.core.io.IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController
-from BAC0.core.devices.Device import Device
-from BAC0.core.devices.Points import NumericPoint, BooleanPoint, EnumPoint
-
+class TestScriptApplication(ScriptApplication):
+    """
+    This class replaces the __init__ method for testing purposes.
+    This way, we can mock the behaviour.
+    """
+    @patch('bacpypes.app.BIPSimpleApplication.__init__')
+    def __init__(self, *args):
+        BIPSimpleApplication.__init__(Mock())
+        self.elementService = Mock()
+        self.ResponseQueue = Mock()
+        self.ResponseQueue.get.return_value = ([21, 'degreesCelcius'], Event())
+        self.request = Mock()
+        self.value = None
 
 class TestNumericPoint(NumericPoint):
     @property
@@ -100,46 +118,52 @@ class FakeDevice(Device):
 
 class TestDevice(unittest.TestCase):
     def setUp(self):
-        self.fake_device = FakeDevice('2:5', 842, None)
+        network = TestReadWriteScript()
+        self.fake_device = FakeDevice('2:5', 842, network)
           
     def test_av1_between_0_100(self):
+        """
+        TestDevice / Reading av1 should return a value between 0 and 100
+        """
         self.assertTrue(0 <= self.fake_device['av1'] <= 100)
         
     def test_bv1_true_or_false(self):
-        self.assertTrue(self.fake_device['bv1'].value in ['inactive','active'])
-        self.assertTrue(isinstance(self.fake_device['bv1']._boolKey, bool))
-        print(type(self.fake_device['bv1'].value))
+        """
+        TestDevice / Reading bv1 should return 'inactive' or 'active'..._boolkey must be bool
+        """
+        for x in range(0,100):
+            self.assertTrue(self.fake_device['bv1'].value in ['inactive','active'])
+            self.assertTrue(isinstance(self.fake_device['bv1']._boolKey, bool))
 
     def test_av1_is_number(self):
-        self.assertTrue(isinstance(self.fake_device['av1'].value, float))
+        """
+        TestDevice / av1 should always be a number
+        """
+        for x in range(0,100):
+            self.assertTrue(isinstance(self.fake_device['av1'].value, float))
 
     def test_histories(self):
+        """
+        TestDevice / Histories must be pandas Series
+        """
         self.assertTrue(isinstance(self.fake_device['av1'].history, pd.Series))
         self.assertTrue(isinstance(self.fake_device['bv1'].history, pd.Series))
         self.assertTrue(isinstance(self.fake_device['mv1'].history, pd.Series))
 
     def test_dataframe_from_list_of_points(self):
-        self.assertTrue(isinstance(self.fake_device.df(['av1','bv1','mv1']), pd.DataFrame))
+        """
+        TestDevice / df function must return a pandas DataFrame provided a list
+        """
+        df = self.fake_device.df(['av1','bv1','mv1'])
+        self.assertTrue(isinstance(df, pd.DataFrame))
+        self.assertTrue('av1' in df.columns)
+        self.assertTrue('bv1' in df.columns)
+        self.assertTrue('mv1' in df.columns)
+        self.assertFalse('av2' in df.columns)
 
     def test_chart_from_list_of_points(self):
+        """
+        TestDevice / Build a chart
+        """
+        
         self.fake_device.chart(['av1','bv1','mv1'])
-
-#class TestReadPropertyClass(ReadProperty):
-#    """
-#    This class replaces the __init__ method for testing purposes.
-#    This way, we can mock the behaviour.
-#    """
-#
-#    def __init__(self):
-#        self.this_application = TestScriptApplication()
-#        self.this_application._lock = Lock()
-#
-#
-#class TestBokehRendering(unittest.TestCase):
-#    """
-#    Test with mock
-#    """
-#    @patch('BAC0.core.devices.Device.Device')
-#    def setUp(self, mock_device):
-#        pass
-

@@ -8,7 +8,7 @@ Test Read Property
 
 from BAC0.core.io.Read import ReadProperty
 from BAC0.core.app.ScriptApplication import ScriptApplication
-from BAC0.core.io.IOExceptions import ReadPropertyException, ReadPropertyMultipleException
+from BAC0.core.io.IOExceptions import ReadPropertyException, ReadPropertyMultipleException, ApplicationNotStarted
 
 
 from mock import Mock, patch, call
@@ -73,18 +73,14 @@ class TestReadProperty(unittest.TestCase):
 
     def test_verify_return_value(self):
         """
-        test_verify_return_value
-        Value returned must be 32
+        TestReadProperty / Result should read 32 from fake value provided
         """
-        #self.read_property.this_application._lock = False
         self.assertEqual(self.read_property.read(self.req), 32)
 
     def test_request_is_correct(self):
         """
-        test_request_is_correct
-        Request used for method call should be equivalent to base request
+        TestReadProperty / Request used for method call should be equivalent to base request
         """
-        #self.read_property.this_application._lock = False
         self.read_property.read(self.req)
         assert self.read_property.this_application.request.called
         self.arg_used_in_call = (
@@ -96,21 +92,20 @@ class TestReadProperty(unittest.TestCase):
             self.base_request.debug_contents())
 
     def test_wrong_datatype(self):
-        #self.read_property.this_application._lock = False
+        """
+        TestReadProperty / Wrong type or property should raise ValueError exception
+        """
         self.req = '2:5 analogVal 1 presentValue'
         with self.assertRaises(ValueError):
             self.read_property.read(self.req)
-        #self.read_property.this_application._lock = False
         self.req = '2:5 analogValue 1 presValue units'
         with self.assertRaises(ValueError):
             self.read_property.read(self.req)
 
-#    def test_ReadPropertyException(self):
-#        self.req = 'a very bad request'
-#        with self.assertRaises(ReadPropertyException):
-#            self.read_property.read(self.req)
-
     def test_no_prop(self):
+        """
+        TestReadProperty / No object type should raise ValueError exception
+        """
         #self.read_property.this_application._lock = False
         self.req = '2:5 1 presentValue units'
         with self.assertRaises(ValueError):
@@ -122,10 +117,13 @@ class TestReadProperty(unittest.TestCase):
 #        self.assertEqual(self.read_property.read(self.req),None)
 
     def test_not_started(self):
+        """
+        TestReadProperty / When not started, application should raise ApplicationNotStarted exception
+        """
         #self.read_property.this_application._lock = False
         self.req = '2:5 1 presentValue units'
         self.read_property._started = False
-        with self.assertRaises(Exception):
+        with self.assertRaises(ApplicationNotStarted):
             self.read_property.read(self.req)
 
 

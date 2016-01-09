@@ -13,7 +13,7 @@ from bacpypes.basetypes import ServicesSupported
 from .Points import NumericPoint, BooleanPoint, EnumPoint
 from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException
 from ...tasks.Poll import DevicePoll
-from ...tasks.BokehRenderer import BokehPlot
+from ...bokeh.BokehRenderer import BokehPlot
 
 from collections import namedtuple
 import pandas as pd

@@ -125,7 +125,7 @@ class BokehPlot(object):
 
         self.device.properties.network.bokeh_document.add_plot(plot)
         self.device.properties.network.bokeh_document.add_periodic_callback(self.update_data, 100)   
-        print('Please reload your web page to see changes')
+        print('Chart created, please reload your web page to see changes')
         
      # Get data
     def read_lst(self):

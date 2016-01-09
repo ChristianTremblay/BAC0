@@ -3,8 +3,8 @@ python:
 - '3.3'
 - '3.4'
 - '3.5'
-- 3.5-dev
-#- nightly
+- "3.5-dev" # 3.5 development branch
+#- "nightly" # currently points to 3.6-dev
 bundler_args: "--retry 3"
 install:
 - pip install -r requirements.txt

@@ -31,7 +31,7 @@ from bacpypes.basetypes import PropertyIdentifier
 from queue import Queue, Empty
 import time
 
-from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController
+from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted
 from ..functions.debug import log_debug, log_exception
 
 # some debugging
@@ -75,7 +75,7 @@ class ReadProperty():
         Will ask for the present Value of analog input 1 (AI:1)
         """
         if not self._started:
-            raise Exception('App not running, use startApp() function')
+            raise ApplicationNotStarted('App not running, use startApp() function')
         with self.this_application._lock:
             #time.sleep(0.5)
         #self.this_application._lock = True
@@ -122,7 +122,7 @@ class ReadProperty():
         Will ask for the present Value and the units of analog input 1 (AI:1)
         """
         if not self._started:
-            raise Exception('App not running, use startApp() function')
+            raise ApplicationNotStarted('App not running, use startApp() function')
         with self.this_application._lock:
             #time.sleep(0.5)
         #self.this_application._lock = True

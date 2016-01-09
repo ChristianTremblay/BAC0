@@ -29,8 +29,14 @@ from ..core.io.Read import ReadProperty
 from ..core.io.Write import WriteProperty
 from ..core.functions.GetIPAddr import HostIP
 from ..core.io.Simulate import Simulation
-from ..tasks.BokehRenderer import BokehSession, BokehDocument
-from ..tasks.BokehServer import BokehServer
+from ..core.io.IOExceptions import BokehServerCantStart
+from ..bokeh.BokehRenderer import BokehSession, BokehDocument
+from ..bokeh.BokehServer import BokehServer
+
+
+import requests
+import time
+import logging
 
 # some debugging
 _DEBUG = 0
@@ -72,17 +78,30 @@ class ReadWriteScript(BasicScript, ReadProperty, WriteProperty, Simulation):
         
     def start_bokeh(self):
         try:
+            logging.getLogger("requests").setLevel(logging.INFO)
             self.BokehServer = BokehServer()
             self.BokehServer.start()
             self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
             self.new_bokeh_session()
             self.bokeh_session.loop()
+            attemptedConnections = 0
+            while requests.get('http://localhost:5006').status_code != 200:
+                time.sleep(0.1)
+                attemptedConnections += 1
+                if attemptedConnections > 10:
+                    raise BokehServerCantStart
             self.bokehserver = True
         except OSError as error:
+            self.bokehserver = False
             print('Please start bokeh serve to use trending features')
             print('controller.chart will not work')
         except RuntimeError as rterror:
-            print('Server already running')           
+            self.bokehserver = False
+            print('Server already running')
+        except BokehServerCantStart:
+            self.bokehserver = False
+            print("Can't start Bokeh Server")
+            print('controller.chart will not work')
 
     def new_bokeh_session(self):
         self.bokeh_session = BokehSession(self.bokeh_document.document)
