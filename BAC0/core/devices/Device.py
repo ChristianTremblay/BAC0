@@ -333,7 +333,7 @@ class Device():
         for each in self.points:
             yield each.properties.name
             
-    def save_to_excel(self):
+    def to_excel(self):
         """
         Using xlwings, make a dataframe of all histories and save it 
         """

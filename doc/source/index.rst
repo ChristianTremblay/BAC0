@@ -5,18 +5,25 @@
 
 Welcome to BACØ's documentation!
 ================================
-
 .. include:: README.rst
 
+
+Table of contents
+==================
 .. toctree::
    :maxdepth: 2
    
-   BAC0.rst
+   getstarted
+   connect
+   tests
+   histories
+   trending
+   savetoexcel
+   jupyter
+   BAC0
 
-
-
-Indices and tables
-==================
+Index and search tool
+======================
 
 * :ref:`genindex`
 * :ref:`modindex`
