@@ -23,28 +23,6 @@ every variables in the controllers. Every points are trended every 10 seconds by
 that you can do data analysis on everything while you're doing your startup. It allows to see performances and
 trouble really fast.
 
-Where to download
-=================
-https://github.com/ChristianTremblay/BAC0/
-
-How to install dependencies
-===========================
-BAC0 is based on BACpypes found here::
-
-    pip install bacpypes
-    pip install bokeh (or conda install bokeh if using Anaconda)
-
-Bacpypes is now available for python 2.5, 2.7 and 3.4. You can also download it using Pypy.
-
-You will also need Pandas as data processing is so easier with this !
-
-If running Python on Windows, I recommend the use of complete distributions like Anaconda or Enthought Canopy.
-
-How to install BAC0
-===================
-Once the repo has been cloned, use::
-
-    python setup.py install
 
 .. |build-status| image:: https://travis-ci.org/ChristianTremblay/BAC0.svg?branch=master
    :target: https://travis-ci.org/ChristianTremblay/BAC0
