@@ -165,16 +165,14 @@ class TestDevice(unittest.TestCase):
         """
         TestDevice / Reading bv1 should return 'inactive' or 'active'..._boolkey must be bool
         """
-        for x in range(0,100):
-            self.assertTrue(self.fake_device['bv1'].value in ['inactive','active'])
-            self.assertTrue(isinstance(self.fake_device['bv1']._boolKey, bool))
+        self.assertTrue(self.fake_device['bv1'].value in ['inactive','active'])
+        self.assertTrue(isinstance(self.fake_device['bv1']._boolKey, bool))
 
     def test_av1_is_number(self):
         """
         TestDevice / av1 should always be a number
         """
-        for x in range(0,100):
-            self.assertTrue(isinstance(self.fake_device['av1'].value, float))
+        self.assertTrue(isinstance(self.fake_device['av1'].value, float))
 
     def test_histories(self):
         """
