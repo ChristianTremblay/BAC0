@@ -30,19 +30,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">BAC0  documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -64,166 +52,12 @@ property, it&#8217;s easy to write a value to the input so the controller will t
 every test must be done manually.</p>
 <p>Now you can write your test and run them as often as you want.</p>
 </div>
-<div class="section" id="how-to-use-it">
-<h1>How to use it<a class="headerlink" href="#how-to-use-it" title="Permalink to this headline">¶</a></h1>
-<p>Example:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">BAC0</span>
-<span class="n">bacnet</span> <span class="o">=</span> <span class="n">BAC0</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-<span class="c"># or specify the IP you want to use / bacnet = BAC0.connect(ip=&#39;192.168.1.10&#39;)</span>
-
-<span class="c"># Define a controller (this one is on MSTP #3, MAC addr 4, device ID 5504)</span>
-<span class="n">mycontroller</span> <span class="o">=</span> <span class="n">BAC0</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s">&#39;3:4&#39;</span><span class="p">,</span> <span class="mi">5504</span><span class="p">,</span> <span class="n">bacnet</span><span class="p">)</span>
-
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Access point value</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;point_name&#39;</span><span class="p">]</span>
-
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Write to point value</span>
-<span class="sd">If the point is an analog/multistate or binary value, it will try to write to the present value.</span>
-<span class="sd">If this fails, it&#39;ll try with the relinquish default</span>
-
-<span class="sd">If the point is an input of some kind, it&#39;ll try a simulation which is :</span>
-<span class="sd">    - write out_of_service = True</span>
-<span class="sd">    - write to the present_value</span>
-
-<span class="sd">If the point is an output of some kind, it&#39;ll override the point writing</span>
-<span class="sd">to priority 8</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;point_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Automatic history</span>
-<span class="sd">Each time a point is read or written to, the value is added to a history</span>
-<span class="sd">table (a pandas Series). You can then easily see what happened to the</span>
-<span class="sd">point while your were making tests.</span>
-
-<span class="sd">It&#39;s also easy to plot the result</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="n">his</span> <span class="o">=</span> <span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;point_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">history</span>
-<span class="n">his</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ylim</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">100</span><span class="p">])</span>
-</pre></div>
-</div>
-<p>Now you can build simple tests using assert syntax for example and make your DDC code stronger.</p>
-</div>
-<div class="section" id="assert">
-<h1>Assert ?<a class="headerlink" href="#assert" title="Permalink to this headline">¶</a></h1>
-<p>Let&#8217;s say your sequence is really simple. Something like this :</p>
-</div>
-<div class="section" id="system-stopped">
-<h1>System stopped<a class="headerlink" href="#system-stopped" title="Permalink to this headline">¶</a></h1>
-<p>When system is stopped, fan must be off, dampers must be closed, heater cannot operate.</p>
-</div>
-<div class="section" id="system-started">
-<h1>System started<a class="headerlink" href="#system-started" title="Permalink to this headline">¶</a></h1>
-<p>When system starts, fan command will be on. Dampers will open to minimum position.
-If fan status turns on, heating sequence will starts.</p>
-<p>And so on...</p>
-</div>
-<div class="section" id="how-would-i-test-that">
-<h1>How would I test that ?<a class="headerlink" href="#how-would-i-test-that" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li>Controller is defined and its variable name is mycontroller</li>
-<li>fan command = SF-C</li>
-<li>Fan Status = SF-S</li>
-<li>Dampers command = MAD-O</li>
-<li>Heater = RH-O</li>
-<li>Occupancy command = OCC-SCHEDULE</li>
-</ul>
-<p>System Stopped Test Code:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;OCC-SCHEDULE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Unoccupied</span>
-<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;SF-C&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">False</span>
-<span class="k">assert</span> <span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;MAD-O&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
-<span class="k">assert</span> <span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;RH-O&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
-
-<span class="c"># Simulate fan status as SF-C is Off</span>
-<span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;SF-S&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;Off&#39;</span>
-</pre></div>
-</div>
-<p>Sytstem Started Test Code:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;OCC-SCHEDULE&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;Occupied&#39;</span>
-<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;SF-C&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;On&#39;</span>
-<span class="c"># Give status</span>
-<span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;SF-S&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;On&#39;</span>
-<span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
-<span class="k">assert</span> <span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;MAD-O&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">mycontroller</span><span class="p">[</span><span class="s">&#39;MADMIN-POS&#39;</span><span class="p">]</span>
-</pre></div>
-</div>
-<p>And so on...</p>
-<p>You are now able to define any test you want. You will probably use more precise conditions
-instead of time.sleep() function (example read a value that tells actual mode is active)</p>
-<p>You can then test random temperature values, build functions that will simulate discharge air
-temperature depending on heatign or cooling stages... it&#8217;s up to you !</p>
-</div>
-<div class="section" id="tasks">
-<h1>Tasks<a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h1>
-<p>POLLING
-Let&#8217;s say you want to poll a point every 5 seconds to see later how the point reacted.</p>
-<p>mycontroller[&#8216;point_name&#8217;].poll(delay=5)</p>
-<p>MATCH
-Let&#8217;s say you want to automatically match the status of a point with the command</p>
-<p>mycontroller[&#8216;status&#8217;].match(mycontroller[&#8216;command&#8217;])</p>
-<p>Access a historyTable:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">controller</span><span class="p">[</span><span class="s">&#39;nvoAI1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">history</span>
-</pre></div>
-</div>
-<p>Result example</p>
-<div class="highlight-python"><div class="highlight"><pre>controller[&#39;nvoAI1&#39;].history
-Out[8]:
-2015-09-20 21:41:37.093985    21.740000
-2015-09-20 21:42:23.672387    21.790001
-2015-09-20 21:42:34.358801    21.790001
-2015-09-20 21:42:45.841596    21.790001
-2015-09-20 21:42:56.308144    21.790001
-2015-09-20 21:43:06.897034    21.790001
-2015-09-20 21:43:17.593321    21.790001
-2015-09-20 21:43:28.087180    21.790001
-2015-09-20 21:43:38.597702    21.790001
-2015-09-20 21:43:48.815317    21.790001
-2015-09-20 21:44:00.353144    21.790001
-2015-09-20 21:44:10.871324    21.790001
-</pre></div>
-</div>
-<p>Show a chart:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">controller</span><span class="p">[</span><span class="s">&#39;nvoAI1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="where-to-download">
-<h1>Where to download<a class="headerlink" href="#where-to-download" title="Permalink to this headline">¶</a></h1>
-<p><a class="reference external" href="https://github.com/ChristianTremblay/BAC0/">https://github.com/ChristianTremblay/BAC0/</a></p>
-</div>
-<div class="section" id="what-you-need">
-<h1>What you need<a class="headerlink" href="#what-you-need" title="Permalink to this headline">¶</a></h1>
-<p>BAC0 is based on BACpypes found here:</p>
-<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/JoelBender/bacpypes.git
-</pre></div>
-</div>
-<p>Bacpypes is now available for python 2.5, 2.7 and 3.4. You can also download it using Pypy.</p>
-<p>You will also need Pandas as data processing is so easier with this !</p>
-<p>If running Python on Windows, I recommend the use of complete distributions like Anaconda or Enthought Canopy.</p>
-</div>
-<div class="section" id="how-to-install-bac0">
-<h1>How to install BAC0<a class="headerlink" href="#how-to-install-bac0" title="Permalink to this headline">¶</a></h1>
-<p>Once the repo has been cloned, use:</p>
-<div class="highlight-python"><div class="highlight"><pre>python setup.py install
-</pre></div>
-</div>
-</div>
-<div class="section" id="demo-in-a-jupyter-notebook">
-<h1>Demo in a Jupyter Notebook<a class="headerlink" href="#demo-in-a-jupyter-notebook" title="Permalink to this headline">¶</a></h1>
-<p>When installed, module can be used to script communication with bacnet device.
-Jupyter Notebooks are an excellent way to test it</p>
-<p><a class="reference external" href="https://github.com/ChristianTremblay/BAC0/blob/master/Jupyter/BAC0.ipynb">https://github.com/ChristianTremblay/BAC0/blob/master/Jupyter/BAC0.ipynb</a>
-<a class="reference external" href="http://bac0.readthedocs.org/en/latest/">http://bac0.readthedocs.org/en/latest/</a>
-<a class="reference external" href="https://readthedocs.org/projects/bac0/">https://readthedocs.org/projects/bac0/</a>
-Doc
-===
-<a class="reference external" href="http://bac0.readthedocs.org/en/latest/">http://bac0.readthedocs.org/en/latest/</a>
-<a class="reference external" href="https://travis-ci.org/ChristianTremblay/BAC0">https://travis-ci.org/ChristianTremblay/BAC0</a></p>
+<div class="section" id="better-start-up-with-data-acquisition">
+<h1>Better start-up with data acquisition<a class="headerlink" href="#better-start-up-with-data-acquisition" title="Permalink to this headline">¶</a></h1>
+<p>As you will discover, when you define a controller in BAC0, you will get access to historical data of
+every variables in the controllers. Every points are trended every 10 seconds by default. Which means
+that you can do data analysis on everything while you&#8217;re doing your startup. It allows to see performances and
+trouble really fast.</p>
 </div>
 
 
@@ -236,18 +70,15 @@ Doc
   <ul>
 <li><a class="reference internal" href="#">BAC0   </a></li>
 <li><a class="reference internal" href="#test-driven-development-tdd-for-ddc-controls">Test driven development (TDD) for DDC controls</a></li>
-<li><a class="reference internal" href="#how-to-use-it">How to use it</a></li>
-<li><a class="reference internal" href="#assert">Assert ?</a></li>
-<li><a class="reference internal" href="#system-stopped">System stopped</a></li>
-<li><a class="reference internal" href="#system-started">System started</a></li>
-<li><a class="reference internal" href="#how-would-i-test-that">How would I test that ?</a></li>
-<li><a class="reference internal" href="#tasks">Tasks</a></li>
-<li><a class="reference internal" href="#where-to-download">Where to download</a></li>
-<li><a class="reference internal" href="#what-you-need">What you need</a></li>
-<li><a class="reference internal" href="#how-to-install-bac0">How to install BAC0</a></li>
-<li><a class="reference internal" href="#demo-in-a-jupyter-notebook">Demo in a Jupyter Notebook</a></li>
+<li><a class="reference internal" href="#better-start-up-with-data-acquisition">Better start-up with data acquisition</a></li>
 </ul>
-
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -277,11 +108,11 @@ Doc
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/README.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

@@ -413,6 +413,7 @@ class BooleanPoint(Point):
     @property
     def units(self):
         """
+        Boolean points don't have units
         """
         return None
 
@@ -471,6 +472,9 @@ class EnumPoint(Point):
 
     @property
     def units(self):
+        """
+        Enum point don't use units... we use states text instead 
+        """
         return None
 
     def _set(self, value):

@@ -69,3 +69,15 @@ class NetworkInterfaceException(Exception):
     or subnet mask...)
     """    
     pass
+
+class ApplicationNotStarted(Exception):
+    """
+    Application not started, no communication available.
+    """
+    pass
+
+class BokehServerCantStart(Exception):
+    """
+    Raised if Bokeh Server can't be started automatically
+    """
+    pass

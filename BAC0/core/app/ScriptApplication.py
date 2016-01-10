@@ -36,6 +36,7 @@ from bacpypes.pdu import Address
 from collections import defaultdict
 from threading import Event, Lock
 from queue import Queue
+import logging
 
 from ..io.IOExceptions import WriteAccessDenied, NoResponseFromController
 
@@ -56,7 +57,7 @@ class ScriptApplication(BIPSimpleApplication):
         :param *args: local object device, local IP address
         See BAC0.scripts.BasicScript for more details.
         """
-
+        logging.getLogger("comtypes").setLevel(logging.INFO)
         log_debug("__init__ %r", args)
         self.localAddress = None
 

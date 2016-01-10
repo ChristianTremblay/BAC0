@@ -1,4 +1,4 @@
 pandas>=0.14
 numpy>=1.9
 bacpypes>=0.13
-bokeh>=0.10.0
+bokeh>=0.11.0

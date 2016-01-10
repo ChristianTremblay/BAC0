@@ -36,7 +36,7 @@ from bacpypes.constructeddata import Array, Any
 from queue import Empty
 import time
 
-from .IOExceptions import WritePropertyCastError, NoResponseFromController, WritePropertyException, WriteAccessDenied
+from .IOExceptions import WritePropertyCastError, NoResponseFromController, WritePropertyException, WriteAccessDenied, ApplicationNotStarted
 from ..functions.debug import log_debug, log_exception
 
 
@@ -83,7 +83,7 @@ class WriteProperty():
         will write 100 to AV:1 of a controller with a MAC address of 5 in the network 2
         """
         if not self._started:
-            raise Exception('App not running, use startApp() function')
+            raise ApplicationNotStarted('App not running, use startApp() function')
         with self.this_application._lock:
         #    time.sleep(0.5)
         #self.this_application._lock = True

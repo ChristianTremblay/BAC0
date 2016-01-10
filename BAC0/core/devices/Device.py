@@ -13,7 +13,7 @@ from bacpypes.basetypes import ServicesSupported
 from .Points import NumericPoint, BooleanPoint, EnumPoint
 from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException
 from ...tasks.Poll import DevicePoll
-from ...tasks.BokehRenderer import BokehRenderer
+from ...bokeh.BokehRenderer import BokehPlot
 
 from collections import namedtuple
 import pandas as pd
@@ -116,7 +116,7 @@ class Device():
     
         return pd.DataFrame(dict(zip(list_of_points,his)))
         
-    def chart(self, list_of_points, *, title = 'New'):
+    def chart(self, list_of_points, *, title = 'Live Trending', show_notes = True):
         """
         chart offers a way to draw a chart from a list of points.
         It allows to pass args to the pandas plot() functions
@@ -125,16 +125,20 @@ class Device():
         :param plot_args: arg for plot function
         :returns: plot()
         """
-        lst = []
-        for point in list_of_points:
-            if point in self.points_name:
-                print('Add %s to list' % point)
-                lst.append(point)
-            else:
-                print('Wrong name, removing %s from list' % point)
-                
-        self.properties.serving_chart[title] = BokehRenderer(self,lst, title = title)
-        self.properties.serving_chart[title].start()
+        if self.properties.network.bokehserver:
+            lst = []
+            for point in list_of_points:
+                if point in self.points_name:
+                    #print('Add %s to list' % point)
+                    lst.append(point)
+                else:
+                    print('Wrong name, removing %s from list' % point)
+            try:                    
+                self.properties.serving_chart[title] = BokehPlot(self,lst, title = title, show_notes = show_notes)
+            except Exception as error:
+                print('A problem ocurred : %s' % error)
+        else:
+            print("No bokeh server running, can't display chart")
 
             
     @property
@@ -304,7 +308,7 @@ class Device():
         """
         try:
             if isinstance(point_name,list):
-                return self.df(point_name)
+                return self.df(point_name, force_read = False)
             else:
                 return self._findPoint(point_name)
         except ValueError as ve:
@@ -329,7 +333,7 @@ class Device():
         for each in self.points:
             yield each.properties.name
             
-    def save_to_excel(self):
+    def to_excel(self):
         """
         Using xlwings, make a dataframe of all histories and save it 
         """
@@ -387,6 +391,18 @@ class Device():
                 au.append(each.properties.name)
                 us.append(each.properties.units_state)
         return dict(zip(au,us))
+
+    @property
+    def temperatures(self):
+        for each in self.analog_units.items():
+            if "deg" in each[1]:
+                yield each
+
+    @property
+    def percent(self):
+        for each in self.analog_units.items():
+            if "percent" in each[1]:
+                yield each
         
     @property
     def multi_states(self):
