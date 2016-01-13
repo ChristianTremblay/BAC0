@@ -159,7 +159,8 @@ class FakeDevice(Device):
 
 class TestDevice(unittest.TestCase):
     def setUp(self):
-        network = TestReadWriteScript()
+        #network = TestReadWriteScript()
+        network = None
         self.fake_device = FakeDevice('2:5', 842, network)
           
     def test_av1_between_0_100(self):
