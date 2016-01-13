@@ -38,23 +38,30 @@ class TestReadWriteScript(object):
         #self.start_bokeh()
     def start_bokeh(self):
         try:
+            print('Starting Bokeh Serve')
             logging.getLogger("requests").setLevel(logging.INFO)
             self.BokehServer = BokehServer()
             self.BokehServer.start()
+            attemptedConnections = 0
+            while True:
+                try:
+                    requests.get('http://localhost:5006')
+                    break
+                except requests.exceptions.ConnectionError:                 
+                    attemptedConnections += 1
+                    if attemptedConnections > 10:
+                        raise BokehServerCantStart
+                time.sleep(1)                
+
+            self.bokehserver = True
             self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
             self.new_bokeh_session()
             self.bokeh_session.loop()
-            attemptedConnections = 0
-            while requests.get('http://localhost:5006').status_code != 200:
-                time.sleep(0.1)
-                attemptedConnections += 1
-                if attemptedConnections > 10:
-                    raise BokehServerCantStart
-            self.bokehserver = True
         except OSError as error:
             self.bokehserver = False
             print('Please start bokeh serve to use trending features')
             print('controller.chart will not work')
+            print(error)
         except RuntimeError as rterror:
             self.bokehserver = False
             print('Server already running')
