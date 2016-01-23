@@ -10,7 +10,7 @@ tasks for simulation purposes
 """
 import random
 from bokeh.plotting import Figure
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis
 from bokeh.models.widgets import VBox
 from bokeh.client import push_session
 from bokeh.document import Document
@@ -131,7 +131,7 @@ class BokehPlot(object):
     def read_lst(self):
         df = self.device[self.lst]
         try:
-            df = df.fillna(method='ffill').fillna(method='bfill').replace(['inactive', 'active'], [0, 50])
+            df = df.fillna(method='ffill').fillna(method='bfill').replace(['inactive', 'active'], [0, 1])
         except TypeError:
             df = df.fillna(method='ffill').fillna(method='bfill')
                                       
@@ -176,6 +176,11 @@ class BokehPlot(object):
                             size = 40) 
 
         self.p.legend.location = 'top_left'
+        self.p.extra_y_ranges = {"bool": Range1d(start=0, end=1.1),
+                                 "enum": Range1d(start=0, end=10)}
+        self.p.add_layout(LinearAxis(y_range_name="bool"), 'left')
+        self.p.add_layout(LinearAxis(y_range_name="enum"), 'right')
+                            
         hover = self.p.select(dict(type=HoverTool))
         hover.tooltips = OrderedDict([
             ('name', '@desc'),
@@ -208,6 +213,7 @@ class BokehPlot(object):
                             name = each,
                             color = "#%06x" % random.randint(0x000000, 0x777777),
                             legend=each,
+                            y_range_name="bool",
                             size = 10)
             elif each in self.multi_states:
                 self.p.diamond('x', 
@@ -216,6 +222,7 @@ class BokehPlot(object):
                             name = each,
                             color = "#%06x" % random.randint(0x000000, 0x777777), 
                             legend=each,
+                            y_range_name="enum",
                             size = 20)            
             else:
                 self.p.line('x',
@@ -243,7 +250,7 @@ class BokehPlot(object):
                     glyph_renderer.data_source.data['units'] = [self.multi_states[name][int(math.fabs(x-1))] for x in df[name]]
                 elif name in self.binary_states:
                     glyph_renderer.data_source.data['y'] = df[name]
-                    glyph_renderer.data_source.data['units'] = [self.binary_states[name][int(x/50)] for x in df[name]]
+                    glyph_renderer.data_source.data['units'] = [self.binary_states[name][int(x/1)] for x in df[name]]
                 else:
                     df['units'] = self.analog_units[name]
                     glyph_renderer.data_source.data['units'] = df['units']

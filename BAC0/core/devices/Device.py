@@ -14,6 +14,7 @@ from .Points import NumericPoint, BooleanPoint, EnumPoint
 from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException
 from ...tasks.Poll import DevicePoll
 from ...bokeh.BokehRenderer import BokehPlot
+from ...sql.sql import SQLMixin
 
 from collections import namedtuple
 import pandas as pd
@@ -26,7 +27,7 @@ except ImportError:
     print('xlwings not installed. If using Windows or OSX, install to get more features.')
     _XLWINGS = False
 
-class Device():
+class Device(SQLMixin):
     """
     Bacnet device
     This class represents a controller. When defined, it allows
