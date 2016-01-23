@@ -21,11 +21,12 @@ setup(name='BAC0',
           'BAC0.core.devices',
           'BAC0.scripts',
           'BAC0.tasks',
-          'BAC0.bokeh'
+          'BAC0.bokeh',
+          'BAC0.sql'
           ],
       install_requires=[
           'pandas',
-          'xlwings',
+          'bacpypes',
           'bokeh',
           ],
       dependency_links=[
