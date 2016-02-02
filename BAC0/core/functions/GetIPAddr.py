@@ -26,9 +26,15 @@ class HostIP():
     Special class to identify host IP informations
     """
 
-    def __init__(self):
-        ip = self._findIPAddr()
-        mask = self._findSubnetMask(ip)
+    def __init__(self, ip=None, mask = None):
+        if ip:
+            ip = ip
+        else:
+            ip = self._findIPAddr()
+        if mask:
+            mask = mask
+        else:
+            mask = self._findSubnetMask(ip)
         self.interface = ipaddress.IPv4Interface("%s/%s" % (ip, mask))
     
     @property    
