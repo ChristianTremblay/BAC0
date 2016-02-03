@@ -193,7 +193,7 @@ class Point():
             '%s %s %s' %
             (self.properties.device.properties.address, self.properties.type, str(
                 self.properties.address)))
-        self.properties.simulated = False
+        self.properties.simulated[0] = False
 
     def ovr(self, value):
         self.write(value, priority=8)
