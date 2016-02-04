@@ -17,6 +17,10 @@ from ...tasks.Poll import SimplePoll as Poll
 from ...tasks.Match import Match
 from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied
 
+import sqlite3
+import pandas as pd
+from pandas.io import sql
+from pandas.lib import Timestamp
 
 class Point():
     """
@@ -193,7 +197,7 @@ class Point():
             '%s %s %s' %
             (self.properties.device.properties.address, self.properties.type, str(
                 self.properties.address)))
-        self.properties.simulated[0] = False
+        self.properties.simulated = (False, None)
 
     def ovr(self, value):
         self.write(value, priority=8)
@@ -494,3 +498,39 @@ class EnumPoint(Point):
 
     def __eq__(self,other):
         return self.value == self.properties.units_state.index(other) + 1
+        
+class OfflinePoint(object):
+    def __init__(self, device, name):
+        self.properties = namedtuple('properties',
+                                     ['device', 'name', 'type',
+                                      'address', 'description', 'units',
+                                      'simulated', 'overridden'])
+
+        self.device = device
+        self.properties.device = 'Offline'
+        self.properties.name = name
+        self.properties.type = 'Offline'
+        self.properties.address = 'Offline'
+        self.properties.description = 'Offline'
+        self.properties.units = 'Offline'
+        self.properties.simulated = 'Offline'
+        self.properties.overridden = 'Offline'
+
+    @property    
+    def history(self):
+        his = sql.read_sql('select * from "%s"' % 'history', self.device.db)  
+        his.index = his['index'].apply(Timestamp)
+        return his.set_index('index')[self.properties.name] 
+ 
+    @property
+    def value(self):
+        """
+        Take last known value as the value
+        """
+        return self.history.dropna()[-1]    
+
+    def __repr__(self):
+        return '%s : %s' % (self.properties.name, self.value)
+
+    
+    

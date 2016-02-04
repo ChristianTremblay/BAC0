@@ -10,15 +10,22 @@ How to describe a bacnet device
 """
 from bacpypes.basetypes import ServicesSupported
 
-from .Points import NumericPoint, BooleanPoint, EnumPoint
+from .Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
 from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException
 from ...tasks.Poll import DevicePoll
 from ...bokeh.BokehRenderer import BokehPlot
 from ...sql.sql import SQLMixin
+#from .states.DeviceDisconnected import DeviceDisconnected
+from .mixins.read_property_multiple import Read
 
 from collections import namedtuple
 import pandas as pd
 from datetime import datetime
+
+import sqlite3
+import pandas as pd
+from pandas.lib import Timestamp
+from pandas.io import sql
 
 try:
     from xlwings import Workbook, Sheet, Range, Chart
@@ -26,8 +33,20 @@ try:
 except ImportError:
     print('xlwings not installed. If using Windows or OSX, install to get more features.')
     _XLWINGS = False
+    
+# Credit : Raymond Hettinger
+def fix_docs(cls):
+    for name, func in vars(cls).items():
+        if not func.__doc__:
+            #print(func, 'needs doc')
+            for parent in cls.__bases__:
+                parfunc = getattr(parent, name)
+                if parfunc and getattr(parfunc, '__doc__', None):
+                    #func.__doc__ = parfunc.__doc__
+                    break
+    return cls
 
-class Device(SQLMixin):
+class Device(SQLMixin, Read):
     """
     Bacnet device
     This class represents a controller. When defined, it allows
@@ -49,27 +68,24 @@ class Device(SQLMixin):
         self.properties = namedtuple('properties',
                                      ['name', 'address', 'device_id', 'network',
                                       'pollDelay', 'objects_list', 'pss',
-                                      'serving_chart', 'charts', 'multistates'])
+                                      'serving_chart', 'charts', 'multistates', 'db'])
         self.properties.address = address
         self.properties.device_id = device_id
         self.properties.network = network
-        self.properties.pollDelay = 10
+        self.properties.pollDelay = poll
         self.properties.name = ''
         self.properties.objects_list = []
         self.properties.pss = ServicesSupported()
         self.properties.serving_chart = {}
         self.properties.charts = []
         self.properties.multistates = {}
+        self.properties.db = 'controller.db'
 
         self.points = []
 
         self._polling_task = namedtuple('_polling_task', ['task', 'running'])
         self._polling_task.task = None
         self._polling_task.running = False
-
-        self._buildPointList()
-        if poll > 0:
-            self.poll()
 
         self._notes = namedtuple('_notes',
                                    ['timestamp', 'notes'])
@@ -78,7 +94,23 @@ class Device(SQLMixin):
         self._notes.notes = []
         self._notes.notes.append("Controller initialized")
         self._notes.timestamp.append(datetime.now())
-            
+
+        print('Calling new state : disconnected')
+        self.new_state(DeviceDisconnected)
+        self.connect_to_device_or_db()
+        
+    def new_state(self, newstate):
+        self.__class__ = newstate
+        
+    def connect_to_device_or_db(self):
+        raise NotImplementedError()
+
+    def connect_to_db(self):
+        raise NotImplementedError() 
+
+    def initialize_device_from_db(self):
+        raise NotImplementedError()
+
     @property
     def notes(self):
         """
@@ -107,15 +139,7 @@ class Device(SQLMixin):
         :param list_of_points: a list of point names as str
         :returns: pd.DataFrame
         """
-        his = []
-        for point in list_of_points:
-            try:
-                his.append(self._findPoint(point, force_read = force_read).history)
-            except ValueError as ve:
-                print('%s' % ve)                
-                continue
-    
-        return pd.DataFrame(dict(zip(list_of_points,his)))
+        raise NotImplementedError()
         
     def chart(self, list_of_points, *, title = 'Live Trending', show_notes = True):
         """
@@ -126,6 +150,10 @@ class Device(SQLMixin):
         :param plot_args: arg for plot function
         :returns: plot()
         """
+        if self.__class__ == DeviceFromDB:
+            update_data = False
+        else:
+            update_data = True
         if self.properties.network.bokehserver:
             lst = []
             for point in list_of_points:
@@ -135,9 +163,9 @@ class Device(SQLMixin):
                 else:
                     print('Wrong name, removing %s from list' % point)
             try:                    
-                self.properties.serving_chart[title] = BokehPlot(self,lst, title = title, show_notes = show_notes)
+                self.properties.serving_chart[title] = BokehPlot(self,lst, title = title, show_notes = show_notes, update_data = update_data)
             except Exception as error:
-                print('A problem ocurred : %s' % error)
+                print('A problem occurred : %s' % error)
         else:
             print("No bokeh server running, can't display chart")
 
@@ -159,6 +187,146 @@ class Device(SQLMixin):
         the list and allow quick access.
         This list will be used to access variables based on point name
         """
+        raise NotImplementedError()
+        
+
+    def __getitem__(self, point_name):
+        """
+        Get a point based on its name
+        If a list is passed, will return a dataframe
+
+        :param point_name: (str) name of the point or list of point_names
+        :type point_name: str     
+        :returns: (Point) the point (can be Numeric, Boolean or Enum) or pd.DataFrame
+        """
+        raise NotImplementedError()
+
+    def __iter__(self):
+        """
+        When iterating a device, iterate points of it.
+        """
+        raise NotImplementedError()
+            
+    def __contains__(self, value):
+        "When using in..."
+        raise NotImplementedError()
+
+    @property
+    def points_name(self):
+        """
+        When iterating a device, iterate points of it.
+        """
+        raise NotImplementedError()
+            
+    def to_excel(self):
+        """
+        Using xlwings, make a dataframe of all histories and save it 
+        """
+        raise NotImplementedError()
+
+    def __setitem__(self, point_name, value):
+        """
+        Write, sim or ovr value
+        :param point_name: Name of the point to set
+        :param value: value to write to the point
+        :type point_name: str
+        :type value: float
+        """
+        raise NotImplementedError()
+
+    def __len__(self):
+        """
+        Will return number of points available
+        """
+        raise NotImplementedError()
+
+    def _parseArgs(self, arg):
+        """
+        Given a string, will interpret the last word as the value, everything else
+        will be considered the point name
+        """
+        args = arg.split()
+        pointName = ' '.join(args[:-1])
+        value = args[-1]
+        return (pointName, value)
+
+    @property
+    def analog_units(self):
+        raise NotImplementedError()
+
+    @property
+    def temperatures(self):
+        raise NotImplementedError()
+
+    @property
+    def percent(self):
+        raise NotImplementedError()
+        
+    @property
+    def multi_states(self):
+        raise NotImplementedError()
+        
+    @property
+    def binary_states(self):
+        raise NotImplementedError()
+
+    def _discoverPoints(self):
+        """
+        This function allows the discovery of all bacnet points in a device
+
+        :returns: (deviceName, pss, objList, df)
+        :rtype: tuple
+
+        *deviceName* : name of the device
+        *pss* : protocole service supported
+        *objList* : list of bacnet object (ex. analogInput, 1)
+        *df* : is a dataFrame containing pointType, pointAddress, pointName, description
+        presentValue and units
+
+        If pandas can't be found, df will be a simple array
+
+        """
+        raise NotImplementedError()
+
+    def _findPoint(self, name, force_read=True):
+        """
+        Helper that retrieve point based on its name.
+
+        :param name: (str) name of the point
+        :param force_read: (bool) read value of the point each time the func
+                            is called.
+        :returns: Point object
+        :rtype: BAC0.core.devices.Point.Point (NumericPoint, EnumPoint or
+        BooleanPoint)
+
+        """
+        raise NotImplementedError()
+
+    def __repr__(self):
+        return '%s / Undefined' % self.properties.name
+
+@fix_docs
+class DeviceConnected(Device):
+    def connect_to_db(self):
+        print('Connect to db not implemented')
+        pass
+
+    def connect_to_device_or_db(self):
+        print('Already connected')        
+
+
+    def df(self, list_of_points, force_read = True):
+        his = []
+        for point in list_of_points:
+            try:
+                his.append(self._findPoint(point, force_read = force_read).history)
+            except ValueError as ve:
+                print('%s' % ve)                
+                continue
+    
+        return pd.DataFrame(dict(zip(list_of_points,his)))
+        
+    def _buildPointList(self):
         try:
             self.properties.pss.value = self.properties.network.read(
                 '%s device %s protocolServicesSupported' %
@@ -172,141 +340,8 @@ class Device(SQLMixin):
         print('Found %s... building points list' % self.properties.name)
         self.properties.objects_list, self.points = self._discoverPoints()
 
-    def _batches(self, request, points_per_request):
-        """
-        Generator that creates request batches.
-        Each batch will contain a maximum of
-        "points_per_request" points to read.
-        :params: request a list of point_name as a list
-        :params: (int) points_per_request
-        :returns: (iter) list of point_name of size <= points_per_request
-        """
-        for i in range(0, len(request), points_per_request):
-            yield request[i:i + points_per_request]
-
-    def _rpm_request_by_name(self, point_list):
-        """
-        :param point_list: a list of point
-        :returns: (tuple) read request for each points, points
-        """
-        points = []
-        requests = []
-        for each in point_list:
-            str_list = []
-            point = self._findPoint(each, force_read=False)
-            points.append(point)
-            str_list.append(' ' + point.properties.type)
-            str_list.append(' ' + str(point.properties.address))
-            str_list.append(' presentValue')
-            rpm_param = (''.join(str_list))
-            requests.append(rpm_param)
-        return (requests, points)
-
-    def read_multiple(self, points_list, *, points_per_request=25, discover_request=(None, 6)):
-        """
-        Functions to read points from a device using the read property
-        multiple request.
-        Using readProperty request can be very slow to read a lot of data.
-
-        :param points_list: (list) a list of all point_name as str
-        :param points_per_request: (int) number of points in the request
-
-        Using too many points will create big requests needing segmentation.
-        It's better to use just enough request so the message will not require
-        segmentation.
-
-        :Example:
-
-        device.read_multiple(['point1', 'point2', 'point3'], points_per_request = 10)
-        """
-        if not self.properties.pss['readPropertyMultiple']:
-            raise ReadPropertyMultipleException('Not supported on device')
-        if discover_request[0]:
-            values = []
-            info_length = discover_request[1]
-            big_request = discover_request[0]
-            # print(big_request)
-            for request in self._batches(big_request,
-                                         points_per_request):
-                try:
-                    
-                    request = ('%s %s' %
-                               (self.properties.address, ''.join(request)))
-                                        
-                    val = self.properties.network.readMultiple(request)
-                except KeyError as error:
-                    raise Exception('Unknown point name : %s' % error)
-                # Save each value to history of each point
-                for points_info in self._batches(val, info_length):
-                    values.append(points_info)
-            return values
-        else:
-            big_request = self._rpm_request_by_name(points_list)
-            i = 0
-            for request in self._batches(big_request[0],
-                                         points_per_request):
-                try:
-                    request = ('%s %s' %
-                               (self.properties.address, ''.join(request)))
-                    val = self.properties.network.readMultiple(request)
-                    points_values = zip(big_request[1][i:i + len(val)], val)
-                    i += len(val)
-                    for each in points_values:
-                        each[0]._trend(each[1])
-                except KeyError as error:
-                    raise Exception('Unknown point name : %s' % error)
-                # Save each value to history of each point
-
-    def poll(self, command='start', *, delay=10):
-        """
-        Enable polling of a variable. Will be read every x seconds (delay=x sec)
-        Can be stopped by using point.poll('stop') or .poll(0) or .poll(False)
-        or by setting a delay = 0
-
-        :param command: (str) start or stop polling
-        :param delay: (int) time delay between polls in seconds
-        :type command: str
-        :type delay: int
-
-        :Example:
-
-        device.poll()
-        device.poll('stop')
-        device.poll(delay = 5)
-        """
-        if str(command).lower() == 'stop' \
-                or command == False \
-                or command == 0 \
-                or delay == 0:
-            if isinstance(self._polling_task.task, DevicePoll):
-                self._polling_task.task.stop()
-                self._polling_task.task = None
-                self._polling_task.running = False
-                print('Polling stopped')
-        elif self._polling_task.task is None:
-            self._polling_task.task = DevicePoll(self, delay=delay)
-            self._polling_task.task.start()
-            self._polling_task.running = True
-            print('Polling started, every values read each %s seconds' % delay)
-        elif self._polling_task.running:
-            self._polling_task.task.stop()
-            self._polling_task.running = False
-            self._polling_task.task = DevicePoll(self, delay=delay)
-            self._polling_task.task.start()
-            self._polling_task.running = True
-            print('Polling started, every values read each %s seconds' % delay)
-        else:
-            raise RuntimeError('Stop polling before redefining it')
 
     def __getitem__(self, point_name):
-        """
-        Get a point based on its name
-        If a list is passed, will return a dataframe
-
-        :param point_name: (str) name of the point or list of point_names
-        :type point_name: str     
-        :returns: (Point) the point (can be Numeric, Boolean or Enum) or pd.DataFrame
-        """
         try:
             if isinstance(point_name,list):
                 return self.df(point_name, force_read = False)
@@ -316,28 +351,18 @@ class Device(SQLMixin):
             print('%s' % ve)
 
     def __iter__(self):
-        """
-        When iterating a device, iterate points of it.
-        """
         for each in self.points:
             yield each
             
     def __contains__(self, value):
-        "When using in..."
         return value in self.points_name
 
     @property
     def points_name(self):
-        """
-        When iterating a device, iterate points of it.
-        """
         for each in self.points:
             yield each.properties.name
             
     def to_excel(self):
-        """
-        Using xlwings, make a dataframe of all histories and save it 
-        """
         his = {}
         for name in list(self.points_name):
             try:
@@ -355,29 +380,15 @@ class Device(SQLMixin):
             df.to_csv()
 
     def __setitem__(self, point_name, value):
-        """
-        Write, sim or ovr value
-        :param point_name: Name of the point to set
-        :param value: value to write to the point
-        :type point_name: str
-        :type value: float
-        """
         try:
             self._findPoint(point_name)._set(value)
         except ValueError as ve:
             print('%s' % ve)
 
     def __len__(self):
-        """
-        Will return number of points available
-        """
         return len(self.points)
 
     def _parseArgs(self, arg):
-        """
-        Given a string, will interpret the last word as the value, everything else
-        will be considered the point name
-        """
         args = arg.split()
         pointName = ' '.join(args[:-1])
         value = args[-1]
@@ -426,21 +437,6 @@ class Device(SQLMixin):
         return dict(zip(bs,us))
 
     def _discoverPoints(self):
-        """
-        This function allows the discovery of all bacnet points in a device
-
-        :returns: (deviceName, pss, objList, df)
-        :rtype: tuple
-
-        *deviceName* : name of the device
-        *pss* : protocole service supported
-        *objList* : list of bacnet object (ex. analogInput, 1)
-        *df* : is a dataFrame containing pointType, pointAddress, pointName, description
-        presentValue and units
-
-        If pandas can't be found, df will be a simple array
-
-        """
         objList = self.properties.network.read(
             '%s device %s objectList' %
             (self.properties.address, self.properties.device_id))
@@ -532,17 +528,6 @@ class Device(SQLMixin):
         return (objList, points)
 
     def _findPoint(self, name, force_read=True):
-        """
-        Helper that retrieve point based on its name.
-
-        :param name: (str) name of the point
-        :param force_read: (bool) read value of the point each time the func
-                            is called.
-        :returns: Point object
-        :rtype: BAC0.core.devices.Point.Point (NumericPoint, EnumPoint or
-        BooleanPoint)
-
-        """
         for point in self.points:
             if point.properties.name == name:
                 if force_read:
@@ -551,4 +536,178 @@ class Device(SQLMixin):
         raise ValueError("%s doesn't exist in controller" % name)
 
     def __repr__(self):
-        return '%s' % self.properties.name
+        return '%s / Connected' % self.properties.name
+
+@fix_docs
+class DeviceDisconnected(Device):
+    def connect_to_device_or_db(self):        
+        try:
+            ojbect_list = self.properties.network.read(
+            '%s device %s objectList' %
+            (self.properties.address, self.properties.device_id))
+            if ojbect_list:
+                print('Calling new state : DeviceConnected')
+                self.new_state(DeviceConnected)
+                self._buildPointList()
+                if self.properties.pollDelay > 0:
+                    self.poll()
+        except NoResponseFromController:
+            print('Calling new state : DeviceFromDB')
+                
+            self.new_state(DeviceFromDB)
+            self.initialize_device_from_db()
+            
+        
+    def df(self, list_of_points, force_read = True):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+        
+    @property
+    def simulated_points(self):
+        for each in self.points:
+            if each.properties.simulated:
+                yield each
+
+    def _buildPointList(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+
+
+
+# This should be a "read" function and rpm defined in state rpm
+    def read_multiple(self, points_list, *, points_per_request=25, discover_request=(None, 6)):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    def poll(self, command='start', *, delay=10):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    def __getitem__(self, point_name):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    def __iter__(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+            
+    def __contains__(self, value):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    @property
+    def points_name(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+            
+    def to_excel(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    def __setitem__(self, point_name, value):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    def __len__(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    @property
+    def analog_units(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    @property
+    def temperatures(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    @property
+    def percent(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+        
+    @property
+    def multi_states(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+        
+    @property
+    def binary_states(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    def _discoverPoints(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    def _findPoint(self, name, force_read=True):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    def __repr__(self):
+        return '%s / Disconnected' % self.properties.name
+
+@fix_docs
+class DeviceFromDB(DeviceConnected):
+    def connect_to_device_or_db(self):        
+        try:
+            ojbect_list = self.properties.network.read(
+            '%s device %s objectList' %
+            (self.properties.address, self.properties.device_id))
+            if ojbect_list:
+                print('Calling new state : DeviceConnected(SQLMixin, Read)')
+                self.new_state(DeviceConnected)
+                self.db.close()
+                self.db = None
+                self._buildPointList()
+                if self.properties.pollDelay > 0:
+                    self.poll()
+        except NoResponseFromController:
+            print('Unable to connect, keeping DB mode active')
+
+    def initialize_device_from_db(self):
+        print('Initializing DB')
+        self.db = sqlite3.connect(self.properties.db)
+        self.points = []
+        for point in self.points_from_sql(self.db):
+            self.points.append(OfflinePoint(self,point))
+                
+    @property
+    def simulated_points(self):
+        for each in self.points:
+            if each.properties.simulated:
+                yield each
+
+    def _buildPointList(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+# This should be a "read" function and rpm defined in state rpm
+    def read_multiple(self, points_list, *, points_per_request=25, discover_request=(None, 6)):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    def poll(self, command='start', *, delay=10):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+            
+    def __contains__(self, value):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+          
+    def to_excel(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    def __setitem__(self, point_name, value):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    @property
+    def analog_units(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    @property
+    def temperatures(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    @property
+    def percent(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+        
+    @property
+    def multi_states(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+        
+    @property
+    def binary_states(self):
+        raise DeviceNotConnected('Must connect to bacnet or database') 
+
+    def _discoverPoints(self):
+        raise DeviceNotConnected('Must connect to bacnet or database')  
+
+    def __repr__(self):
+        return '%s / Disconnected' % self.properties.name
+
+
+class DeviceNotConnected(Exception):
+    pass
+

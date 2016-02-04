@@ -108,7 +108,7 @@ class BokehSession(object):
             BokehSession._loop.start()
 
 class BokehPlot(object):
-    def __init__(self, device, points_list, *, title = 'My title', show_notes = True):
+    def __init__(self, device, points_list, *, title = 'My title', show_notes = True, update_data = True):
         self.device = device
         self.points_list = points_list
         self.title = title
@@ -124,7 +124,8 @@ class BokehPlot(object):
         plot = self.build_plot()
 
         self.device.properties.network.bokeh_document.add_plot(plot)
-        self.device.properties.network.bokeh_document.add_periodic_callback(self.update_data, 100)   
+        if update_data:
+            self.device.properties.network.bokeh_document.add_periodic_callback(self.update_data, 100)   
         print('Chart created, please reload your web page to see changes')
         
      # Get data

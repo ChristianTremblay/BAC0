@@ -102,7 +102,7 @@ class ReadProperty():
                 except Empty:
                     log_exception(ReadProperty, 'No response from controller')
                     #self.this_application._lock = False
-                    return None
+                    raise NoResponseFromController()
 
     def readMultiple(self, args):
         """ This function build a readMultiple request wait for the answer and
