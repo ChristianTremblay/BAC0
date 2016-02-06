@@ -516,18 +516,16 @@ class EnumPoint(Point):
         
 class OfflinePoint(object):
     def __init__(self, device, name):
-        self.properties = namedtuple('properties',
-                                     ['device', 'name', 'type',
-                                      'address', 'description', 'units',
-                                      'simulated', 'overridden'])
+        self.properties = PointProperties()
 
         self.device = device
-        self.properties.device = 'Offline'
-        self.properties.name = name
-        self.properties.type = 'Offline'
-        self.properties.address = 'Offline'
-        self.properties.description = 'Offline'
-        self.properties.units = 'Offline'
+        dev_name = 'FX14 0005'
+        self.properties.device = self.device
+        self.properties.name = self.device.point_prop(dev_name, 'name')
+        self.properties.type = self.device.point_prop(dev_name, 'type')
+        self.properties.address = self.device.point_prop(dev_name, 'address')
+        self.properties.description = self.device.point_prop(dev_name, 'description')
+        self.properties.units = self.device.point_prop(dev_name, 'units_state')
         self.properties.simulated = 'Offline'
         self.properties.overridden = 'Offline'
 

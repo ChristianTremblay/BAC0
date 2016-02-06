@@ -57,7 +57,7 @@ class DeviceProperties(object):
         self.network = None
         self.pollDelay = None
         self.objects_list = None
-        self.pss = None
+        self.pss = ServicesSupported()
         self.serving_chart = None
         self.charts = None
         self.multistates = None
@@ -675,6 +675,17 @@ class DeviceFromDB(DeviceConnected):
         self.points = []
         for point in self.points_from_sql(self.db):
             self.points.append(OfflinePoint(self,point))
+        self.properties = DeviceProperties()
+        self.properties.address = self.dev_prop('FX14 0005')['address']
+        self.properties.device_id = self.dev_prop('FX14 0005')['device_id']
+        self.properties.network = 'Offline'
+        self.properties.pollDelay = self.dev_prop('FX14 0005')['pollDelay']
+        self.properties.name = self.dev_prop('FX14 0005')['name']
+        self.properties.objects_list = self.dev_prop('FX14 0005')['objects_list']
+        self.properties.pss = ServicesSupported()
+        self.properties.serving_chart = {}
+        self.properties.charts = []
+        self.properties.multistates = self.dev_prop('FX14 0005')['multistates']
                 
     @property
     def simulated_points(self):
@@ -701,25 +712,25 @@ class DeviceFromDB(DeviceConnected):
     def __setitem__(self, point_name, value):
         raise DeviceNotConnected('Must connect to bacnet or database') 
 
-    @property
-    def analog_units(self):
-        raise DeviceNotConnected('Must connect to bacnet or database') 
-
-    @property
-    def temperatures(self):
-        raise DeviceNotConnected('Must connect to bacnet or database') 
-
-    @property
-    def percent(self):
-        raise DeviceNotConnected('Must connect to bacnet or database') 
-        
-    @property
-    def multi_states(self):
-        raise DeviceNotConnected('Must connect to bacnet or database') 
-        
-    @property
-    def binary_states(self):
-        raise DeviceNotConnected('Must connect to bacnet or database') 
+#    @property
+#    def analog_units(self):
+#        raise DeviceNotConnected('Must connect to bacnet or database') 
+#
+#    @property
+#    def temperatures(self):
+#        raise DeviceNotConnected('Must connect to bacnet or database') 
+#
+#    @property
+#    def percent(self):
+#        raise DeviceNotConnected('Must connect to bacnet or database') 
+#        
+#    @property
+#    def multi_states(self):
+#        raise DeviceNotConnected('Must connect to bacnet or database') 
+#        
+#    @property
+#    def binary_states(self):
+#        raise DeviceNotConnected('Must connect to bacnet or database') 
 
     def _discoverPoints(self):
         raise DeviceNotConnected('Must connect to bacnet or database')  
