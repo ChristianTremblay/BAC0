@@ -45,6 +45,27 @@ def fix_docs(cls):
                     #func.__doc__ = parfunc.__doc__
                     break
     return cls
+    
+class DeviceProperties(object):
+    """
+    This serves as a container for device properties
+    """
+    def __init__(self):
+        self.name = None
+        self.address = None
+        self.device_id = None
+        self.network = None
+        self.pollDelay = None
+        self.objects_list = None
+        self.pss = None
+        self.serving_chart = None
+        self.charts = None
+        self.multistates = None
+        self.db = None
+
+    @property
+    def asdict(self):
+        return self.__dict__
 
 class Device(SQLMixin, Read):
     """
@@ -65,10 +86,8 @@ class Device(SQLMixin, Read):
         :type device_id: int
         :type network: BAC0.scripts.ReadWriteScript.ReadWriteScript
         """
-        self.properties = namedtuple('properties',
-                                     ['name', 'address', 'device_id', 'network',
-                                      'pollDelay', 'objects_list', 'pss',
-                                      'serving_chart', 'charts', 'multistates', 'db'])
+        self.properties = DeviceProperties()
+
         self.properties.address = address
         self.properties.device_id = device_id
         self.properties.network = network
@@ -79,6 +98,7 @@ class Device(SQLMixin, Read):
         self.properties.serving_chart = {}
         self.properties.charts = []
         self.properties.multistates = {}
+        # Todo : find a way to normalize the name of the db
         self.properties.db = 'controller.db'
 
         self.points = []

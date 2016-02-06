@@ -22,6 +22,24 @@ import pandas as pd
 from pandas.io import sql
 from pandas.lib import Timestamp
 
+class PointProperties(object):
+    """
+    This serves as a container for properties.
+    """
+    def __init__(self):
+        self.device = None
+        self.name = None
+        self.type = None
+        self.address = None
+        self.description = None
+        self.units_state = None
+        self.simulated = (False, None)
+        self.overridden = (False, None)
+    
+    @property
+    def asdict(self):
+        return self.__dict__
+
 class Point():
     """
     This represents a point inside a device. This base class will be
@@ -43,10 +61,7 @@ class Point():
                  units_state=None):
         self._history = namedtuple('_history',
                                    ['timestamp', 'value'])
-        self.properties = namedtuple('properties',
-                                     ['device', 'name', 'type',
-                                      'address', 'description', 'units',
-                                      'simulated', 'overridden'])
+        self.properties = PointProperties()
 
         self._polling_task = namedtuple('_polling_task', ['task', 'running'])
         self._polling_task.task = None
