@@ -153,6 +153,9 @@ class Device(SQLMixin, ReadMixin):
 
     def initialize_device_from_db(self):
         raise NotImplementedError()
+        
+    def load_db(self, new_db_name):
+        raise NotImplementedError()
 
     @property
     def notes(self):
@@ -363,6 +366,10 @@ class DeviceConnected(Device):
 
     def connect(self, network):
         print('Already connected')
+        
+    def load_db(self, new_db_name):
+        self.properties.db_name = new_db_name
+        self.new_state(DeviceFromDB)
 
     def df(self, list_of_points, force_read=True):
         his = []
@@ -698,19 +705,28 @@ class DeviceFromDB(DeviceConnected):
         except NoResponseFromController as error:
             print('Unable to connect, keeping DB mode active')
 
+    def load_db(self, new_db_name):
+        self.properties.db_name = new_db_name
+        self.new_state(DeviceFromDB)
+
     def initialize_device_from_db(self):
         print('Initializing DB')
         # Save important properties for reuse
-        dbname = self.properties.db_name
-        network = self.properties.network
+        if self.properties.db_name:
+            dbname = self.properties.db_name
+        else:
+            raise ValueError("Please provide db name using device.load_db('name')")
         
-        self.db = sqlite3.connect(dbname)
+        network = self.properties.network
+        pss = self.properties.pss
+        
+        self.db = sqlite3.connect('%s.db' % (self.properties.db_name))
         self.points = []
         for point in self.points_from_sql(self.db):
             self.points.append(OfflinePoint(self, point))
         self.properties = DeviceProperties()
-        file_name = 'FX14 0005'
-        device_name = 'FX14 0005'
+        file_name = "%s_prop.bin"  % self.properties.db_name
+        device_name = self.properties.name
         self.properties.db_name = dbname
         self.properties.address = self.dev_prop(file_name)[device_name].address
         self.properties.device_id = self.dev_prop(
@@ -721,7 +737,7 @@ class DeviceFromDB(DeviceConnected):
         self.properties.name = self.dev_prop(file_name)[device_name].name
         self.properties.objects_list = self.dev_prop(
             file_name)[device_name].objects_list
-        self.properties.pss = ServicesSupported()
+        self.properties.pss = pss
         self.properties.serving_chart = {}
         self.properties.charts = []
         self.properties.multistates = self.dev_prop(

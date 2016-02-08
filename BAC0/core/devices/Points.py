@@ -522,7 +522,7 @@ class OfflinePoint(Point):
         self.properties = PointProperties()
 
         self.device = device
-        dev_name = 'FX14 0005'
+        dev_name = self.properties.db_name
         self.properties.device = self.device
         props = self.device.point_prop(dev_name, name)
         self.properties.name = props.name
