@@ -35,6 +35,9 @@ class PointProperties(object):
         self.units_state = None
         self.simulated = (False, None)
         self.overridden = (False, None)
+        
+    def __repr__(self):
+        return '%s' % self.asdict
     
     @property
     def asdict(self):
@@ -514,21 +517,36 @@ class EnumPoint(Point):
     def __eq__(self,other):
         return self.value == self.properties.units_state.index(other) + 1
         
-class OfflinePoint(object):
+class OfflinePoint(Point):
     def __init__(self, device, name):
         self.properties = PointProperties()
 
         self.device = device
         dev_name = 'FX14 0005'
         self.properties.device = self.device
-        self.properties.name = self.device.point_prop(dev_name, 'name')
-        self.properties.type = self.device.point_prop(dev_name, 'type')
-        self.properties.address = self.device.point_prop(dev_name, 'address')
-        self.properties.description = self.device.point_prop(dev_name, 'description')
-        self.properties.units = self.device.point_prop(dev_name, 'units_state')
+        props = self.device.point_prop(dev_name, name)
+        self.properties.name = props.name
+        self.properties.type = props.type
+        self.properties.address = props.address
+        self.properties.description = props.description
+        self.properties.units_state = props.units_state
         self.properties.simulated = 'Offline'
         self.properties.overridden = 'Offline'
+        
+        if 'analog' in self.properties.type:
+            self.new_state(NumericPointOffline)
+        elif 'multi' in self.properties.type:
+            self.new_state(EnumPointOffline)
+        elif 'binary' in self.properties.type:
+            self.new_state(BooleanPointOffline)
+        else:
+            raise TypeError('Unknown point type')
+        
+    def new_state(self, newstate):
+        self.__class__ = newstate
 
+
+class NumericPointOffline(NumericPoint):
     @property    
     def history(self):
         his = sql.read_sql('select * from "%s"' % 'history', self.device.db)  
@@ -540,10 +558,76 @@ class OfflinePoint(object):
         """
         Take last known value as the value
         """
-        return self.history.dropna()[-1]    
+        return self.history.dropna()[-1]        
+        
+    def write(self, value, *, prop='presentValue', priority=''):        
+        raise OfflineException('Must be online to write')
+
+    def sim(self, value, *, prop='presentValue', priority=''):        
+        raise OfflineException('Must be online to write')
+
+    def release(self, value, *, prop='presentValue', priority=''):        
+        raise OfflineException('Must be online to write')
+        
+    @property
+    def units(self):
+        return self.properties.units_state
+
+    def _set(self, value):
+        raise OfflineException('Must be online to write')
 
     def __repr__(self):
-        return '%s : %s' % (self.properties.name, self.value)
+        return '%s : %.2f %s' % (self.properties.name, self.history[-1], self.properties.units_state)
 
-    
+class BooleanPointOffline(BooleanPoint):
+    @property    
+    def history(self):
+        his = sql.read_sql('select * from "%s"' % 'history', self.device.db)  
+        his.index = his['index'].apply(Timestamp)
+        return his.set_index('index')[self.properties.name]
+
+    @property
+    def value(self):
+        return self.history.dropna()[-1]
+
+    def _set(self, value):
+        raise OfflineException('Point must be online to write')
+        
+    def write(self, value, *, prop='presentValue', priority=''):        
+        raise OfflineException('Must be online to write')
+
+    def sim(self, value, *, prop='presentValue', priority=''):        
+        raise OfflineException('Must be online to write')
+
+    def release(self, value, *, prop='presentValue', priority=''):        
+        raise OfflineException('Must be online to write')
+
+class EnumPointOffline(EnumPoint):
+    @property    
+    def history(self):
+        his = sql.read_sql('select * from "%s"' % 'history', self.device.db)  
+        his.index = his['index'].apply(Timestamp)
+        return his.set_index('index')[self.properties.name]
+
+    @property
+    def enumValue(self):
+        """
+        returns: (str) Enum state value
+        """
+        return self.properties.units_state[int(self.history[-1]) - 1]
+
+    def _set(self, value):
+        raise OfflineException('Point must be online to write')
+
+    def write(self, value, *, prop='presentValue', priority=''):        
+        raise OfflineException('Must be online to write')
+
+    def sim(self, value, *, prop='presentValue', priority=''):        
+        raise OfflineException('Must be online to write')
+
+    def release(self, value, *, prop='presentValue', priority=''):        
+        raise OfflineException('Must be online to write')
+
+class OfflineException(Exception):
+    pass
     

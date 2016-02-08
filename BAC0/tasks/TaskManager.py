@@ -35,24 +35,27 @@ class Task(Thread):
 
     def run(self):
         self.process()
-        if self.lock.release():
-            print('Task too fast...slow down, last call not finisehd yet...')
-        else:
-            try:
-                self.lock.release()
-            except RuntimeError:
-                pass
-            self.beforeStop()
-            if self in Manager.taskList:
-                Manager.taskList.remove(self)
+#        if self.lock.release():
+#            print('Task too fast...slow down, last call not finisehd yet...')
+#        else:
+#            try:
+#                self.lock.release()
+#            except RuntimeError:
+#                pass
+#            self.beforeStop()
 
     def process(self):
-        # if self.started = True
         while not self.exitFlag:
             self.lock.acquire()
             self.task()
             self.lock.release()
-            time.sleep(self.delay)
+            # This replace a single time.sleep
+            # the goal is to speed up the stop
+            # of the thread by providing an easy way out
+            for i in range(self.delay * 2):
+                if self.exitFlag:
+                    break
+                time.sleep(0.5)
 
     def task(self):
         raise RuntimeError("task must be overridden")
@@ -64,4 +67,5 @@ class Task(Thread):
         """
         Action done when closing thread
         """
-        pass
+        if self in Manager.taskList:
+            Manager.taskList.remove(self)

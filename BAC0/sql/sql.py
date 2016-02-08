@@ -67,8 +67,8 @@ class SQLMixin(object):
         #sql.to_sql(self.points_properties_df(), name='points_properties', con=cnx, if_exists = 'replace')
         #sql.to_sql(self.dev_properties_df(), name='device_properties', con=cnx, if_exists = 'replace')
         # pickling properties 
-        pickle.dump(self.points_properties_df(), open( "%s_prop.bin"  % self.properties.name, "wb" ))
-        pickle.dump(self.dev_properties_df(), open( "%s_points_prop.bin"  % self.properties.name, "wb" ))
+        pickle.dump(self.points_properties_df(), open( "%s_points_prop.bin"  % self.properties.name, "wb" ))
+        pickle.dump(self.dev_properties_df(), open( "%s_prop.bin"  % self.properties.name, "wb" ))
                 
         print('%s saved to disk' % fname)
         
@@ -89,9 +89,9 @@ class SQLMixin(object):
         
     def point_prop(self, name, point):
         #prop = sql.read_sql('select %s from "%s"' % (point, 'points_properties'), db)
-        return pickle.load(open( "%s_prop.bin" % name, "rb" ))[point]
+        return pickle.load(open( "%s_points_prop.bin" % name, "rb" ))[point]
         
     def dev_prop(self, name):
         #prop = sql.read_sql('select * from "%s"' % 'device_properties', db)
-        return pickle.load(open( "%s_points_prop.bin" % name, "rb" ))
+        return pickle.load(open( "%s_prop.bin" % name, "rb" ))
         

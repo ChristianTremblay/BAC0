@@ -6,10 +6,14 @@ Created on Wed Feb  3 20:45:24 2016
 """
 
 from ....tasks.Poll import DevicePoll
-from ...io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException
+from ...io.IOExceptions import ReadPropertyMultipleException
 
 
 class Read():
+    """
+    This is a Mixin that will handle ReadProperty and ReadPropertyMultiple
+    for a device
+    """
     def _batches(self, request, points_per_request):
         """
         Generator that creates request batches.
@@ -67,10 +71,10 @@ class Read():
             for request in self._batches(big_request,
                                          points_per_request):
                 try:
-                    
+
                     request = ('%s %s' %
                                (self.properties.address, ''.join(request)))
-                                        
+
                     val = self.properties.network.readMultiple(request)
                 except KeyError as error:
                     raise Exception('Unknown point name : %s' % error)
@@ -118,6 +122,8 @@ class Read():
                 or delay == 0:
             if isinstance(self._polling_task.task, DevicePoll):
                 self._polling_task.task.stop()
+                while self._polling_task.task.is_alive():
+                    pass
                 self._polling_task.task = None
                 self._polling_task.running = False
                 print('Polling stopped')
@@ -128,6 +134,8 @@ class Read():
             print('Polling started, every values read each %s seconds' % delay)
         elif self._polling_task.running:
             self._polling_task.task.stop()
+            while self._polling_task.task.is_alive():
+                pass
             self._polling_task.running = False
             self._polling_task.task = DevicePoll(self, delay=delay)
             self._polling_task.task.start()

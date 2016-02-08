@@ -99,8 +99,8 @@ class ReadProperty():
                     evt.set()
                     #self.this_application._lock = False
                     return data
-                except Empty:
-                    log_exception(ReadProperty, 'No response from controller')
+                except Empty as error:
+                    #log_exception(ReadProperty, 'No response from controller')
                     #self.this_application._lock = False
                     raise NoResponseFromController()
 
