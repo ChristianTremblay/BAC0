@@ -27,10 +27,10 @@ class SQLMixin(object):
         dic.pop('network', None)
         dic.pop('pss', None)
         dic.pop('serving_chart', None)
-        dev = {}
-        dev[self.properties.name] = dic
-        df = pd.DataFrame(dev)
-        return df
+        #dev = {}
+        #dev[self.properties.name] = dic
+        #df = pd.DataFrame(dev)
+        return dic
         
     
     def points_properties_df(self):
@@ -90,10 +90,15 @@ class SQLMixin(object):
         #sql.to_sql(self.points_properties_df(), name='points_properties', con=cnx, if_exists = 'replace')
         #sql.to_sql(self.dev_properties_df(), name='device_properties', con=cnx, if_exists = 'replace')
         # pickling properties
+        prop_backup = {}
+        prop_backup['device'] = self.dev_properties_df()
+        prop_backup['points'] = self.points_properties_df()
         with open( "%s_points_prop.bin"  % self.properties.db_name, "wb" ) as file:
             pickle.dump(self.points_properties_df(), file)
         with open( "%s_prop.bin"  % self.properties.db_name, "wb" ) as file:
             pickle.dump(self.dev_properties_df(), file)
+        with open( "%s.bin"  % self.properties.db_name, "wb" ) as file:
+            pickle.dump(self.prop_backup, file)
                 
         print('%s saved to disk' % self.properties.db_name)
         
@@ -115,9 +120,14 @@ class SQLMixin(object):
         Take last known value as the value
         """
         return self.his_from_sql(db, point).last_valid_index()
+
+    def read_backup_prop(self, filename):
+        with open( "%s.bin" % filename, "rb" ) as file:
+            return pickle.load(file)            
         
     def point_prop(self, name, point):
         #prop = sql.read_sql('select %s from "%s"' % (point, 'points_properties'), db)
+        
         return pickle.load(open( "%s_points_prop.bin" % name, "rb" ))[point]
         
     def dev_prop(self, name):

@@ -15,7 +15,7 @@ import time
 
 from ...tasks.Poll import SimplePoll as Poll
 from ...tasks.Match import Match
-from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied
+from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied, SegmentationProblem
 
 import sqlite3
 import pandas as pd

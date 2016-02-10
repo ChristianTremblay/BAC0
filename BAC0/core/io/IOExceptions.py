@@ -81,3 +81,7 @@ class BokehServerCantStart(Exception):
     Raised if Bokeh Server can't be started automatically
     """
     pass
+
+
+class SegmentationProblem(Exception):
+    pass

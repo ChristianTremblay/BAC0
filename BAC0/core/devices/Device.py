@@ -11,11 +11,11 @@ How to describe a bacnet device
 from bacpypes.basetypes import ServicesSupported
 
 from .Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
-from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException
+from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException, SegmentationProblem
 from ...bokeh.BokehRenderer import BokehPlot
 from ...sql.sql import SQLMixin
 #from .states.DeviceDisconnected import DeviceDisconnected
-from .mixins.read_property_multiple import Read as ReadMixin
+from .mixins.read_mixin import ReadPropertyMultiple, ReadProperty
 
 from collections import namedtuple
 import pandas as pd
@@ -25,6 +25,10 @@ import sqlite3
 import pandas as pd
 from pandas.lib import Timestamp
 from pandas.io import sql
+
+from abc import ABCMeta
+
+import os.path
 
 try:
     from xlwings import Workbook, Sheet, Range, Chart
@@ -36,16 +40,16 @@ except ImportError:
 # Credit : Raymond Hettinger
 
 
-def fix_docs(cls):
-    for name, func in vars(cls).items():
-        if not func.__doc__:
-            #print(func, 'needs doc')
-            for parent in cls.__bases__:
-                parfunc = getattr(parent, name)
-                if parfunc and getattr(parfunc, '__doc__', None):
-                    #func.__doc__ = parfunc.__doc__
-                    break
-    return cls
+#def fix_docs(cls):
+#    for name, func in vars(cls).items():
+#        if not func.__doc__:
+#            #print(func, 'needs doc')
+#            for parent in cls.__bases__:
+#                parfunc = getattr(parent, name)
+#                if parfunc and getattr(parfunc, '__doc__', None):
+#                    #func.__doc__ = parfunc.__doc__
+#                    break
+#    return cls
 
 
 class DeviceProperties(object):
@@ -65,6 +69,7 @@ class DeviceProperties(object):
         self.charts = None
         self.multistates = None
         self.db_name = None
+        self.segmentation_supported = True
 
     def __repr__(self):
         return '%s' % self.asdict
@@ -73,8 +78,7 @@ class DeviceProperties(object):
     def asdict(self):
         return self.__dict__
 
-
-class Device(SQLMixin, ReadMixin):
+class Device(SQLMixin):
     """
     Bacnet device
     This class represents a controller. When defined, it allows
@@ -82,7 +86,7 @@ class Device(SQLMixin, ReadMixin):
     with the device on the network
     """
 
-    def __init__(self, address, device_id, network, *, poll=10):
+    def __init__(self, address, device_id, network, *, poll=10, restore = None, segmentation_supported = True):
         """
         Initialization require address, device id and bacnetApp (the script itself)
         :param addr: address of the device (ex. '2:5')
@@ -105,10 +109,11 @@ class Device(SQLMixin, ReadMixin):
         self.properties.serving_chart = {}
         self.properties.charts = []
         self.properties.multistates = {}
+        self.segmentation_supported = segmentation_supported
 
         self.db = None
         # Todo : find a way to normalize the name of the db
-        self.properties.db_name = 'controller.db'
+        self.properties.db_name = ''
 
         self.points = []
 
@@ -123,8 +128,17 @@ class Device(SQLMixin, ReadMixin):
         self._notes.notes = []
         self._notes.notes.append("Controller initialized")
         self._notes.timestamp.append(datetime.now())
+        
 
-        self.new_state(DeviceDisconnected)
+        if restore:
+            filename = restore
+            db_name = filename.split('.')[0]
+            if os.path.isfile(restore):
+                self.load_db(db_name)
+            else:
+                raise FileNotFoundError("Can't find %s on drive" % filename)
+        else:
+            self.new_state(DeviceDisconnected)
 
     def new_state(self, newstate):
         """
@@ -142,6 +156,7 @@ class Device(SQLMixin, ReadMixin):
         """
         raise NotImplementedError()
 
+
     def connect(self):
         """
         Connect the device to the network
@@ -155,7 +170,8 @@ class Device(SQLMixin, ReadMixin):
         raise NotImplementedError()
         
     def load_db(self, new_db_name):
-        raise NotImplementedError()
+        self.properties.db_name = new_db_name
+        self.new_state(DeviceFromDB)
 
     @property
     def notes(self):
@@ -315,23 +331,23 @@ class Device(SQLMixin, ReadMixin):
     def binary_states(self):
         raise NotImplementedError()
 
-    def _discoverPoints(self):
-        """
-        This function allows the discovery of all bacnet points in a device
-
-        :returns: (deviceName, pss, objList, df)
-        :rtype: tuple
-
-        *deviceName* : name of the device
-        *pss* : protocole service supported
-        *objList* : list of bacnet object (ex. analogInput, 1)
-        *df* : is a dataFrame containing pointType, pointAddress, pointName, description
-        presentValue and units
-
-        If pandas can't be found, df will be a simple array
-
-        """
-        raise NotImplementedError()
+#    def _discoverPoints(self):
+#        """
+#        This function allows the discovery of all bacnet points in a device
+#
+#        :returns: (deviceName, pss, objList, df)
+#        :rtype: tuple
+#
+#        *deviceName* : name of the device
+#        *pss* : protocole service supported
+#        *objList* : list of bacnet object (ex. analogInput, 1)
+#        *df* : is a dataFrame containing pointType, pointAddress, pointName, description
+#        presentValue and units
+#
+#        If pandas can't be found, df will be a simple array
+#
+#        """
+#        raise NotImplementedError()
 
     def _findPoint(self, name, force_read=True):
         """
@@ -351,13 +367,12 @@ class Device(SQLMixin, ReadMixin):
         return '%s / Undefined' % self.properties.name
 
 
-@fix_docs
+#@fix_docs
 class DeviceConnected(Device):
 
     def _init_state(self):
         self._buildPointList()
-        if self.properties.pollDelay > 0:
-            self.poll()
+
 
     def disconnect(self):
         print('Wait while stopping polling')
@@ -395,7 +410,13 @@ class DeviceConnected(Device):
             '%s device %s objectName' %
             (self.properties.address, self.properties.device_id))
         print('Found %s... building points list' % self.properties.name)
-        self.properties.objects_list, self.points = self._discoverPoints()
+        try:
+            self.properties.objects_list, self.points = self._discoverPoints()
+        except SegmentationProblem as error:
+            self.segmentation_supported = False
+            self.new_state(DeviceDisconnected)
+        if self.properties.pollDelay > 0:
+            self.poll()
 
     def __getitem__(self, point_name):
         try:
@@ -494,96 +515,7 @@ class DeviceConnected(Device):
                 us.append(each.properties.units_state)
         return dict(zip(bs, us))
 
-    def _discoverPoints(self):
-        objList = self.properties.network.read(
-            '%s device %s objectList' %
-            (self.properties.address, self.properties.device_id))
-
-        points = []
-
-        def retrieve_type(obj_list, point_type_key):
-            """
-            retrive analog values
-            """
-            for point_type, point_address in obj_list:
-                if point_type_key in point_type:
-                    yield (point_type, point_address)
-
-        # Numeric
-        analog_request = []
-        list_of_analog = retrieve_type(objList, 'analog')
-        for analog_points, address in list_of_analog:
-            analog_request.append('%s %s objectName presentValue units description ' %
-                                  (analog_points, address))
-        analog_points_info = self.read_multiple(
-            '', discover_request=(analog_request, 4), points_per_request=5)
-        i = 0
-        for each in retrieve_type(objList, 'analog'):
-            point_type = str(each[0])
-            point_address = str(each[1])
-            point_infos = analog_points_info[i]
-            i += 1
-            points.append(
-                NumericPoint(
-                    pointType=point_type,
-                    pointAddress=point_address,
-                    pointName=point_infos[0],
-                    description=point_infos[3],
-                    presentValue=float(point_infos[1]),
-                    units_state=point_infos[2],
-                    device=self))
-
-        multistate_request = []
-        list_of_multistate = retrieve_type(objList, 'multi')
-        for multistate_points, address in list_of_multistate:
-            multistate_request.append('%s %s objectName presentValue stateText description ' %
-                                      (multistate_points, address))
-
-        multistate_points_info = self.read_multiple(
-            '', discover_request=(multistate_request, 4), points_per_request=5)
-
-        i = 0
-        for each in retrieve_type(objList, 'multi'):
-            point_type = str(each[0])
-            point_address = str(each[1])
-            point_infos = multistate_points_info[i]
-            i += 1
-            points.append(
-                EnumPoint(
-                    pointType=point_type,
-                    pointAddress=point_address,
-                    pointName=point_infos[0],
-                    description=point_infos[3],
-                    presentValue=point_infos[1],
-                    units_state=point_infos[2],
-                    device=self))
-
-        binary_request = []
-        list_of_binary = retrieve_type(objList, 'binary')
-        for binary_points, address in list_of_binary:
-            binary_request.append('%s %s objectName presentValue inactiveText activeText description ' %
-                                  (binary_points, address))
-
-        binary_points_info = self.read_multiple(
-            '', discover_request=(binary_request, 5), points_per_request=5)
-
-        i = 0
-        for each in retrieve_type(objList, 'binary'):
-            point_type = str(each[0])
-            point_address = str(each[1])
-            point_infos = binary_points_info[i]
-            i += 1
-            points.append(
-                BooleanPoint(
-                    pointType=point_type,
-                    pointAddress=point_address,
-                    pointName=point_infos[0],
-                    description=point_infos[4],
-                    presentValue=point_infos[1],
-                    units_state=(point_infos[2], point_infos[3]),
-                    device=self))
-        print('Ready!')
-        return (objList, points)
+         
 
     def _findPoint(self, name, force_read=True):
         for point in self.points:
@@ -596,8 +528,13 @@ class DeviceConnected(Device):
     def __repr__(self):
         return '%s / Connected' % self.properties.name
 
+class RPDeviceConnected(DeviceConnected, ReadProperty):
+    pass
 
-@fix_docs
+class RPMDeviceConnected(DeviceConnected, ReadPropertyMultiple):
+    pass
+
+#@fix_docs
 class DeviceDisconnected(Device):
 
     def _init_state(self):
@@ -609,7 +546,10 @@ class DeviceDisconnected(Device):
                 '%s device %s objectList' %
                 (self.properties.address, self.properties.device_id))
             if ojbect_list:
-                self.new_state(DeviceConnected)
+                if self.segmentation_supported:
+                    self.new_state(RPMDeviceConnected)
+                else:
+                    self.new_state(RPDeviceConnected)
 
         except NoResponseFromController as error:
             self.new_state(DeviceFromDB)
@@ -685,8 +625,7 @@ class DeviceDisconnected(Device):
     def __repr__(self):
         return '%s / Disconnected' % self.properties.name
 
-
-@fix_docs
+#@fix_docs
 class DeviceFromDB(DeviceConnected):
 
     def _init_state(self):
@@ -699,9 +638,11 @@ class DeviceFromDB(DeviceConnected):
                 '%s device %s objectList' %
                 (self.properties.address, self.properties.device_id))
             if ojbect_list:
-                self.new_state(DeviceConnected)
+                if self.segmentation_supported:
+                    self.new_state(RPMDeviceConnected)
+                else:
+                    self.new_state(RPDeviceConnected)
                 self.db.close()
-
         except NoResponseFromController as error:
             print('Unable to connect, keeping DB mode active')
 
@@ -721,33 +662,29 @@ class DeviceFromDB(DeviceConnected):
         pss = self.properties.pss
         
         self.db = sqlite3.connect('%s.db' % (self.properties.db_name))
+        self._props = self.read_backup_prop(self.properties.db_name)        
         self.points = []
         for point in self.points_from_sql(self.db):
             self.points.append(OfflinePoint(self, point))
+        
         self.properties = DeviceProperties()
-        file_name = "%s_prop.bin"  % self.properties.db_name
-        device_name = self.properties.name
+        #file_name = "%s_prop.bin"  % self.properties.db_name
+        #device_name = self.properties.name
         self.properties.db_name = dbname
-        self.properties.address = self.dev_prop(file_name)[device_name].address
-        self.properties.device_id = self.dev_prop(
-            file_name)[device_name].device_id
+        self.properties.address = self._props.address
+        self.properties.device_id = self._props.device_id
         self.properties.network = network
-        self.properties.pollDelay = self.dev_prop(
-            file_name)[device_name].pollDelay
-        self.properties.name = self.dev_prop(file_name)[device_name].name
-        self.properties.objects_list = self.dev_prop(
-            file_name)[device_name].objects_list
+        self.properties.pollDelay = self._props.pollDelay
+        self.properties.name = self._props.name
+        self.properties.objects_list = self._props.objects_list
         self.properties.pss = pss
         self.properties.serving_chart = {}
         self.properties.charts = []
-        self.properties.multistates = self.dev_prop(
-            file_name)[device_name].multistates
+        self.properties.multistates = self._props.multistates
 
     @property
     def simulated_points(self):
-        for each in self.points:
-            if each.properties.simulated:
-                yield each
+        raise DeviceNotConnected('Must connect to bacnet or database')
 
     def _buildPointList(self):
         raise DeviceNotConnected('Must connect to bacnet or database')

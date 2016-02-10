@@ -32,6 +32,7 @@ from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU, ReadPropertyRequest, \
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
 from bacpypes.pdu import Address
+from bacpypes.object import PropertyError
 
 from collections import defaultdict
 from threading import Event, Lock
@@ -172,9 +173,15 @@ class ScriptApplication(BIPSimpleApplication):
                 self.ResponseQueue.put((None, evt))
                 evt.wait()
                 raise WriteAccessDenied('Cannot write to point')
+            
+            elif self.error == 'unknownProperty':
+                #print('%s : Unknow property.' % self.error)
+                evt = Event()
+                self.ResponseQueue.put(('', evt))
+                evt.wait()
 
         elif isinstance(apdu, AbortPDU):
-            print('Abort PDU')
+            print('Abort PDU : %s' % AbortPDU)
             evt = Event()
             self.ResponseQueue.put((None, evt))
             evt.wait()
