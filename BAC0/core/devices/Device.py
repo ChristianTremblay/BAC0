@@ -412,11 +412,12 @@ class DeviceConnected(Device):
         print('Found %s... building points list' % self.properties.name)
         try:
             self.properties.objects_list, self.points = self._discoverPoints()
+            if self.properties.pollDelay > 0:
+                self.poll()
         except SegmentationProblem as error:
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
-        if self.properties.pollDelay > 0:
-            self.poll()
+
 
     def __getitem__(self, point_name):
         try:
