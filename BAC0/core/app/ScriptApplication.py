@@ -39,7 +39,7 @@ from threading import Event, Lock
 from queue import Queue
 import logging
 
-from ..io.IOExceptions import WriteAccessDenied, NoResponseFromController
+from ..io.IOExceptions import WriteAccessDenied, NoResponseFromController, SegmentationNotSupported, APDUError
 
 # some debugging
 _DEBUG = 0
@@ -179,13 +179,20 @@ class ScriptApplication(BIPSimpleApplication):
                 evt = Event()
                 self.ResponseQueue.put(('', evt))
                 evt.wait()
+                #raise UnknownPropertyError('Cannot find property on point')
+                
+            else:
+                raise APDUError('%s' % self.error)
 
         elif isinstance(apdu, AbortPDU):
-            print('Abort PDU : %s' % AbortPDU)
+            print('Abort PDU : %s' % AbortPDU.apduAbortRejectReason)                
             evt = Event()
             self.ResponseQueue.put((None, evt))
             evt.wait()
-            raise NoResponseFromController('Abort PDU received')
+            if AbortPDU.apduAbortRejectReason == 'segmentationNotSupported':
+                raise SegmentationNotSupported('Segmentation problem with device')
+            else:
+                raise NoResponseFromController('Abort PDU received')
 
         if isinstance(apdu, SimpleAckPDU):
             evt = Event()

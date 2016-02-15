@@ -22,6 +22,9 @@ class WritePropertyCastError(Exception):
     """
     pass
 
+class UnknownPropertyError(Exception):
+    pass
+
 
 class ReadPropertyException(ValueError):
     """
@@ -47,6 +50,9 @@ class WriteAccessDenied(Exception):
     """
     This exception is used when trying to write and controller refuse it.
     """
+    pass
+
+class APDUError(Exception):
     pass
 
 class OutOfServiceNotSet(Exception):
@@ -83,5 +89,5 @@ class BokehServerCantStart(Exception):
     pass
 
 
-class SegmentationProblem(Exception):
+class SegmentationNotSupported(Exception):
     pass

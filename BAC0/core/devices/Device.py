@@ -11,7 +11,7 @@ How to describe a bacnet device
 from bacpypes.basetypes import ServicesSupported
 
 from .Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
-from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException, SegmentationProblem
+from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException, SegmentationNotSupported
 from ...bokeh.BokehRenderer import BokehPlot
 from ...sql.sql import SQLMixin
 #from .states.DeviceDisconnected import DeviceDisconnected
@@ -58,7 +58,7 @@ class DeviceProperties(object):
     """
 
     def __init__(self):
-        self.name = None
+        self.name = 'Unknown'
         self.address = None
         self.device_id = None
         self.network = None
@@ -86,7 +86,7 @@ class Device(SQLMixin):
     with the device on the network
     """
 
-    def __init__(self, address, device_id, network, *, poll=10, restore = None, segmentation_supported = True):
+    def __init__(self, address, device_id, network, *, poll=10, from_backup = None, segmentation_supported = True):
         """
         Initialization require address, device id and bacnetApp (the script itself)
         :param addr: address of the device (ex. '2:5')
@@ -130,11 +130,12 @@ class Device(SQLMixin):
         self._notes.timestamp.append(datetime.now())
         
 
-        if restore:
-            filename = restore
+        if from_backup:
+            filename = from_backup
             db_name = filename.split('.')[0]
-            if os.path.isfile(restore):
-                self.load_db(db_name)
+            if os.path.isfile(filename):
+                self.properties.db_name = db_name
+                self.new_state(DeviceDisconnected)
             else:
                 raise FileNotFoundError("Can't find %s on drive" % filename)
         else:
@@ -168,10 +169,6 @@ class Device(SQLMixin):
 
     def initialize_device_from_db(self):
         raise NotImplementedError()
-        
-    def load_db(self, new_db_name):
-        self.properties.db_name = new_db_name
-        self.new_state(DeviceFromDB)
 
     @property
     def notes(self):
@@ -373,18 +370,18 @@ class DeviceConnected(Device):
     def _init_state(self):
         self._buildPointList()
 
-
     def disconnect(self):
         print('Wait while stopping polling')
         self.poll(command='stop')
         self.new_state(DeviceFromDB)
 
-    def connect(self, network):
-        print('Already connected')
-        
-    def load_db(self, new_db_name):
-        self.properties.db_name = new_db_name
-        self.new_state(DeviceFromDB)
+    def connect(self, *, db = None):
+        if db:
+            self.poll(command = 'stop')
+            self.properties.db_name = db.split('.')[0]
+            self.new_state(DeviceFromDB)
+        else:
+            print('Already connected, provide db arg if you want to connect to db')
 
     def df(self, list_of_points, force_read=True):
         his = []
@@ -414,7 +411,7 @@ class DeviceConnected(Device):
             self.properties.objects_list, self.points = self._discoverPoints()
             if self.properties.pollDelay > 0:
                 self.poll()
-        except SegmentationProblem as error:
+        except SegmentationNotSupported as error:
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
 
@@ -530,10 +527,12 @@ class DeviceConnected(Device):
         return '%s / Connected' % self.properties.name
 
 class RPDeviceConnected(DeviceConnected, ReadProperty):
-    pass
-
+    def __str__(self):
+        return 'connected using read property'
+        
 class RPMDeviceConnected(DeviceConnected, ReadPropertyMultiple):
-    pass
+    def __str__(self):
+        return 'connected using read property multiple'
 
 #@fix_docs
 class DeviceDisconnected(Device):
@@ -541,7 +540,9 @@ class DeviceDisconnected(Device):
     def _init_state(self):
         self.connect()
 
-    def connect(self):
+    def connect(self, *, db = None):
+        if db:
+            self.properties.db_name = db
         try:
             ojbect_list = self.properties.network.read(
                 '%s device %s objectList' %
@@ -552,8 +553,12 @@ class DeviceDisconnected(Device):
                 else:
                     self.new_state(RPDeviceConnected)
 
-        except NoResponseFromController as error:
-            self.new_state(DeviceFromDB)
+        except NoResponseFromController:
+            if self.properties.db_name:
+                self.new_state(DeviceFromDB)
+            else:
+                print('Provide dbname to connect to device offline')
+                print("Ex. controller.connect(db = 'backup')")
 
     def df(self, list_of_points, force_read=True):
         raise DeviceNotConnected('Must connect to bacnet or database')
@@ -630,26 +635,31 @@ class DeviceDisconnected(Device):
 class DeviceFromDB(DeviceConnected):
 
     def _init_state(self):
-        self.initialize_device_from_db()
-
-    def connect(self, network):
-        self.properties.network = network
         try:
-            ojbect_list = self.properties.network.read(
-                '%s device %s objectList' %
-                (self.properties.address, self.properties.device_id))
-            if ojbect_list:
-                if self.segmentation_supported:
-                    self.new_state(RPMDeviceConnected)
-                else:
-                    self.new_state(RPDeviceConnected)
-                self.db.close()
-        except NoResponseFromController as error:
-            print('Unable to connect, keeping DB mode active')
+            self.initialize_device_from_db()
+        except ValueError:
+            self.new_state(DeviceDisconnected)
 
-    def load_db(self, new_db_name):
-        self.properties.db_name = new_db_name
-        self.new_state(DeviceFromDB)
+    def connect(self, *, network = None, from_backup = None):
+        if network and from_backup:
+            raise WrongParameter('Please provide network OR from_backup')
+        elif network:
+            self.properties.network = network
+            try:
+                ojbect_list = self.properties.network.read(
+                    '%s device %s objectList' %
+                    (self.properties.address, self.properties.device_id))
+                if ojbect_list:
+                    if self.segmentation_supported:
+                        self.new_state(RPMDeviceConnected)
+                    else:
+                        self.new_state(RPDeviceConnected)
+                    self.db.close()
+            except NoResponseFromController:
+                print('Unable to connect, keeping DB mode active')
+        elif from_backup:
+            self.properties.db_name = from_backup.split('.')[0]
+            self._init_state()
 
     def initialize_device_from_db(self):
         print('Initializing DB')
@@ -663,7 +673,7 @@ class DeviceFromDB(DeviceConnected):
         pss = self.properties.pss
         
         self.db = sqlite3.connect('%s.db' % (self.properties.db_name))
-        self._props = self.read_backup_prop(self.properties.db_name)        
+        self._props = self.read_dev_prop(self.properties.db_name)        
         self.points = []
         for point in self.points_from_sql(self.db):
             self.points.append(OfflinePoint(self, point))
@@ -672,16 +682,16 @@ class DeviceFromDB(DeviceConnected):
         #file_name = "%s_prop.bin"  % self.properties.db_name
         #device_name = self.properties.name
         self.properties.db_name = dbname
-        self.properties.address = self._props.address
-        self.properties.device_id = self._props.device_id
+        self.properties.address = self._props['address']
+        self.properties.device_id = self._props['device_id']
         self.properties.network = network
-        self.properties.pollDelay = self._props.pollDelay
-        self.properties.name = self._props.name
-        self.properties.objects_list = self._props.objects_list
+        self.properties.pollDelay = self._props['pollDelay']
+        self.properties.name = self._props['name']
+        self.properties.objects_list = self._props['objects_list']
         self.properties.pss = pss
         self.properties.serving_chart = {}
         self.properties.charts = []
-        self.properties.multistates = self._props.multistates
+        self.properties.multistates = self._props['multistates']
 
     @property
     def simulated_points(self):
@@ -714,4 +724,6 @@ class DeviceFromDB(DeviceConnected):
 
 
 class DeviceNotConnected(Exception):
+    pass
+class WrongParameter(Exception):
     pass
