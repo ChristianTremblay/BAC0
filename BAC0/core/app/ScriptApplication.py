@@ -28,11 +28,12 @@ from bacpypes.app import BIPSimpleApplication
 from bacpypes.object import get_datatype
 from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU, ReadPropertyRequest, \
     ReadPropertyACK, ReadPropertyMultipleRequest, ReadPropertyMultipleACK, \
-    IAmRequest, WhoIsRequest
+    IAmRequest, WhoIsRequest, AbortReason
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
 from bacpypes.pdu import Address
 from bacpypes.object import PropertyError
+from bacpypes.basetypes import ErrorCode
 
 from collections import defaultdict
 from threading import Event, Lock
@@ -166,15 +167,16 @@ class ScriptApplication(BIPSimpleApplication):
 
         if isinstance(apdu, Error):
             self.error = "%s" % (apdu.errorCode,)
+            #print('Error : %s' % self.error)
             
-            if self.error == 'writeAccessDenied':
+            if self.error == "writeAccessDenied":
                 print('%s : Try writing to relinquish default.' % self.error)
                 evt = Event()
                 self.ResponseQueue.put((None, evt))
                 evt.wait()
                 raise WriteAccessDenied('Cannot write to point')
             
-            elif self.error == 'unknownProperty':
+            elif self.error == "unknownProperty":
                 #print('%s : Unknow property.' % self.error)
                 evt = Event()
                 self.ResponseQueue.put(('', evt))
@@ -183,16 +185,19 @@ class ScriptApplication(BIPSimpleApplication):
                 
 
         elif isinstance(apdu, AbortPDU):
-            print('Abort PDU : %s' % AbortPDU.apduAbortRejectReason)  
-            if AbortPDU.apduAbortRejectReason == 'segmentationNotSupported':
-                print('Abort PDU : %s' % AbortPDU.apduAbortRejectReason)                
+            
+            self.abort_pdu_reason = apdu.apduAbortRejectReason
+            #print('Abort PDU : %s' % self.abort_pdu_reason)  
+            # UNCOMMENT STRING
+            if self.abort_pdu_reason == "AbortReason.segmentationNotSupported":
+                print('Segment Abort PDU : %s' % self.abort_pdu_reason)                
                 evt = Event()
-                self.ResponseQueue.put(('', evt))
+                self.ResponseQueue.put((None, evt))
                 evt.wait()
                 raise SegmentationNotSupported('Segmentation problem with device')
             else:
-                print('Abort PDU : %s' % AbortPDU.apduAbortRejectReason)                
-                evt = Event()
+                print('Abort PDU : %s' % self.abort_pdu_reason)                
+                #evt = Event()
                 self.ResponseQueue.put((None, evt))
                 evt.wait()
                 raise NoResponseFromController('Abort PDU received')

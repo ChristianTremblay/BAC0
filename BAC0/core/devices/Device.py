@@ -403,6 +403,10 @@ class DeviceConnected(Device):
         except NoResponseFromController as error:
             print('Controller not found, aborting. (%s)' % error)
             return ('Not Found', '', [], [])
+        except SegmentationNotSupported as error:
+            print('Segmentation not supported')
+            self.segmentation_supported = False
+            self.new_state(DeviceDisconnected)
         self.properties.name = self.properties.network.read(
             '%s device %s objectName' %
             (self.properties.address, self.properties.device_id))
@@ -411,10 +415,6 @@ class DeviceConnected(Device):
             self.properties.objects_list, self.points = self._discoverPoints()
             if self.properties.pollDelay > 0:
                 self.poll()
-        except SegmentationNotSupported as error:
-            print('Segmentation not supported')
-            self.segmentation_supported = False
-            self.new_state(DeviceDisconnected)
         except NoResponseFromController as error:
             print('Segmentation not supported')
             self.segmentation_supported = False

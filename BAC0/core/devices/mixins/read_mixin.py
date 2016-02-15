@@ -84,13 +84,13 @@ class ReadPropertyMultiple():
                         val = self.properties.network.readMultiple(request)
                         if val == None:
                             self.properties.segmentation_supported = False
-                            val = self.read_multiple(request)
+                            raise SegmentationNotSupported
                     except KeyError as error:
                         raise Exception('Unknown point name : %s' % error)
                         
                     except SegmentationNotSupported as error:
                         self.properties.segmentation_supported = False
-                        val = self.properties.network.readMultiple(request)
+                        self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
                         print('Seg not supported')                        
                     # Save each value to history of each point
                     else:
@@ -177,8 +177,11 @@ class ReadPropertyMultiple():
         for analog_points, address in list_of_analog:
             analog_request.append('%s %s objectName presentValue units description ' %
                                   (analog_points, address))
-        analog_points_info = self.read_multiple(
-            '', discover_request=(analog_request, 4), points_per_request=5)
+        try:
+            analog_points_info = self.read_multiple(
+                '', discover_request=(analog_request, 4), points_per_request=5)
+        except SegmentationNotSupported:
+            raise
         i = 0
         for each in retrieve_type(objList, 'analog'):
             point_type = str(each[0])
