@@ -181,17 +181,20 @@ class ScriptApplication(BIPSimpleApplication):
                 evt.wait()
                 #raise UnknownPropertyError('Cannot find property on point')
                 
-            else:
-                raise APDUError('%s' % self.error)
 
         elif isinstance(apdu, AbortPDU):
-            print('Abort PDU : %s' % AbortPDU.apduAbortRejectReason)                
-            evt = Event()
-            self.ResponseQueue.put((None, evt))
-            evt.wait()
+            print('Abort PDU : %s' % AbortPDU.apduAbortRejectReason)  
             if AbortPDU.apduAbortRejectReason == 'segmentationNotSupported':
+                print('Abort PDU : %s' % AbortPDU.apduAbortRejectReason)                
+                evt = Event()
+                self.ResponseQueue.put(('', evt))
+                evt.wait()
                 raise SegmentationNotSupported('Segmentation problem with device')
             else:
+                print('Abort PDU : %s' % AbortPDU.apduAbortRejectReason)                
+                evt = Event()
+                self.ResponseQueue.put((None, evt))
+                evt.wait()
                 raise NoResponseFromController('Abort PDU received')
 
         if isinstance(apdu, SimpleAckPDU):

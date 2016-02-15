@@ -412,6 +412,11 @@ class DeviceConnected(Device):
             if self.properties.pollDelay > 0:
                 self.poll()
         except SegmentationNotSupported as error:
+            print('Segmentation not supported')
+            self.segmentation_supported = False
+            self.new_state(DeviceDisconnected)
+        except NoResponseFromController as error:
+            print('Segmentation not supported')
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
 

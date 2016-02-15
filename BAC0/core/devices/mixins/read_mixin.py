@@ -82,13 +82,16 @@ class ReadPropertyMultiple():
                                    (self.properties.address, ''.join(request)))
     
                         val = self.properties.network.readMultiple(request)
+                        if val == None:
+                            self.properties.segmentation_supported = False
+                            val = self.read_multiple(request)
                     except KeyError as error:
                         raise Exception('Unknown point name : %s' % error)
                         
                     except SegmentationNotSupported as error:
                         self.properties.segmentation_supported = False
-                        raise
-                        
+                        val = self.properties.network.readMultiple(request)
+                        print('Seg not supported')                        
                     # Save each value to history of each point
                     else:
                         for points_info in self._batches(val, info_length):
