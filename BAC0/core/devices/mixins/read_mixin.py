@@ -1,13 +1,14 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Feb  3 20:45:24 2016
-
-@author: CTremblay
-"""
+#
+# Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+#
+# Licensed under LGPLv3, see file LICENSE in this source tree.
 
 from ....tasks.Poll import DevicePoll
-from ...io.IOExceptions import ReadPropertyMultipleException
-from .Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
+from ...io.IOExceptions import ReadPropertyMultipleException, NoResponseFromController, SegmentationNotSupported
+from ..Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
+  
 
 class ReadPropertyMultiple():
     """
@@ -61,7 +62,7 @@ class ReadPropertyMultiple():
 
         device.read_multiple(['point1', 'point2', 'point3'], points_per_request = 10)
         """
-        print('PSS : %s' % self.properties.pss['readPropertyMultiple']) 
+        #print('PSS : %s' % self.properties.pss['readPropertyMultiple']) 
         if not self.properties.pss['readPropertyMultiple']:
             print('Read property Multiple Not supported')
             self.read_single(points_list,points_per_request=1, discover_request=discover_request)
@@ -84,10 +85,10 @@ class ReadPropertyMultiple():
                     except KeyError as error:
                         raise Exception('Unknown point name : %s' % error)
                         
-                    if not val:
-                        print('Probable segmentation problem, trying to read single prop')
+                    except SegmentationNotSupported as error:
                         self.properties.segmentation_supported = False
-                        self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
+                        raise
+                        
                     # Save each value to history of each point
                     else:
                         for points_info in self._batches(val, info_length):
@@ -102,19 +103,18 @@ class ReadPropertyMultiple():
                         request = ('%s %s' %
                                    (self.properties.address, ''.join(request)))
                         val = self.properties.network.readMultiple(request)
-                        if not val:
-                            print('Probable segmentation problem, trying to read single prop')
-                            self.properties.segmentation_supported = False
-                            self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
+                    except SegmentationNotSupported as error:
+                        self.properties.segmentation_supported = False
+                        self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
                         # Save each value to history of each point
-                        else:
-                            points_values = zip(big_request[1][i:i + len(val)], val)
-                            i += len(val)
-                            for each in points_values:
-                                each[0]._trend(each[1])
                     except KeyError as error:
                         raise Exception('Unknown point name : %s' % error)
                     # Save each value to history of each point
+                    else:
+                        points_values = zip(big_request[1][i:i + len(val)], val)
+                        i += len(val)
+                        for each in points_values:
+                            each[0]._trend(each[1])
                         
     def read_single(self, points_list, *, points_per_request=1, discover_request=(None, 4)):
         if discover_request[0]:
@@ -341,97 +341,24 @@ class ReadProperty():
 
         device.read_multiple(['point1', 'point2', 'point3'], points_per_request = 10)
         """
-        print('PSS : %s' % self.properties.pss['readPropertyMultiple']) 
-        if not self.properties.pss['readPropertyMultiple']:
-            print('Read property Multiple Not supported')
+        #print('PSS : %s' % self.properties.pss['readPropertyMultiple'])
+        if isinstance(points_list, list):
+            for each in points_list:
+                self.read_single(each,points_per_request=1, discover_request=discover_request)
+        else:
             self.read_single(points_list,points_per_request=1, discover_request=discover_request)
-        else:
-            if not self.properties.segmentation_supported:
-                points_per_request = 1
-            if discover_request[0]:
-                values = []
-                info_length = discover_request[1]
-                big_request = discover_request[0]
-                # print(big_request)
-                for request in self._batches(big_request,
-                                             points_per_request):
-                    try:
-    
-                        request = ('%s %s' %
-                                   (self.properties.address, ''.join(request)))
-    
-                        val = self.properties.network.readMultiple(request)
-                    except KeyError as error:
-                        raise Exception('Unknown point name : %s' % error)
                         
-                    if not val:
-                        print('Probable segmentation problem, trying to read single prop')
-                        self.properties.segmentation_supported = False
-                        self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
-                    # Save each value to history of each point
-                    else:
-                        for points_info in self._batches(val, info_length):
-                            values.append(points_info)
-                return values
-            else:
-                big_request = self._rpm_request_by_name(points_list)
-                i = 0
-                for request in self._batches(big_request[0],
-                                             points_per_request):
-                    try:
-                        request = ('%s %s' %
-                                   (self.properties.address, ''.join(request)))
-                        val = self.properties.network.readMultiple(request)
-                        if not val:
-                            print('Probable segmentation problem, trying to read single prop')
-                            self.properties.segmentation_supported = False
-                            self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
-                        # Save each value to history of each point
-                        else:
-                            points_values = zip(big_request[1][i:i + len(val)], val)
-                            i += len(val)
-                            for each in points_values:
-                                each[0]._trend(each[1])
-                    except KeyError as error:
-                        raise Exception('Unknown point name : %s' % error)
-                    # Save each value to history of each point
-                        
-    def read_single(self, points_list, *, points_per_request=1, discover_request=(None, 4)):
-        if discover_request[0]:
-            values = []
-            info_length = discover_request[1]
-            big_request = discover_request[0]
-            # print(big_request)
-            for request in self._batches(big_request,
-                                         points_per_request):
-                try:
-    
-                    request = ('%s %s' %
+    def read_single(self, request, *, points_per_request=1, discover_request=(None, 4)):
+        try:
+            request = ('%s %s' %
                                (self.properties.address, ''.join(request)))
-    
-                    val = self.properties.network.read(request)
-                except KeyError as error:
-                    raise Exception('Unknown point name : %s' % error)
-                # Save each value to history of each point
-                for points_info in self._batches(val, info_length):
-                    values.append(points_info)
-            return values
-        else:
-            big_request = self._rpm_request_by_name(points_list)
-            i = 0
-            for request in self._batches(big_request[0],
-                                         points_per_request):
-                try:
-                    request = ('%s %s' %
-                               (self.properties.address, ''.join(request)))
-                    val = self.properties.network.read(request)
-                    points_values = zip(big_request[1][i:i + len(val)], val)
-                    i += len(val)
-                    for each in points_values:
-                        each[0]._trend(each[1])
-                except KeyError as error:
-                    raise Exception('Unknown point name : %s' % error)
-                # Save each value to history of each point
+            return self.properties.network.read(request)
+        except KeyError as error:
+            raise Exception('Unknown point name : %s' % error)
+        except NoResponseFromController as error:
+            return ''
+        # Save each value to history of each point
+            
 
     def _discoverPoints(self):
         objList = self.properties.network.read(
@@ -479,9 +406,9 @@ class ReadProperty():
                                   (point_type, point_address)),
                     description=self.read_single('%s %s description ' %
                                   (point_type, point_address)),
-                    presentValue=float(self.read_single('%s %s presentValue ' %
+                    presentValue=(self.read_single('%s %s presentValue ' %
                                   (point_type, point_address)),),
-                    units_state=self.read_single('%s %s units ' %
+                    units_state=self.read_single('%s %s stateText ' %
                                   (point_type, point_address)),
                     device=self))
 
@@ -497,15 +424,20 @@ class ReadProperty():
                                   (point_type, point_address)),
                     description=self.read_single('%s %s description ' %
                                   (point_type, point_address)),
-                    presentValue=float(self.read_single('%s %s presentValue ' %
+                    presentValue=(self.read_single('%s %s presentValue ' %
                                   (point_type, point_address)),),
-                    units_state=self.read_single('%s %s units ' %
-                                  (point_type, point_address)),
+                    units_state=(
+                                (self.read_single('%s %s inactiveText ' %
+                                  (point_type, point_address))),
+                                (self.read_single('%s %s activeText ' %
+                                  (point_type, point_address)))
+                                 ), 
                     device=self))
+
         print('Ready!')
         return (objList, points)
             
-    def poll(self, command='start', *, delay=10):
+    def poll(self, command='start', *, delay=60):
         """
         Enable polling of a variable. Will be read every x seconds (delay=x sec)
         Can be stopped by using point.poll('stop') or .poll(0) or .poll(False)
@@ -522,33 +454,8 @@ class ReadProperty():
         device.poll('stop')
         device.poll(delay = 5)
         """
-        if str(command).lower() == 'stop' \
-                or command == False \
-                or command == 0 \
-                or delay == 0:
-            if isinstance(self._polling_task.task, DevicePoll):
-                self._polling_task.task.stop()
-                while self._polling_task.task.is_alive():
-                    pass
-                self._polling_task.task = None
-                self._polling_task.running = False
-                print('Polling stopped')
-        elif self._polling_task.task is None:
-            self._polling_task.task = DevicePoll(self, delay=delay)
-            self._polling_task.task.start()
-            self._polling_task.running = True
-            print('Polling started, every values read each %s seconds' % delay)
-        elif self._polling_task.running:
-            self._polling_task.task.stop()
-            while self._polling_task.task.is_alive():
-                pass
-            self._polling_task.running = False
-            self._polling_task.task = DevicePoll(self, delay=delay)
-            self._polling_task.task.start()
-            self._polling_task.running = True
-            print('Polling started, every values read each %s seconds' % delay)
-        else:
-            raise RuntimeError('Stop polling before redefining it')
-
-class SegmentationProblem(Exception):
-    pass
+        print('Device too slow, use single points polling if needed')
+        print('Points will be read once...')
+        for each in self.points:
+            each.value
+        print('Complete')
