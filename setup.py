@@ -30,9 +30,6 @@ setup(name='BAC0',
           'bacpypes',
           'bokeh',
           ],
-      dependency_links=[
-          'git://github.com/ChristianTremblay/bacnetScript.git#egg=package-0.11.34.7'
-          ],
       long_description=open('README.rst').read(),
       classifiers=[
           "Development Status :: 4 - Beta",
