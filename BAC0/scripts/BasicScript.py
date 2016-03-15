@@ -26,6 +26,7 @@ Class::
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 from bacpypes.core import run as startBacnetIPApp
 from bacpypes.core import stop as stopBacnetIPApp
+from bacpypes.core import enable_sleeping
 from bacpypes.app import LocalDeviceObject
 from bacpypes.basetypes import ServicesSupported, DeviceStatus
 from bacpypes.primitivedata import CharacterString
@@ -166,6 +167,7 @@ class BasicScript(WhoisIAm):
         Once started, socket will be reserved.
         """
         print('Starting app...')
+        enable_sleeping(0.0005)
         self.t = Thread(target=startBacnetIPApp, daemon = True)
         self.t.start()
         self._started = True
