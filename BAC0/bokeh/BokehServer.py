@@ -5,8 +5,12 @@
 #
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 """
-This module allows the creation of threads that will be used as repetitive
-tasks for simulation purposes
+This module starts an external process : bokeh serve
+As Bokeh use Tornado, I didn't find a way to include the server in the code.
+The IOLoop creates some conflicts. 
+
+So actually, the process is called outside of the script... then communication
+with the server is made using localhost:5006
 """
 from threading import Thread
 import time

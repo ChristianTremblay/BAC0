@@ -290,6 +290,12 @@ class Point():
             raise RuntimeError('Stop polling before redefining it')
 
     def match(self, point, *, delay=5):
+        """
+        This allow functions like : 
+            device['status'].match('command')
+            
+        A fan status for example will follow the command...
+        """
         if self._match_task.task is None:
             self._match_task.task = Match(
                 command=point, status=self, delay=delay)
@@ -310,6 +316,9 @@ class Point():
             raise RuntimeError('Stop task before redefining it')
             
     def __len__(self):
+        """
+        Length of a point = # of history records
+        """
         return len(self.history)
 
 
@@ -343,7 +352,7 @@ class NumericPoint(Point):
         else:
             try:
                 if isinstance(value,Point):
-                    value = value.history[-1]
+                    value = value.history.dropna().iloc[-1]
                 val = float(value)
                 if isinstance(val, float):
                     self._setitem(value)
@@ -351,7 +360,7 @@ class NumericPoint(Point):
                 raise ValueError('Value must be numeric')
 
     def __repr__(self):
-        return '%s : %.2f %s' % (self.properties.name, self.history[-1], self.properties.units_state)
+        return '%s : %.2f %s' % (self.properties.name, self.history.dropna().iloc[-1], self.properties.units_state)
         
     def __add__(self,other):
         return self.value + other
@@ -402,6 +411,9 @@ class BooleanPoint(Point):
 
     @property
     def value(self):
+        """
+        Read the value on bacnet using network read (bacpypes)
+        """
         try:
             res = self.properties.device.properties.network.read(
                 '%s %s %s presentValue' %
@@ -424,7 +436,7 @@ class BooleanPoint(Point):
         """
         returns : (boolean) Value
         """
-        if self.history[-1] == 'active':
+        if self.history.dropna().iloc[-1] == 1 or self.history.dropna().iloc[-1] == 'active':
             self._key = 1
             self._boolKey = True
         else:
@@ -490,7 +502,7 @@ class EnumPoint(Point):
         """
         returns: (str) Enum state value
         """
-        return self.properties.units_state[int(self.history[-1]) - 1]
+        return self.properties.units_state[int(self.history.dropna().iloc[-1]) - 1]
 
     @property
     def units(self):
@@ -518,6 +530,10 @@ class EnumPoint(Point):
         return self.value == self.properties.units_state.index(other) + 1
         
 class OfflinePoint(Point):
+    """
+    When offline (DB state), points needs to behave in a particular way
+    (we can't read on bacnet...)
+    """
     def __init__(self, device, name):
         self.properties = PointProperties()
         self.properties.device = device
@@ -556,7 +572,11 @@ class NumericPointOffline(NumericPoint):
         """
         Take last known value as the value
         """
-        return self.history.dropna()[-1]        
+        try:
+            value = self.history.dropna().iloc[-1]
+        except IndexError:
+            value = 65535
+        return value      
         
     def write(self, value, *, prop='presentValue', priority=''):        
         raise OfflineException('Must be online to write')
@@ -575,7 +595,7 @@ class NumericPointOffline(NumericPoint):
         raise OfflineException('Must be online to write')
 
     def __repr__(self):
-        return '%s : %.2f %s' % (self.properties.name, self.history.dropna()[-1], self.properties.units_state)
+        return '%s : %.2f %s' % (self.properties.name, self.value, self.properties.units_state)
 
 class BooleanPointOffline(BooleanPoint):
     @property    
@@ -586,7 +606,11 @@ class BooleanPointOffline(BooleanPoint):
 
     @property
     def value(self):
-        return self.history.dropna()[-1]
+        try:
+            value = self.history.dropna().iloc[-1]
+        except IndexError:
+            value = 'NaN'
+        return value 
 
     def _set(self, value):
         raise OfflineException('Point must be online to write')
@@ -612,14 +636,26 @@ class EnumPointOffline(EnumPoint):
         """
         Take last known value as the value
         """
-        return self.history.dropna()[-1]
+        try:
+            value = self.history.dropna().iloc[-1]
+        except IndexError:
+            value = 'NaN'
+        except ValueError:
+            value = 'NaN'
+        return value 
 
     @property
     def enumValue(self):
         """
         returns: (str) Enum state value
         """
-        return self.properties.units_state[int(self.history[-1]) - 1]
+        try:
+            value = self.properties.units_state[int(self.history.dropna().iloc[-1]) - 1]
+        except IndexError:
+            value = 'unknown'
+        except ValueError:
+            value = 'NaN'
+        return value 
 
     def _set(self, value):
         raise OfflineException('Point must be online to write')

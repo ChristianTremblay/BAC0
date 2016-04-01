@@ -11,11 +11,11 @@ Repeat read function every delay
 from .TaskManager import Task
 from bacpypes.core import deferred
 
-import time
-
 class SimplePoll(Task):
     """
     Start a polling task which is in fact a recurring read of the point.
+    ex.
+        device['point_name'].poll(delay=60)
     """
 
     def __init__(self, point, *, delay=10):

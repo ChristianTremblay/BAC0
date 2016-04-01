@@ -11,11 +11,7 @@ from pandas.io import sql
 from pandas.lib import Timestamp
 import pickle
 
-import time
 import os.path
-
-
-
 
 class SQLMixin(object):
     """
@@ -27,9 +23,6 @@ class SQLMixin(object):
         dic.pop('network', None)
         dic.pop('pss', None)
         dic.pop('serving_chart', None)
-        #dev = {}
-        #dev[self.properties.name] = dic
-        #df = pd.DataFrame(dev)
         return dic
         
     
@@ -39,7 +32,6 @@ class SQLMixin(object):
         """
         pprops = {}
         for each in self.points:
-            #print(each.properties.asdict)
             p = each.properties.asdict.copy()
             p.pop('charts', None)
             p.pop('device', None)
@@ -52,6 +44,9 @@ class SQLMixin(object):
         return df
 
     def backup_histories_df(self):
+        """
+        Build a dataframe from all histories
+        """
         backup = {}
         for point in self.points:
             if point.history.dtypes == object:
@@ -60,19 +55,21 @@ class SQLMixin(object):
                 backup[point.properties.name] = point.history.resample('1s')
         return pd.DataFrame(backup)
 
-    def to_sql(self, filename = None):
-        if self.properties.pollDelay > 0:
-            print('Wait while stopping polling')
-            self.poll(command='stop')
+    def save(self, filename = None):
+        """
+        Will save histories to sqlite3 file
+        Will also save device properties to a pickle file so the device 
+        can be rebuilt
+        """
         if filename:
             self.properties.db_name = filename
         else:
             self.properties.db_name = self.properties.name
             
  
-        # Do fil exist ? If so...will nee to append data
+        # Do file exist ? If so...will nee to append data
         if os.path.isfile('%s.db' % (self.properties.db_name)):
-            print('File exists')
+            print('File exists, appending data...')
             db = sqlite3.connect('%s.db' % (self.properties.db_name))
             his = sql.read_sql('select * from "%s"' % 'history', db)  
             his.index = his['index'].apply(Timestamp)
@@ -87,30 +84,26 @@ class SQLMixin(object):
     
         # DataFrames that will be saved to SQL
         sql.to_sql(df_to_backup, name='history', con=cnx, index_label = 'index', index = True, if_exists = 'append')
-        #sql.to_sql(self.points_properties_df(), name='points_properties', con=cnx, if_exists = 'replace')
-        #sql.to_sql(self.dev_properties_df(), name='device_properties', con=cnx, if_exists = 'replace')
-        # pickling properties
+
         prop_backup = {}
         prop_backup['device'] = self.dev_properties_df()
         prop_backup['points'] = self.points_properties_df()
-  #      with open( "%s_points_prop.bin"  % self.properties.db_name, "wb" ) as file:
-  #          pickle.dump(self.points_properties_df(), file)
-  #      with open( "%s_prop.bin"  % self.properties.db_name, "wb" ) as file:
-  #          pickle.dump(self.dev_properties_df(), file)
         with open( "%s.bin"  % self.properties.db_name, "wb" ) as file:
             pickle.dump(prop_backup, file)
                 
         print('%s saved to disk' % self.properties.db_name)
         
-        if self.properties.pollDelay > 0:
-            print('Wait while restarting polling')
-            self.poll()
-        
     def points_from_sql(self, db):
+        """
+        Function to retrieve points from DB
+        """
         points = sql.read_sql("SELECT * FROM history;", db) 
         return list(points.columns.values)[1:]
         
     def his_from_sql(self, db, point):
+        """
+        Function to retrive histories from DB
+        """
         his = sql.read_sql('select * from "%s"' % 'history', db)  
         his.index = his['index'].apply(Timestamp)
         return his.set_index('index')[point]
@@ -119,18 +112,19 @@ class SQLMixin(object):
         """
         Take last known value as the value
         """
-        return self.his_from_sql(db, point).last_valid_index()
-
-#    def read_backup_prop(self, filename):
-#        with open( "%s.bin" % filename, "rb" ) as file:
-#            return pickle.load(file)['device']            
+        return self.his_from_sql(db, point).last_valid_index()          
         
     def read_point_prop(self, device_name, point):
-        #prop = sql.read_sql('select %s from "%s"' % (point, 'points_properties'), db)       
+        """
+        Points properties retrieved from pickle
+        """
         with open( "%s.bin" % device_name, "rb" ) as file:        
             return pickle.load(file)['points'][point]
         
     def read_dev_prop(self, device_name):
+        """
+        Device properties retrieved from pickle
+        """
         with open( "%s.bin" % device_name, "rb" ) as file:
             return pickle.load(file)['device']            
         

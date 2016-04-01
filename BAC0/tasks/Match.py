@@ -9,12 +9,11 @@ Change Fan status based on Fan Command
 """
 
 from .TaskManager import Task
-from random import randint
 
 
 class Match(Task):
     """
-    Will fit fan status with fan command
+    Will match 2 points (ex. a status with a command)
     """
 
     def __init__(self, command = None, status = None, delay=5):        

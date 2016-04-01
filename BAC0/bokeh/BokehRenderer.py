@@ -5,8 +5,8 @@
 #
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 """
-This module allows the creation of threads that will be used as repetitive
-tasks for simulation purposes
+This module deals with Bokeh Session, Document and Plots
+A connection to the server is mandatory to use update_data
 """
 import random
 from bokeh.plotting import Figure

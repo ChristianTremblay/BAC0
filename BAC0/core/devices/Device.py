@@ -366,6 +366,10 @@ class Device(SQLMixin):
 
 #@fix_docs
 class DeviceConnected(Device):
+    """
+    If the device is found on the bacnet network, its state will be connected.
+    Once connected, every command will use the bacnet connection.
+    """
 
     def _init_state(self):
         self._buildPointList()
@@ -376,6 +380,10 @@ class DeviceConnected(Device):
         self.new_state(DeviceFromDB)
 
     def connect(self, *, db = None):
+        """
+        A connected device can be switched to a DBmode where the device will 
+        not use the bacnet network but the data saved previously.
+        """
         if db:
             self.poll(command = 'stop')
             self.properties.db_name = db.split('.')[0]
@@ -384,6 +392,9 @@ class DeviceConnected(Device):
             print('Already connected, provide db arg if you want to connect to db')
 
     def df(self, list_of_points, force_read=True):
+        """
+        When connected, calling DF should force a reading on the network.
+        """
         his = []
         for point in list_of_points:
             try:
@@ -396,6 +407,10 @@ class DeviceConnected(Device):
         return pd.DataFrame(dict(zip(list_of_points, his)))
 
     def _buildPointList(self):
+        """
+        Initial work upon connection to build the device point list 
+        and properties.
+        """
         try:
             self.properties.pss.value = self.properties.network.read(
                 '%s device %s protocolServicesSupported' %
@@ -422,6 +437,15 @@ class DeviceConnected(Device):
 
 
     def __getitem__(self, point_name):
+        """
+        Allow the usage of 
+            device['point_name'] or
+            device[lst_of_points]
+            
+        If calling a list, last value will be used (won't read on the network)
+        for performance reasons.
+        If calling a simple point, point will be read via bacnet.
+        """
         try:
             if isinstance(point_name, list):
                 return self.df(point_name, force_read=False)
@@ -435,6 +459,11 @@ class DeviceConnected(Device):
             yield each
 
     def __contains__(self, value):
+        """
+        Allow 
+            if "point_name" in device: 
+        use case
+        """
         return value in self.points_name
 
     @property
@@ -443,6 +472,10 @@ class DeviceConnected(Device):
             yield each.properties.name
 
     def to_excel(self):
+        """
+        This is a beta function allowing the creation of an Excel document
+        based on the device point histories.
+        """
         his = {}
         for name in list(self.points_name):
             try:
@@ -462,12 +495,20 @@ class DeviceConnected(Device):
             df.to_csv()
 
     def __setitem__(self, point_name, value):
+        """
+        Allow the usage of 
+            device['point_name'] = value
+        use case
+        """
         try:
             self._findPoint(point_name)._set(value)
         except ValueError as ve:
             print('%s' % ve)
 
     def __len__(self):
+        """
+        Length of a device = number of points
+        """
         return len(self.points)
 
     def _parseArgs(self, arg):
@@ -478,6 +519,10 @@ class DeviceConnected(Device):
 
     @property
     def analog_units(self):
+        """
+        A shortcut to retrieve all analog points units
+        Used by Bokeh feature
+        """
         au = []
         us = []
         for each in self.points:
@@ -521,6 +566,9 @@ class DeviceConnected(Device):
          
 
     def _findPoint(self, name, force_read=True):
+        """
+        Used by getter and setter functions
+        """
         for point in self.points:
             if point.properties.name == name:
                 if force_read:
@@ -532,20 +580,37 @@ class DeviceConnected(Device):
         return '%s / Connected' % self.properties.name
 
 class RPDeviceConnected(DeviceConnected, ReadProperty):
+    """
+    A device will be in that state if it's connected but doesn't support
+    read property multiple
+    
+    In that state, BAC0 will not poll all points every 10 seconds by default.
+    Would be too much trafic. Polling must be done as needed using poll function
+    """
     def __str__(self):
         return 'connected using read property'
         
 class RPMDeviceConnected(DeviceConnected, ReadPropertyMultiple):
+    """
+    A device will be in that state if it's connected and support
+    read property multiple
+    """
     def __str__(self):
         return 'connected using read property multiple'
 
 #@fix_docs
 class DeviceDisconnected(Device):
-
+    """
+    Initial state of a device. Disconnected from bacnet.
+    """
     def _init_state(self):
         self.connect()
 
     def connect(self, *, db = None):
+        """
+        Will try to connect, if unable, will connect to a database if one's
+        available (so the user can play with previous data)
+        """
         if db:
             self.properties.db_name = db
         try:
@@ -559,6 +624,13 @@ class DeviceDisconnected(Device):
                     self.new_state(RPDeviceConnected)
 
         except NoResponseFromController:
+            if self.properties.db_name:
+                self.new_state(DeviceFromDB)
+            else:
+                print('Provide dbname to connect to device offline')
+                print("Ex. controller.connect(db = 'backup')")
+        
+        except AttributeError:
             if self.properties.db_name:
                 self.new_state(DeviceFromDB)
             else:
@@ -638,7 +710,14 @@ class DeviceDisconnected(Device):
 
 #@fix_docs
 class DeviceFromDB(DeviceConnected):
-
+    """
+    This state is used when replaying previous data.
+    Every call to 
+        device['point_name'] 
+    will result on last valid value.
+    
+    Histories for each point are available
+    """
     def _init_state(self):
         try:
             self.initialize_device_from_db()
@@ -646,6 +725,10 @@ class DeviceFromDB(DeviceConnected):
             self.new_state(DeviceDisconnected)
 
     def connect(self, *, network = None, from_backup = None):
+        """
+        In a DBState, a device can be reconnected to bacnet using :
+            device.connect(bacnet) (bacnet = BAC0.connect())
+        """
         if network and from_backup:
             raise WrongParameter('Please provide network OR from_backup')
         elif network:
@@ -697,6 +780,7 @@ class DeviceFromDB(DeviceConnected):
         self.properties.serving_chart = {}
         self.properties.charts = []
         self.properties.multistates = self._props['multistates']
+        print('Device restored from db')
 
     @property
     def simulated_points(self):
@@ -727,7 +811,14 @@ class DeviceFromDB(DeviceConnected):
     def __repr__(self):
         return '%s / Disconnected' % self.properties.name
 
+class DeviceLoad(DeviceFromDB):
+    def __init__(self,filename = None):
+        if filename:
+            Device.__init__(self,None,None,None,from_backup = filename)
+        else:
+            raise Exception('Please provide backup file as argument')
 
+# Some exceptions
 class DeviceNotConnected(Exception):
     pass
 class WrongParameter(Exception):

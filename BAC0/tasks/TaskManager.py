@@ -35,14 +35,6 @@ class Task(Thread):
 
     def run(self):
         self.process()
-#        if self.lock.release():
-#            print('Task too fast...slow down, last call not finisehd yet...')
-#        else:
-#            try:
-#                self.lock.release()
-#            except RuntimeError:
-#                pass
-#            self.beforeStop()
 
     def process(self):
         while not self.exitFlag:
