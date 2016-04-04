@@ -50,9 +50,11 @@ class SQLMixin(object):
         backup = {}
         for point in self.points:
             if point.history.dtypes == object:
-                backup[point.properties.name] = point.history.replace(['inactive', 'active'], [0, 1]).resample('1s')
+                backup[point.properties.name] = point.history.replace(['inactive', 'active'], [0, 1]).resample('1s').mean()
             else:
-                backup[point.properties.name] = point.history.resample('1s')
+                backup[point.properties.name] = point.history.resample('1s').mean()
+        # in some circumstances, correct : pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in backup.items() ]))
+        backup = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in backup.items() ]))
         return pd.DataFrame(backup)
 
     def save(self, filename = None):

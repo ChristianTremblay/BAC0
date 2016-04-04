@@ -11,7 +11,7 @@ A connection to the server is mandatory to use update_data
 import random
 from bokeh.plotting import Figure
 from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis
-from bokeh.models.widgets import VBox
+from bokeh.models import VBox
 from bokeh.client import push_session
 from bokeh.document import Document
 from bokeh.io import gridplot

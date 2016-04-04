@@ -3,8 +3,7 @@ python:
 - '3.3'
 - '3.4'
 - '3.5'
-- "3.5-dev" # 3.5 development branch
-#- "nightly" # currently points to 3.6-dev
+- 3.5-dev
 bundler_args: "--retry 3"
 install:
 - pip install -r requirements.txt
@@ -13,22 +12,11 @@ install:
 script:
 - nosetests --with-coverage --cover-package=BAC0 -v
 after_success: coveralls
-
 deploy:
-#- provider: pypi
-#  server: https://testpypi.python.org/pypi
-#  user: ChristianTremblay
-#  password:
-#    secure: C2RaknM+gjZ7IyzSs8Gh2IQAJVbG7/QSAGNQZAOirYQStUm9/KaLmHs8lUv7aEvNfE2NGCb/fE09kM7CzBlso3TGyl2tIT/Mc0mYlyEVlArzTEIMZ8UJKENnPYuV3Oj8pwLJzft2XLfYlPhG82FsMU6RcpKVrxOj9Z6nyXlvw+3ruljl9/KRQgG1S43CUuJXPP/DFiOAvPmlyiRDDgWgfyoNOMEHrHcyncBX4BTSD6NmY0VsdRk+Utas27gyGHwgS7nUCwSsFoGehHeJOiGHvajISPE2p8Z6uLVltsIeCEXFMzMqQtDC7D/xotK4BtQyz44ebiKeuSKUWl4v1tEfuQDMX7/KK4fH7d6irU2J26zGWoJKZB9+fbSE/3m0P1nJJeFhxXKbUqebhu03AhceiD/pSHCBT0UH+7JyWXmryHl5WlgGpN/VnNWOnxaZPrjbkqTOiu9btK66MFfBNsbGCtFw6FW+N+m9gp7Oh2orNHkdUv8svHxr4Qn8b45ejfiEGQPCkeedJ88xF/aXHlKlG1u5EI9ao43qNZRaXYtnEtnakcw5aIf0U5ukagK32zgv01X5JHoNPCf/ofnLAqpzW2f459iVwTIoamBVIz1B0zy8g/YEO2m6Sf0z1VoIWyoEFl4m/2ZagOjlEUCIhoSN84MX1e3KIj9o8oAKwvwWKXA=
-#  distributions: sdist bdist_wheel
-#  on:
-#    branch: stage
-
-- provider: pypi
-  server: https://pypi.python.org/pypi
+  provider: pypi
   user: ChristianTremblay
   password:
-    secure: C2RaknM+gjZ7IyzSs8Gh2IQAJVbG7/QSAGNQZAOirYQStUm9/KaLmHs8lUv7aEvNfE2NGCb/fE09kM7CzBlso3TGyl2tIT/Mc0mYlyEVlArzTEIMZ8UJKENnPYuV3Oj8pwLJzft2XLfYlPhG82FsMU6RcpKVrxOj9Z6nyXlvw+3ruljl9/KRQgG1S43CUuJXPP/DFiOAvPmlyiRDDgWgfyoNOMEHrHcyncBX4BTSD6NmY0VsdRk+Utas27gyGHwgS7nUCwSsFoGehHeJOiGHvajISPE2p8Z6uLVltsIeCEXFMzMqQtDC7D/xotK4BtQyz44ebiKeuSKUWl4v1tEfuQDMX7/KK4fH7d6irU2J26zGWoJKZB9+fbSE/3m0P1nJJeFhxXKbUqebhu03AhceiD/pSHCBT0UH+7JyWXmryHl5WlgGpN/VnNWOnxaZPrjbkqTOiu9btK66MFfBNsbGCtFw6FW+N+m9gp7Oh2orNHkdUv8svHxr4Qn8b45ejfiEGQPCkeedJ88xF/aXHlKlG1u5EI9ao43qNZRaXYtnEtnakcw5aIf0U5ukagK32zgv01X5JHoNPCf/ofnLAqpzW2f459iVwTIoamBVIz1B0zy8g/YEO2m6Sf0z1VoIWyoEFl4m/2ZagOjlEUCIhoSN84MX1e3KIj9o8oAKwvwWKXA=
-  distributions: sdist bdist_wheel
+    secure: Wgb3PCFut7RCbajytFP4IchYZ1ghA6UH0qjLtBm5qdCYesQKipo3p4Pm5N2IlyOfen1RGd0igaksQqHj19bpwoMXvvR6Rb/Q/eqON+mUWtN1BDPJFh60bWfyJ9c3ZsrCmkVChIQxOPwmyUTX23LV+1Z4nuRdlktdzIDbBZn847BesVylHP9gQ7CKZb3Fxr69ZeOtMbTwAyfK1BbMcFjXMQQGzl4W0R9CuFH7eDa8Ih/fUsvUupDNDKwl6hyKNWwtzDu/DPP0TDBgQexjntIo+MkByatmXyGCoYuHzIrjIMKHCxHGtciCnD6cNGT9meUkwjiCHITfRKCdCAZmwfCeVJuB/AsjgMj4M/dA6kMklqs4A+DEqbw+JiYxMSP1VZL5Sy864Api+7Rhm7tQNNPzjQywSlCjwKexEmSdbKy3M0A7OkORzFFsWDE5WUG1OjR8iJGnhKINmAjfvPhlZCjf/9Dgsd5EA735WiUmhTjj7Vzu3MTtMOzg95UtdDVekqZHf4Yjk6cjhqJQxKM0GZSomAdTZhpYiFFMXgpiup9hUmRujPvGMOci/vydi3rWEe4QARGdDZb/6spydyCy/9sw1O+D93hzLq09fSm3IWN/awdj0dkbhKbHSfH+Gq/436DgRdG/5GlevL3u8b/QARGu2bAXzNJJIuBcGcesTzLch30=
   on:
-    branch: master
+    distributions: sdist bdist_wheel
+    repo: ChristianTremblay/BAC0
