@@ -14,6 +14,7 @@ from .Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
 from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException, SegmentationNotSupported
 from ...bokeh.BokehRenderer import BokehPlot
 from ...sql.sql import SQLMixin
+from ...tasks.DoOnce import DoOnce
 #from .states.DeviceDisconnected import DeviceDisconnected
 from .mixins.read_mixin import ReadPropertyMultiple, ReadProperty
 
@@ -359,6 +360,9 @@ class Device(SQLMixin):
 
         """
         raise NotImplementedError()
+        
+    def do(self, func):
+        DoOnce(func).start()
 
     def __repr__(self):
         return '%s / Undefined' % self.properties.name

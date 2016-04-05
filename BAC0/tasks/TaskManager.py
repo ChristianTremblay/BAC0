@@ -61,3 +61,30 @@ class Task(Thread):
         """
         if self in Manager.taskList:
             Manager.taskList.remove(self)
+
+class OneShotTask(Thread):
+
+    def __init__(self, daemon = True):
+        Thread.__init__(self, daemon = daemon)
+        self.lock = Manager.threadLock
+        if not self.name in Manager.taskList:
+            Manager.taskList.append(self)
+
+    def run(self):
+        self.process()
+
+    def process(self):
+        self.task()
+            
+    def task(self):
+        raise RuntimeError("task must be overridden")
+
+    def stop(self):
+        pass
+
+    def beforeStop(self):
+        """
+        Action done when closing thread
+        """
+        if self in Manager.taskList:
+            Manager.taskList.remove(self)
