@@ -1,30 +1,88 @@
+.. _getting-started:
+
 Getting started
 ===============
 
-Where to download
------------------
-https://github.com/ChristianTremblay/BAC0/
-Project will soon be published on PyPi to be able to pip install BAC0
+.. _i-know-nothing-about-python:
 
-How to install dependencies
+I know nothing about Python
 ---------------------------
-BAC0 is based on BACpypes found here::
+First, welcome to the Python community. If you're new to Python programming, 
+it can be hard to know where to start.
+
+I highly recommend to start with a complete distribution. That will help you a 
+lot as the majority of important modules will be installed for you.
+
+If you are using Windows, it will simplify your life as some modules needs a
+C compiler and it can be hard sometimes to compile a module by yourself. 
+
+
+Some examples of complete distributions are Anaconda_ or `Enthought Canopy <https://www.enthought.com/products/canopy/>`_.
+As I use Anaconda_, I'll focus on this one but you're free to choose the one
+you prefer.
+
+.. _installing-a-complete-distribution:
+
+Installing a complete distribution
+++++++++++++++++++++++++++++++++++
+Begin by downloading Anaconda_. Install it. Once it's done, you'll get access
+to a variety of tools like : 
+
+    * Spyder (and IDE to write the code)
+    * Anaconda Prompt (a console configured for Python)
+    * Jupyter Notebook (Python in your browser)
+    * pip (a script allowing you to install modules)
+    * conda (a package manager used by Anaconda_)
+
+.. _start-using-pip:
+
+Start using pip
++++++++++++++++
+Open the Anaconda Prompt (a console terminal with Python configured in the path) ::
+
+    pip install BAC0
+
+This simple line will look in Pypi_ (The Python Package Index), download and
+install everything you need to start using BAC0
+
+.. _check-that-bac0-works:
+
+Check that BAC0 works
++++++++++++++++++++++
+In the terminal again, type :: 
+
+    python
+
+This will open a python terminal. In the terminal type :: 
+
+    >>import BAC0
+    >>BAC0.version
+
+This will show you the installed version. You're good to go.   
+
+.. _where-to-download-the-source-code:
+
+Where to download the source code
+---------------------------------
+https://github.com/ChristianTremblay/BAC0/
+
+There you'll be able to open issues if you find bugs.
+
+.. _dependencies:
+
+Dependencies
+------------
+* BAC0 is based on BACpypes_ for all BACnet/IP communication.
+* It uses Bokeh_ for Live trending features 
+* It uses Pandas for every Series and DataFrame (histories) 
+
+Normally, if you have installed Anaconda_, Bokeh_ and Pandas_ will already
+be installed. You'll only need to install BACpypes_ ::
 
     pip install bacpypes
     pip install bokeh (or conda install bokeh if using Anaconda)
 
-Bacpypes is now available for python 2.5, 2.7 and 3.4. You can also download it using Pypy.
-
-You will also need Pandas as data processing is so easier with this !
-
-If running Python on Windows, I recommend the use of complete distributions like Anaconda or Enthought Canopy.
-
-How to install BAC0
--------------------
-Once the repo has been cloned, use::
-
-    python setup.py install
-
+You're ready to begin using BAC0 !
 
 .. |build-status| image:: https://travis-ci.org/ChristianTremblay/BAC0.svg?branch=master
    :target: https://travis-ci.org/ChristianTremblay/BAC0
@@ -41,3 +99,9 @@ Once the repo has been cloned, use::
 .. _bacpypes : https://github.com/JoelBender/bacpypes
 
 .. _bokeh : http://www.bokehplots.com
+
+.. _Pandas : http://pandas.pydata.org/
+
+.. _anaconda : https://www.continuum.io/downloads
+
+.. _Pypi : https://pypi.python.org/pypi

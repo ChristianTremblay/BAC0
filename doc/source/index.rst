@@ -15,12 +15,16 @@ Table of contents
    
    getstarted
    connect
-   tests
    histories
    trending
-   savetoexcel
+   savedevice
    jupyter
-   BAC0
+   tests
+   pytest
+
+Modules documentation
+=====================
+.. include:: BAC0.rst
 
 Index and search tool
 ======================

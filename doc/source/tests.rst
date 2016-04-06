@@ -74,3 +74,27 @@ Match
 Let's say you want to automatically match the status of a point with the command.::
 
     mycontroller['status'].match(mycontroller['command'])
+
+Custom function
+---------------
+You could also define a complex function, and send it to the controller. 
+This way, you'll be able to continue using all synchronous functions of Jupyter Notebook for example.
+(technically, a large function will block any inputs until it's finished)
+
+PLEASE NOTE THAT THIS IS A WORK IN PROGRESS
+
+Example ::
+
+    import time
+    
+    def test_Vernier():
+        for each in range(0,101):
+            controller['Vernier Sim'] = each
+            print('Sending : %2f' % each)
+            time.sleep(30)
+            
+    controller.do(test_Vernier)
+
+This function updates the variable named "Vernier Sim" each 30 seconds. By increment of 1 percent.
+It will take a really long time to finish. Using the "do" method, you send the function to the controller
+and it will be handled by a thread so you'll be able to continue working on the device.

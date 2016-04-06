@@ -58,7 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'BAC0'
-copyright = '2015, Christian Tremblay, P.Eng.'
+copyright = '2015, Christian Tremblay, P.Eng. | SERVISYS inc.'
 author = infos.__author__
 
 # The version info for the project you're documenting, acts as replacement for
@@ -119,13 +119,15 @@ todo_include_todos = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'alabaster'
+html_theme = 'bizstyle'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 #html_theme_options = {}
-
+html_theme_options = {
+    "rightsidebar": "true",
+}
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = []
 
@@ -134,7 +136,7 @@ html_theme = 'alabaster'
 #html_title = None
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-#html_short_title = None
+html_short_title = 'BAC0'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.

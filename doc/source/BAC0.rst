@@ -8,18 +8,9 @@ Subpackages
 
     BAC0.core
     BAC0.scripts
-
-Submodules
-----------
-
-BAC0.infos module
------------------
-
-.. automodule:: BAC0.infos
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+    BAC0.sql
+    BAC0.tasks
+    BAC0.bokeh
 
 Module contents
 ---------------
