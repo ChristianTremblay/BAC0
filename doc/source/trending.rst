@@ -78,6 +78,15 @@ And a lot of other options like pan, box zoom, mouse wheel zoom, save, etc...
 By default, x-axis will be a timeseries and will be linked between trends. So if you span one, 
 or zoom one, the other plots will follow, giving you the eaxct same x-axis for every plots.
 
+Bokeh Demo
+----------
+Here is a working demo of Bokeh. It's taken from a real life test. You can use all the features (zoom, pan, etc.)
+Please note that the hover suffers from a little bug in this "saved" version of the trends... Working to solve this.
+
+.. raw:: html
+   :file: images/demo1.html
+
+
 .. |bokeh_plots| image:: images/bokeh_trends_1.png
 .. |bokeh_tools| image:: images/bokeh_tools.png
 .. |bokeh_hover| image:: images/bokeh_hover.png
