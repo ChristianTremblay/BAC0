@@ -11,8 +11,9 @@ install:
 - pip install coveralls
 - pip install pytest
 - pip install pytest-cov
+- pip install nose
 script:
-- py.test -v --cov=BAC0 tests/
+- nosetests --with-coverage --cover-package=BAC0 -v
 after_success: coveralls
 deploy:
   provider: pypi
