@@ -1,5 +1,9 @@
 BAC0 |build-status| |coverage| |docs|
 =====================================
+
+.. image:: https://badges.gitter.im/ChristianTremblay/BAC0.svg
+   :alt: Join the chat at https://gitter.im/ChristianTremblay/BAC0
+   :target: https://gitter.im/ChristianTremblay/BAC0?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 BAC0 is a Python 3 (3.4 and over) scripting application that uses BACpypes_ to process BACnet messages on a IP network. 
 This library brings out simple commands to browse a BACnet network, read properties from BACnet devices or write to them.
 
