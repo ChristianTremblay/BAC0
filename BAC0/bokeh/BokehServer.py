@@ -41,7 +41,7 @@ class BokehServer(Thread):
             self.task()
 
     def startServer(self):
-        if 'win' in sys.platform:
+        if 'win32' in sys.platform:
             commandToExecute = "bokeh.bat serve"
         else:
             commandToExecute = "bokeh serve"
