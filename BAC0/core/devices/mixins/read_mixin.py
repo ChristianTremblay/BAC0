@@ -159,20 +159,21 @@ class ReadPropertyMultiple():
     def _discoverPoints(self):
         try : 
             objList = self.properties.network.read(
-                '%s device %s objectList %s' %
+                '%s device %s objectList' %
                 (self.properties.address, self.properties.device_id))
         except SegmentationNotSupported:
             objList = []
             number_of_objects = self.properties.network.read(
-                '%s device %s objectList 0' %
-                (self.properties.address, self.properties.device_id))
+                '%s device %s objectList' %
+                (self.properties.address, self.properties.device_id), arr_index = 0)
             for i in range(1,number_of_objects+1):
                 objList.append(self.properties.network.read(
-                '%s device %s objectList %s' %
-                (self.properties.address, self.properties.device_id, i)))
+                '%s device %s objectList' %
+                (self.properties.address, self.properties.device_id), arr_index = i))
+            
 
         points = []
-
+        print(objList)
         def retrieve_type(obj_list, point_type_key):
             """
             retrive analog values
@@ -379,17 +380,17 @@ class ReadProperty():
     def _discoverPoints(self):
         try : 
             objList = self.properties.network.read(
-                '%s device %s objectList %s' %
+                '%s device %s objectList' %
                 (self.properties.address, self.properties.device_id))
         except SegmentationNotSupported:
             objList = []
             number_of_objects = self.properties.network.read(
-                '%s device %s objectList 0' %
-                (self.properties.address, self.properties.device_id))
+                '%s device %s objectList' %
+                (self.properties.address, self.properties.device_id), arr_index = 0)
             for i in range(1,number_of_objects+1):
                 objList.append(self.properties.network.read(
-                '%s device %s objectList %s' %
-                (self.properties.address, self.properties.device_id, i)))
+                '%s device %s objectList' %
+                (self.properties.address, self.properties.device_id), arr_index = i))
 
         points = []
 

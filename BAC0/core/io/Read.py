@@ -31,7 +31,7 @@ from bacpypes.basetypes import PropertyIdentifier
 from queue import Queue, Empty
 import time
 
-from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted
+from .IOExceptions import SegmentationNotSupported, ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted
 from ..functions.debug import log_debug, log_exception
 
 # some debugging
@@ -57,7 +57,7 @@ class ReadProperty():
         #self.this_application._lock = False
         self._started = False
 
-    def read(self, args):
+    def read(self, args, arr_index = None):
         """ This function build a read request wait for the answer and
         return the value
 
@@ -85,7 +85,7 @@ class ReadProperty():
     
             try:
                 # give it to the application
-                self.this_application.request(self.build_rp_request(args))
+                self.this_application.request(self.build_rp_request(args, arr_index))
     
             except ReadPropertyException as error:
                 log_exception("exception: %r", error)
@@ -96,9 +96,13 @@ class ReadProperty():
                 try:
                     data, evt = self.this_application.ResponseQueue.get(
                         timeout=self._TIMEOUT)
-                    evt.set()
+                    evt.set()             
+                    if data == 'err_seg':
+                        raise SegmentationNotSupported
                     #self.this_application._lock = False
                     return data
+                except SegmentationNotSupported:
+                    raise
                 except Empty as error:
                     #log_exception(ReadProperty, 'No response from controller')
                     #self.this_application._lock = False
@@ -144,14 +148,16 @@ class ReadProperty():
                     evt.set()
                     #self.this_application._lock = False
                     return data
+                except SegmentationNotSupported:
+                    raise
                 except Empty:
                     print('No response from controller')
                     #self.this_application._lock = False
                     raise NoResponseFromController
                     #return None
                 
-    def build_rp_request(self, args):
-        addr, obj_type, obj_inst, prop_id, arr_index = args[:5]
+    def build_rp_request(self, args, arr_index = None):
+        addr, obj_type, obj_inst, prop_id = args[:4]
 
         if obj_type.isdigit():
             obj_type = int(obj_type)

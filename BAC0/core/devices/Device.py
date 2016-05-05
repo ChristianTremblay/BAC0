@@ -626,6 +626,11 @@ class DeviceDisconnected(Device):
                     self.new_state(RPMDeviceConnected)
                 else:
                     self.new_state(RPDeviceConnected)
+                    
+        except SegmentationNotSupported:
+            self.segmentation_supported = False
+            print('Segmentation not supported.... will slow down our requests')
+            self.new_state(RPDeviceConnected)
 
         except NoResponseFromController:
             if self.properties.db_name:

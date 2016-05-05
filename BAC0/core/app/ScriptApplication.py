@@ -189,18 +189,21 @@ class ScriptApplication(BIPSimpleApplication):
             self.abort_pdu_reason = apdu.apduAbortRejectReason
             #print('Abort PDU : %s' % self.abort_pdu_reason)  
             # UNCOMMENT STRING
-            if self.abort_pdu_reason == "AbortReason.segmentationNotSupported":
-                print('Segment Abort PDU : %s' % self.abort_pdu_reason)                
+            if self.abort_pdu_reason == AbortReason.segmentationNotSupported:
+                #print('Segment Abort PDU : %s' % self.abort_pdu_reason)                
                 evt = Event()
-                self.ResponseQueue.put((None, evt))
+                self.ResponseQueue.put(('err_seg', evt))
                 evt.wait()
-                raise SegmentationNotSupported('Segmentation problem with device')
+                # probably because of thread... the raise do not seem
+                # to be fired.... putting err_seg to raise from caller...
+                #raise SegmentationNotSupported('Segmentation problem with device')
+            
             else:
-                print('Abort PDU : %s' % self.abort_pdu_reason)                
+                #print('Abort PDU : %s' % self.abort_pdu_reason)                
                 #evt = Event()
                 self.ResponseQueue.put((None, evt))
                 evt.wait()
-                raise NoResponseFromController('Abort PDU received')
+                #raise NoResponseFromController('Abort PDU received')
 
         if isinstance(apdu, SimpleAckPDU):
             evt = Event()
