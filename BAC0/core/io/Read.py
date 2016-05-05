@@ -151,7 +151,7 @@ class ReadProperty():
                     #return None
                 
     def build_rp_request(self, args):
-        addr, obj_type, obj_inst, prop_id = args[:4]
+        addr, obj_type, obj_inst, prop_id, arr_index = args[:5]
 
         if obj_type.isdigit():
             obj_type = int(obj_type)
@@ -168,6 +168,7 @@ class ReadProperty():
         request = ReadPropertyRequest(
             objectIdentifier=(obj_type, obj_inst),
             propertyIdentifier=prop_id,
+            propertyArrayIndex=arr_index,
         )
         request.pduDestination = Address(addr)
 

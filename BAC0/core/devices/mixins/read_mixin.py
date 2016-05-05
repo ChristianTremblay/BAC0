@@ -8,7 +8,7 @@
 from ....tasks.Poll import DevicePoll
 from ...io.IOExceptions import ReadPropertyMultipleException, NoResponseFromController, SegmentationNotSupported
 from ..Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
-  
+
 
 class ReadPropertyMultiple():
     """
@@ -157,9 +157,19 @@ class ReadPropertyMultiple():
                 # Save each value to history of each point
 
     def _discoverPoints(self):
-        objList = self.properties.network.read(
-            '%s device %s objectList' %
-            (self.properties.address, self.properties.device_id))
+        try : 
+            objList = self.properties.network.read(
+                '%s device %s objectList %s' %
+                (self.properties.address, self.properties.device_id))
+        except SegmentationNotSupported:
+            objList = []
+            number_of_objects = self.properties.network.read(
+                '%s device %s objectList 0' %
+                (self.properties.address, self.properties.device_id))
+            for i in range(1,number_of_objects+1):
+                objList.append(self.properties.network.read(
+                '%s device %s objectList %s' %
+                (self.properties.address, self.properties.device_id, i)))
 
         points = []
 
@@ -367,9 +377,19 @@ class ReadProperty():
             
 
     def _discoverPoints(self):
-        objList = self.properties.network.read(
-            '%s device %s objectList' %
-            (self.properties.address, self.properties.device_id))
+        try : 
+            objList = self.properties.network.read(
+                '%s device %s objectList %s' %
+                (self.properties.address, self.properties.device_id))
+        except SegmentationNotSupported:
+            objList = []
+            number_of_objects = self.properties.network.read(
+                '%s device %s objectList 0' %
+                (self.properties.address, self.properties.device_id))
+            for i in range(1,number_of_objects+1):
+                objList.append(self.properties.network.read(
+                '%s device %s objectList %s' %
+                (self.properties.address, self.properties.device_id, i)))
 
         points = []
 
