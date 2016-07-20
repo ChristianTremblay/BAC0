@@ -173,7 +173,7 @@ class ReadPropertyMultiple():
             
 
         points = []
-        print(objList)
+        #print(objList)
         def retrieve_type(obj_list, point_type_key):
             """
             retrive analog values
@@ -248,15 +248,33 @@ class ReadPropertyMultiple():
             point_type = str(each[0])
             point_address = str(each[1])
             point_infos = binary_points_info[i]
+            if len(point_infos) == 3:
+                #we probably get only objectName, presentValue and description
+                point_units_state = ('OFF', 'ON')
+                point_description = point_infos[2]
+            elif len(point_infos) == 5:
+                point_units_state = (point_infos[2], point_infos[3])           
+                try:
+                    point_description = point_infos[4]
+                except IndexError:
+                    point_description = ""
+            elif len(point_infos) == 2:
+                point_units_state = ('OFF', 'ON')          
+                point_description = ""
+            else:
+                #raise ValueError('Not enough values returned', each, point_infos)
+                # SHOULD SWITCH TO SEGMENTATION_SUPPORTED = FALSE HERE
+                print('Cannot add %s / %s' % (point_type, point_address))
+                continue
             i += 1
             points.append(
                 BooleanPoint(
                     pointType=point_type,
                     pointAddress=point_address,
                     pointName=point_infos[0],
-                    description=point_infos[4],
+                    description=point_description,
                     presentValue=point_infos[1],
-                    units_state=(point_infos[2], point_infos[3]),
+                    units_state=point_units_state,
                     device=self))
         print('Ready!')
         return (objList, points)
