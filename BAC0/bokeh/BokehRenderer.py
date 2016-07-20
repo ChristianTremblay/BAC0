@@ -242,26 +242,30 @@ class BokehPlot(object):
             df = self.read_lst()
             for renderer in self.p.renderers:
                 name = renderer.name
-                if name in self.points_list:
-                    glyph_renderer = renderer
+                glyph_renderer = renderer
+                new_data = {}
+                if name in self.points_list:     
+                    new_data = glyph_renderer.data_source.data
                     df['name'] = ('%s / %s' % (name, self.device[name]['description']))
-                    glyph_renderer.data_source.data['x'] = df['index']
-                    glyph_renderer.data_source.data['y'] = df[name]
-                    glyph_renderer.data_source.data['desc'] = df['name']
-                    glyph_renderer.data_source.data['time'] = df['time_s']
+                    new_data['x'] = df['index']
+                    new_data['y'] = df[name]
+                    new_data['desc'] = df['name']
+                    new_data['time'] = df['time_s']
                     if name in self.multi_states:
-                        glyph_renderer.data_source.data['units'] = [self.multi_states[name][int(math.fabs(x-1))] for x in df[name]]
+                        new_data['units'] = [self.multi_states[name][int(math.fabs(x-1))] for x in df[name]]
                     elif name in self.binary_states:
-                        glyph_renderer.data_source.data['y'] = df[name]
-                        glyph_renderer.data_source.data['units'] = [self.binary_states[name][int(x/1)] for x in df[name]]
+                        new_data['y'] = df[name]
+                        new_data['units'] = [self.binary_states[name][int(x/1)] for x in df[name]]
                     else:
                         df['units'] = self.analog_units[name]
-                        glyph_renderer.data_source.data['units'] = df['units']
+                        new_data['units'] = df['units']
+                    glyph_renderer.data_source.data = new_data
                 elif name == 'Notes':
+                    new_data = glyph_renderer.data_source.data
                     notes_df = self.read_notes()
-                    glyph_renderer = renderer
-                    glyph_renderer.data_source.data['x'] = notes_df['index']
-                    glyph_renderer.data_source.data['y'] = notes_df['value']
-                    glyph_renderer.data_source.data['desc'] = notes_df['desc']
-                    glyph_renderer.data_source.data['units'] = notes_df[0]
-                    glyph_renderer.data_source.data['time'] = notes_df['time_s']
+                    new_data['x'] = notes_df['index']
+                    new_data['y'] = notes_df['value']
+                    new_data['desc'] = notes_df['desc']
+                    new_data['units'] = notes_df[0]
+                    new_data['time'] = notes_df['time_s']
+                    glyph_renderer.data_source.data = new_data
