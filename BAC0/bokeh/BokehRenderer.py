@@ -245,7 +245,6 @@ class BokehPlot(object):
                 glyph_renderer = renderer
                 new_data = {}
                 if name in self.points_list:     
-                    new_data = glyph_renderer.data_source.data
                     df['name'] = ('%s / %s' % (name, self.device[name]['description']))
                     new_data['x'] = df['index']
                     new_data['y'] = df[name]
@@ -261,7 +260,6 @@ class BokehPlot(object):
                         new_data['units'] = df['units']
                     glyph_renderer.data_source.data = new_data
                 elif name == 'Notes':
-                    new_data = glyph_renderer.data_source.data
                     notes_df = self.read_notes()
                     new_data['x'] = notes_df['index']
                     new_data['y'] = notes_df['value']
