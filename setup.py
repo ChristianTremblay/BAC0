@@ -2,7 +2,13 @@
 Setup.py
 """
 from setuptools import setup
-from BAC0 import infos as infos
+import BAC0.infos as infos
+
+requirements =[
+          'bacpypes',          
+          'pandas',
+          'bokeh',
+          ]
 
 setup(name='BAC0',
       version=infos.__version__,
@@ -25,11 +31,8 @@ setup(name='BAC0',
           'BAC0.bokeh',
           'BAC0.sql'
           ],
-      install_requires=[
-          'pandas',
-          'bacpypes',
-          'bokeh',
-          ],
+      requires=requirements,
+      install_requires=requirements,
       long_description=open('README.rst').read(),
       classifiers=[
           "Development Status :: 4 - Beta",
