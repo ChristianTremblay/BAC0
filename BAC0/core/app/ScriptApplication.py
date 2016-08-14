@@ -200,7 +200,7 @@ class ScriptApplication(BIPSimpleApplication):
             
             else:
                 #print('Abort PDU : %s' % self.abort_pdu_reason)                
-                #evt = Event()
+                evt = Event()
                 self.ResponseQueue.put((None, evt))
                 evt.wait()
                 #raise NoResponseFromController('Abort PDU received')
