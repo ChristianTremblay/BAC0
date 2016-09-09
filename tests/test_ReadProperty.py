@@ -34,7 +34,6 @@ class TestScriptApplication(ScriptApplication):
     def __init__(self, *args):
         BIPSimpleApplication.__init__(Mock())
         self.elementService = Mock()
-        self.request = Mock()
         #self.value = None
         iocb = IOCB()
         
