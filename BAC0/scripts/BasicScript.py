@@ -37,7 +37,7 @@ from queue import Queue
 import random
 import sys
 
-from ..core.functions.WhoisIAm import WhoisIAm
+
 from ..core.app.ScriptApplication import ScriptApplication
 from .. import infos
 from ..core.io.IOExceptions import NoResponseFromController
@@ -49,7 +49,7 @@ _DEBUG = 0
 
 
 @bacpypes_debugging
-class BasicScript(WhoisIAm):
+class BasicScript():
     """
     This class build a running bacnet application and will accept whois ans iam requests
 
@@ -85,8 +85,9 @@ class BasicScript(WhoisIAm):
         self.vendorName = CharacterString('SERVISYS inc.')
         self.modelName = CharacterString('BAC0 Scripting Tool')
         self.discoveredDevices = None
-        self.ResponseQueue = Queue()
+        #self.ResponseQueue = Queue()
         self.systemStatus = DeviceStatus(1)
+        #self.this_application = None
 
         self.startApp()
 

@@ -169,9 +169,7 @@ class ReadProperty():
         """
         if not self._started:
             raise ApplicationNotStarted('App not running, use startApp() function')
-       # with self.this_application._lock:
-            #time.sleep(0.5)
-            #self.this_application._lock = True
+
         args = args.split()
         values = []
         log_debug(ReadProperty, "readMultiple %r", args)

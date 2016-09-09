@@ -28,6 +28,7 @@ from ..scripts.BasicScript import BasicScript
 from ..core.io.Read import ReadProperty
 from ..core.io.Write import WriteProperty
 from ..core.functions.GetIPAddr import HostIP
+from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.io.Simulate import Simulation
 from ..core.io.IOExceptions import BokehServerCantStart
 from ..bokeh.BokehRenderer import BokehSession, BokehDocument
@@ -43,7 +44,7 @@ _DEBUG = 0
 
 
 @bacpypes_debugging
-class ReadWriteScript(BasicScript, ReadProperty, WriteProperty, Simulation):
+class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simulation):
     """
     This class build a running bacnet application and will accept read ans write requests
     Whois and IAm function are also possible as they are implemented in the BasicScript class.
