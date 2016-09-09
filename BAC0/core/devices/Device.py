@@ -419,6 +419,7 @@ class DeviceConnected(Device):
             self.properties.pss.value = self.properties.network.read(
                 '%s device %s protocolServicesSupported' %
                 (self.properties.address, self.properties.device_id))
+            print('pss: ', self.properties.pss.value)
         except NoResponseFromController as error:
             print('Controller not found, aborting. (%s)' % error)
             return ('Not Found', '', [], [])
@@ -426,11 +427,13 @@ class DeviceConnected(Device):
             print('Segmentation not supported')
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
+        print('You are there')
         self.properties.name = self.properties.network.read(
             '%s device %s objectName' %
             (self.properties.address, self.properties.device_id))
         print('Found %s... building points list' % self.properties.name)
         try:
+            print('You are here')
             self.properties.objects_list, self.points = self._discoverPoints()
             if self.properties.pollDelay > 0:
                 self.poll()

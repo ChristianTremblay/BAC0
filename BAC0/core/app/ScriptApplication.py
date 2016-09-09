@@ -67,7 +67,7 @@ class ScriptApplication(BIPSimpleApplication):
         
         # _lock will be used by read/write operation to wait for answer before 
         # making another request
-        self._lock = Lock()
+        #self._lock = Lock()
         
         self._request = None
         #self.value = None
@@ -143,7 +143,7 @@ class ScriptApplication(BIPSimpleApplication):
             self.who_is_counter[key] += 1
             
         # pass back to the default implementation
-        BIPSimpleApplication.indication(self, apdu)
+        return BIPSimpleApplication.indication(self, apdu)
 
 #    def confirmation(self, apdu):
 #        """

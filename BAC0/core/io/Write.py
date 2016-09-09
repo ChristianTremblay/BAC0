@@ -77,35 +77,35 @@ class WriteProperty():
         """
         if not self._started:
             raise ApplicationNotStarted('App not running, use startApp() function')
-        with self.this_application._lock:
+        #with self.this_application._lock:
         #    time.sleep(0.5)
         #self.this_application._lock = True
-            args = args.split()
-            log_debug(WriteProperty, "do_write %r", args)
-    
-            try:
-                # give it to the application
-                iocb = self.this_application.request(self.build_wp_request(args))
-    
-            except WritePropertyException as error:
-                log_exception("exception: %r", error)
+        args = args.split()
+        log_debug(WriteProperty, "do_write %r", args)
+
+        try:
+            # give it to the application
+            iocb = self.this_application.request(self.build_wp_request(args))
+
+        except WritePropertyException as error:
+            log_exception("exception: %r", error)
 
 
-            # wait for it to complete
-            iocb.wait()
+        # wait for it to complete
+        iocb.wait()
 
-            # do something for success
-            if iocb.ioResponse:
-                # should be an ack
-                if not isinstance(iocb.ioResponse, SimpleAckPDU):
-                    #if _debug: ReadWritePropertyConsoleCmd._debug("    - not an ack")
-                    return
+        # do something for success
+        if iocb.ioResponse:
+            # should be an ack
+            if not isinstance(iocb.ioResponse, SimpleAckPDU):
+                #if _debug: ReadWritePropertyConsoleCmd._debug("    - not an ack")
+                return
 
-                #sys.stdout.write("ack\n")
+            #sys.stdout.write("ack\n")
 
-            # do something for error/reject/abort
-            if iocb.ioError:
-                raise NoResponseFromController()  
+        # do something for error/reject/abort
+        if iocb.ioError:
+            raise NoResponseFromController()  
 #            while True:
 #                try:
 #                    data, evt = self.this_application.ResponseQueue.get(

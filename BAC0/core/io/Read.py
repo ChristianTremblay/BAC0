@@ -79,58 +79,58 @@ class ReadProperty():
         """
         if not self._started:
             raise ApplicationNotStarted('App not running, use startApp() function')
-        with self.this_application._lock:
+        #with self.this_application._lock:
             #time.sleep(0.5)
             #self.this_application._lock = True
-            args = args.split()
-            #self.this_application.value is None
-            log_debug(ReadProperty, "do_read %r", args)
-    
-            try:
-                # give it to the application
-                iocb = self.this_application.request(self.build_rp_request(args, arr_index))
-                print('iocb : ', iocb)
-                log_debug(ReadProperty,"    - iocb: %r", iocb)
-                
-    
-            except ReadPropertyException as error:
-                # error in the creation of the request
-                log_exception("exception: %r", error)
-                
-            # Wait for the response
-            iocb.wait()
+        args = args.split()
+        #self.this_application.value is None
+        log_debug(ReadProperty, "do_read %r", args)
+
+        try:
+            # give it to the application
+            iocb = self.this_application.request(self.build_rp_request(args, arr_index))
+            #print('iocb : ', iocb)
+            log_debug(ReadProperty,"    - iocb: %r", iocb)
             
-            # do something for success
-            if iocb.ioResponse:
-                apdu = iocb.ioResponse
-    
-                # should be an ack
-                if not isinstance(apdu, ReadPropertyACK):
-                    log_debug(ReadProperty,"    - not an ack")
-                    return
-    
-                # find the datatype
-                datatype = get_datatype(apdu.objectIdentifier[0], apdu.propertyIdentifier)
-                log_debug(ReadProperty,"    - datatype: %r", datatype)
-                if not datatype:
-                    raise TypeError("unknown datatype")
-    
-                # special case for array parts, others are managed by cast_out
-                if issubclass(datatype, Array) and (apdu.propertyArrayIndex is not None):
-                    if apdu.propertyArrayIndex == 0:
-                        value = apdu.propertyValue.cast_out(Unsigned)
-                    else:
-                        value = apdu.propertyValue.cast_out(datatype.subtype)
+
+        except ReadPropertyException as error:
+            # error in the creation of the request
+            log_exception("exception: %r", error)
+            
+        # Wait for the response
+        iocb.wait()
+        
+        # do something for success
+        if iocb.ioResponse:
+            apdu = iocb.ioResponse
+
+            # should be an ack
+            if not isinstance(apdu, ReadPropertyACK):
+                log_debug(ReadProperty,"    - not an ack")
+                return
+
+            # find the datatype
+            datatype = get_datatype(apdu.objectIdentifier[0], apdu.propertyIdentifier)
+            log_debug(ReadProperty,"    - datatype: %r", datatype)
+            if not datatype:
+                raise TypeError("unknown datatype")
+
+            # special case for array parts, others are managed by cast_out
+            if issubclass(datatype, Array) and (apdu.propertyArrayIndex is not None):
+                if apdu.propertyArrayIndex == 0:
+                    value = apdu.propertyValue.cast_out(Unsigned)
                 else:
-                    value = apdu.propertyValue.cast_out(datatype)
-                log_debug(ReadProperty,"    - value: %r", value)
-    
-    
-                return value
-    
-            # do something for error/reject/abort
-            if iocb.ioError:
-                raise NoResponseFromController()
+                    value = apdu.propertyValue.cast_out(datatype.subtype)
+            else:
+                value = apdu.propertyValue.cast_out(datatype)
+            log_debug(ReadProperty,"    - value: %r", value)
+
+
+            return value
+
+        # do something for error/reject/abort
+        if iocb.ioError:
+            raise NoResponseFromController()
     
             # Share response with Queue
 #            data = None
@@ -169,82 +169,82 @@ class ReadProperty():
         """
         if not self._started:
             raise ApplicationNotStarted('App not running, use startApp() function')
-        with self.this_application._lock:
+       # with self.this_application._lock:
             #time.sleep(0.5)
             #self.this_application._lock = True
-            args = args.split()
-            values = []
-            log_debug(ReadProperty, "readMultiple %r", args)
-    
-            try:
-                # give it to the application
-                iocb = self.this_application.request(self.build_rpm_request(args))
-    
-            except ReadPropertyMultipleException as error:
-                log_exception(ReadProperty, "exception: %r", error)
-    
-            iocb.wait()
-    
-            # do something for success
-            if iocb.ioResponse:
-                apdu = iocb.ioResponse
-    
-                # should be an ack
-                if not isinstance(apdu, ReadPropertyMultipleACK):
-                    log_debug(ReadProperty,"    - not an ack")
-                    return
-    
-                # loop through the results
-                for result in apdu.listOfReadAccessResults:
-                    # here is the object identifier
-                    objectIdentifier = result.objectIdentifier
-                    log_debug(ReadProperty,"    - objectIdentifier: %r", objectIdentifier)
-    
-                    # now come the property values per object
-                    for element in result.listOfResults:
-                        # get the property and array index
-                        propertyIdentifier = element.propertyIdentifier
-                        log_debug(ReadProperty,"    - propertyIdentifier: %r", propertyIdentifier)
-                        propertyArrayIndex = element.propertyArrayIndex
-                        log_debug(ReadProperty,"    - propertyArrayIndex: %r", propertyArrayIndex)
-    
-                        # here is the read result
-                        readResult = element.readResult
-    
-                        if propertyArrayIndex is not None:
-                            print("[" + str(propertyArrayIndex) + "]")
-    
-                        # check for an error
-                        if readResult.propertyAccessError is not None:
-                            print(" ! " + str(readResult.propertyAccessError) + '\n')
-    
-                        else:
-                            # here is the value
-                            propertyValue = readResult.propertyValue
-    
-                            # find the datatype
-                            datatype = get_datatype(objectIdentifier[0], propertyIdentifier)
-                            log_debug(ReadProperty,"    - datatype: %r", datatype)
-                            if not datatype:
-                                raise TypeError("unknown datatype")
-    
-                            # special case for array parts, others are managed by cast_out
-                            if issubclass(datatype, Array) and (propertyArrayIndex is not None):
-                                if propertyArrayIndex == 0:
-                                    value = propertyValue.cast_out(Unsigned)
-                                else:
-                                    value = propertyValue.cast_out(datatype.subtype)
+        args = args.split()
+        values = []
+        log_debug(ReadProperty, "readMultiple %r", args)
+
+        try:
+            # give it to the application
+            iocb = self.this_application.request(self.build_rpm_request(args))
+
+        except ReadPropertyMultipleException as error:
+            log_exception(ReadProperty, "exception: %r", error)
+
+        iocb.wait()
+
+        # do something for success
+        if iocb.ioResponse:
+            apdu = iocb.ioResponse
+
+            # should be an ack
+            if not isinstance(apdu, ReadPropertyMultipleACK):
+                log_debug(ReadProperty,"    - not an ack")
+                return
+
+            # loop through the results
+            for result in apdu.listOfReadAccessResults:
+                # here is the object identifier
+                objectIdentifier = result.objectIdentifier
+                log_debug(ReadProperty,"    - objectIdentifier: %r", objectIdentifier)
+
+                # now come the property values per object
+                for element in result.listOfResults:
+                    # get the property and array index
+                    propertyIdentifier = element.propertyIdentifier
+                    log_debug(ReadProperty,"    - propertyIdentifier: %r", propertyIdentifier)
+                    propertyArrayIndex = element.propertyArrayIndex
+                    log_debug(ReadProperty,"    - propertyArrayIndex: %r", propertyArrayIndex)
+
+                    # here is the read result
+                    readResult = element.readResult
+
+                    if propertyArrayIndex is not None:
+                        print("[" + str(propertyArrayIndex) + "]")
+
+                    # check for an error
+                    if readResult.propertyAccessError is not None:
+                        print(" ! " + str(readResult.propertyAccessError))
+
+                    else:
+                        # here is the value
+                        propertyValue = readResult.propertyValue
+
+                        # find the datatype
+                        datatype = get_datatype(objectIdentifier[0], propertyIdentifier)
+                        log_debug(ReadProperty,"    - datatype: %r", datatype)
+                        if not datatype:
+                            raise TypeError("unknown datatype")
+
+                        # special case for array parts, others are managed by cast_out
+                        if issubclass(datatype, Array) and (propertyArrayIndex is not None):
+                            if propertyArrayIndex == 0:
+                                value = propertyValue.cast_out(Unsigned)
                             else:
-                                value = propertyValue.cast_out(datatype)
-                            log_debug(ReadProperty,"    - value: %r", value)
-    
-                            values.append(value)
-                    return values
-                        
-    
-            # do something for error/reject/abort
-            if iocb.ioError:
-                raise NoResponseFromController()
+                                value = propertyValue.cast_out(datatype.subtype)
+                        else:
+                            value = propertyValue.cast_out(datatype)
+                        log_debug(ReadProperty,"    - value: %r", value)
+
+                        values.append(value)
+            return values
+                    
+
+        # do something for error/reject/abort
+        if iocb.ioError:
+            raise NoResponseFromController()
     
 #            data = None
 #            while True:
