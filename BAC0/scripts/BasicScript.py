@@ -56,7 +56,7 @@ class BasicScript():
     """
 
     def __init__(self, localIPAddr=None, localObjName='BAC0', Boid=None,
-                 maxAPDULengthAccepted='1024', segmentationSupported='segmentedBoth'):
+                 maxAPDULengthAccepted='1024', maxSegmentsAccepted='1024', segmentationSupported='segmentedBoth'):
         """
         Initialization requires information about the local device
         Default values are localObjName = 'name', Boid = '2015',maxAPDULengthAccepted = '1024',segmentationSupported = 'segmentedBoth', vendorId = '842' )
@@ -75,6 +75,7 @@ class BasicScript():
         else:
             self.localIPAddr = '127.0.0.1'
         self.segmentationSupported = segmentationSupported
+        self.maxSegmentsAccepted = maxSegmentsAccepted
         self.localObjName = localObjName
         if Boid:
             self.Boid = int(Boid)

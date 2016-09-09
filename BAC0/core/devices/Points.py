@@ -14,7 +14,7 @@ from collections import namedtuple
 import time
 
 from ...tasks.Poll import SimplePoll as Poll
-from ...tasks.Match import Match
+from ...tasks.Match import Match, Match_Value
 from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied, UnknownPropertyError
 
 import sqlite3
@@ -204,6 +204,17 @@ class Point():
                 (self.properties.device.properties.address, self.properties.type, str(
                     self.properties.address), str(value)))
             self.properties.simulated = (True, value)
+            
+    def out_of_service(self):
+        """
+        Simulate a value
+        Will write to out_of_service property (true)
+        """
+        self.properties.device.properties.network.out_of_service(
+            '%s %s %s' %
+            (self.properties.device.properties.address, self.properties.type, str(
+                self.properties.address)))
+        self.properties.simulated = (True, None)        
 
     def release(self):
         """
@@ -307,6 +318,32 @@ class Point():
             time.sleep(1)
             self._match_task.task = Match(
                 command=point, status=self, delay=delay)
+            self._match_task.task.start()
+            self._match_task.running = True
+        elif self._match_task.running and delay == 0:
+            self._match_task.task.stop()
+            self._match_task.running = False
+        else:
+            raise RuntimeError('Stop task before redefining it')
+
+    def match_value(self, value, *, delay=5):
+        """
+        This allow functions like : 
+            device['point'].match('value')
+            
+        A sensor will follow a calculation...
+        """
+        if self._match_task.task is None:
+            self._match_task.task = Match_Value(
+                value=value, point=self, delay=delay)
+            self._match_task.task.start()
+            self._match_task.running = True
+        elif self._match_task.running and delay > 0:
+            self._match_task.task.stop()
+            self._match_task.running = False
+            time.sleep(1)
+            self._match_task.task = Match_Value(
+                value=value, point=self, delay=delay)
             self._match_task.task.start()
             self._match_task.running = True
         elif self._match_task.running and delay == 0:

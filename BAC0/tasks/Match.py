@@ -29,3 +29,24 @@ class Match(Task):
         self.status._setitem('auto')
         self.exitFlag = True
 
+class Match_Value(Task):
+    """
+    Will match 2 points (ex. a status with a command)
+    """
+
+    def __init__(self, value = None, point = None, delay=5):        
+        self.value = value
+        self.point = point
+        Task.__init__(self, delay=delay, daemon = True)
+
+    def task(self):
+        if hasattr(self.value, '__call__'):
+            value = self.value()
+        else:
+            value = self.value
+        if  value != self.point:
+            self.point._setitem(value)        
+        
+    def stop(self):
+        self.status._setitem('auto')
+        self.exitFlag = True
