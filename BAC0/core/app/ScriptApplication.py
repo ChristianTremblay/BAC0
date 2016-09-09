@@ -104,7 +104,7 @@ class ScriptApplication(BIPSimpleApplication):
         self.who_is_counter = defaultdict(int)
 
         # forward it along
-        BIPSimpleApplication.request(self, apdu)
+        return BIPSimpleApplication.request(self, apdu)
 
     def indication(self, apdu):
         """

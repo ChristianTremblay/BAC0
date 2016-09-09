@@ -173,6 +173,7 @@ class ReadProperty():
             #time.sleep(0.5)
             #self.this_application._lock = True
             args = args.split()
+            values = []
             log_debug(ReadProperty, "readMultiple %r", args)
     
             try:
@@ -237,7 +238,8 @@ class ReadProperty():
                                 value = propertyValue.cast_out(datatype)
                             log_debug(ReadProperty,"    - value: %r", value)
     
-                            return value
+                            values.append(value)
+                    return values
                         
     
             # do something for error/reject/abort
