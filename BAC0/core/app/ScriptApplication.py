@@ -29,7 +29,7 @@ from bacpypes.object import get_datatype
 from bacpypes.apdu import Error, AbortPDU, SimpleAckPDU, ReadPropertyRequest, \
     ReadPropertyACK, ReadPropertyMultipleRequest, ReadPropertyMultipleACK, \
     IAmRequest, WhoIsRequest, AbortReason
-from bacpypes.primitivedata import Unsigned
+from bacpypes.primitivedata import Unsigned, Null, CharacterString
 from bacpypes.constructeddata import Array
 from bacpypes.pdu import Address
 from bacpypes.object import PropertyError
@@ -270,8 +270,8 @@ class ScriptApplication(BIPSimpleApplication):
 
                     # check for an error
                     if readResult.propertyAccessError is not None:
-                        #sys.stdout.write(" ! " + str(readResult.propertyAccessError) + '\n')
-                        pass
+                        #self.values.append(CharacterString('not implmented'))                      
+                        self.values.append('not implemented')
 
                     else:
                         # here is the value

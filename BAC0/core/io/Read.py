@@ -128,8 +128,6 @@ class ReadProperty():
         if not self._started:
             raise ApplicationNotStarted('App not running, use startApp() function')
         with self.this_application._lock:
-            #time.sleep(0.5)
-        #self.this_application._lock = True
             args = args.split()
             log_debug(ReadProperty, "readMultiple %r", args)
     
@@ -146,15 +144,12 @@ class ReadProperty():
                     data, evt = self.this_application.ResponseQueue.get(
                         timeout=self._TIMEOUT)
                     evt.set()
-                    #self.this_application._lock = False
                     return data
                 except SegmentationNotSupported:
                     raise
                 except Empty:
                     print('No response from controller')
-                    #self.this_application._lock = False
                     raise NoResponseFromController
-                    #return None
                 
     def build_rp_request(self, args, arr_index = None):
         addr, obj_type, obj_inst, prop_id = args[:4]

@@ -58,6 +58,28 @@ class Simulation():
             except NoResponseFromController:
                 pass
 
+    def out_of_service(self, args):
+        """
+        This function allow the simulation of IO points by turning on the
+        out_of_service property. 
+        Example : if an expansion controller is disconnected, we need to make
+        the outputs out_of_service so the sequence works.
+
+        :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]
+
+        """
+        if not self._started:
+            raise ApplicationNotStarted('App not running, use startApp() function')
+        #with self.this_application._lock: if use lock...won't be able to call read...
+        args = args.split()
+        addr, obj_type, obj_inst = args[:3]
+        try:
+            self.write(
+                '%s %s %s outOfService True' %
+                (addr, obj_type, obj_inst))
+        except NoResponseFromController:
+            pass
+
     def release(self, args):
         """
         This function will turn out_of_service property to false so the

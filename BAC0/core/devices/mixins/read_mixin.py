@@ -73,15 +73,17 @@ class ReadPropertyMultiple():
                 values = []
                 info_length = discover_request[1]
                 big_request = discover_request[0]
-                # print(big_request)
+                #print(big_request)
                 for request in self._batches(big_request,
                                              points_per_request):
+                    
                     try:
     
                         request = ('%s %s' %
                                    (self.properties.address, ''.join(request)))
-    
+                        print('Request : ', request)
                         val = self.properties.network.readMultiple(request)
+                        #print('val : ', val, len(val), type(val))
                         if val == None:
                             self.properties.segmentation_supported = False
                             raise SegmentationNotSupported
@@ -179,7 +181,7 @@ class ReadPropertyMultiple():
             retrive analog values
             """
             for point_type, point_address in obj_list:
-                if point_type_key in point_type:
+                if point_type_key in str(point_type):
                     yield (point_type, point_address)
 
         # Numeric
@@ -191,22 +193,41 @@ class ReadPropertyMultiple():
         try:
             analog_points_info = self.read_multiple(
                 '', discover_request=(analog_request, 4), points_per_request=5)
+            print(analog_points_info)
         except SegmentationNotSupported:
             raise
+
         i = 0
         for each in retrieve_type(objList, 'analog'):
             point_type = str(each[0])
             point_address = str(each[1])
             point_infos = analog_points_info[i]
+            #print(point_infos, ' | ', len(point_infos))
+            if len(point_infos) == 4:
+                # We have all we want 
+                point_units_state = point_infos[2]
+                point_description = point_infos[3]
+            elif len(point_infos) == 3:
+                #we probably get only objectName, presentValue and units
+                point_units_state = point_infos[2]
+                point_description = ""
+            elif len(point_infos) == 2:
+                point_units_state = ""          
+                point_description = ""
+            else:
+                #raise ValueError('Not enough values returned', each, point_infos)
+                # SHOULD SWITCH TO SEGMENTATION_SUPPORTED = FALSE HERE
+                print('Cannot add %s / %s | %s' % (point_type, point_address, len(point_infos)))
+                continue
             i += 1
             points.append(
                 NumericPoint(
                     pointType=point_type,
                     pointAddress=point_address,
                     pointName=point_infos[0],
-                    description=point_infos[3],
+                    description=point_description,
                     presentValue=float(point_infos[1]),
-                    units_state=point_infos[2],
+                    units_state=point_units_state,
                     device=self))
 
         multistate_request = []
@@ -417,7 +438,7 @@ class ReadProperty():
             retrive analog values
             """
             for point_type, point_address in obj_list:
-                if point_type_key in point_type:
+                if point_type_key in str(point_type):
                     yield (point_type, point_address)
 
         # Numeric
