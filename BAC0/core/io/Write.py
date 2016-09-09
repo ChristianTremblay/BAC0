@@ -28,7 +28,7 @@ from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 from bacpypes.pdu import Address
 from bacpypes.object import get_datatype
 
-from bacpypes.apdu import WritePropertyRequest
+from bacpypes.apdu import WritePropertyRequest, SimpleAckPDU
 
 from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
 from bacpypes.constructeddata import Array, Any
@@ -59,13 +59,6 @@ class WriteProperty():
     errors.
     """
     _TIMEOUT = 10
-
-    def __init__(self):
-        """ This function is a fake one so spyder can see local variables
-        """
-        self.this_application = None
-        self._started = None
-
     def write(self, args):
         """ This function build a write request wait for an acknowledgment and
         return a boolean status (True if ok, False if not)
@@ -92,21 +85,37 @@ class WriteProperty():
     
             try:
                 # give it to the application
-                self.this_application.request(self.build_wp_request(args))
+                iocb = self.this_application.request(self.build_wp_request(args))
     
             except WritePropertyException as error:
                 log_exception("exception: %r", error)
-    
-            while True:
-                try:
-                    data, evt = self.this_application.ResponseQueue.get(
-                        timeout=self._TIMEOUT)
-                    evt.set()
-                    #self.this_application._lock = False
-                    return data
-                except Empty:
-                    #self.this_application._lock = False
-                    raise NoResponseFromController
+
+
+            # wait for it to complete
+            iocb.wait()
+
+            # do something for success
+            if iocb.ioResponse:
+                # should be an ack
+                if not isinstance(iocb.ioResponse, SimpleAckPDU):
+                    #if _debug: ReadWritePropertyConsoleCmd._debug("    - not an ack")
+                    return
+
+                #sys.stdout.write("ack\n")
+
+            # do something for error/reject/abort
+            if iocb.ioError:
+                raise NoResponseFromController()  
+#            while True:
+#                try:
+#                    data, evt = self.this_application.ResponseQueue.get(
+#                        timeout=self._TIMEOUT)
+#                    evt.set()
+#                    #self.this_application._lock = False
+#                    return data
+#                except Empty:
+#                    #self.this_application._lock = False
+#                    raise NoResponseFromController
                 
     def build_wp_request(self, args):
         addr, obj_type, obj_inst, prop_id = args[:4]

@@ -31,11 +31,6 @@ class WhoisIAm():
     This class will be used by inheritance to add features to an app
     Will allows the usage of whois and iam functions
     """
-
-    def __init__(self):
-        self.this_application = None
-        self.this_device = None
-
     def whois(self, *args):
         """
         Creation of a whois requests

@@ -70,12 +70,12 @@ class ScriptApplication(BIPSimpleApplication):
         self._lock = Lock()
         
         self._request = None
-        self.value = None
-        self.error = None
-        self.values = []
+        #self.value = None
+        #self.error = None
+        #self.values = []
         self.i_am_counter = defaultdict(int)
         self.who_is_counter = defaultdict(int)
-        self.ResponseQueue = Queue()
+        #self.ResponseQueue = Queue()
 
         if isinstance(self.localAddress, Address):
             self.local_unicast_tuple = self.localAddress.addrTuple
@@ -145,166 +145,166 @@ class ScriptApplication(BIPSimpleApplication):
         # pass back to the default implementation
         BIPSimpleApplication.indication(self, apdu)
 
-    def confirmation(self, apdu):
-        """
-        This function process confirmed answers from the stack and looks for a returned
-        value or an error.
-        If a valid value is found, it's stored in the ResponseQueue. We'll wait for the
-        response to be used by the caller then resume the function.
-
-        How we deal with the Queue::
-
-            # Creation of an event
-            evt = Event()
-            # Store the value and the event in the Queue
-            self.ResponseQueue.put((self.value, evt))
-            # Wait until the event is set by the caller (read function for example)
-            evt.wait()
-
-        :param apdu: apdu
-        """
-        log_debug("confirmation from %r", apdu.pduSource)
-
-        if isinstance(apdu, Error):
-            self.error = "%s" % (apdu.errorCode,)
-            #print('Error : %s' % self.error)
-            
-            if self.error == "writeAccessDenied":
-                print('%s : Try writing to relinquish default.' % self.error)
-                evt = Event()
-                self.ResponseQueue.put((None, evt))
-                evt.wait()
-                raise WriteAccessDenied('Cannot write to point')
-            
-            elif self.error == "unknownProperty":
-                #print('%s : Unknow property.' % self.error)
-                evt = Event()
-                self.ResponseQueue.put(('', evt))
-                evt.wait()
-                #raise UnknownPropertyError('Cannot find property on point')
-                
-
-        elif isinstance(apdu, AbortPDU):
-            
-            self.abort_pdu_reason = apdu.apduAbortRejectReason
-            #print('Abort PDU : %s' % self.abort_pdu_reason)  
-            # UNCOMMENT STRING
-            if self.abort_pdu_reason == AbortReason.segmentationNotSupported:
-                #print('Segment Abort PDU : %s' % self.abort_pdu_reason)                
-                evt = Event()
-                self.ResponseQueue.put(('err_seg', evt))
-                evt.wait()
-                # probably because of thread... the raise do not seem
-                # to be fired.... putting err_seg to raise from caller...
-                #raise SegmentationNotSupported('Segmentation problem with device')
-            
-            else:
-                #print('Abort PDU : %s' % self.abort_pdu_reason)                
-                #evt = Event()
-                self.ResponseQueue.put((None, evt))
-                evt.wait()
-                #raise NoResponseFromController('Abort PDU received')
-
-        if isinstance(apdu, SimpleAckPDU):
-            evt = Event()
-            self.ResponseQueue.put((self.value, evt))
-            evt.wait()
-
-        elif (isinstance(self._request, ReadPropertyRequest)) \
-                and (isinstance(apdu, ReadPropertyACK)):
-
-            # find the datatype
-            datatype = get_datatype(
-                apdu.objectIdentifier[0],
-                apdu.propertyIdentifier)
-            log_debug("    - datatype: %r", datatype)
-
-            if not datatype:
-                raise TypeError("unknown datatype")
-
-            # special case for array parts, others are managed by cast_out
-            if issubclass(datatype, Array) and (
-                    apdu.propertyArrayIndex is not None):
-                if apdu.propertyArrayIndex == 0:
-                    self.value = apdu.propertyValue.cast_out(Unsigned)
-                else:
-                    self.value = apdu.propertyValue.cast_out(datatype.subtype)
-            else:
-                self.value = apdu.propertyValue.cast_out(datatype)
-
-            # Share data with script
-            evt = Event()
-            self.ResponseQueue.put((self.value, evt))
-            evt.wait()
-
-            log_debug("    - value: %r", self.value)
-
-        elif (isinstance(self._request, ReadPropertyMultipleRequest)) \
-                and (isinstance(apdu, ReadPropertyMultipleACK)):
-
-            # loop through the results
-            for result in apdu.listOfReadAccessResults:
-                # here is the object identifier
-                objectIdentifier = result.objectIdentifier
-                log_debug("    - objectIdentifier: %r", objectIdentifier)
-
-                # now come the property values per object
-                for element in result.listOfResults:
-                    # get the property and array index
-                    propertyIdentifier = element.propertyIdentifier
-                    log_debug(
-                        "    - propertyIdentifier: %r",
-                        propertyIdentifier)
-
-                    propertyArrayIndex = element.propertyArrayIndex
-                    log_debug(
-                        "    - propertyArrayIndex: %r",
-                        propertyArrayIndex)
-
-                    # here is the read result
-                    readResult = element.readResult
-
-                    if propertyArrayIndex is not None:
-                        #sys.stdout.write("[" + str(propertyArrayIndex) + "]")
-                        pass
-
-                    # check for an error
-                    if readResult.propertyAccessError is not None:
-                        #sys.stdout.write(" ! " + str(readResult.propertyAccessError) + '\n')
-                        pass
-
-                    else:
-                        # here is the value
-                        propertyValue = readResult.propertyValue
-
-                        # find the datatype
-                        datatype = get_datatype(
-                            objectIdentifier[0], propertyIdentifier)
-                        log_debug("    - datatype: %r", datatype)
-
-                        if not datatype:
-                            raise TypeError("unknown datatype")
-
-                        # special case for array parts, others are managed by
-                        # cast_out
-                        if issubclass(datatype, Array) and (
-                                propertyArrayIndex is not None):
-                            if propertyArrayIndex == 0:
-                                self.values.append(
-                                    propertyValue.cast_out(Unsigned))
-                            else:
-                                self.values.append(
-                                    propertyValue.cast_out(datatype.subtype))
-                        else:
-                            value = propertyValue.cast_out(datatype)
-                        log_debug("    - value: %r", value)
-
-                        self.values.append(value)
-            # Use a queue to store the response, wait for it to be used then
-            # resume
-            evt = Event()
-            self.ResponseQueue.put((self.values, evt))
-            evt.wait()
+#    def confirmation(self, apdu):
+#        """
+#        This function process confirmed answers from the stack and looks for a returned
+#        value or an error.
+#        If a valid value is found, it's stored in the ResponseQueue. We'll wait for the
+#        response to be used by the caller then resume the function.
+#
+#        How we deal with the Queue::
+#
+#            # Creation of an event
+#            evt = Event()
+#            # Store the value and the event in the Queue
+#            self.ResponseQueue.put((self.value, evt))
+#            # Wait until the event is set by the caller (read function for example)
+#            evt.wait()
+#
+#        :param apdu: apdu
+#        """
+#        log_debug("confirmation from %r", apdu.pduSource)
+#
+#        if isinstance(apdu, Error):
+#            self.error = "%s" % (apdu.errorCode,)
+#            #print('Error : %s' % self.error)
+#            
+#            if self.error == "writeAccessDenied":
+#                print('%s : Try writing to relinquish default.' % self.error)
+#                evt = Event()
+#                self.ResponseQueue.put((None, evt))
+#                evt.wait()
+#                raise WriteAccessDenied('Cannot write to point')
+#            
+#            elif self.error == "unknownProperty":
+#                #print('%s : Unknow property.' % self.error)
+#                evt = Event()
+#                self.ResponseQueue.put(('', evt))
+#                evt.wait()
+#                #raise UnknownPropertyError('Cannot find property on point')
+#                
+#
+#        elif isinstance(apdu, AbortPDU):
+#            
+#            self.abort_pdu_reason = apdu.apduAbortRejectReason
+#            #print('Abort PDU : %s' % self.abort_pdu_reason)  
+#            # UNCOMMENT STRING
+#            if self.abort_pdu_reason == AbortReason.segmentationNotSupported:
+#                #print('Segment Abort PDU : %s' % self.abort_pdu_reason)                
+#                evt = Event()
+#                self.ResponseQueue.put(('err_seg', evt))
+#                evt.wait()
+#                # probably because of thread... the raise do not seem
+#                # to be fired.... putting err_seg to raise from caller...
+#                #raise SegmentationNotSupported('Segmentation problem with device')
+#            
+#            else:
+#                #print('Abort PDU : %s' % self.abort_pdu_reason)                
+#                #evt = Event()
+#                self.ResponseQueue.put((None, evt))
+#                evt.wait()
+#                #raise NoResponseFromController('Abort PDU received')
+#
+#        if isinstance(apdu, SimpleAckPDU):
+#            evt = Event()
+#            self.ResponseQueue.put((self.value, evt))
+#            evt.wait()
+#
+#        elif (isinstance(self._request, ReadPropertyRequest)) \
+#                and (isinstance(apdu, ReadPropertyACK)):
+#
+#            # find the datatype
+#            datatype = get_datatype(
+#                apdu.objectIdentifier[0],
+#                apdu.propertyIdentifier)
+#            log_debug("    - datatype: %r", datatype)
+#
+#            if not datatype:
+#                raise TypeError("unknown datatype")
+#
+#            # special case for array parts, others are managed by cast_out
+#            if issubclass(datatype, Array) and (
+#                    apdu.propertyArrayIndex is not None):
+#                if apdu.propertyArrayIndex == 0:
+#                    self.value = apdu.propertyValue.cast_out(Unsigned)
+#                else:
+#                    self.value = apdu.propertyValue.cast_out(datatype.subtype)
+#            else:
+#                self.value = apdu.propertyValue.cast_out(datatype)
+#
+#            # Share data with script
+#            evt = Event()
+#            self.ResponseQueue.put((self.value, evt))
+#            evt.wait()
+#
+#            log_debug("    - value: %r", self.value)
+#
+#        elif (isinstance(self._request, ReadPropertyMultipleRequest)) \
+#                and (isinstance(apdu, ReadPropertyMultipleACK)):
+#
+#            # loop through the results
+#            for result in apdu.listOfReadAccessResults:
+#                # here is the object identifier
+#                objectIdentifier = result.objectIdentifier
+#                log_debug("    - objectIdentifier: %r", objectIdentifier)
+#
+#                # now come the property values per object
+#                for element in result.listOfResults:
+#                    # get the property and array index
+#                    propertyIdentifier = element.propertyIdentifier
+#                    log_debug(
+#                        "    - propertyIdentifier: %r",
+#                        propertyIdentifier)
+#
+#                    propertyArrayIndex = element.propertyArrayIndex
+#                    log_debug(
+#                        "    - propertyArrayIndex: %r",
+#                        propertyArrayIndex)
+#
+#                    # here is the read result
+#                    readResult = element.readResult
+#
+#                    if propertyArrayIndex is not None:
+#                        #sys.stdout.write("[" + str(propertyArrayIndex) + "]")
+#                        pass
+#
+#                    # check for an error
+#                    if readResult.propertyAccessError is not None:
+#                        #sys.stdout.write(" ! " + str(readResult.propertyAccessError) + '\n')
+#                        pass
+#
+#                    else:
+#                        # here is the value
+#                        propertyValue = readResult.propertyValue
+#
+#                        # find the datatype
+#                        datatype = get_datatype(
+#                            objectIdentifier[0], propertyIdentifier)
+#                        log_debug("    - datatype: %r", datatype)
+#
+#                        if not datatype:
+#                            raise TypeError("unknown datatype")
+#
+#                        # special case for array parts, others are managed by
+#                        # cast_out
+#                        if issubclass(datatype, Array) and (
+#                                propertyArrayIndex is not None):
+#                            if propertyArrayIndex == 0:
+#                                self.values.append(
+#                                    propertyValue.cast_out(Unsigned))
+#                            else:
+#                                self.values.append(
+#                                    propertyValue.cast_out(datatype.subtype))
+#                        else:
+#                            value = propertyValue.cast_out(datatype)
+#                        log_debug("    - value: %r", value)
+#
+#                        self.values.append(value)
+#            # Use a queue to store the response, wait for it to be used then
+#            # resume
+#            evt = Event()
+#            self.ResponseQueue.put((self.values, evt))
+#            evt.wait()
 
 def log_debug(txt, *args):
     """

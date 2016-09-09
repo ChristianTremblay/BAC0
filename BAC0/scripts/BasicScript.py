@@ -27,7 +27,7 @@ from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 from bacpypes.core import run as startBacnetIPApp
 from bacpypes.core import stop as stopBacnetIPApp
 from bacpypes.core import enable_sleeping
-from bacpypes.app import LocalDeviceObject
+from bacpypes.service.device import LocalDeviceObject
 from bacpypes.basetypes import ServicesSupported, DeviceStatus
 from bacpypes.primitivedata import CharacterString
 from threading import Thread
