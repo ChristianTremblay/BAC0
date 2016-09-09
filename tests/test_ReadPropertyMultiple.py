@@ -37,6 +37,14 @@ class TestScriptApplication(ScriptApplication):
         self.elementService = Mock()
         self.ResponseQueue = Mock()
         self.ResponseQueue.get.return_value = ([21, 'degreesCelcius'], Event())
+        iocb = IOCB()
+        
+        # Forging apdu response        
+        fake_apdu_! = ReadPropertyACK( 
+            objectIdentifier=('analogInput', 0), 
+            propertyIdentifier='presentValue', 
+            propertyValue=Any(Real(32)), )
+        iocb.complete(fake_apdu)
         self.request = Mock()
         self.value = None
 
@@ -59,7 +67,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
     @patch('BAC0.core.io.Read.ReadProperty.this_application.ResponseQueue.get')
     @patch('BAC0.core.app.ScriptApplication.ScriptApplication.__init__')
     @patch('bacpypes.app.BIPSimpleApplication.__init__')
-    @patch('bacpypes.app.LocalDeviceObject')
+    @patch('bacpypes.service.device.LocalDeviceObject')
     @patch('BAC0.core.io.Read.ReadProperty')
     def setUp(self, mock_rp, mock_localDevice,
               mock_BIPSimpleApplication, mock_ScriptApplication, mock_ResponseQueueGet):

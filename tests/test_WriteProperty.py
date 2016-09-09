@@ -61,7 +61,7 @@ class TestWriteProperty(unittest.TestCase):
     @patch('BAC0.core.io.Read.ReadProperty.this_application.ResponseQueue.get')
     @patch('BAC0.core.app.ScriptApplication.ScriptApplication.__init__')
     @patch('bacpypes.app.BIPSimpleApplication.__init__')
-    @patch('bacpypes.app.LocalDeviceObject')
+    @patch('bacpypes.service.device.LocalDeviceObject')
     @patch('BAC0.core.io.Read.ReadProperty')
     def setUp(self, mock_rp, mock_localDevice,
               mock_BIPSimpleApplication, mock_ScriptApplication, mock_ResponseQueueGet):
