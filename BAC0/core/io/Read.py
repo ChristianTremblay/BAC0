@@ -30,6 +30,7 @@ from bacpypes.basetypes import PropertyIdentifier
 from bacpypes.apdu import ReadPropertyMultipleACK, ReadPropertyACK
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
+from bacpypes.iocb import IOCB
 
 from queue import Queue, Empty
 import time
@@ -87,8 +88,9 @@ class ReadProperty():
         log_debug(ReadProperty, "do_read %r", args)
 
         try:
+            iocb = IOCB(self.build_rp_request(args, arr_index))
             # give it to the application
-            iocb = self.this_application.request(self.build_rp_request(args, arr_index))
+            self.this_application.request_io(iocb)
             #print('iocb : ', iocb)
             log_debug(ReadProperty,"    - iocb: %r", iocb)
             
@@ -175,8 +177,9 @@ class ReadProperty():
         log_debug(ReadProperty, "readMultiple %r", args)
 
         try:
+            iocb = IOCB(self.build_rpm_request(args))
             # give it to the application
-            iocb = self.this_application.request(self.build_rpm_request(args))
+            self.this_application.request_io(iocb)
 
         except ReadPropertyMultipleException as error:
             log_exception(ReadProperty, "exception: %r", error)

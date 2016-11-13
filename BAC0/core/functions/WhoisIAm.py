@@ -22,6 +22,7 @@ from bacpypes.pdu import Address, GlobalBroadcast
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
 from bacpypes.object import get_object_class, get_datatype
+from bacpypes.iocb import IOCB
 
 from ..functions.debug import log_debug, log_exception
 from ..io.IOExceptions import SegmentationNotSupported, ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted
@@ -77,9 +78,16 @@ class WhoisIAm():
             request.deviceInstanceRangeHighLimit = int(args[1])
         log_debug(WhoisIAm, "    - request: %r" % request)
 
+
+         # make an IOCB
+        iocb = IOCB(request)
+        log_debug(WhoisIAm, "    - iocb: %r", iocb)
+
         # give it to the application
-        print(self.this_application)
-        self.this_application.request(request)
+        self.this_application.request_io(iocb)
+        # give it to the application
+#        print(self.this_application)
+#        self.this_application.request(request)
 #        iocb = self.this_application.request(request)
 #        iocb.wait()
 #        

@@ -32,6 +32,7 @@ from bacpypes.apdu import WritePropertyRequest, SimpleAckPDU
 
 from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
 from bacpypes.constructeddata import Array, Any
+from bacpypes.iocb import IOCB
 
 from queue import Empty
 import time
@@ -84,8 +85,9 @@ class WriteProperty():
         log_debug(WriteProperty, "do_write %r", args)
 
         try:
+            iocb = IOCB(self.build_wp_request(args))
             # give it to the application
-            iocb = self.this_application.request(self.build_wp_request(args))
+            self.this_application.request(iocb)
 
         except WritePropertyException as error:
             log_exception("exception: %r", error)
