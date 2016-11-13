@@ -89,7 +89,7 @@ class WhoisIAm():
 #        print(self.this_application)
 #        self.this_application.request(request)
 #        iocb = self.this_application.request(request)
-#        iocb.wait()
+        iocb.wait()
 #        
 #        # do something for success
 #        if iocb.ioResponse:

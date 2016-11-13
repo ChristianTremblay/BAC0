@@ -87,7 +87,7 @@ class WriteProperty():
         try:
             iocb = IOCB(self.build_wp_request(args))
             # give it to the application
-            self.this_application.request(iocb)
+            self.this_application.request_io(iocb)
 
         except WritePropertyException as error:
             log_exception("exception: %r", error)
