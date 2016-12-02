@@ -25,7 +25,6 @@ See BAC0.scripts for more details.
 from bacpypes.debugging import bacpypes_debugging
 
 from bacpypes.app import BIPSimpleApplication
-from bacpypes.apdu import IAmRequest, WhoIsRequest
 from bacpypes.pdu import Address
 
 from collections import defaultdict
@@ -66,64 +65,34 @@ class ScriptApplication(BIPSimpleApplication):
             
         #log_debug(ScriptApplication, "__init__ %r" % args)
 
-    def request(self, apdu):
-        """
-        Reset class variables to None for the present request
-        Sends the apdu to the application request
+    def do_WhoIsRequest(self, apdu):
+        """Respond to a Who-Is request."""
+        if self._debug: ScriptApplication._debug("do_WhoIsRequest %r", apdu)
 
-        :param apdu: apdu
-        """
-        log_debug(ScriptApplication, "request %r", apdu)
+        # build a key from the source and parameters
+        key = (str(apdu.pduSource),
+            apdu.deviceInstanceRangeLowLimit,
+            apdu.deviceInstanceRangeHighLimit,
+            )
 
-        # save a copy of the request
-        self._request = apdu
-#        self.value = None
-#        self.error = None
-#        self.values = []
-#        
-        # Will store responses to IAm and Whois
-        self.i_am_counter = defaultdict(int)
-        self.who_is_counter = defaultdict(int)
+        # count the times this has been received
+        self.who_is_counter[key] += 1
 
-        # forward it along
-        return BIPSimpleApplication.request(self, apdu)
+        # continue with the default implementation
+        BIPSimpleApplication.do_WhoIsRequest(self, apdu)
 
-    def indication(self, apdu):
-        """
-        Indication will treat unconfirmed messages on the stack
+    def do_IAmRequest(self, apdu):
+        """Given an I-Am request, cache it."""
+        if self._debug: ScriptApplication._debug("do_IAmRequest %r", apdu)
 
-        :param apdu: apdu
-        """
-        log_debug(ScriptApplication, "do_IAmRequest %r" % apdu)
+        # build a key from the source, just use the instance number
+        key = (str(apdu.pduSource),
+            apdu.iAmDeviceIdentifier[1],
+            )
 
-#        if _DEBUG:
-#            if apdu.pduSource == self.local_unicast_tuple[0]:
-#                log_debug("indication:received broadcast from self\n")
-#            else:
-#                log_debug("indication:received broadcast from %s (local:%s|source:%s)\n" %
-#                          (apdu.pduSource, self.local_unicast_tuple, apdu.pduSource))
-#        else:
-#            log_debug("cannot test broadcast")
+        # count the times this has been received
+        self.i_am_counter[key] += 1
 
-        # Given an I-Am request, cache it.
-        if isinstance(apdu, IAmRequest):
-            # build a key from the source, just use the instance number
-            key = (str(apdu.pduSource),
-                   apdu.iAmDeviceIdentifier[1],)
-            # count the times this has been received
-            self.i_am_counter[key] += 1
-
-        # Given an Who Is request, cache it.
-        if isinstance(apdu, WhoIsRequest):
-            # build a key from the source and parameters
-            key = (str(apdu.pduSource),
-                   apdu.deviceInstanceRangeLowLimit,
-                   apdu.deviceInstanceRangeHighLimit,
-                   )
-
-            # count the times this has been received
-            self.who_is_counter[key] += 1
-            
-        # pass back to the default implementation
-        return BIPSimpleApplication.indication(self, apdu)
+        # continue with the default implementation
+        BIPSimpleApplication.do_IAmRequest(self, apdu)
 
