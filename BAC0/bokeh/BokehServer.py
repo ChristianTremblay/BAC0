@@ -42,7 +42,7 @@ class BokehServer(Thread):
 
     def startServer(self):
         if 'win32' in sys.platform:
-            commandToExecute = "bokeh.bat serve"
+            commandToExecute = "bokeh serve"
         else:
             commandToExecute = "bokeh serve"
         cmdargs = shlex.split(commandToExecute)

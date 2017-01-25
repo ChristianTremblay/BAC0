@@ -11,7 +11,7 @@ Helper functions to log debug and exception messages
 from functools import wraps
 import inspect
 
-_DEBUG = 0
+_DEBUG = 1
 
 def debug(func):
     if 'debug' in inspect.getargspec(func).args:
