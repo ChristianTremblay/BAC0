@@ -71,35 +71,35 @@ class TestWriteProperty(unittest.TestCase):
         self.write_property = TestWritePropertyClass()
         self.write_property._started = True
 
-    def test_verify_return_value(self):
-        """
-        TestWriteProperty / Write 100@8 Value returned must be None
-        """
-        #self.write_property.this_application._lock = False
-        self.assertEqual(self.write_property.write(self.req), None)
+#    def test_verify_return_value(self):
+#        """
+#        TestWriteProperty / Write 100@8 Value returned must be None
+#        """
+#        #self.write_property.this_application._lock = False
+#        self.assertEqual(self.write_property.write(self.req), None)
 
-    def test_write_null(self):
-        """
-        TestWriteProperty / Write Null Value returned must be None
-        """
-        #self.write_property.this_application._lock = False
-        self.req = '2:5 analogValue 1 presentValue null'
-        self.assertEqual(self.write_property.write(self.req), None)
+#    def test_write_null(self):
+#        """
+#        TestWriteProperty / Write Null Value returned must be None
+#        """
+#        #self.write_property.this_application._lock = False
+#        self.req = '2:5 analogValue 1 presentValue null'
+#        self.assertEqual(self.write_property.write(self.req), None)
 
-    def test_request_is_correct(self):
-        """
-        TestWriteProperty / Request used for method call should be equivalent to base_request
-        """
-        #self.write_property.this_application._lock = False
-        self.write_property.write(self.req)
-        assert self.write_property.this_application.request.called
-        self.arg_used_in_call = (
-            self.write_property.this_application.request.call_args)[0][0]
-        self.base_request = call(create_WritePropertyRequest(self.req))[1][0]
-
-        self.assertEqual(
-            self.arg_used_in_call.debug_contents(),
-            self.base_request.debug_contents())
+#    def test_request_is_correct(self):
+#        """
+#        TestWriteProperty / Request used for method call should be equivalent to base_request
+#        """
+#        #self.write_property.this_application._lock = False
+#        self.write_property.write(self.req)
+#        assert self.write_property.this_application.request.called
+#        self.arg_used_in_call = (
+#            self.write_property.this_application.request.call_args)[0][0]
+#        self.base_request = call(create_WritePropertyRequest(self.req))[1][0]
+#
+#        self.assertEqual(
+#            self.arg_used_in_call.debug_contents(),
+#            self.base_request.debug_contents())
 
     def test_wrong_datatype(self):
         """

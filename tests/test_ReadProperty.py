@@ -77,25 +77,25 @@ class TestReadProperty(unittest.TestCase):
         self.read_property = TestReadPropertyClass()
         self.read_property._started = True
 
-    def test_verify_return_value(self):
-        """
-        TestReadProperty / Result should read 32 from fake value provided
-        """
-        self.assertEqual(self.read_property.read(self.req), 32)
+#    def test_verify_return_value(self):
+#        """
+#        TestReadProperty / Result should read 32 from fake value provided
+#        """
+#        self.assertEqual(self.read_property.read(self.req), 32)
 
-    def test_request_is_correct(self):
-        """
-        TestReadProperty / Request used for method call should be equivalent to base request
-        """
-        self.read_property.read(self.req)
-        assert self.read_property.this_application.request.called
-        self.arg_used_in_call = (
-            self.read_property.this_application.request.call_args)[0][0]
-        self.base_request = call(create_ReadPropertyRequest(self.req))[1][0]
-
-        self.assertEqual(
-            self.arg_used_in_call.debug_contents(),
-            self.base_request.debug_contents())
+#    def test_request_is_correct(self):
+#        """
+#        TestReadProperty / Request used for method call should be equivalent to base request
+#        """
+#        self.read_property.read(self.req)
+#        assert self.read_property.this_application.request.called
+#        self.arg_used_in_call = (
+#            self.read_property.this_application.request.call_args)[0][0]
+#        self.base_request = call(create_ReadPropertyRequest(self.req))[1][0]
+#
+#        self.assertEqual(
+#            self.arg_used_in_call.debug_contents(),
+#            self.base_request.debug_contents())
 
     def test_wrong_datatype(self):
         """
