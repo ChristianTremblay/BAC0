@@ -33,6 +33,7 @@ setup(name='BAC0',
           ],
       requires=requirements,
       install_requires=requirements,
+      test_suite="tests",
       long_description=open('README.rst').read(),
       classifiers=[
           "Development Status :: 4 - Beta",

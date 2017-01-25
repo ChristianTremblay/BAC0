@@ -18,11 +18,11 @@ from bacpypes.app import BIPSimpleApplication
 from bacpypes.pdu import Address
 from bacpypes.object import get_object_class, get_datatype
 from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
-    ReadPropertyRequest, ReadPropertyMultipleRequest
+    ReadPropertyRequest, ReadPropertyMultipleRequest, ReadPropertyACK
 from bacpypes.basetypes import PropertyIdentifier
-
-from threading import Event, Lock
-from queue import Queue, Empty
+from bacpypes.iocb import IOCB
+from bacpypes.constructeddata import Any
+from bacpypes.primitivedata import Real
 
 
 class TestScriptApplication(ScriptApplication):
@@ -34,11 +34,17 @@ class TestScriptApplication(ScriptApplication):
     def __init__(self, *args):
         BIPSimpleApplication.__init__(Mock())
         self.elementService = Mock()
-        self.ResponseQueue = Mock()
-        self.ResponseQueue.get.return_value = (32, Event())
-        self.request = Mock()
-        self.value = None
+        #self.value = None
+        iocb = IOCB()
         
+        # Forging apdu response        
+        fake_apdu = ReadPropertyACK( 
+            objectIdentifier=('analogInput', 0), 
+            propertyIdentifier='presentValue', 
+            propertyValue=Any(Real(32)), )
+        iocb.complete(fake_apdu)
+        self.request = Mock()
+        self.request.return_value = iocb
 
 
 class TestReadPropertyClass(ReadProperty):
@@ -49,7 +55,6 @@ class TestReadPropertyClass(ReadProperty):
 
     def __init__(self):
         self.this_application = TestScriptApplication()
-        self.this_application._lock = Lock()
 
 
 class TestReadProperty(unittest.TestCase):
@@ -58,16 +63,17 @@ class TestReadProperty(unittest.TestCase):
     """
     # def setUp(self):
 
-    @patch('BAC0.core.io.Read.ReadProperty.this_application.ResponseQueue.get')
+    @patch('BAC0.core.io.Read.ReadProperty.this_application.request')
     @patch('BAC0.core.app.ScriptApplication.ScriptApplication.__init__')
     @patch('bacpypes.app.BIPSimpleApplication.__init__')
-    @patch('bacpypes.app.LocalDeviceObject')
+    @patch('bacpypes.service.device.LocalDeviceObject')
     @patch('BAC0.core.io.Read.ReadProperty')
     def setUp(self, mock_rp, mock_localDevice,
-              mock_BIPSimpleApplication, mock_ScriptApplication, mock_ResponseQueueGet):
+              mock_BIPSimpleApplication, mock_ScriptApplication, mock_request):
         self.req = '2:5 analogValue 1 presentValue'
         mock_ScriptApplication.return_value = TestScriptApplication()
         mock_BIPSimpleApplication.return_value = None
+        
         self.read_property = TestReadPropertyClass()
         self.read_property._started = True
 

@@ -15,14 +15,6 @@ class Simulation():
     """
     Global informations regarding simulation
     """
-
-    def __init__(self):
-        """ This function is a fake one so spyder can see local variables
-        """
-        self.this_application = None
-        self.simulatedPoints = []
-
-
     def sim(self, args):
         """
         This function allow the simulation of IO points by turning on the

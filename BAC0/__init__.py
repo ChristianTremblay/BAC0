@@ -12,6 +12,6 @@ try:
     from .tasks.Match import Match as match
     from .bokeh.BokehRenderer import BokehPlot as chart
     from .infos import __version__ as version
-except ImportError:
-    pass
+except ImportError as error:
+    print(error)
     # Not installed yet
