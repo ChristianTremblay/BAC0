@@ -54,7 +54,7 @@ class SQLMixin(object):
             else:
                 backup[point.properties.name] = point.history.resample('1s').mean()
         # in some circumstances, correct : pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in backup.items() ]))
-        backup = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in backup.items() ]))
+        backup = pd.DataFrame({k: pd.Series(v) for k,v in backup.items()})
         return pd.DataFrame(backup)
 
     def save(self, filename = None):
