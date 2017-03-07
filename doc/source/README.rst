@@ -1,10 +1,10 @@
 BAC0 |build-status| |coverage| |docs|
 =====================================
-BAC0 is a Python 3 (3.4 and over) scripting application that uses BACpypes_ to process BACnet messages on a IP network. 
+BAC0 is a Python 3 (3.4 and over) scripting application that uses BACpypes_ to process BACnet messages on an IP network. 
 This library brings out simple commands to browse a BACnet network, read properties from BACnet devices or write to them.
 
 Python is a simple language to learn and a very powerful tool for data processing. Coupled to BACnet, it becomes a great 
-tool to test devices an interact with controllers.
+tool to test devices and interact with controllers.
 
 BAC0 takes its name from the default IP port used by BACnet/IP communication which is port 47808. In hexadecimal, it's written 0xBAC0.
 
@@ -33,9 +33,9 @@ every variables in the controllers. Every points are trended every 10 seconds by
 that you can do data analysis on everything while you're doing your startup. It allows to see performances and
 trouble really fast.
 
-This make BAC0 not only a good tool to test your sequence while your in the office.
+This make BAC0 not only a good tool to test your sequence while you're in the office.
 But also a really good tool to assist your startup, test and balancing. Using Jupyter Notebook, you'll
-even be able to create nice looking report right from your code.
+even be able to create nice looking reports right from your code.
 
 
 .. |build-status| image:: https://travis-ci.org/ChristianTremblay/BAC0.svg?branch=master
