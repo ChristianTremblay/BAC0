@@ -1,32 +1,24 @@
 Using Pytest_
 =============
-Pytest_ is a "a mature full-featured Python testing tool".
-It allows the creation of test files that can be called by a command line script.
-It's then possible to create different test, all in there own file start 
-the process and work on something else while tests are running.
+Pytest_ [https://docs.pytest.org/en/latest/] is a "a mature full-featured Python testing tool".
+It allows the creation of test files that can be called by a command line script, 
+and run automatically while you work on something else.
 
-Here an example of a Pytest_ module that could be created.
+For more details, please refer Pytest's documentation.
 
-Please note that Pytest_ on its own is a very complete solution. For more documentation about 
-it, please refer to the documentation of the project.
-
-I'll simply describe minimal feature I present in the example.
 
 Some basic stuff before we begin
 --------------------------------
-Pytest is a very simple testing tool. The default unit test tool for python is called 
-unittest. Based on Java xUnit, it's more formal, uses a lot of different functions and classes... 
-It can easily become too much for the needs of testing DDC controllers.
+Pytest is a very simple testing tool.  While, the default unit test tool for python is  
+**unittest** (which is more formal and has more features); unittest can easily become 
+too much for the needs of testing DDC controllers.
 
-Pytest uses only simple `assert` command, inside functions defined in a module.
+Pytest uses only simple the `assert` command, and locally defined functions.
+It also allows the usage of "fixtures" which are little snippets of code that prepare things 
+prior to the test (setUp), then finalize things when the test is over (tearDown).
 
-Pytest also allows the usage of "fixtures" which are little snippets of code that will be
-used to prepare what's needed for the test, then finalize the process when it's over. In unittest, 
-thoses functions are called setUp and tearDown.
-
-In the example module I'll show you, I'm using fixtures to create the BACnet connection at the beginning 
-of the test, making this connection valid for all the tests in the module, then closing the connection
-after the tests have been done, just after having saved the controller so the histories be available.
+The following example uses fixtures to establish the BACnet connection prior to the test, 
+and then saves the controller histories and closes the connection after the tests are done.
 
 Example
 +++++++
@@ -69,12 +61,12 @@ Code ::
 
 Success result
 ..............
-If you named you file test_mytest.py, you can just run ::
+If you name the file: test_mytest.py, you can just run ::
 
     py.test -v -s
 
-Pytest_ will look for test files, find them and run them. Or you can define the
-file you want to run ::
+Pytest_ will look for the test files, find them and run them. Or you can define the
+exact file you want to run ::
 
     py.test mytestfile.py -v -s
 
@@ -117,7 +109,7 @@ Here's what it looks like ::
 Failure result
 ..............
 
-Here's what it looks like when a test fails ::
+Here's what a test failure looks like::
 
     ============================= test session starts =============================
     platform win32 -- Python 3.4.4, pytest-2.8.5, py-1.4.31, pluggy-0.3.1 -- C:\User
@@ -163,12 +155,12 @@ Here's what it looks like when a test fails ::
     pytest_example.py:30: AssertionError
     ===================== 1 failed, 1 passed in 30.71 seconds =====================
 
-I modified the test here to generate an failure if nvoAI2 is not greater than 1000.
+Note: I modified the test to generate an failure - nvoAI2 cannot exceed 1000.
 
 Conclusion
 ----------
 Using Pytest_ is a really good way to generate test files that can be reused and modified
 depending on different use cases. It's a good way to run multiple tests at once.
-It will give you a concise report of every failure and tell you if tests succeeded.
+It provides concise reports of every failure and tells you when your tests succeed.
 
 .. _pytest : http://pytest.org/latest/

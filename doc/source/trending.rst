@@ -1,13 +1,16 @@
 Trends
 ======
-Trending is a nice feature when you want to see what's going on. Until now,
-it was possible to use matplotlib directly in Jupyter_ to show trends.
+Trending is a nice feature when you want to see how a points value changed over time.
+Until now, this was only possible using matplotlib directly in Jupyter_.
+But I recently became aware of Bokeh_ [http://bokeh.pydata.org/en/latest/] which brings 
+a complete set of wonderful features for visualizing point histories (a.k.a. trends). 
+The best feature of all - the ability to see Live Trends of your data as it occurs.
 
 Matplotlib
 ----------
-Matplotlib_ is a well know library for plotting with python. As historical data are
-pandas Series or DataFrame, it's possible to use Matplotlib with BAC0.
-Show a chart using matplotlib::
+Matplotlib_ is a well known data plotting library for Python. As BAC0's historical point data 
+are pandas Series and DataFrames, it's possible to use Matplotlib with BAC0.
+i.e. Showing a chart using matplotlib::
 
     %matplotlib notebook
     # or matplotlib inline for a basic interface
@@ -15,25 +18,30 @@ Show a chart using matplotlib::
 
 |matplotlib|
 
+
 Bokeh
 -----
-But I recently got aware of Bokeh_ which brings a complete new set of wonderful
-features to see trends. Best of all, the ability to see Live Trends of your data.
+Bokeh is a Python interactive visualization library targeting modern web browsers for presentation. 
+Its goal is to provide elegant, concise graphics, with high-performance interactivity over very large 
+or streaming datasets. Bokeh can help anyone who would like to quickly create interactive plots, dashboards, 
+and data applications.
 
-Default trending features of BAC0 now depends on Bokeh_ library
+BAC0 trending features use Bokeh by default.
+
 
 Bokeh serve
 -----------
-To be able to use live trending features, a bokeh server needs to run locally on the machine.
-When the application starts, a bokeh server will be started in a subprocess.
-This server is available on localhost:5006, on your machine.
+To use the live trending features, a bokeh server needs to be running locally on your computer.
+When the BAC0 starts, it starts a bokeh server for you, running locally.  This server is available 
+at localhost:5006, on your machine.
 
-It's a shortcut so the user don't have to think about starting the server using::
+The server can be started manually, from the command line via::
 
     bokeh serve
 
-Note : Once started, the bokeh server won't be stopped by the BAC0. It will terminate when
-Jupyter session will be closed.
+Note : Once started, the bokeh server won't be stopped by the BAC0. It will terminate when your 
+Jupyter session is closed.
+
 
 Add plots to Bokeh Document
 ---------------------------
@@ -56,22 +64,23 @@ Empty at first, you need to send the data you want to the server using ::
 
 |bokeh_plots|
 
-At startup, the script will give you the complete address to reach to get access
-to the trends ::
+At startup, BAC0 prints the complete URL address for your web browser to view trends ::
 
     Click here to open Live Trending Web Page
     http://localhost:5006/?bokeh-session-id=f9OdQd0LWSPXsnuNdCqVSoEa5xxwd32cZR0ioi9ACXzl
 
+
 Bokeh Features
 --------------
-You'll get access to live stream of data and all the features of bokeh (zooming, span, etc.)
-For more details, see http://www.bokehplots.com
+Bokeh has an extensive set of features. Exploring them is beyond the scope of this documentation.
+Instead you may discover them yourself at [http://www.bokehplots.com].
+A couple of its features are highlighted below.
 
-Numerous options are provided by Bokeh plots like a hover tool.
+Hover tool:
 
 |bokeh_hover|
 
-And a lot of other options like pan, box zoom, mouse wheel zoom, save, etc...
+And a lot of other options like pan, box zoom, mouse wheel zoom, save, etc...:
 
 |bokeh_tools|
 
