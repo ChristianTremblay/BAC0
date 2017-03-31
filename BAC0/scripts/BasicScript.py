@@ -170,7 +170,7 @@ class BasicScript():
         """
         print('Starting app...')
         enable_sleeping(0.0005)
-        self.t = Thread(target=startBacnetIPApp, daemon = True)
+        self.t = Thread(target=startBacnetIPApp, kwargs={'sigterm': None,'sigusr1': None}, daemon = True)
         self.t.start()
         self._started = True
         print('App started')
