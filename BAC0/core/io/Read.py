@@ -2,41 +2,45 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-#
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-This module allows the creation of ReadProperty and ReadPropertyMultiple
-requests by and app
+#
+'''
+Read.py - creation of ReadProperty and ReadPropertyMultiple requests
 
-    Must be used while defining an app
+    Used while defining an app:
     Example::
-
         class BasicScript(WhoisIAm, ReadProperty)
 
     Class::
-
         ReadProperty()
             def read()
             def readMultiple()
-"""
 
+'''
+
+#--- standard Python modules ---
+from queue import Queue, Empty
+import time
+
+#--- 3rd party modules ---
 from bacpypes.debugging import bacpypes_debugging
 
 from bacpypes.pdu import Address
 from bacpypes.object import get_object_class, get_datatype
 from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
     ReadPropertyRequest, ReadPropertyMultipleRequest
+
 from bacpypes.basetypes import PropertyIdentifier
 from bacpypes.apdu import ReadPropertyMultipleACK, ReadPropertyACK
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB
 
-from queue import Queue, Empty
-import time
-
+#--- this application's modules ---
 from .IOExceptions import SegmentationNotSupported, ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted
 from ..functions.debug import log_debug, log_exception
+
+#------------------------------------------------------------------------------
 
 # some debugging
 _DEBUG = 0
@@ -45,11 +49,9 @@ _DEBUG = 0
 @bacpypes_debugging
 class ReadProperty():
     """
-    This class defines functions to read bacnet messages.
-    It handles readProperty, readPropertyMultiple
+    Defines BACnet Read functions: readProperty and readPropertyMultiple.
     Data exchange is made via a Queue object
-    A timeout of 5 seconds allow detection of invalid device or communciation
-    errors.
+    A timeout of 10 seconds allows detection of invalid device or communciation errors.
     """
     _TIMEOUT = 10
 
@@ -62,8 +64,7 @@ class ReadProperty():
 #        self._started = False
 
     def read(self, args, arr_index = None):
-        """ This function build a read request wait for the answer and
-        return the value
+        """ Build a ReadProperty request, wait for the answer and return the value
 
         :param args: String with <addr> <type> <inst> <prop> [ <indx> ]
         :returns: data read from device (str representing data like 10 or True)
@@ -75,39 +76,32 @@ class ReadProperty():
             bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)
             bacnet.read('2:5 analogInput 1 presentValue')
 
-        will read controller with a MAC address of 5 in the network 2
-        Will ask for the present Value of analog input 1 (AI:1)
+        Requests the controller at (Network 2, address 5) for the presentValue of 
+        its analog input 1 (AI:1).
         """
         if not self._started:
-            raise ApplicationNotStarted('App not running, use startApp() function')
+            raise ApplicationNotStarted('BACnet stack not running - use startApp()')
         #with self.this_application._lock:
             #time.sleep(0.5)
             #self.this_application._lock = True
+
         args = args.split()
-        #self.this_application.value is None
         log_debug(ReadProperty, "do_read %r", args)
 
         try:
-            iocb = IOCB(self.build_rp_request(args, arr_index))
-            # give it to the application
-            self.this_application.request_io(iocb)
-            #print('iocb : ', iocb)
+            iocb = IOCB(self.build_rp_request(args, arr_index))     # build ReadProperty request
+            self.this_application.request_io(iocb)                  # pass to the BACnet stack
             log_debug(ReadProperty,"    - iocb: %r", iocb)
-            
 
         except ReadPropertyException as error:
-            # error in the creation of the request
-            log_exception("exception: %r", error)
-            
-        # Wait for the response
-        iocb.wait()
-        
-        # do something for success
-        if iocb.ioResponse:
+            log_exception("exception: %r", error)                   # construction error
+
+        iocb.wait()             # Wait for BACnet response
+
+        if iocb.ioResponse:     # successful response
             apdu = iocb.ioResponse
 
-            # should be an ack
-            if not isinstance(apdu, ReadPropertyACK):
+            if not isinstance(apdu, ReadPropertyACK):               # expecting an ACK
                 log_debug(ReadProperty,"    - not an ack")
                 return
 
@@ -127,11 +121,9 @@ class ReadProperty():
                 value = apdu.propertyValue.cast_out(datatype)
             log_debug(ReadProperty,"    - value: %r", value)
 
-
             return value
 
-        # do something for error/reject/abort
-        if iocb.ioError:
+        if iocb.ioError:        # unsuccessful: error/reject/abort
             raise NoResponseFromController()
     
             # Share response with Queue
@@ -152,9 +144,9 @@ class ReadProperty():
 #                    #self.this_application._lock = False
 #                    raise NoResponseFromController()
 
+
     def readMultiple(self, args):
-        """ This function build a readMultiple request wait for the answer and
-        return the value
+        """ Build a ReadPropertyMultiple request, wait for the answer and return the values
 
         :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
         :returns: data read from device (str representing data like 10 or True)
@@ -166,32 +158,30 @@ class ReadProperty():
             bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)
             bacnet.readMultiple('2:5 analogInput 1 presentValue units')
 
-        will read controller with a MAC address of 5 in the network 2
-        Will ask for the present Value and the units of analog input 1 (AI:1)
+        Requests the controller at (Network 2, address 5) for the (presentValue and units) of 
+        its analog input 1 (AI:1).
         """
         if not self._started:
-            raise ApplicationNotStarted('App not running, use startApp() function')
+            raise ApplicationNotStarted('BACnet stack not running - use startApp()')
 
         args = args.split()
         values = []
         log_debug(ReadProperty, "readMultiple %r", args)
 
         try:
-            iocb = IOCB(self.build_rpm_request(args))
-            # give it to the application
-            self.this_application.request_io(iocb)
+            iocb = IOCB(self.build_rpm_request(args))               # build an ReadPropertyMultiple request
+            self.this_application.request_io(iocb)                  # pass to the BACnet stack
 
         except ReadPropertyMultipleException as error:
-            log_exception(ReadProperty, "exception: %r", error)
+            log_exception("exception: %r", error)                   # construction error
 
-        iocb.wait()
 
-        # do something for success
-        if iocb.ioResponse:
+        iocb.wait()             # Wait for BACnet response
+
+        if iocb.ioResponse:     # successful response
             apdu = iocb.ioResponse
 
-            # should be an ack
-            if not isinstance(apdu, ReadPropertyMultipleACK):
+            if not isinstance(apdu, ReadPropertyMultipleACK):       # expecting an ACK
                 log_debug(ReadProperty,"    - not an ack")
                 return
 
@@ -209,16 +199,13 @@ class ReadProperty():
                     propertyArrayIndex = element.propertyArrayIndex
                     log_debug(ReadProperty,"    - propertyArrayIndex: %r", propertyArrayIndex)
 
-                    # here is the read result
                     readResult = element.readResult
 
                     if propertyArrayIndex is not None:
                         print("[" + str(propertyArrayIndex) + "]")
 
-                    # check for an error
                     if readResult.propertyAccessError is not None:
                         print(" ! " + str(readResult.propertyAccessError))
-
                     else:
                         # here is the value
                         propertyValue = readResult.propertyValue
@@ -240,11 +227,11 @@ class ReadProperty():
                         log_debug(ReadProperty,"    - value: %r", value)
 
                         values.append(value)
+
             return values
                     
 
-        # do something for error/reject/abort
-        if iocb.ioError:
+        if iocb.ioError:        # unsuccessful: error/reject/abort
             raise NoResponseFromController()
     
 #            data = None
@@ -291,6 +278,7 @@ class ReadProperty():
 
         return request              
                 
+
     def build_rpm_request(self, args):
         """
         Build request from args
@@ -329,41 +317,32 @@ class ReadProperty():
                             (obj_type, prop_id))
 
                 # build a property reference
-                prop_reference = PropertyReference(
-                    propertyIdentifier=prop_id,
-                )
+                prop_reference = PropertyReference(propertyIdentifier=prop_id)
 
                 # check for an array index
                 if (i < len(args)) and args[i].isdigit():
                     prop_reference.propertyArrayIndex = int(args[i])
                     i += 1
 
-                # add it to the list
                 prop_reference_list.append(prop_reference)
 
-            # check for at least one property
             if not prop_reference_list:
                 raise ValueError("provide at least one property")
 
             # build a read access specification
             read_access_spec = ReadAccessSpecification(
                 objectIdentifier=(obj_type, obj_inst),
-                listOfPropertyReferences=prop_reference_list,
-            )
+                listOfPropertyReferences=prop_reference_list )
 
-            # add it to the list
             read_access_spec_list.append(read_access_spec)
 
-        # check for at least one
         if not read_access_spec_list:
             raise RuntimeError(
                 "at least one read access specification required")
 
         # build the request
-        request = ReadPropertyMultipleRequest(
-            listOfReadAccessSpecs=read_access_spec_list,
-        )
+        request = ReadPropertyMultipleRequest(listOfReadAccessSpecs=read_access_spec_list )
         request.pduDestination = Address(addr)
         log_debug(ReadProperty, "    - request: %r", request)
-            
+
         return request

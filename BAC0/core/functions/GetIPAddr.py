@@ -1,18 +1,24 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""
-Utility functions to retrieve local host's IP information.
+#
+# Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+# Licensed under LGPLv3, see file LICENSE in this source tree.
+#
+'''
+GetIPAddr.py - Utility functions to retrieve local host's IP information.
+'''
 
-Copyright (C) 2015-2017 Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-
-Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-from bacpypes.pdu import Address
-
+#--- standard Python modules ---
 import subprocess
 import ipaddress
 import sys
 
+#--- 3rd party modules ---
+from bacpypes.pdu import Address
+
+#--- this application's modules ---
+
+#------------------------------------------------------------------------------
 
 class HostIP():
     """
@@ -53,4 +59,4 @@ class HostIP():
 
 if __name__ == '__main__':
     h = HostIP()
-    print(h.ip_address)
+    print('Localhost IP address= ',h.ip_address)

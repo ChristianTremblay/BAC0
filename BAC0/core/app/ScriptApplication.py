@@ -2,14 +2,13 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-#
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-ScriptApplication
+#
+'''
+ScriptApplication 
 =================
-Built around a simple BIPSimpleApplication this module deals with requests
-created by a child app. It will prepare the requests and give them back to the
-stack.
+Built around bacpypes::BIPSimpleApplication this module deals with requests
+created by a child app. It prepares requests and interacts with the BACnet stack.
 
 This module will also listen for responses to requests (indication or confirmation).
 
@@ -20,22 +19,27 @@ This object will be added to script objects and will be runned as thread
 
 See BAC0.scripts for more details.
 
-"""
+'''
+#--- standard Python modules ---
+from collections import defaultdict
+import logging
 
+#--- 3rd party modules ---
 from bacpypes.debugging import bacpypes_debugging
 
 from bacpypes.app import BIPSimpleApplication
 from bacpypes.pdu import Address
 
-from collections import defaultdict
-import logging
-
+#--- this application's modules ---
 from ..functions.debug import log_debug
+
+
+#------------------------------------------------------------------------------
 
 @bacpypes_debugging
 class ScriptApplication(BIPSimpleApplication):
     """
-    This class defines the bacnet application that process requests
+    Defines a BACnet application to process requests
     """
 
     def __init__(self, *args):
@@ -65,6 +69,7 @@ class ScriptApplication(BIPSimpleApplication):
             
         #log_debug(ScriptApplication, "__init__ %r" % args)
 
+    
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
         if self._debug: ScriptApplication._debug("do_WhoIsRequest %r", apdu)
@@ -81,16 +86,13 @@ class ScriptApplication(BIPSimpleApplication):
         # continue with the default implementation
         BIPSimpleApplication.do_WhoIsRequest(self, apdu)
 
+
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
         if self._debug: ScriptApplication._debug("do_IAmRequest %r", apdu)
 
         # build a key from the source, just use the instance number
-        key = (str(apdu.pduSource),
-            apdu.iAmDeviceIdentifier[1],
-            )
-
-        # count the times this has been received
+        key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1] )
         self.i_am_counter[key] += 1
 
         # continue with the default implementation

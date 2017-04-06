@@ -2,24 +2,30 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-#
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-This module define discoverPoints function
-"""
+#
+'''
+discoverPoints.py - allow discovery of BACnet points in a controller.
+'''
 
-from ..devices.Points import EnumPoint, BooleanPoint, NumericPoint
+#--- standard Python modules ---
 
+#--- 3rd party modules ---
 try:
     import pandas as pd
     _PANDA = True
 except:
     _PANDA = False
 
+#--- this application's modules ---
+from ..devices.Points import EnumPoint, BooleanPoint, NumericPoint
+
+
+#------------------------------------------------------------------------------
 
 def discoverPoints(bacnetapp, address, devID):
     """
-    This function allows the discovery of all bacnet points in a device
+    Discover the BACnet points in a BACnet device.
 
     :param bacnetApp: The app itself so we can call read
     :param address: address of the device as a string (ex. '2:5')
@@ -34,45 +40,61 @@ def discoverPoints(bacnetapp, address, devID):
     presentValue and units
 
     If pandas can't be found, df will be a simple array
-
     """
-    pss = bacnetapp.read(
-        '%s device %s protocolServicesSupported' % (address, devID))
-    deviceName = bacnetapp.read('%s device %s objectName' % (address, devID))
-    print('Found %s... building points list' % deviceName)
-    objList = bacnetapp.read('%s device %s objectList' % (address, devID))
+    pss = bacnetapp.read('{} device {} protocolServicesSupported'.format(address, devID))
+    deviceName = bacnetapp.read('{} device {} objectName'.format(address, devID))
+
+    print('Device {}- building points list'.format(deviceName))
+    objList = bacnetapp.read('{} device {] objectList'.format(address, devID))
+
     newLine = []
     result = []
     points = []
 
     for pointType, pointAddr in objList:
-        if pointType not in 'file calendar device schedule notificationClass eventLog':
-            if 'binary' not in pointType and 'multiState' not in pointType:
-                newLine = [pointType, pointAddr]
-                newLine.extend(bacnetapp.readMultiple(
-                    '%s %s %s objectName description presentValue units' % (address, pointType, pointAddr)))
-                newPoint = NumericPoint(pointType=newLine[0], pointAddress=newLine[1], pointName=newLine[
-                                        2], description=newLine[3], presentValue=newLine[4], units_state=newLine[5])
-            elif 'binary' in pointType:
-                newLine = [pointType, pointAddr]
-                infos = (bacnetapp.readMultiple(
-                    '%s %s %s objectName description presentValue inactiveText activeText' % (address, pointType, pointAddr)))
-                newLine.extend(infos[:-2])
-                newLine.extend([infos[-2:]])
-                newPoint = BooleanPoint(pointType=newLine[0], pointAddress=newLine[1], pointName=newLine[
-                                        2], description=newLine[3], presentValue=newLine[4], units_state=newLine[5])
-            elif 'multiState' in pointType:
-                newLine = [pointType, pointAddr]
-                newLine.extend(bacnetapp.readMultiple(
-                    '%s %s %s objectName description presentValue stateText' % (address, pointType, pointAddr)))
-                newPoint = EnumPoint(pointType=newLine[0], pointAddress=newLine[1], pointName=newLine[
-                                     2], description=newLine[3], presentValue=newLine[4], units_state=newLine[5])
-            result.append(newLine)
-            points.append(newPoint)
+
+        if 'binary' in pointType:           # BI/BO/BV
+            newLine = [pointType, pointAddr]
+            infos = bacnetapp.readMultiple(
+                        '{} {} {} objectName description presentValue inactiveText activeText'.format(
+                        address, pointType, pointAddr))
+
+            newLine.extend(infos[:-2])
+            newLine.extend([infos[-2:]])
+            newPoint = BooleanPoint(pointType=newLine[0], pointAddress=newLine[1], 
+                                    pointName=newLine[2], description=newLine[3], 
+                                    presentValue=newLine[4], units_state=newLine[5])
+
+        elif 'multiState' in pointType:     # MI/MV/MO
+            newLine = [pointType, pointAddr]
+            newLine.extend(bacnetapp.readMultiple(
+                '{} {} {} objectName description presentValue stateText'.format(address, pointType, pointAddr)))
+            
+            newPoint = EnumPoint(pointType=newLine[0], pointAddress=newLine[1], 
+                                 pointName=newLine[2], description=newLine[3], 
+                                 presentValue=newLine[4], units_state=newLine[5])
+
+        elif 'analog' in pointType:         # AI/AO/AV
+            newLine = [pointType, pointAddr]
+            newLine.extend(bacnetapp.readMultiple(
+                '{} {} {} objectName description presentValue units'.format(address, pointType, pointAddr)))
+            
+            newPoint = NumericPoint(pointType=newLine[0], pointAddress=newLine[1], 
+                                    pointName=newLine[2], description=newLine[3], 
+                                    presentValue=newLine[4], units_state=newLine[5])
+
+        else:
+            continue        # skip
+
+        result.append(newLine)
+        points.append(newPoint)
+
+
     if _PANDA:
         df = pd.DataFrame(result, columns=['pointType', 'pointAddress', 'pointName',
                                            'description', 'presentValue', 'units_state']).set_index(['pointName'])
     else:
         df = result
+        
     print('Ready!')
     return (deviceName, pss, objList, df, points)
