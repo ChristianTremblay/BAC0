@@ -528,7 +528,6 @@ class EnumPoint(Point):
     """
     Representation of an Enumerated (multiState) value
     """
-
     def __init__(self, device=None,
                  pointType=None,    pointAddress=None,  pointName=None,
                  description=None,  presentValue=None,  units_state=None):

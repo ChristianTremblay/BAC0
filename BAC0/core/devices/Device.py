@@ -75,19 +75,17 @@ class Device(SQLMixin):
     """
     Represent a BACnet device.  Once defined, it allows use of read, write, sim, release 
     functions to communicate with the device on the network.
-    """
+    
+    :param addr: address of the device (ex. '2:5')
+    :param device_id: bacnet device ID (boid)
+    :param network: defined by BAC0.connect()
+    :param poll: (int) if > 0, will poll every points each x seconds.
 
+    :type address: (str)
+    :type device_id: int
+    :type network: BAC0.scripts.ReadWriteScript.ReadWriteScript
+    """
     def __init__(self, address, device_id, network, *, poll=10, from_backup = None, segmentation_supported = True):
-        """
-        Initialization require address, device id and bacnetApp (the script itself)
-        :param addr: address of the device (ex. '2:5')
-        :param device_id: bacnet device ID (boid)
-        :param network: defined by BAC0.connect()
-        :param poll: (int) if > 0, will poll every points each x seconds.
-        :type address: (str)
-        :type device_id: int
-        :type network: BAC0.scripts.ReadWriteScript.ReadWriteScript
-        """
         self.properties = DeviceProperties()
 
         self.properties.address = address
@@ -168,6 +166,7 @@ class Device(SQLMixin):
         """
         Allow the addition of text notes to the device.
         Notes are stored as timeseries (same than points)
+
         :returns: pd.Series
         """
         notes_table = pd.Series(self._notes.notes, index=self._notes.timestamp)
@@ -178,6 +177,7 @@ class Device(SQLMixin):
     def notes(self, note):
         """
         Setter for notes
+
         :param note: (str)
         """
         self._notes.timestamp.append(datetime.now())
@@ -198,6 +198,7 @@ class Device(SQLMixin):
         """
         Draw a chart from a list of points.  Refer to the pandas and matplotlib doc for details on 
         the plot() function and the args they accept.
+
         :param list_of_points: a list of point name as str
         :param plot_args: arg for plot function
         :returns: plot()
@@ -229,6 +230,7 @@ class Device(SQLMixin):
     def simulated_points(self):
         """
         iterate over simulated points
+
         :returns: points if simulated (out_of_service == True)
         :rtype: BAC0.core.devices.Points.Point
         """
@@ -287,6 +289,7 @@ class Device(SQLMixin):
     def __setitem__(self, point_name, value):
         """
         Write, sim or ovr value
+
         :param point_name: Name of the point to set
         :param value: value to write to the point
         :type point_name: str
@@ -317,21 +320,17 @@ class Device(SQLMixin):
     def analog_units(self):
         raise NotImplementedError()
 
-
     @property
     def temperatures(self):
         raise NotImplementedError()
-
 
     @property
     def percent(self):
         raise NotImplementedError()
 
-
     @property
     def multi_states(self):
         raise NotImplementedError()
-
 
     @property
     def binary_states(self):
@@ -343,12 +342,9 @@ class Device(SQLMixin):
         Helper that retrieve point based on its name.
 
         :param name: (str) name of the point
-        :param force_read: (bool) read value of the point each time the func
-                            is called.
+        :param force_read: (bool) read value of the point each time the function is called.
         :returns: Point object
-        :rtype: BAC0.core.devices.Point.Point (NumericPoint, EnumPoint or
-        BooleanPoint)
-
+        :rtype: BAC0.core.devices.Point.Point (NumericPoint, EnumPoint or BooleanPoint)
         """
         raise NotImplementedError()
 
@@ -743,12 +739,8 @@ class DeviceDisconnected(Device):
 #@fix_docs
 class DeviceFromDB(DeviceConnected):
     """
-    This state is used when replaying previous data.
-    Every call to 
-        device['point_name'] 
-    will result on last valid value.
-    
-    Histories for each point are available
+    [Device state] Where requests for a point's present value returns the last 
+    valid value from the point's history.
     """
     def _init_state(self):
         try:

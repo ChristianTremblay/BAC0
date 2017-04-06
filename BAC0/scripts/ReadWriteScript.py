@@ -53,17 +53,13 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
     """
     Build a BACnet application to accept read and write requests.
     [Basic Whois/IAm functions are implemented in parent BasicScript class.]
-
     Once created, execute a whois() to build a list of available controllers.
+    Initialization requires information on the local device.
+
+    :param ip='127.0.0.1': Address must be in the same subnet as the BACnet network 
+        [BBMD and Foreign Device - not supported] 
     """
-
-    def __init__(self, ip=None):
-        """
-        Initialization requires information on the local device
-        :param ip: (str) '127.0.0.1'
-
-        Address must be in the same subnet as the BACnet network [BBMD and Foreign Device - not supported] 
-        """
+    def __init__(self, ip='127.0.0.1'):
         log_debug("Configurating app")
         if ip is None:
             host = HostIP()

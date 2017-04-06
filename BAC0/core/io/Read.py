@@ -9,9 +9,11 @@ Read.py - creation of ReadProperty and ReadPropertyMultiple requests
 
     Used while defining an app:
     Example::
+
         class BasicScript(WhoisIAm, ReadProperty)
 
     Class::
+
         ReadProperty()
             def read()
             def readMultiple()
@@ -64,7 +66,8 @@ class ReadProperty():
 #        self._started = False
 
     def read(self, args, arr_index = None):
-        """ Build a ReadProperty request, wait for the answer and return the value
+        """
+        Build a ReadProperty request, wait for the answer and return the value
 
         :param args: String with <addr> <type> <inst> <prop> [ <indx> ]
         :returns: data read from device (str representing data like 10 or True)

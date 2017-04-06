@@ -7,17 +7,13 @@
 '''
 ScriptApplication 
 =================
-Built around bacpypes::BIPSimpleApplication this module deals with requests
-created by a child app. It prepares requests and interacts with the BACnet stack.
 
-This module will also listen for responses to requests (indication or confirmation).
+A basic BACnet application (bacpypes BIPSimpleApplication) for interacting with 
+the bacpypes BACnet stack.  It enables the base-level BACnet functionality 
+(a.k.a. device discovery) - meaning it can send & receive WhoIs & IAm messages.
 
-Response will be added to a Queue, we'll wait for the response to be processed
-by the caller, then resume.
-
-This object will be added to script objects and will be runned as thread
-
-See BAC0.scripts for more details.
+Additional functionality is enabled by inheriting this application, and then 
+extending it with more functions. [See BAC0.scripts for more examples of this.]
 
 '''
 #--- standard Python modules ---
@@ -39,16 +35,13 @@ from ..functions.debug import log_debug
 @bacpypes_debugging
 class ScriptApplication(BIPSimpleApplication):
     """
-    Defines a BACnet application to process requests
-    """
+    Defines a basic BACnet/IP application to process BACnet requests.
 
-    def __init__(self, *args):
-        """
-        Creation of the application. Adding properties to basic B/IP App.
-
-        :param *args: local object device, local IP address
+    :param *args: local object device, local IP address
         See BAC0.scripts.BasicScript for more details.
-        """
+        
+    """
+    def __init__(self, *args):
         logging.getLogger("comtypes").setLevel(logging.INFO)
         
         self.localAddress = None
@@ -66,8 +59,6 @@ class ScriptApplication(BIPSimpleApplication):
         else:
             self.local_unicast_tuple = ('', 47808)
             self.local_broadcast_tuple = ('255.255.255.255', 47808)
-            
-        #log_debug(ScriptApplication, "__init__ %r" % args)
 
     
     def do_WhoIsRequest(self, apdu):
@@ -77,8 +68,7 @@ class ScriptApplication(BIPSimpleApplication):
         # build a key from the source and parameters
         key = (str(apdu.pduSource),
             apdu.deviceInstanceRangeLowLimit,
-            apdu.deviceInstanceRangeHighLimit,
-            )
+            apdu.deviceInstanceRangeHighLimit )
 
         # count the times this has been received
         self.who_is_counter[key] += 1

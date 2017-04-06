@@ -33,13 +33,13 @@ def discoverPoints(bacnetapp, address, devID):
 
     :returns: a tuple with deviceName, pss, objList, df
 
-    *deviceName* : name of the device
-    *pss* : protocole service supported
-    *objList* : list of bacnet object (ex. analogInput, 1)
-    *df* : is a dataFrame containing pointType, pointAddress, pointName, description
-    presentValue and units
+        * *deviceName* : name of the device
+        * *pss* : protocole service supported
+        * *objList* : list of bacnet object (ex. analogInput, 1)
+        * *df* : is a dataFrame containing pointType, pointAddress, pointName, description
+        presentValue and units
 
-    If pandas can't be found, df will be a simple array
+        If pandas can't be found, df will be a simple array
     """
     pss = bacnetapp.read('{} device {} protocolServicesSupported'.format(address, devID))
     deviceName = bacnetapp.read('{} device {} objectName'.format(address, devID))

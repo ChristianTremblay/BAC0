@@ -53,14 +53,17 @@ _DEBUG = 1
 class BasicScript():
     """
     Build a running BACnet/IP device that accepts WhoIs and IAm requests
+    Initialization requires some minimial information about the local device.
+    
+    :param localIPAddr='127.0.0.1':
+    :param localObjName='BAC0':
+    :param DeviceId=None:
+    :param maxAPDULengthAccepted='1024':
+    :param maxSegmentsAccepted='1024':
+    :param segmentationSupported='segmentedBoth':
     """
-
-    def __init__(self, localIPAddr=None, localObjName='BAC0', DevId=None,
+    def __init__(self, localIPAddr='127.0.0.1', localObjName='BAC0', DeviceId=None,
                  maxAPDULengthAccepted='1024', maxSegmentsAccepted='1024', segmentationSupported='segmentedBoth'):
-        """
-        Initialization requires some minimial information about the local device.
-            Name, Device ID, IP Address, Vendor, packet sizes, and packet segmentation capabilities.
-        """
         log_debug("Configure App")
 
         self.response = None
@@ -68,8 +71,8 @@ class BasicScript():
         self._started = False
         self._stopped = False
 
-        self.localIPAddr = localIPAddr if localIPAddr else '127.0.0.1'
-        self.Boid = int(DevId) if DevId else (3056177 + int(random.uniform(0, 1000)))
+        self.localIPAddr= localIPAddr
+        self.Boid = int(DeviceId) if DeviceId else (3056177 + int(random.uniform(0, 1000)))
 
         self.segmentationSupported = segmentationSupported
         self.maxSegmentsAccepted = maxSegmentsAccepted
