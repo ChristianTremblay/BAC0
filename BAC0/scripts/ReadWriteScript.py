@@ -59,7 +59,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
     :param ip='127.0.0.1': Address must be in the same subnet as the BACnet network 
         [BBMD and Foreign Device - not supported] 
     """
-    def __init__(self, ip='127.0.0.1'):
+    def __init__(self, ip=None):
         log_debug("Configurating app")
         if ip is None:
             host = HostIP()
