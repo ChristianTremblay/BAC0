@@ -167,6 +167,9 @@ class BasicScript():
         """
         Starts the application in its own thread so requests can be processed.
         Once started, socket will be reserved.
+        
+        As signal cannot be called in another thread than the main thread
+        when calling startBacnetIPApp, we must pass None to both parameters
         """
         print('Starting app...')
         enable_sleeping(0.0005)
