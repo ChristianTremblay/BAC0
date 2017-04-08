@@ -2,18 +2,25 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-#
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-Repeat read function every delay
-"""
+#
+'''
+Poll.py - create a Polling task to repeatedly read a point.
+'''
 
-from .TaskManager import Task
+#--- standard Python modules ---
+
+#--- 3rd party modules ---
 from bacpypes.core import deferred
+
+#--- this application's modules ---
+from .TaskManager import Task
+
+#------------------------------------------------------------------------------
 
 class SimplePoll(Task):
     """
-    Start a polling task which is in fact a recurring read of the point.
+    Start a polling task to repeatedly read a point's Present_Value.
     ex.
         device['point_name'].poll(delay=60)
     """
@@ -31,17 +38,18 @@ class SimplePoll(Task):
             delay = 5
         if point.properties:
             self._point = point
-            Task.__init__(self, delay=delay)
+            Task.__init__(self, name='rp_poll', delay=delay)
         else:
-            raise ValueError('Should provide a point object')
+            raise ValueError('Provide a point object')
 
     def task(self):
         self._point.value
 
+
 class DevicePoll(Task):
     """
-    Start a polling task which is in fact a recurring read of 
-    a list of point using read property multiple.
+    Start a polling task to repeatedly read a list of points from a device using 
+    ReadPropertyMultiple requests.
     """
 
     def __init__(self, device, delay=10):
@@ -56,7 +64,8 @@ class DevicePoll(Task):
         if delay < 5:
             delay = 5
         self._device = device
-        Task.__init__(self, delay=delay, daemon = True)
+        Task.__init__(self, name='rpm_poll', delay=delay, daemon = True)
+
 
     def task(self):
         self._device.read_multiple(list(self._device.points_name), points_per_request=25)

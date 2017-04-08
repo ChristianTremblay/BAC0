@@ -1,11 +1,9 @@
 BAC0.core.devices package
 =========================
 
-Submodules
-----------
 
-BAC0.core.devices.Device module
--------------------------------
+BAC0.core.devices.Device
+------------------------
 
 .. automodule:: BAC0.core.devices.Device
     :members:
@@ -13,10 +11,10 @@ BAC0.core.devices.Device module
     :show-inheritance:
 
 
-Module contents
----------------
+BAC0.core.devices.Points
+------------------------
 
-.. automodule:: BAC0.core.devices
+.. automodule:: BAC0.core.devices.Points
     :members:
     :undoc-members:
     :show-inheritance:

@@ -2,49 +2,46 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-#
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-ScriptApplication
+#
+'''
+ScriptApplication 
 =================
-Built around a simple BIPSimpleApplication this module deals with requests
-created by a child app. It will prepare the requests and give them back to the
-stack.
 
-This module will also listen for responses to requests (indication or confirmation).
+A basic BACnet application (bacpypes BIPSimpleApplication) for interacting with 
+the bacpypes BACnet stack.  It enables the base-level BACnet functionality 
+(a.k.a. device discovery) - meaning it can send & receive WhoIs & IAm messages.
 
-Response will be added to a Queue, we'll wait for the response to be processed
-by the caller, then resume.
+Additional functionality is enabled by inheriting this application, and then 
+extending it with more functions. [See BAC0.scripts for more examples of this.]
 
-This object will be added to script objects and will be runned as thread
+'''
+#--- standard Python modules ---
+from collections import defaultdict
+import logging
 
-See BAC0.scripts for more details.
-
-"""
-
+#--- 3rd party modules ---
 from bacpypes.debugging import bacpypes_debugging
 
 from bacpypes.app import BIPSimpleApplication
 from bacpypes.pdu import Address
 
-from collections import defaultdict
-import logging
-
+#--- this application's modules ---
 from ..functions.debug import log_debug
+
+
+#------------------------------------------------------------------------------
 
 @bacpypes_debugging
 class ScriptApplication(BIPSimpleApplication):
     """
-    This class defines the bacnet application that process requests
-    """
+    Defines a basic BACnet/IP application to process BACnet requests.
 
-    def __init__(self, *args):
-        """
-        Creation of the application. Adding properties to basic B/IP App.
-
-        :param *args: local object device, local IP address
+    :param *args: local object device, local IP address
         See BAC0.scripts.BasicScript for more details.
-        """
+        
+    """
+    def __init__(self, *args):
         logging.getLogger("comtypes").setLevel(logging.INFO)
         
         self.localAddress = None
@@ -62,9 +59,8 @@ class ScriptApplication(BIPSimpleApplication):
         else:
             self.local_unicast_tuple = ('', 47808)
             self.local_broadcast_tuple = ('255.255.255.255', 47808)
-            
-        #log_debug(ScriptApplication, "__init__ %r" % args)
 
+    
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
         if self._debug: ScriptApplication._debug("do_WhoIsRequest %r", apdu)
@@ -72,8 +68,7 @@ class ScriptApplication(BIPSimpleApplication):
         # build a key from the source and parameters
         key = (str(apdu.pduSource),
             apdu.deviceInstanceRangeLowLimit,
-            apdu.deviceInstanceRangeHighLimit,
-            )
+            apdu.deviceInstanceRangeHighLimit )
 
         # count the times this has been received
         self.who_is_counter[key] += 1
@@ -81,16 +76,13 @@ class ScriptApplication(BIPSimpleApplication):
         # continue with the default implementation
         BIPSimpleApplication.do_WhoIsRequest(self, apdu)
 
+
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
         if self._debug: ScriptApplication._debug("do_IAmRequest %r", apdu)
 
         # build a key from the source, just use the instance number
-        key = (str(apdu.pduSource),
-            apdu.iAmDeviceIdentifier[1],
-            )
-
-        # count the times this has been received
+        key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1] )
         self.i_am_counter[key] += 1
 
         # continue with the default implementation
