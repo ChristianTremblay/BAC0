@@ -24,6 +24,7 @@ from threading import Thread
 from queue import Queue
 import random
 import sys
+import logging
 
 #--- 3rd party modules ---
 import pandas as pd
@@ -64,8 +65,11 @@ class BasicScript():
     """
     def __init__(self, localIPAddr='127.0.0.1', localObjName='BAC0', DeviceId=None,
                  maxAPDULengthAccepted='1024', maxSegmentsAccepted='1024', segmentationSupported='segmentedBoth'):
-        log_debug("Configure App")
 
+        self._log = logging.getLogger('BAC0.script.%s' \
+                    % self.__class__.__name__)
+        self._log.debug("Configurating app")
+        
         self.response = None
         self._initialized = False
         self._started = False
@@ -94,7 +98,7 @@ class BasicScript():
         Define the local device, including services supported.
         Once defined, start the BACnet stack in its own thread.
         """
-        log_debug("Create Local Device")
+        self._log.debug("Create Local Device")
         try:
             # make a device object
             self.this_device = LocalDeviceObject(
@@ -127,15 +131,15 @@ class BasicScript():
             # make a simple application
             self.this_application = ScriptApplication(self.this_device, self.localIPAddr)
 
-            log_debug("Starting")
+            self._log.debug("Starting")
             self._initialized = True
             self._startAppThread()
-            log_debug("Running")
+            self._log.debug("Running")
 
         except Exception as error:
-            log_exception("an error has occurred: %s", error)
+            self._log.error("an error has occurred: %s", error)
         finally:
-            log_debug("finally")
+            self._log.debug("finally")
 
 
     def disconnect(self):
@@ -162,12 +166,12 @@ class BasicScript():
         As signal cannot be called in another thread than the main thread
         when calling startBacnetIPApp, we must pass None to both parameters
         """
-        print('Starting app...')
+        self._log.info('Starting app...')
         enable_sleeping(0.0005)
         self.t = Thread(target=startBacnetIPApp, kwargs={'sigterm': None,'sigusr1': None}, daemon = True)
         self.t.start()
         self._started = True
-        print('BACnet started')
+        self._log.info('BACnet started')
         
 
     @property

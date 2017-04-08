@@ -79,7 +79,7 @@ class ReadPropertyMultiple():
         device.read_multiple(['point1', 'point2', 'point3'], points_per_request = 10)
         """
         if not self.properties.pss['readPropertyMultiple']:
-            print('Read property Multiple Not supported')
+            self._log.warning('Read property Multiple Not supported')
             self.read_single(points_list,points_per_request=1, discover_request=discover_request)
         else:
             if not self.properties.segmentation_supported:
@@ -94,7 +94,7 @@ class ReadPropertyMultiple():
                     
                     try:
                         request = ('{} {}'.format(self.properties.address, ''.join(request)))
-                        print('RPM_Request: ', request)
+                        self._log.debug('RPM_Request: ', request)
                         val = self.properties.network.readMultiple(request)
 
                         #print('val : ', val, len(val), type(val))
@@ -108,7 +108,7 @@ class ReadPropertyMultiple():
                     except SegmentationNotSupported as error:
                         self.properties.segmentation_supported = False
                         self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
-                        print('Segmentation not supported')
+                        self._log.warning('Segmentation not supported')
 
                     else:
                         for points_info in self._batches(val, info_length):
@@ -199,7 +199,7 @@ class ReadPropertyMultiple():
 
         try:
             analog_points_info = self.read_multiple('', discover_request=(analog_request, 4), points_per_request=5)
-            print(analog_points_info)
+            self._log.info(analog_points_info)
         except SegmentationNotSupported:
             raise
 
@@ -225,7 +225,7 @@ class ReadPropertyMultiple():
             else:
                 #raise ValueError('Not enough values returned', each, point_infos)
                 # SHOULD SWITCH TO SEGMENTATION_SUPPORTED = FALSE HERE
-                print('Cannot add {} / {} | {}'.format(point_type, point_address, len(point_infos)))
+                self._log.warning('Cannot add {} / {} | {}'.format(point_type, point_address, len(point_infos)))
                 continue
             
             i += 1
@@ -287,7 +287,7 @@ class ReadPropertyMultiple():
             else:
                 #raise ValueError('Not enough values returned', each, point_infos)
                 # SHOULD SWITCH TO SEGMENTATION_SUPPORTED = FALSE HERE
-                print('Cannot add {} / {]'.format(point_type, point_address))
+                self._log.warning('Cannot add {} / {]'.format(point_type, point_address))
                 continue
 
             i += 1
@@ -297,7 +297,7 @@ class ReadPropertyMultiple():
                     description=point_description,  presentValue=point_infos[1],    units_state=point_units_state,
                     device=self))
             
-        print('Ready!')
+        self._log.info('Ready!')
         return (objList, points)
 
             
@@ -330,13 +330,13 @@ class ReadPropertyMultiple():
 
                 self._polling_task.task = None
                 self._polling_task.running = False
-                print('Polling stopped')
+                self._log.info('Polling stopped')
                 
         elif self._polling_task.task is None:
             self._polling_task.task = DevicePoll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
-            print('Polling started, values read every {} seconds'.format(delay))
+            self._log.info('Polling started, values read every {} seconds'.format(delay))
             
         elif self._polling_task.running:
             self._polling_task.task.stop()
@@ -347,7 +347,7 @@ class ReadPropertyMultiple():
             self._polling_task.task = DevicePoll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
-            print('Polling started, every values read each %s seconds' % delay)
+            self._log.info('Polling started, every values read each %s seconds' % delay)
             
         else:
             raise RuntimeError('Stop polling before redefining it')
@@ -494,7 +494,7 @@ class ReadProperty():
                                  ), 
                     device=self))
 
-        print('Ready!')
+        self._log.info('Ready!')
         return (objList, points)
 
             
@@ -515,8 +515,8 @@ class ReadProperty():
         device.poll('stop')
         device.poll(delay = 5)
         """
-        print('Device too slow, use single points polling if needed')
-        print('Points will be read once...')
+        self._log.warning('Device too slow, use single points polling if needed')
+        self._log.warning('Points will be read once...')
         for each in self.points:
             each.value
-        print('Complete')
+        self._log.info('Complete')

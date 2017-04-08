@@ -60,7 +60,9 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         [BBMD and Foreign Device - not supported] 
     """
     def __init__(self, ip=None):
-        log_debug("Configurating app")
+        self._log = logging.getLogger('BAC0.script.%s' \
+                    % self.__class__.__name__)
+        self._log.debug("Configurating app")
         if ip is None:
             host = HostIP()
             ip_addr = host.address
@@ -77,8 +79,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
     def start_bokeh(self):
         try:
-            print('Starting Bokeh Serve')
-            logging.getLogger("requests").setLevel(logging.INFO)
+            self._log.info('Starting Bokeh Serve')
             
             self.BokehServer = BokehServer()
             self.BokehServer.start()
@@ -100,16 +101,16 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
         except OSError as error:
             self.bokehserver = False
-            print('[bokeh serve] required for trending (controller.chart) features')
-            print(error)
+            self._log.error('[bokeh serve] required for trending (controller.chart) features')
+            self._log.error(error)
 
         except RuntimeError as rterror:
             self.bokehserver = False
-            print('Server already running')
+            self._log.error('Server already running')
 
         except BokehServerCantStart:
             self.bokehserver = False
-            print('No Bokeh Server - controller.chart not available')
+            self._log.error('No Bokeh Server - controller.chart not available')
 
 
     def new_bokeh_session(self):

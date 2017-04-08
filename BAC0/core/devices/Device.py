@@ -21,6 +21,7 @@ import sqlite3
 import pandas as pd
 from pandas.lib import Timestamp
 from pandas.io import sql
+import logging
 
 try:
     from xlwings import Workbook, Sheet, Range, Chart
@@ -38,7 +39,6 @@ from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleExce
 from ...bokeh.BokehRenderer import BokehPlot
 from ...sql.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
-#from .states.DeviceDisconnected import DeviceDisconnected
 from .mixins.read_mixin import ReadPropertyMultiple, ReadProperty
 
 
@@ -86,6 +86,10 @@ class Device(SQLMixin):
     :type network: BAC0.scripts.ReadWriteScript.ReadWriteScript
     """
     def __init__(self, address, device_id, network, *, poll=10, from_backup = None, segmentation_supported = True):
+        self._log = logging.getLogger('BAC0.core.devices.%s' \
+                    % self.__class__.__name__)
+        self._log.setLevel(logging.INFO)
+                
         self.properties = DeviceProperties()
 
         self.properties.address = address
@@ -134,7 +138,7 @@ class Device(SQLMixin):
         Used to make transitions between device states.
         Take care to call the state init function.
         """
-        print('Changing device state to {}'.format(newstate))
+        self._log.info('Changing device state to {}'.format(newstate))
         self.__class__ = newstate
         self._init_state()
 
@@ -215,15 +219,15 @@ class Device(SQLMixin):
                     #print('Add %s to list' % point)
                     lst.append(point)
                 else:
-                    print('Wrong name, removing %s from list' % point)
+                    self._log.warning('Wrong name, removing %s from list' % point)
 
             try:
                 self.properties.serving_chart[title] = BokehPlot(
                     self, lst, title=title, show_notes=show_notes, update_data=update_data)
             except Exception as error:
-                print('A problem occurred : %s' % error)
+                self._log.error('A problem occurred : %s' % error)
         else:
-            print("No bokeh server running, can't display chart")
+            self._log.warning("No bokeh server running, can't display chart")
 
 
     @property
@@ -369,7 +373,7 @@ class DeviceConnected(Device):
 
 
     def disconnect(self):
-        print('Wait while stopping polling')
+        self._log.info('Wait while stopping polling')
         self.poll(command='stop')
         self.new_state(DeviceFromDB)
 
@@ -385,7 +389,7 @@ class DeviceConnected(Device):
             self.properties.db_name = db.split('.')[0]
             self.new_state(DeviceFromDB)
         else:
-            print('Already connected, provide db arg if you want to connect to db')
+            self._log.warning('Already connected, provide db arg if you want to connect to db')
 
 
     def df(self, list_of_points, force_read=True):
@@ -398,7 +402,7 @@ class DeviceConnected(Device):
                 his.append(self._findPoint(
                     point, force_read=force_read).history)
             except ValueError as ve:
-                print('%s' % ve)
+                self._log.error('%s' % ve)
                 continue
 
         return pd.DataFrame(dict(zip(list_of_points, his)))
@@ -413,24 +417,24 @@ class DeviceConnected(Device):
                 '{} device {} protocolServicesSupported'.format(self.properties.address, self.properties.device_id))
 
         except NoResponseFromController as error:
-            print('Controller not found, aborting. ({})'.format(error))
+            self._log.error('Controller not found, aborting. ({})'.format(error))
             return ('Not Found', '', [], [])
 
         except SegmentationNotSupported as error:
-            print('Segmentation not supported')
+            self._log.error('Segmentation not supported')
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
 
         self.properties.name = self.properties.network.read(
             '{} device {} objectName'.format(self.properties.address, self.properties.device_id))
 
-        print('Device {}:[{}] found... building points list'.format(self.properties.device_id,self.properties.name))
+        self._log.info('Device {}:[{}] found... building points list'.format(self.properties.device_id,self.properties.name))
         try:
             self.properties.objects_list, self.points = self._discoverPoints()
             if self.properties.pollDelay > 0:
                 self.poll()
         except NoResponseFromController as error:
-            print('Segmentation not supported')
+            self._log.error('Segmentation not supported')
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
 
@@ -449,7 +453,7 @@ class DeviceConnected(Device):
             else:
                 return self._findPoint(point_name)
         except ValueError as ve:
-            print('%s' % ve)
+            self._log.error('%s' % ve)
 
 
     def __iter__(self):
@@ -502,7 +506,7 @@ class DeviceConnected(Device):
         try:
             self._findPoint(point_name)._set(value)
         except ValueError as ve:
-            print('%s' % ve)
+            self._log.error('%s' % ve)
 
 
     def __len__(self):
@@ -635,15 +639,15 @@ class DeviceDisconnected(Device):
   
         except SegmentationNotSupported:
             self.segmentation_supported = False
-            print('Segmentation not supported.... expect slow responses.')
+            self._log.warning('Segmentation not supported.... expect slow responses.')
             self.new_state(RPDeviceConnected)
 
         except (NoResponseFromController, AttributeError):
             if self.properties.db_name:
                 self.new_state(DeviceFromDB)
             else:
-                print('Offline: provide database name to load stored data.')
-                print("Ex. controller.connect(db = 'backup')")
+                self._log.warning('Offline: provide database name to load stored data.')
+                self._log.warning("Ex. controller.connect(db = 'backup')")
         
 
     def df(self, list_of_points, force_read=True):
@@ -771,7 +775,7 @@ class DeviceFromDB(DeviceConnected):
                     self.db.close()
 
             except NoResponseFromController:
-                print('Unable to connect, keeping DB mode active')
+                self._log.error('Unable to connect, keeping DB mode active')
 
         elif from_backup:
             self.properties.db_name = from_backup.split('.')[0]
@@ -779,7 +783,7 @@ class DeviceFromDB(DeviceConnected):
 
 
     def initialize_device_from_db(self):
-        print('Initializing DB')
+        self._log.info('Initializing DB')
         # Save important properties for reuse
         if self.properties.db_name:
             dbname = self.properties.db_name
