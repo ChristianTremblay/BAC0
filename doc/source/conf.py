@@ -16,6 +16,13 @@
 import sys
 import os
 import shlex
+
+# Magic: allowing sphinx to find the 'current source' vs the installed BAC0 library.
+PACKAGE_PARENT = '../..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+print(sys.path)
+
 from BAC0 import infos as infos
 
 # If extensions (or modules to document with autodoc) are in another directory,

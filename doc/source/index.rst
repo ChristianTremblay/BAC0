@@ -3,8 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to BACØ's documentation!
-================================
+Welcome to BACØ - BACnet Test Tool
+==================================
+
 .. include:: README.rst
 
 
@@ -22,9 +23,14 @@ Table of contents
    tests
    pytest
 
-Modules documentation
-=====================
-.. include:: BAC0.rst
+
+Developer documentation
+=======================
+.. toctree::
+   :maxdepth: 2
+
+   BAC0
+
 
 Index and search tool
 ======================

@@ -27,39 +27,81 @@ To read a point, simply ask for it using bracket syntax::
 
     mycontroller['point_name']
 
-Write to a point
-----------------
-simple write
+
+Writing to Points
+-----------------
+
+Simple write
 ************
-If point is a analogValue, binaryValue or a multistateValue BAC0 will write to the default
-priority ::
+If point is a value:
 
-    mycontroller['point_name'] = 10 
+    * analogValue (AV)
+    * binaryValue (BV)
+    * multistateValue (MV) 
+    
+You can change its value with a simple assignment.  BAC0 will write the value to the object's 
+**presentValue** at the default priority.::
 
-Relinquish default
-******************
-If you must write to relinquish default, it must be said explicitly ::
+    mycontroller['point_name'] = 23 
 
-    mycontroller['pointToChange'].default(10)
+.. image:: images/AV_write.png
 
-This distinction is made because of the sensibility to multiple writes to those values.
-Thoses are often written to EEPROM directly and have a ±250000 write cycle.
 
-Override
-*********
-If the point is a output, BAC0 will override it (@priority 8)::
+Write to an Output (Override)
+*****************************
+If the point is an output:
 
-    mycontroller['outputName'] = 100
+    * analogOutput (AO) 
+    * binaryOutput (BO) 
+    * multistateOutput (MO)
 
-simulate (out_of_service)
-**************************
-If the point is an input, BAC0 will set the out_of_service flag to On and write 
-to the present value (which will simulate it)::
+You can change its value with a simple assignment.  BAC0 will write the value to the object's 
+**presentValue** (a.k.a override it) at priority 8 (Manual Operator).::
 
-    mycontroller['inputName'] = 34
+    mycontroller['outputName'] = 45
 
-Releasing a simulation or an override
-**************************************
-Simply affect 'auto' to the point ::
+.. image:: images/AO_write.png
+
+
+Write to an Input (simulate)
+****************************
+If the point is an input:
+
+    * analogInput (AI) 
+    * binaryOutput (BO) 
+    * multistateOutput (MO) 
+
+You can change its value with a simple assigment, thus overriding any external value it is 
+reading and simulating a different sensor reading.  The override occurs because  
+BAC0 sets the point's **out_of_service** (On) and then writes to the point's **presentValue**.
+ 
+    mycontroller['inputName'] = <simulated value>
+
+    mycontroller['Temperature'] = 23.5      # overiding actual reading of 18.8 C
+
+.. image:: images/AI_override.png
+
+
+Releasing an Input simulation or Output override
+*************************************************
+
+To return control of an Input or Output back to the controller, it needs to be released.
+Releasing a point returns it automatic control.  This is done with an assignment to 'auto'.::
 
     mycontroller['pointToRelease'] = 'auto'
+
+.. image:: images/AI_auto.png
+.. image:: images/AO_auto.png
+
+    
+Setting a Relinquish_Default
+****************************
+When a point (with a priority array) is released of all override commands, it takes on the value 
+of its **Relinquish_Default**. [BACnet clause 12.4.12]  If you wish to set this default value, 
+you may with this command::
+
+    mycontroller['pointToChange'].default(<value>)
+    mycontroller['Output'].default(75)
+
+.. image:: images/AO_set_default.png
+

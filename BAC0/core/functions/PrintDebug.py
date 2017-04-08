@@ -2,15 +2,14 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-#
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-Module : PrintDebug.py
-Author : Christian Tremblay, ing.
-Inspired a lot by the work of Joel Bender (joel@carrickbender.com)
-Email : christian.tremblay@servisys.com
-"""
+#
+'''
+PrintDebug.py
 
+Inspired by the work of Joel Bender (joel@carrickbender.com)
+Email : christian.tremblay@servisys.com
+'''
 
 def print_debug(msg, args):
     """

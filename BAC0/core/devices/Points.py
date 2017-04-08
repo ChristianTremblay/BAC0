@@ -2,29 +2,33 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-#
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-Definition of points so operations will be easier on read result
-"""
+#
+'''
+Points.py - Definition of points so operations on Read results are more convenient.
+'''
 
-import pandas as pd
+#--- standard Python modules ---
 from datetime import datetime
 from collections import namedtuple
 import time
 
-from ...tasks.Poll import SimplePoll as Poll
-from ...tasks.Match import Match, Match_Value
-from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied, UnknownPropertyError
-
+#--- 3rd party modules ---
 import sqlite3
 import pandas as pd
 from pandas.io import sql
 from pandas.lib import Timestamp
 
+#--- this application's modules ---
+from ...tasks.Poll import SimplePoll as Poll
+from ...tasks.Match import Match, Match_Value
+from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied, UnknownPropertyError
+
+#------------------------------------------------------------------------------
+
 class PointProperties(object):
     """
-    This serves as a container for properties.
+    A container for point properties.
     """
     def __init__(self):
         self.device = None
@@ -34,36 +38,32 @@ class PointProperties(object):
         self.description = None
         self.units_state = None
         self.simulated = (False, None)
-        self.overridden = (False, None)
-        
+        self.overridden = (False, None) 
+
+
     def __repr__(self):
         return '%s' % self.asdict
     
+
     @property
     def asdict(self):
         return self.__dict__
 
+#------------------------------------------------------------------------------
+
 class Point():
     """
-    This represents a point inside a device. This base class will be
-    used to build NumericPoint, BooleanPoint and EnumPoints
+    Represents a device BACnet point.  Used to NumericPoint, BooleanPoint and EnumPoints.
 
-    Each point implement a history feature. Each time the point is read,
-    the value with timstampe is added to a
-    history table. It's then possible to look what happened since the
-    creation of the point.
-
+    Each point implements a history feature. Each time the point is read, its value (with timestamp)
+    is added to a history table. Histories capture the changes to point values over time.
     """
 
     def __init__(self, device=None,
-                 pointType=None,
-                 pointAddress=None,
-                 pointName=None,
-                 description=None,
-                 presentValue=None,
-                 units_state=None):
-        self._history = namedtuple('_history',
-                                   ['timestamp', 'value'])
+                 pointType=None,    pointAddress=None,  pointName=None,
+                 description=None,  presentValue=None,  units_state=None):
+        
+        self._history = namedtuple('_history',['timestamp', 'value'])
         self.properties = PointProperties()
 
         self._polling_task = namedtuple('_polling_task', ['task', 'running'])
@@ -83,10 +83,12 @@ class Point():
         self.properties.name = pointName
         self.properties.type = pointType
         self.properties.address = pointAddress
+
         self.properties.description = description
         self.properties.units_state = units_state
         self.properties.simulated = (False, 0)
         self.properties.overridden = (False, 0)
+
 
     @property
     def value(self):
@@ -94,19 +96,19 @@ class Point():
         Retrieve value of the point
         """
         try:
-            res = self.properties.device.properties.network.read(
-                '%s %s %s presentValue' %
-                (self.properties.device.properties.address, self.properties.type, str(
-                    self.properties.address)))
+            res = self.properties.device.properties.network.read('{} {} {} presentValue'.format(
+                     self.properties.device.properties.address, self.properties.type, str(self.properties.address)))
             self._trend(res)
         except Exception:
             raise Exception('Problem reading : %s' % self.properties.name)        
         
         return res
-        
+
+
     def _trend(self, res):
         self._history.timestamp.append(datetime.now())
         self._history.value.append(res)
+
 
     @property
     def units(self):
@@ -115,6 +117,7 @@ class Point():
         """
         raise Exception('Must be overridden')
 
+
     @property
     def lastValue(self):
         """
@@ -122,21 +125,24 @@ class Point():
         """
         return self._history.value[-1]
 
+
     @property
     def history(self):
         """
         returns : (pd.Series) containing timestamp and value of all readings
         """
-        his_table = pd.Series(self._history.value,
-                              index=self._history.timestamp)
+        his_table = pd.Series(self._history.value, index=self._history.timestamp)
         return his_table
+
 
     def chart(self, *args):
         """
         Simple shortcut to plot function
         """
         args = args.split()
-        return self.history.replace(['inactive', 'active'], [0, 1]).plot('%s, title = %s / %s' % (args, self.properties.name, self.properties.description))
+        return self.history.replace(['inactive', 'active'], [0, 1]).plot(
+                     '{}, title = {} / {}'.format(args, self.properties.name, self.properties.description))
+
 
     def __getitem__(self, key):
         """
@@ -151,6 +157,7 @@ class Point():
             return getattr(self.properties, key)
         except AttributeError:
             raise ValueError('Wrong property')
+
 
     def write(self, value, *, prop='presentValue', priority=''):
         """
@@ -180,61 +187,56 @@ class Point():
         # Read after the write so history gets updated.
         self.value
 
+
     def default(self, value):
         self.write(value, prop='relinquishDefault')
 
+
     def sim(self, value, *, force=False):
         """
-        Simulate a value
-        Will write to out_of_service property (true)
-        Will then write the presentValue so the controller will use that value
-        The point name will be added to the list of simulated points
-        (self.simPoints)
+        Simulate a value.  Sets the Out_Of_Service property- to disconnect the point from the 
+        controller's control.  Then writes to the Present_Value.
+        The point name is added to the list of simulated points (self.simPoints)
 
         :param value: (float) value to simulate
-
         """
         if self.properties.simulated[0] \
                 and self.properties.simulated[1] == value \
                 and force == False:
             pass
         else:
-            self.properties.device.properties.network.sim(
-                '%s %s %s presentValue %s' %
-                (self.properties.device.properties.address, self.properties.type, str(
-                    self.properties.address), str(value)))
+            self.properties.device.properties.network.sim('{} {} {} presentValue {}'.format(
+                self.properties.device.properties.address, self.properties.type, str(self.properties.address), str(value)))
             self.properties.simulated = (True, value)
+
             
     def out_of_service(self):
         """
-        Simulate a value
-        Will write to out_of_service property (true)
+        Sets the Out_Of_Service property [to True].
         """
-        self.properties.device.properties.network.out_of_service(
-            '%s %s %s' %
-            (self.properties.device.properties.address, self.properties.type, str(
-                self.properties.address)))
-        self.properties.simulated = (True, None)        
+        self.properties.device.properties.network.out_of_service('{} {} {}'.format(
+            self.properties.device.properties.address, self.properties.type, str(self.properties.address)))
+        self.properties.simulated = (True, None)
+
 
     def release(self):
         """
-        Release points
-        Will write to out_of_service property (false)
-        The controller will take control back of the presentValue
+        Clears the Out_Of_Service property [to False] - so the controller regains control of the point.
         """
-        self.properties.device.properties.network.release(
-            '%s %s %s' %
-            (self.properties.device.properties.address, self.properties.type, str(
-                self.properties.address)))
+        self.properties.device.properties.network.release('{} {} {}'.format(
+            self.properties.device.properties.address, self.properties.type, str(self.properties.address)))
         self.properties.simulated = (False, None)
+
 
     def ovr(self, value):
         self.write(value, priority=8)
         self.properties.overridden = (True, value)
 
+
     def auto(self):
         self.write('null', priority=8)
         self.properties.overridden = (False, 0)
+
 
     def _setitem(self, value):
         """
@@ -264,41 +266,46 @@ class Point():
             else:
                 self.sim(value)
 
+
     def _set(self, value):
         """
-        This function will check for datatype to write
-        and call _setitem()
-        Those functions allow __setitem__ to work from device
-        device['point'] = value
+        Allows the syntax:
+            device['point'] = value
         """
         raise Exception('Must be overridden')
 
+
     def poll(self, command='start', *, delay=10):
         """
-        Enable polling of a variable. Will be read every x seconds (delay=x sec)
-        Can be stopped by using point.poll('stop') or .poll(0) or .poll(False)
+        Poll a point every x seconds (delay=x sec)
+        Stopped by using point.poll('stop') or .poll(0) or .poll(False)
         or by setting a delay = 0
         """
         if str(command).lower() == 'stop' \
                 or command == False \
                 or command == 0 \
                 or delay == 0:
+
             if isinstance(self._polling_task.task, Poll):
                 self._polling_task.task.stop()
                 self._polling_task.task = None
                 self._polling_task.running = False
+
         elif self._polling_task.task is None:
             self._polling_task.task = Poll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
+
         elif self._polling_task.running:
             self._polling_task.task.stop()
             self._polling_task.running = False
             self._polling_task.task = Poll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
+
         else:
             raise RuntimeError('Stop polling before redefining it')
+
 
     def match(self, point, *, delay=5):
         """
@@ -308,23 +315,26 @@ class Point():
         A fan status for example will follow the command...
         """
         if self._match_task.task is None:
-            self._match_task.task = Match(
-                command=point, status=self, delay=delay)
+            self._match_task.task = Match(command=point, status=self, delay=delay)
             self._match_task.task.start()
             self._match_task.running = True
+
         elif self._match_task.running and delay > 0:
             self._match_task.task.stop()
             self._match_task.running = False
             time.sleep(1)
-            self._match_task.task = Match(
-                command=point, status=self, delay=delay)
+
+            self._match_task.task = Match(command=point, status=self, delay=delay)
             self._match_task.task.start()
             self._match_task.running = True
+
         elif self._match_task.running and delay == 0:
             self._match_task.task.stop()
             self._match_task.running = False
+
         else:
             raise RuntimeError('Stop task before redefining it')
+
 
     def match_value(self, value, *, delay=5):
         """
@@ -334,23 +344,26 @@ class Point():
         A sensor will follow a calculation...
         """
         if self._match_task.task is None:
-            self._match_task.task = Match_Value(
-                value=value, point=self, delay=delay)
+            self._match_task.task = Match_Value(value=value, point=self, delay=delay)
             self._match_task.task.start()
             self._match_task.running = True
+
         elif self._match_task.running and delay > 0:
             self._match_task.task.stop()
             self._match_task.running = False
             time.sleep(1)
-            self._match_task.task = Match_Value(
-                value=value, point=self, delay=delay)
+            
+            self._match_task.task = Match_Value(value=value, point=self, delay=delay)
             self._match_task.task.start()
             self._match_task.running = True
+
         elif self._match_task.running and delay == 0:
             self._match_task.task.stop()
             self._match_task.running = False
+
         else:
             raise RuntimeError('Stop task before redefining it')
+
             
     def __len__(self):
         """
@@ -359,29 +372,25 @@ class Point():
         return len(self.history)
 
 
+#------------------------------------------------------------------------------
+
 class NumericPoint(Point):
     """
-    Representation of a Numeric information
+    Representation of a Numeric value
     """
 
     def __init__(self, device=None,
-                 pointType=None,
-                 pointAddress=None,
-                 pointName=None,
-                 description=None,
-                 presentValue=None,
-                 units_state=None):
+                 pointType=None,    pointAddress=None,  pointName=None,
+                 description=None,  presentValue=None,  units_state=None):
+        
         Point.__init__(self, device=device,
-                       pointType=pointType,
-                       pointAddress=pointAddress,
-                       pointName=pointName,
-                       description=description,
-                       presentValue=presentValue,
-                       units_state=units_state)
+                       pointType=pointType,     pointAddress=pointAddress,  pointName=pointName,
+                       description=description, presentValue=presentValue,  units_state=units_state)
 
     @property
     def units(self):
         return self.properties.units_state
+
 
     def _set(self, value):
         if str(value).lower() == 'auto':
@@ -396,8 +405,10 @@ class NumericPoint(Point):
             except:
                 raise ValueError('Value must be numeric')
 
+
     def __repr__(self):
         return '%s : %.2f %s' % (self.properties.name, self.history.dropna().iloc[-1], self.properties.units_state)
+
         
     def __add__(self,other):
         return self.value + other
@@ -425,38 +436,32 @@ class NumericPoint(Point):
 
     def __ge__(self,other):
         return self.value >= other
+
+#------------------------------------------------------------------------------
         
 class BooleanPoint(Point):
     """
-    Representation of a Boolean Information
+    Representation of a Boolean value
     """
 
     def __init__(self, device=None,
-                 pointType=None,
-                 pointAddress=None,
-                 pointName=None,
-                 description=None,
-                 presentValue=None,
-                 units_state=None):
+                 pointType=None,    pointAddress=None,  pointName=None,
+                 description=None,  presentValue=None,  units_state=None):
+        
         Point.__init__(self, device=device,
-                       pointType=pointType,
-                       pointAddress=pointAddress,
-                       pointName=pointName,
-                       description=description,
-                       presentValue=presentValue,
-                       units_state=units_state)
+                       pointType=pointType,     pointAddress=pointAddress,  pointName=pointName,
+                       description=description, presentValue=presentValue,  units_state=units_state)
 
     @property
     def value(self):
         """
-        Read the value on bacnet using network read (bacpypes)
+        Read the value from BACnet network
         """
         try:
-            res = self.properties.device.properties.network.read(
-                '%s %s %s presentValue' %
-                (self.properties.device.properties.address, self.properties.type, str(
-                    self.properties.address)))
+            res = self.properties.device.properties.network.read('{} {} {} presentValue'.format(
+                self.properties.device.properties.address, self.properties.type, str(self.properties.address)))
             self._trend(res)
+            
         except Exception:
             raise Exception('Problem reading : %s' % self.properties.name)        
         
@@ -467,6 +472,7 @@ class BooleanPoint(Point):
             self._key = 1
             self._boolKey = True
         return res
+
 
     @property
     def boolValue(self):
@@ -481,12 +487,14 @@ class BooleanPoint(Point):
             self._boolKey = False
         return self._boolKey
 
+
     @property
     def units(self):
         """
         Boolean points don't have units
         """
         return None
+
 
     def _set(self, value):
         if value == True:
@@ -514,25 +522,20 @@ class BooleanPoint(Point):
     def __eq__(self,other):
         return self.boolValue == other
 
+#------------------------------------------------------------------------------
+
 class EnumPoint(Point):
     """
-    Representation of an Enumerated Information (multiState)
+    Representation of an Enumerated (multiState) value
     """
-
     def __init__(self, device=None,
-                 pointType=None,
-                 pointAddress=None,
-                 pointName=None,
-                 description=None,
-                 presentValue=None,
-                 units_state=None):
+                 pointType=None,    pointAddress=None,  pointName=None,
+                 description=None,  presentValue=None,  units_state=None):
+        
         Point.__init__(self, device=device,
-                       pointType=pointType,
-                       pointAddress=pointAddress,
-                       pointName=pointName,
-                       description=description,
-                       presentValue=presentValue,
-                       units_state=units_state)
+                       pointType=pointType,     pointAddress=pointAddress,  pointName=pointName,
+                       description=description, presentValue=presentValue,  units_state=units_state)
+
 
     @property
     def enumValue(self):
@@ -541,12 +544,14 @@ class EnumPoint(Point):
         """
         return self.properties.units_state[int(self.history.dropna().iloc[-1]) - 1]
 
+
     @property
     def units(self):
         """
-        Enum point don't use units... we use states text instead 
+        Enums have 'state text' instead of units. 
         """
         return None
+
 
     def _set(self, value):
         if isinstance(value, int):
@@ -559,12 +564,17 @@ class EnumPoint(Point):
             raise ValueError(
                 'Value must be integer or correct enum state : %s' % self.properties.units_state)
 
+
     def __repr__(self):
         # return '%s : %s' % (self.name, )
         return '%s : %s' % (self.properties.name, self.enumValue)
 
+
     def __eq__(self,other):
         return self.value == self.properties.units_state.index(other) + 1
+
+
+#------------------------------------------------------------------------------
         
 class OfflinePoint(Point):
     """
@@ -576,9 +586,11 @@ class OfflinePoint(Point):
         self.properties.device = device
         dev_name = self.properties.device.properties.db_name
         props = self.properties.device.read_point_prop(dev_name, name)
+
         self.properties.name = props['name']
         self.properties.type = props['type']
         self.properties.address = props['address']
+
         self.properties.description = props['description']
         self.properties.units_state = props['units_state']
         self.properties.simulated = 'Offline'
@@ -592,7 +604,8 @@ class OfflinePoint(Point):
             self.new_state(BooleanPointOffline)
         else:
             raise TypeError('Unknown point type')
-        
+
+
     def new_state(self, newstate):
         self.__class__ = newstate
 
@@ -614,6 +627,7 @@ class NumericPointOffline(NumericPoint):
         except IndexError:
             value = 65535
         return value      
+
         
     def write(self, value, *, prop='presentValue', priority=''):        
         raise OfflineException('Must be online to write')
@@ -623,6 +637,7 @@ class NumericPointOffline(NumericPoint):
 
     def release(self, value, *, prop='presentValue', priority=''):        
         raise OfflineException('Must be online to write')
+
         
     @property
     def units(self):
@@ -633,6 +648,7 @@ class NumericPointOffline(NumericPoint):
 
     def __repr__(self):
         return '%s : %.2f %s' % (self.properties.name, self.value, self.properties.units_state)
+
 
 class BooleanPointOffline(BooleanPoint):
     @property    
@@ -649,6 +665,7 @@ class BooleanPointOffline(BooleanPoint):
             value = 'NaN'
         return value 
 
+
     def _set(self, value):
         raise OfflineException('Point must be online to write')
         
@@ -660,6 +677,7 @@ class BooleanPointOffline(BooleanPoint):
 
     def release(self, value, *, prop='presentValue', priority=''):        
         raise OfflineException('Must be online to write')
+
 
 class EnumPointOffline(EnumPoint):
     @property    
@@ -681,6 +699,7 @@ class EnumPointOffline(EnumPoint):
             value = 'NaN'
         return value 
 
+
     @property
     def enumValue(self):
         """
@@ -694,6 +713,7 @@ class EnumPointOffline(EnumPoint):
             value = 'NaN'
         return value 
 
+
     def _set(self, value):
         raise OfflineException('Point must be online to write')
 
@@ -705,6 +725,7 @@ class EnumPointOffline(EnumPoint):
 
     def release(self, value, *, prop='presentValue', priority=''):        
         raise OfflineException('Must be online to write')
+
 
 class OfflineException(Exception):
     pass

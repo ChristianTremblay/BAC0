@@ -2,19 +2,20 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-#
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-This module allows the creation of Whois and IAm requests by and app
+#
+'''
+WhoisIAm.py - creation of Whois and IAm requests
 
-Usage
-Must be used while defining an app
+Used while defining an app
 ex.: class BasicScript(WhoisIAm):
 
 Class : WhoisIAm
 
-"""
+'''
+#--- standard Python modules ---
 
+#--- 3rd party modules ---
 from bacpypes.debugging import bacpypes_debugging
 from bacpypes.apdu import WhoIsRequest, IAmRequest
 
@@ -24,43 +25,38 @@ from bacpypes.constructeddata import Array
 from bacpypes.object import get_object_class, get_datatype
 from bacpypes.iocb import IOCB
 
+#--- this application's modules ---
 from ..functions.debug import log_debug, log_exception
 from ..io.IOExceptions import SegmentationNotSupported, ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted
 
+#------------------------------------------------------------------------------
 
 @bacpypes_debugging
 class WhoisIAm():
     """
-    This class will be used by inheritance to add features to an app
-    Will allows the usage of whois and iam functions
+    Define BACnet WhoIs and IAm functions.
     """
+
     def whois(self, *args):
         """
-        Creation of a whois requests
-        Requets is given to the app
+        Build a WhoIs request
 
         :param args: string built as [ <addr>] [ <lolimit> <hilimit> ] **optional**
         :returns: discoveredDevices as a defaultdict(int)
 
         Example::
 
-            whois()
-            #will create a broadcast whois request and every device will response by a Iam
-            whois('2:5')
-            #will create a whois request aimed at device 5
-            whois('10 1000')
-            #will create a whois request looking for device ID 10 to 1000
+            whois()             # WhoIs broadcast globally.  Every device will respond with an IAm
+            whois('2:5')        # WhoIs looking for the device at (Network 2, Address 5)
+            whois('10 1000')    # WhoIs looking for devices in the ID range (10 - 1000) 
 
         """
         if not self._started:
-            raise ApplicationNotStarted('App not running, use startApp() function')
+            raise ApplicationNotStarted('BACnet stack not running - use startApp()')
+
         if args:
             args = args[0].split()
-
-        if not args:
-            msg = "any"
-        else:
-            msg = args
+        msg= arg if args else 'any'
 
         log_debug(WhoisIAm, "do_whois %r" % msg)
 
@@ -79,21 +75,14 @@ class WhoisIAm():
         log_debug(WhoisIAm, "    - request: %r" % request)
 
 
-         # make an IOCB
-        iocb = IOCB(request)
-        log_debug(WhoisIAm, "    - iocb: %r", iocb)
+        iocb = IOCB(request)                            # make an IOCB
 
-        # give it to the application
-        self.this_application.request_io(iocb)
-        # give it to the application
-#        print(self.this_application)
-#        self.this_application.request(request)
-#        iocb = self.this_application.request(request)
-        iocb.wait()
-#        
-#        # do something for success
-#        if iocb.ioResponse:
-#            apdu = iocb.ioResponse
+        self.this_application.request_io(iocb)          # pass to the BACnet stack
+
+        iocb.wait()             # Wait for BACnet response
+
+        if iocb.ioResponse:     # successful response
+            apdu = iocb.ioResponse
 #            # should be an ack
 #            if not isinstance(apdu, IAmRequest) and not isinstance(apdu, WhoIsRequest):
 #                log_debug(WhoisIAm,"    - not an ack")
@@ -132,15 +121,17 @@ class WhoisIAm():
 #            # count the times this has been received
 #            self.who_is_counter[key] += 1
 
-        self.discoveredDevices = self.this_application.i_am_counter
+        if iocb.ioError:        # unsuccessful: error/reject/abort
+            pass
 
+        self.discoveredDevices = self.this_application.i_am_counter
         return self.discoveredDevices
+
 
     def iam(self):
         """
-        Creation of a iam request
-
-        Iam requests are sent when whois requests ask for it
+        Build an IAm response.  IAm are sent in response to a WhoIs request that;  
+        matches our device ID, whose device range includes us, or is a broadcast.
         Content is defined by the script (deviceId, vendor, etc...)
 
         :returns: bool
@@ -153,25 +144,21 @@ class WhoisIAm():
         log_debug(WhoisIAm, "do_iam")
 
         try:
-            # build a request
+            # build a response
             request = IAmRequest()
             request.pduDestination = GlobalBroadcast()
 
-            # set the parameters from the device object
+            # fill the response with details about us (from our device object)
             request.iAmDeviceIdentifier = self.this_device.objectIdentifier
             request.maxAPDULengthAccepted = self.this_device.maxApduLengthAccepted
             request.segmentationSupported = self.this_device.segmentationSupported
             request.vendorID = self.this_device.vendorIdentifier
             log_debug(WhoisIAm, "    - request: %r" % request)
 
-            # give it to the application
-            iocb = self.this_application.request(request)
+            iocb = self.this_application.request(request)       # pass to the BACnet stack
             iocb.wait()
             return True
 
         except Exception as error:
             log_exception("exception: %r" % error)
             return False
-
-
-
