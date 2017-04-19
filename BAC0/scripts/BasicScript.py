@@ -133,7 +133,11 @@ class BasicScript():
 
             self._log.debug("Starting")
             self._initialized = True
-            self._startAppThread()
+            try:
+                self._startAppThread()
+            except:
+                self._log.debug("Error opening socket")
+                raise
             self._log.debug("Running")
 
         except Exception as error:

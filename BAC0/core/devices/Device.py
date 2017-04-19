@@ -85,7 +85,9 @@ class Device(SQLMixin):
     :type device_id: int
     :type network: BAC0.scripts.ReadWriteScript.ReadWriteScript
     """
-    def __init__(self, address, device_id, network, *, poll=10, from_backup = None, segmentation_supported = True):
+    def __init__(self, address, device_id, network, *, poll=10, 
+                 from_backup = None, segmentation_supported = True,
+                 object_list = None):
         self._log = logging.getLogger('BAC0.core.devices.%s' \
                     % self.__class__.__name__)
         self._log.setLevel(logging.INFO)
@@ -103,6 +105,7 @@ class Device(SQLMixin):
         self.properties.charts = []
         self.properties.multistates = {}
         self.segmentation_supported = segmentation_supported
+        self.custom_object_list = object_list
 
         self.db = None
         # Todo : find a way to normalize the name of the db
@@ -430,7 +433,7 @@ class DeviceConnected(Device):
 
         self._log.info('Device {}:[{}] found... building points list'.format(self.properties.device_id,self.properties.name))
         try:
-            self.properties.objects_list, self.points = self._discoverPoints()
+            self.properties.objects_list, self.points = self._discoverPoints(self.custom_object_list)
             if self.properties.pollDelay > 0:
                 self.poll()
         except NoResponseFromController as error:
@@ -628,10 +631,11 @@ class DeviceDisconnected(Device):
         if db:
             self.properties.db_name = db
         try:
-            object_list = self.properties.network.read('{} device {} objectList'.format(
-                self.properties.address, self.properties.device_id))
 
-            if object_list:
+            name = self.properties.network.read('{} device {} objectName'.format(
+                    self.properties.address, self.properties.device_id))
+
+            if name:
                 if self.segmentation_supported:
                     self.new_state(RPMDeviceConnected)
                 else:
@@ -727,7 +731,7 @@ class DeviceDisconnected(Device):
         raise DeviceNotConnected('Must connect to BACnet or database')
 
 
-    def _discoverPoints(self):
+    def _discoverPoints(self, custom_object_list = None):
         raise DeviceNotConnected('Must connect to BACnet or database')
 
 
@@ -756,7 +760,7 @@ class DeviceFromDB(DeviceConnected):
     def connect(self, *, network = None, from_backup = None):
         """
         In DBState, a device can be reconnected to BACnet using:
-            device.connect(bacnet) (bacnet = BAC0.connect())
+            device.connect(network=bacnet) (bacnet = BAC0.connect())
         """
         if network and from_backup:
             raise WrongParameter('Please provide network OR from_backup')
@@ -764,10 +768,10 @@ class DeviceFromDB(DeviceConnected):
         elif network:
             self.properties.network = network
             try:
-                object_list = self.properties.network.read('{} device {} objectList'.format(
-                    self.properties.address, self.properties.device_id))
+                name = self.properties.network.read('{} device {} objectName'.format(
+                        self.properties.address, self.properties.device_id))
 
-                if object_list:
+                if name:
                     if self.segmentation_supported:
                         self.new_state(RPMDeviceConnected)
                     else:
@@ -846,7 +850,7 @@ class DeviceFromDB(DeviceConnected):
         raise DeviceNotConnected('Must connect to BACnet or database')
 
 
-    def _discoverPoints(self):
+    def _discoverPoints(self, custom_object_list = None):
         raise DeviceNotConnected('Must connect to BACnet or database')
 
 

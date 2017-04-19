@@ -174,19 +174,22 @@ class ReadPropertyMultiple():
                     raise Exception('Unknown point name : %s' % error)
 
 
-    def _discoverPoints(self):
-        try : 
-            objList = self.properties.network.read(
-                '{} device {} objectList'.format(self.properties.address, self.properties.device_id))
-            
-        except SegmentationNotSupported:
-            objList = []
-            number_of_objects = self.properties.network.read(
-                '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = 0)
-
-            for i in range(1,number_of_objects+1):
-                objList.append(self.properties.network.read(
-                    '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = i))
+    def _discoverPoints(self, custom_object_list = None):
+        if custom_object_list:
+            objList = custom_object_list
+        else:
+            try : 
+                    objList = self.properties.network.read(
+                    '{} device {} objectList'.format(self.properties.address, self.properties.device_id))
+                
+            except SegmentationNotSupported:
+                objList = []
+                number_of_objects = self.properties.network.read(
+                    '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = 0)
+    
+                for i in range(1,number_of_objects+1):
+                    objList.append(self.properties.network.read(
+                        '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = i))
 
         points = []
 
@@ -427,19 +430,22 @@ class ReadProperty():
             return ''
             
 
-    def _discoverPoints(self):
-        try : 
-            objList = self.properties.network.read('{} device {} objectList'.format(
-                          self.properties.address, self.properties.device_id))
-            
-        except SegmentationNotSupported:
-            objList = []
-            number_of_objects = self.properties.network.read(
-                '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = 0)
-            
-            for i in range(1,number_of_objects+1):
-                objList.append(self.properties.network.read(
-                '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = i))
+    def _discoverPoints(self, custom_object_list = None):
+        if custom_object_list:
+            objList = custom_object_list
+        else:
+            try : 
+                objList = self.properties.network.read('{} device {} objectList'.format(
+                              self.properties.address, self.properties.device_id))
+                
+            except SegmentationNotSupported:
+                objList = []
+                number_of_objects = self.properties.network.read(
+                    '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = 0)
+                
+                for i in range(1,number_of_objects+1):
+                    objList.append(self.properties.network.read(
+                    '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = i))
 
         points = []
 
