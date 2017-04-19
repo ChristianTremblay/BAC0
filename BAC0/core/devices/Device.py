@@ -440,7 +440,7 @@ class DeviceConnected(Device):
             return ('Not Found', '', [], [])
 
         except SegmentationNotSupported as error:
-            self._log.error('Segmentation not supported')
+            self._log.warning('Segmentation not supported')
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
 
@@ -453,7 +453,7 @@ class DeviceConnected(Device):
             if self.properties.pollDelay > 0:
                 self.poll()
         except NoResponseFromController as error:
-            self._log.error('Segmentation not supported')
+            self._log.error('Cannot retrieve object list, disconnecting...')
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
 
