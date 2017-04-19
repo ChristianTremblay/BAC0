@@ -76,10 +76,26 @@ class Device(SQLMixin):
     Represent a BACnet device.  Once defined, it allows use of read, write, sim, release 
     functions to communicate with the device on the network.
     
-    :param addr: address of the device (ex. '2:5')
+    :param address: address of the device (ex. '2:5')
     :param device_id: bacnet device ID (boid)
     :param network: defined by BAC0.connect()
     :param poll: (int) if > 0, will poll every points each x seconds.
+    :from_backup: sqlite backup file
+    :segmentation_supported: (boolean) When segmentation is not supported, BAC0
+                             will not use read property multiple to poll the 
+                             device.
+    :object_list: (list) Use can provide a custom object_list to use for the
+                  the creation of the device. the object list must be built
+                  using the same pattern returned by bacpypes when polling the
+                  objectList property
+                  example ::
+                      my_obj_list = [('file', 1),
+                     ('analogInput', 2),
+                     ('analogInput', 3),
+                     ('analogInput', 5),
+                     ('analogInput', 4),
+                     ('analogInput', 0),
+                     ('analogInput', 1)]
 
     :type address: (str)
     :type device_id: int
@@ -631,12 +647,21 @@ class DeviceDisconnected(Device):
         if db:
             self.properties.db_name = db
         try:
-
             name = self.properties.network.read('{} device {} objectName'.format(
                     self.properties.address, self.properties.device_id))
+            
+            segmentation = self.properties.network.read('{} device {} segmentationSupported'.format(
+                    self.properties.address, self.properties.device_id))
+            
+            if not self.segmentation_supported or \
+                segmentation not in ('segmentedTransmit', 'segmentedBoth'):
+                segmentation_supported = False
+                self._log.debug('Segmentation not supported')
+            else:
+                segmentation_supported = True
 
             if name:
-                if self.segmentation_supported:
+                if segmentation_supported:
                     self.new_state(RPMDeviceConnected)
                 else:
                     self.new_state(RPDeviceConnected)
@@ -770,9 +795,19 @@ class DeviceFromDB(DeviceConnected):
             try:
                 name = self.properties.network.read('{} device {} objectName'.format(
                         self.properties.address, self.properties.device_id))
-
+            
+                segmentation = self.properties.network.read('{} device {} segmentationSupported'.format(
+                    self.properties.address, self.properties.device_id))
+            
+                if not self.segmentation_supported or \
+                    segmentation not in ('segmentedTransmit', 'segmentedBoth'):
+                    segmentation_supported = False
+                    self._log.debug('Segmentation not supported')
+                else:
+                    segmentation_supported = True
+                    
                 if name:
-                    if self.segmentation_supported:
+                    if segmentation_supported:
                         self.new_state(RPMDeviceConnected)
                     else:
                         self.new_state(RPDeviceConnected)
