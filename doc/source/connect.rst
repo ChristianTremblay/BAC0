@@ -155,7 +155,9 @@ BAC0 sets the point's **out_of_service** (On) and then writes to the point's **p
 
 
 In a Niagara station, you would need to create a new point using the "out_of_service" 
-property, then set this point to True or False. No screenshot available.
+property, then set this point to True. Then you would need to create 
+(if not already done) a point writable to the present value property and write
+to it. No screenshot available.
 
 Releasing an Input simulation or Output override
 *************************************************
@@ -181,6 +183,10 @@ Releasing a point returns it automatic control.  This is done with an assignment
     :figclass: align-center
     
     *Example from Delta Controls OWS Workstation*
+
+
+In a Niagara station, you would need to create a new point using the "out_of_service" 
+property, then set this point to False. No screenshot available.
     
 Setting a Relinquish_Default
 ****************************
