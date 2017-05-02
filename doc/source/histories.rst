@@ -1,34 +1,51 @@
 Histories in BAC0
 ====================
-As said, every points get saved in a pandas Series every 10 seconds by default.
-This means that you can look for historical data from the moment you connect to a device.
-Access a historyTable::
+
+BAC0 uses the Python Data Analysis library **pandas** [http://pandas.pydata.org/] to 
+maintain histories of point values over time.  All points are saved by BAC0 in a **pandas** 
+Series every 10 seconds (by default).  This means you will automatically have historical data 
+from the moment you connect to a BACnet device.
+
+Access the contents of a point's history is very simple.::
     
-    controller['nvoAI1'].history
+    controller['pointName'].history
 
-Result example ::
+Example ::
 
-    controller['nvoAI1'].history
-    Out[8]:
-    2015-09-20 21:41:37.093985    21.740000
-    2015-09-20 21:42:23.672387    21.790001
-    2015-09-20 21:42:34.358801    21.790001
-    2015-09-20 21:42:45.841596    21.790001
-    2015-09-20 21:42:56.308144    21.790001
-    2015-09-20 21:43:06.897034    21.790001
-    2015-09-20 21:43:17.593321    21.790001
-    2015-09-20 21:43:28.087180    21.790001
-    2015-09-20 21:43:38.597702    21.790001
-    2015-09-20 21:43:48.815317    21.790001
-    2015-09-20 21:44:00.353144    21.790001
-    2015-09-20 21:44:10.871324    21.790001
+    controller['Temperature'].history
+    2017-03-30 12:50:46.514947    19.632507
+    2017-03-30 12:50:56.932325    19.632507
+    2017-03-30 12:51:07.336394    19.632507
+    2017-03-30 12:51:17.705131    19.632507
+    2017-03-30 12:51:28.111724    19.632507
+    2017-03-30 12:51:38.497451    19.632507
+    2017-03-30 12:51:48.874454    19.632507
+    2017-03-30 12:51:59.254916    19.632507
+    2017-03-30 12:52:09.757253    19.536366
+    2017-03-30 12:52:20.204171    19.536366
+    2017-03-30 12:52:30.593838    19.536366
+    2017-03-30 12:52:40.421532    19.536366
+    dtype: float64
+
+
+.. note:: 
+    **pandas** is an extensive data analysis tool, with a vast array of data manipulation operators.
+    Exploring these is beyond the scope of this documentation.  Instead we refer you to this 
+    cheat sheet [https://github.com/pandas-dev/pandas/blob/master/doc/cheatsheet/Pandas_Cheat_Sheet.pdf] and 
+    the pandas website [http://pandas.pydata.org/].
+
 
 Resampling data
 ---------------
-As those are pandas DataFrame or Series, you can resample data::
+One common task associated with point histories is preparing it for use with other tools.
+This usually involves (as a first step) changing the frequency of the data samples - called 
+**resampling** in pandas terminology.
 
-    # This piece of code show what can of operation can be made using Pandas
-    
+Since the point histories are standard pandas data structures (DataFrames, and Series), you can 
+manipulate the data with pandas operators, as follows.::
+
+    # code snipet showing use of pandas operations on a BAC0 point history.
+   
     # Resample (consider the mean over a period of 1 min)    
     tempPieces = {
             '102_ZN-T' : local102['ZN-T'].history.resample('1min'),
@@ -44,7 +61,7 @@ As those are pandas DataFrame or Series, you can resample data::
             '110_ZN-T' : local110['ZN-T'].history.resample('1min'),
             '110_ZN-SP' : local110['ZN-SP'].history.resample('1min'),    
            }
-    # Remove any NaN value
+    # Remove any NaN values
     temp_pieces = pd.DataFrame(tempPieces).fillna(method = 'ffill').fillna(method = 'bfill')
     
     # Create a new column in the DataFrame which is the error between setpoint and temperature

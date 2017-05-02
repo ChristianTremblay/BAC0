@@ -12,3 +12,16 @@
 /doc
 /.coverage
 /doc/build
+/__pycache__
+/.cache
+/.coveragerc
+/.pylintrc
+__pycache__
+/BAC0/core/devices/mixins/__pycache__
+/BAC0/sql/__pycache__
+/BAC0/.coverage
+/Jupyter/BACPypes.ipynb
+/tests/__pycache__
+/tests/need_rebuild_Device.py
+/tests/.coverage
+/pylintrc

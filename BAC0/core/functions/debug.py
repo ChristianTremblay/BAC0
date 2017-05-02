@@ -2,14 +2,21 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-#
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-Helper functions to log debug and exception messages
+#
+'''
+debug.py - Helper functions to log debug and exception messages
 
-"""
+'''
+
+#--- standard Python modules ---
 from functools import wraps
 import inspect
+
+#--- 3rd party modules ---
+#--- this application's modules ---
+
+#------------------------------------------------------------------------------
 
 _DEBUG = 1
 
@@ -32,15 +39,13 @@ def debug(func):
     wrapper.__signature__ = sig.replace(parameters=parms)                              
     return wrapper                            
 
+
 def log_debug(cls,txt, *args):
     """
     Helper function to log debug messages
     """
     if _DEBUG:
-        if args:
-            msg = txt % args
-        else:
-            msg = txt
+        msg= (txt % args) if args else txt
         # pylint: disable=E1101,W0212
         cls._debug(msg)
 
@@ -49,9 +54,6 @@ def log_exception(cls,txt, *args):
     """
     Helper function to log debug messages
     """
-    if args:
-        msg = txt % args
-    else:
-        msg = txt
+    msg= (txt % args) if args else txt
     # pylint: disable=E1101,W0212
     cls._exception(msg)

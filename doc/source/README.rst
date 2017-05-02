@@ -1,41 +1,50 @@
 BAC0 |build-status| |coverage| |docs|
 =====================================
-BAC0 is a Python 3 (3.4 and over) scripting application that uses BACpypes_ to process BACnet messages on a IP network. 
-This library brings out simple commands to browse a BACnet network, read properties from BACnet devices or write to them.
+BAC0 is a Python 3 (3.4 and later) scripting application that uses BACpypes_ to process BACnet messages on a IP network. 
+This library exposes simple functions to browse the BACnet network, and read & write properties from the BACnet devices.
 
-Python is a simple language to learn and a very powerful tool for data processing. Coupled to BACnet, it becomes a great 
-tool to test devices an interact with controllers.
+Python is a simple language to learn and a very powerful tool for data processing. Coupled with BACnet, 
+it becomes a **great tool for testing BACnet** and interacting with BACnet controllers.
 
-BAC0 takes its name from the default IP port used by BACnet/IP communication which is port 47808. In hexadecimal, it's written 0xBAC0.
+BAC0 takes its name from the default IP port assigned to BACnet/IP communications - port (47808 decimal, 0xBAC0 
+hexadecimal).
 
 Test driven development (TDD) for DDC controls
 ==============================================
-BAC0 is made for building automation system (BAS) programmers. Controllers used in this field are commonly called DDC Controllers (Direct Digital Control).
+BAC0 is intended for assisting BAS (building automation system) programmers, with configuring, testing, and 
+commissioning of BAS Controllers - often called DDC (Direct Digital Control) Controllers.
 
-Typical controllers can be programmed in different ways, depending on the manufacturer selling them (block programming, basic "kinda" scripts, C code, etc...). 
-BAC0, is a unified way, using Python language and BACnet/IP communication, to interact with those controllers once their sequence is built.
+Typically BAS controllers are programmed using vendor specific tools, and vendor specific programming languages 
+to define how they will operate.  The resulting programs are the controller's **sequence of operations**.  
+Different vendors, use different methods to define these sequences - including 'block programming', 
+'graphical programming', and 'text/procedural programming'.  
 
-BAC0 allows users to simply test an application even if sensors are not connected to the controller. Using the out_of_service
-property, it's easy to write a value to the input so the controller will think an input is conencted. 
+BAC0 provides a generalized (vendor-independent) means to programmatically interact with the BAS controllers, 
+via Python and the BACnet/IP communication protocol.  BAC0 allows users to test a controller even if no sensors 
+or outputs are connected to the controller.  Thanks to the BACnet **out_of_service** property, it is easy to write 
+a value to the input pin(s) so the controller believes a sensor is connected, and its **operating sequence** will 
+respond accordingly.  Likewise, it is possible to write a value to an output pin(s) to operate any connected 
+equipment (often called a **manual command** or to **override an output**).  In fact, BAC0 exposes a great many of a  
+controller's BACnet Objects and Object Properties, enabling automated interactions using Python; as a simple 
+scripting language, a powerful testing & commissioning tool, or a general application development environment.
 
-It's also possible to do "manual commands" on output (often called overrides). In fact, every variable is exposed and seen by BAC0 and 
-it's possible to interact with them using a simple scripting language or a complete unit test suite (like Pytest).
+Using BAC0 as test tool, makes automated BAS testing quick, reliable, and repeatable.  Compare this to 
+the BAS vendor provided tools, which only allow the controllers to be programmed, and where all the 
+testing must be done manually.  Very slow.  Very error-prone.  Now you can write your tests and re-run them 
+as often as you need.
 
-Without a program like BAC0, you can rely on your DDC programming tool... but it is often slow and
-every test must be done manually. That means also that if you want to repeat the tests, the more complicated they are, the less chance you'll be able to do so.
 
-Now you can write your test and run them as often as you want. We'll show you how it works.
+Better commissioning thanks to automatic data logging
+=====================================================
+As you will discover, when you define a controller in BAC0, you automatically get **historical data logs** for  
+every variable in the controller.  All I/O points are trended every 10 seconds (by default).  Meaning 
+you can do data analysis of the controller's operation while you're doing your basic **sequence testing**. 
+This gives you a high-level overview of the controller's performance while highlighting trouble areas really fast.
 
-Better start-up with data acquisition
-=====================================
-As you will discover, when you define a controller in BAC0, you will get access to historical data of
-every variables in the controllers. Every points are trended every 10 seconds by default. Which means 
-that you can do data analysis on everything while you're doing your startup. It allows to see performances and
-trouble really fast.
-
-This make BAC0 not only a good tool to test your sequence while your in the office.
-But also a really good tool to assist your startup, test and balancing. Using Jupyter Notebook, you'll
-even be able to create nice looking report right from your code.
+BAC0 is not only a good tool for testing your **sequence of operations** while in-the-office.
+It is also a really good tool to assist on-site.  Use it to test controller startup, operation, and balancing 
+in-the-field.  When combined with Jupyter Notebook, you are even able to create nice looking reports right from your 
+automation code.
 
 
 .. |build-status| image:: https://travis-ci.org/ChristianTremblay/BAC0.svg?branch=master

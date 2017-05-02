@@ -2,15 +2,21 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-#
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-This module allows the creation of threads that will be used as repetitive
-tasks for simulation purposes
-"""
+#
+'''
+TaskManager.py - creation of threads used for repetitive tasks.  
+
+A key building block for point simulation.
+'''
+#--- standard Python modules ---
 from threading import Thread, Lock
 import time
 
+#--- 3rd party modules ---
+#--- this application's modules ---
+
+#------------------------------------------------------------------------------
 
 class Manager():
     taskList = []
@@ -25,16 +31,18 @@ def stopAllTasks():
 
 class Task(Thread):
 
-    def __init__(self, delay=5, daemon = True):
-        Thread.__init__(self, daemon = daemon)
+    def __init__(self, delay=5, daemon = True, name='recurring'):
+        Thread.__init__(self, name=name, daemon = daemon)
         self.exitFlag = False
         self.lock = Manager.threadLock
         self.delay = delay
         if not self.name in Manager.taskList:
             Manager.taskList.append(self)
 
+
     def run(self):
         self.process()
+
 
     def process(self):
         while not self.exitFlag:
@@ -49,11 +57,14 @@ class Task(Thread):
                     break
                 time.sleep(0.5)
 
+
     def task(self):
         raise RuntimeError("task must be overridden")
 
+
     def stop(self):
         self.exitFlag = True
+
 
     def beforeStop(self):
         """
@@ -62,10 +73,11 @@ class Task(Thread):
         if self in Manager.taskList:
             Manager.taskList.remove(self)
 
+
 class OneShotTask(Thread):
 
-    def __init__(self, daemon = True):
-        Thread.__init__(self, daemon = daemon)
+    def __init__(self, daemon = True,name='Oneshot'):
+        Thread.__init__(self, name=name, daemon = daemon)
         self.lock = Manager.threadLock
         if not self.name in Manager.taskList:
             Manager.taskList.append(self)

@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
-#
 # Licensed under LGPLv3, see file LICENSE in this source tree.
-"""
-This module allows the creation of WriteProperty requests by and app
+#
+'''
+Write.py - creation of WriteProperty requests
 
-    Must be used while defining an app
+    Used while defining an app
     Example::
 
         class BasicScript(WhoisIAm, WriteProperty)
@@ -21,9 +21,13 @@ This module allows the creation of WriteProperty requests by and app
 
         print_debug()
 
-"""
-from bacpypes.debugging import bacpypes_debugging, ModuleLogger
+'''
+#--- standard Python modules ---
+from queue import Empty
+import time
 
+#--- 3rd party modules ---
+from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
 from bacpypes.pdu import Address
 from bacpypes.object import get_datatype
@@ -34,12 +38,12 @@ from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
 from bacpypes.constructeddata import Array, Any
 from bacpypes.iocb import IOCB
 
-from queue import Empty
-import time
-
+#--- this application's modules ---
 from .IOExceptions import WritePropertyCastError, NoResponseFromController, WritePropertyException, WriteAccessDenied, ApplicationNotStarted
 from ..functions.debug import log_debug, log_exception
 
+
+#------------------------------------------------------------------------------
 
 # some debugging
 _debug = 0
@@ -49,20 +53,15 @@ _LOG = ModuleLogger(globals())
 @bacpypes_debugging
 class WriteProperty():
     """
-    This class define function to write to bacnet objects
-    Will implement a Queue object waiting for an acknowledgment
-    """
-    """
-    This class defines functions to write to bacnet properties.
-    It handles writeProperty
-    Data exchange is made via a Queue object
-    A timeout of 2 seconds allow detection of invalid device or communciation
-    errors.
+    Defines BACnet Write functions: WriteProperty [WritePropertyMultiple not supported]
+
+    A timeout of 10 seconds allows detection of invalid device or communciation errors.
     """
     _TIMEOUT = 10
+
+
     def write(self, args):
-        """ This function build a write request wait for an acknowledgment and
-        return a boolean status (True if ok, False if not)
+        """ Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
 
         :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]
         :returns: data read from device (str representing data like 10 or True)
@@ -74,10 +73,11 @@ class WriteProperty():
             bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)
             bacnet.write('2:5 analogValue 1 presentValue 100')
 
-        will write 100 to AV:1 of a controller with a MAC address of 5 in the network 2
+        Direct the controller at (Network 2, address 5) to write 100 to the presentValues of 
+        its analogValue 1 (AV:1)
         """
         if not self._started:
-            raise ApplicationNotStarted('App not running, use startApp() function')
+            raise ApplicationNotStarted('BACnet stack not running - use startApp()')
         #with self.this_application._lock:
         #    time.sleep(0.5)
         #self.this_application._lock = True
@@ -85,29 +85,23 @@ class WriteProperty():
         log_debug(WriteProperty, "do_write %r", args)
 
         try:
-            iocb = IOCB(self.build_wp_request(args))
-            # give it to the application
-            self.this_application.request_io(iocb)
+            iocb = IOCB(self.build_wp_request(args))            # build a WriteProperty request
+            self.this_application.request_io(iocb)              # pass to the BACnet stack
 
         except WritePropertyException as error:
-            log_exception("exception: %r", error)
+            log_exception("exception: %r", error)               # construction error
 
 
-        # wait for it to complete
-        iocb.wait()
+        iocb.wait()             # Wait for BACnet response
 
-        # do something for success
-        if iocb.ioResponse:
-            # should be an ack
-            if not isinstance(iocb.ioResponse, SimpleAckPDU):
-                #if _debug: ReadWritePropertyConsoleCmd._debug("    - not an ack")
+        if iocb.ioResponse:     # successful response
+            if not isinstance(iocb.ioResponse, SimpleAckPDU):   # expect an ACK
+                log_debug(WriteProperty,"    - not an ack")
                 return
 
-            #sys.stdout.write("ack\n")
-
-        # do something for error/reject/abort
-        if iocb.ioError:
+        if iocb.ioError:        # unsuccessful: error/reject/abort
             raise NoResponseFromController()  
+
 #            while True:
 #                try:
 #                    data, evt = self.this_application.ResponseQueue.get(
@@ -119,6 +113,7 @@ class WriteProperty():
 #                    #self.this_application._lock = False
 #                    raise NoResponseFromController
                 
+
     def build_wp_request(self, args):
         addr, obj_type, obj_inst, prop_id = args[:4]
         if obj_type.isdigit():
@@ -145,6 +140,7 @@ class WriteProperty():
         # case
         if value == 'null':
             value = Null()
+
         elif issubclass(datatype, Atomic):
             if datatype is Integer:
                 value = int(value)
@@ -153,6 +149,7 @@ class WriteProperty():
             elif datatype is Unsigned:
                 value = int(value)
             value = datatype(value)
+
         elif issubclass(datatype, Array) and (indx is not None):
             if indx == 0:
                 value = Integer(value)
@@ -162,6 +159,7 @@ class WriteProperty():
                 raise TypeError(
                     "invalid result datatype, expecting %s" %
                     (datatype.subtype.__name__,))
+
         elif not isinstance(value, datatype):
             raise TypeError(
                 "invalid result datatype, expecting %s" %
@@ -174,9 +172,7 @@ class WriteProperty():
 
         # build a request
         request = WritePropertyRequest(
-            objectIdentifier=(obj_type, obj_inst),
-            propertyIdentifier=prop_id
-        )
+            objectIdentifier=(obj_type, obj_inst), propertyIdentifier=prop_id )
         request.pduDestination = Address(addr)
 
         # save the value

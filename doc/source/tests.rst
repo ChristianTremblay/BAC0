@@ -1,30 +1,35 @@
 Testing and simulating with BAC0
 ================================
-Now you can build simple tests using assert syntax for example and make your DDC code stronger.
+
+BAC0 is a powerful BAS test tool.  With it you can easily build tests scripts, and by 
+using its **assert** syntax, you can make your DDC code stronger.
+
 
 Using Assert and other commands
 -------------------------------
-Let's say your sequence is really simple. Something like this : 
+Let's say your BAC controller **sequence of operation** is really simple. Something like this::
 
-System stopped
---------------
-When system is stopped, fan must be off, dampers must be closed, heater cannot operate.
+    System stopped:
+        When system is stopped, fan must be off, 
+        dampers must be closed, heater cannot operate.
 
-System started
---------------
-When system starts, fan command will be on. Dampers will open to minimum position.
-If fan status turns on, heating sequence will starts.
+    System started:
+        When system starts, fan command will be on. 
+        Dampers will open to minimum position.
+        If fan status turns on, heating sequence will start.
 
 And so on...
 
 How would I test that ?
 -----------------------
-* Controller is defined and its variable name is mycontroller
-* fan command = SF-C
-* Fan Status = SF-S
-* Dampers command = MAD-O
-* Heater = RH-O
-* Occupancy command = OCC-SCHEDULE
+
+Assuming:
+    * Controller is defined and its variable name is mycontroller
+    * fan command = SF-C
+    * Fan Status = SF-S
+    * Dampers command = MAD-O
+    * Heater = RH-O
+    * Occupancy command = OCC-SCHEDULE
 
 System Stopped Test Code::
 
@@ -49,39 +54,44 @@ Sytstem Started Test Code::
 
 And so on...
 
-You are now able to define any test you want. You will probably use more precise conditions
-instead of time.sleep() function (example read a value that tells actual mode is active)
+You can define any test you want.  As complex as you want.  You will use more precise conditions
+instead of a simple time.sleep() function - most likely you will read a point value that tells 
+you when the actual mode is active.
 
-You can then test random temperature values, build functions that will simulate discharge air
-temperature depending on heatign or cooling stages... it's up to you !
+You can then add tests for the various temperature ranges; and build functions to simulate discharge air
+temperature depending on the heating or cooling stages... it's all up to you!
+
 
 Using tasks to automate simulation
 ==================================
+
 Polling
 -------
-Let's say you want to poll a point every 5 seconds to see later how the point reacted.::
+Let's say you want to poll a point every 5 seconds to see how the point reacted.::
 
     mycontroller['point_name'].poll(delay=5)
 
-Note that by default, polling is on for every points every 10 seconds. But you could have
-define a controller without polling and do specific polling.::
+Note: by default, polling is enabled on all points at a 10 second frequency. But you could 
+    define a controller without polling and do specific point polling.::
 
     mycontroller = BAC0.device('2:5',5,bacnet,poll=0)
     mycontroller['point_name'].poll(delay=5)
 
 Match
 -----
-Let's say you want to automatically match the status of a point with the command.::
+Let's say you want to automatically match the status of a point with it's command to 
+find times when it is reacting to conditions other than what you expected.::
 
     mycontroller['status'].match(mycontroller['command'])
 
+
 Custom function
 ---------------
-You could also define a complex function, and send it to the controller. 
+You could also define a complex function, and send that to the controller. 
 This way, you'll be able to continue using all synchronous functions of Jupyter Notebook for example.
 (technically, a large function will block any inputs until it's finished)
 
-PLEASE NOTE THAT THIS IS A WORK IN PROGRESS
+.. note:: THIS IS A WORK IN PROGRESS
 
 Example ::
 
@@ -95,6 +105,7 @@ Example ::
             
     controller.do(test_Vernier)
 
-This function updates the variable named "Vernier Sim" each 30 seconds. By increment of 1 percent.
-It will take a really long time to finish. Using the "do" method, you send the function to the controller
-and it will be handled by a thread so you'll be able to continue working on the device.
+This function updates the variable named "Vernier Sim" each 30 seconds; incrementing by 1 percent.
+This will take a really long time to finish.  So instead, use the "do" method, and the function 
+will be run is a separate thread so you are free to continue working on the device, while the 
+function commands the controller's point.

@@ -13,6 +13,42 @@ Example::
     # Define a controller (this one is on MSTP #3, MAC addr 4, device ID 5504)    
     mycontroller = BAC0.device('3:4', 5504, bacnet)
 
+Some caveats
+*************
+
+Segmentation
+.............
+
+Some devices do not support segmentation. BAC0 will try to detect that and will
+not allow "read property multiple" to be used. But it is sometimes better to 
+speciy to BAC0 that the device doesn't support segmentation.
+
+To do so, use the parameter::
+
+    my_old_device = BAC0.connect('3:4', 5504, bacnet, segmentation_supported=False)
+    
+Object List
+............
+
+By default, BAC0 will read the object list from the controller and define every
+points found inside the device as points. This behaviour may not be optimal in
+all use cases. BAC0 allows you to provide a custom object list when creating the
+device.
+
+To do so, use this syntax::    
+
+    # Define your own list
+    my_obj_list = [('file', 1),
+                 ('analogInput', 2),
+                 ('analogInput', 3),
+                 ('analogInput', 5),
+                 ('analogInput', 4),
+                 ('analogInput', 0),
+                 ('analogInput', 1)]
+    
+    # Provide it as an argument               
+    fx = BAC0.device('2:5',5,bacnet, object_list = my_obj_list)
+
 
 Look for points in controller
 -----------------------------
@@ -27,39 +63,153 @@ To read a point, simply ask for it using bracket syntax::
 
     mycontroller['point_name']
 
-Write to a point
-----------------
-simple write
+
+Writing to Points
+-----------------
+
+Simple write
 ************
-If point is a analogValue, binaryValue or a multistateValue BAC0 will write to the default
-priority ::
+If point is a value:
 
-    mycontroller['point_name'] = 10 
+    * analogValue (AV)
+    * binaryValue (BV)
+    * multistateValue (MV) 
+    
+You can change its value with a simple assignment.  BAC0 will write the value to the object's 
+**presentValue** at the default priority.::
 
-Relinquish default
-******************
-If you must write to relinquish default, it must be said explicitly ::
+    mycontroller['point_name'] = 23 
 
-    mycontroller['pointToChange'].default(10)
+.. figure:: images/AV_write.png
+    :width: 400px
+    :align: center
+    :alt: Example from Delta Controls OWS Workstation
+    :figclass: align-center
+    
+    *Example from Delta Controls OWS Workstation*
+    
 
-This distinction is made because of the sensibility to multiple writes to those values.
-Thoses are often written to EEPROM directly and have a ±250000 write cycle.
+.. figure:: images/niagara_AV_Rel_set_fallback.png
+    :width: 400px
+    :align: center
+    :alt: Example from Niagara 4 station
+    :figclass: align-center
+    
+    *Example from Niagara 4 station*
 
-Override
-*********
-If the point is a output, BAC0 will override it (@priority 8)::
 
-    mycontroller['outputName'] = 100
+Write to an Output (Override)
+*****************************
+If the point is an output:
 
-simulate (out_of_service)
-**************************
-If the point is an input, BAC0 will set the out_of_service flag to On and write 
-to the present value (which will simulate it)::
+    * analogOutput (AO) 
+    * binaryOutput (BO) 
+    * multistateOutput (MO)
 
-    mycontroller['inputName'] = 34
+You can change its value with a simple assignment.  BAC0 will write the value to the object's 
+**presentValue** (a.k.a override it) at priority 8 (Manual Operator).::
 
-Releasing a simulation or an override
-**************************************
-Simply affect 'auto' to the point ::
+    mycontroller['outputName'] = 45
+
+
+.. figure:: images/AO_write.png
+    :width: 400px
+    :align: center
+    :alt: Example from Delta Controls OWS Workstation
+    :figclass: align-center
+    
+    *Example from Delta Controls OWS Workstation*
+    
+.. figure:: images/niagara_BO_Override.png
+    :width: 400px
+    :align: center
+    :alt: Example from Niagara 4 station
+    :figclass: align-center
+    
+    *Example from Niagara 4 station*
+
+Write to an Input (simulate)
+****************************
+If the point is an input:
+
+    * analogInput (AI) 
+    * binaryOutput (BO) 
+    * multistateOutput (MO) 
+
+You can change its value with a simple assigment, thus overriding any external value it is 
+reading and simulating a different sensor reading.  The override occurs because  
+BAC0 sets the point's **out_of_service** (On) and then writes to the point's **presentValue**.
+ 
+    mycontroller['inputName'] = <simulated value>
+
+    mycontroller['Temperature'] = 23.5      # overiding actual reading of 18.8 C
+
+
+.. figure:: images/AI_override.png
+    :width: 400px
+    :align: center
+    :alt: Example from Delta Controls OWS Workstation
+    :figclass: align-center
+    
+    *Example from Delta Controls OWS Workstation*
+
+
+In a Niagara station, you would need to create a new point using the "out_of_service" 
+property, then set this point to True. Then you would need to create 
+(if not already done) a point writable to the present value property and write
+to it. No screenshot available.
+
+Releasing an Input simulation or Output override
+*************************************************
+
+To return control of an Input or Output back to the controller, it needs to be released.
+Releasing a point returns it automatic control.  This is done with an assignment to 'auto'.::
 
     mycontroller['pointToRelease'] = 'auto'
+
+
+.. figure:: images/AI_auto.png
+    :width: 400px
+    :align: center
+    :alt: Example from Delta Controls OWS Workstation
+    :figclass: align-center
+    
+    *Example from Delta Controls OWS Workstation*
+    
+.. figure:: images/AO_auto.png
+    :width: 400px
+    :align: center
+    :alt: Example from Delta Controls OWS Workstation
+    :figclass: align-center
+    
+    *Example from Delta Controls OWS Workstation*
+
+
+In a Niagara station, you would need to create a new point using the "out_of_service" 
+property, then set this point to False. No screenshot available.
+    
+Setting a Relinquish_Default
+****************************
+When a point (with a priority array) is released of all override commands, it takes on the value 
+of its **Relinquish_Default**. [BACnet clause 12.4.12]  If you wish to set this default value, 
+you may with this command::
+
+    mycontroller['pointToChange'].default(<value>)
+    mycontroller['Output'].default(75)
+
+
+.. figure:: images/AO_set_default.png
+    :width: 400px
+    :align: center
+    :alt: Example from Delta Controls OWS Workstation
+    :figclass: align-center
+    
+    *Example from Delta Controls OWS Workstation*
+    
+.. figure:: images/niagara_relinquish_default.png
+    :width: 400px
+    :align: center
+    :alt: Example from Niagara 4 station
+    :figclass: align-center
+    
+    *Example from Niagara 4 station*
