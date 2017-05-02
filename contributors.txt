@@ -1,0 +1,7 @@
+Contributors:
+
+Christian Tremblay        christian.tremblay@servisys.com
+Ken J. Lockhart           klockhart@coppertreeanalytics.com (helped a lot with documentation)
+
+
+Thanks !
