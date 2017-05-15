@@ -59,7 +59,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
     :param ip='127.0.0.1': Address must be in the same subnet as the BACnet network 
         [BBMD and Foreign Device - not supported] 
     """
-    def __init__(self, ip=None):
+    def __init__(self, ip=None, bokeh_server=True):
         self._log = logging.getLogger('BAC0.script.%s' \
                     % self.__class__.__name__)
         self._log.debug("Configurating app")
@@ -74,7 +74,12 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         self.bokehserver = False
         # Force and global whois to find all devices on the network
         self.whois()
-        self.start_bokeh()
+        if bokeh_server:
+            self._log.debug('Starting bokeh server')
+            self.start_bokeh()
+        else:
+            self._log.warning('Bokeh server not started. Trend feature will not work')
+            
         
 
     def start_bokeh(self):

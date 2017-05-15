@@ -13,14 +13,14 @@ from collections import namedtuple
 from datetime import datetime
 
 import os.path
-from abc import ABCMeta     # abstract base classes
+#from abc import ABCMeta     # abstract base classes
 
 #--- 3rd party modules ---
 import sqlite3
 
 import pandas as pd
-from pandas.lib import Timestamp
-from pandas.io import sql
+#from pandas.lib import Timestamp
+#from pandas.io import sql
 import logging
 
 try:
