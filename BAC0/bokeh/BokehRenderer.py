@@ -11,7 +11,7 @@ A connection to the server is mandatory to use update_data
 import random
 from bokeh.plotting import Figure
 from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis
-from bokeh.models.layouts import VBox
+from bokeh.models import Column
 from bokeh.client import push_session
 from bokeh.document import Document
 from bokeh.io import gridplot
@@ -80,7 +80,7 @@ class BokehDocument(InstancesMixin):
             layout = gridplot(rows)
         else:
             print('Layout...')
-            layout = VBox(children=self.plots)            
+            layout = Column(children=self.plots)            
 
         self.document.add_root(layout)
         
