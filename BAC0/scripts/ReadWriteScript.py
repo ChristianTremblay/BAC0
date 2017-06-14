@@ -58,6 +58,10 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
     :param ip='127.0.0.1': Address must be in the same subnet as the BACnet network 
         [BBMD and Foreign Device - not supported] 
+        
+    :param bokeh_server: (boolean) If set to false, will prevent Bokeh server
+        from being started. Can help troubleshoot issues with Bokeh. By default,
+        set to True.
     """
     def __init__(self, ip=None, bokeh_server=True):
         self._log = logging.getLogger('BAC0.script.%s' \
@@ -72,7 +76,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         BasicScript.__init__(self, localIPAddr=ip_addr)
 
         self.bokehserver = False
-        # Force and global whois to find all devices on the network
+        # Force a global whois to find all devices on the network
         self.whois()
         if bokeh_server:
             self._log.debug('Starting bokeh server')

@@ -190,7 +190,11 @@ class BasicScript():
             except NoResponseFromController:
                 #print('No response from %s' % device)
                 continue
-        return pd.DataFrame(lst, columns=['Name', 'Manufacturer', 'Address',' Device ID']).set_index('Name').sort_values('Address')
+        df = pd.DataFrame(lst, columns=['Name', 'Manufacturer', 'Address',' Device ID']).set_index('Name')
+        try: 
+            return df.sort_values('Address')
+        except AttributeError:
+            return df
 
 
 

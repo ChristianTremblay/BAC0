@@ -22,12 +22,12 @@ import pandas as pd
 #from pandas.lib import Timestamp
 #from pandas.io import sql
 import logging
-
+log = logging.getLogger('BAC0.core.devices')
 try:
     from xlwings import Workbook, Sheet, Range, Chart
     _XLWINGS = True
 except ImportError:
-    print('xlwings not installed. If using Windows or OSX, install to get more features.')
+    log.debug('xlwings not installed. If using Windows or OSX, install to get more features.')
     _XLWINGS = False
 
 
