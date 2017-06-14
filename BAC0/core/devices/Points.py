@@ -17,7 +17,10 @@ import time
 import sqlite3
 import pandas as pd
 from pandas.io import sql
-from pandas.lib import Timestamp
+try:
+    from pandas import Timestamp
+except ImportError:
+    from pandas.lib import Timestamp
 
 #--- this application's modules ---
 from ...tasks.Poll import SimplePoll as Poll
