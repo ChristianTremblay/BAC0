@@ -124,6 +124,11 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
     def new_bokeh_session(self):
         self.bokeh_session = BokehSession(self.bokeh_document.document)
+        
+    def disconnect(self):
+        if self.bokehserver:
+            self.bokeh_session._loop.stop()
+        super().disconnect()
 
     def __repr__(self):
         return 'Bacnet Network using ip %s with device id %s' % (self.localIPAddr, self.Boid)

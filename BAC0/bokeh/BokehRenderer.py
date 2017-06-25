@@ -11,7 +11,7 @@ A connection to the server is mandatory to use update_data
 import random
 from bokeh.plotting import Figure
 from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis, CategoricalColorMapper
-from bokeh.models.widgets import DataTable, DateFormatter, NumberFormatter, TableColumn
+from bokeh.models.widgets import DataTable, DateFormatter, NumberFormatter, TableColumn, Div
 from bokeh.layouts import widgetbox, row, column, gridplot 
 from bokeh.palettes import d3, Spectral6
 from bokeh.models import Column
@@ -55,11 +55,10 @@ class BokehDocument(InstancesMixin):
     def __init__(self, title = 'Live Trending'):
         self.document = Document(title = title)
         self.plots = []
-        self.widgets = []
-        logging.getLogger("requests").setLevel(logging.INFO)
+        self.widgets = [None,]
         logging.getLogger("bokeh").setLevel(logging.INFO)
         
-    def add_plot(self, new_plot_and_widget, linked_x_axis = True):
+    def add_plot(self, new_plot_and_widget, linked_x_axis = True, infos = None):
         self.document.clear()
         new_plot, widget = new_plot_and_widget
         new_plot.x_range.bounds = None
@@ -71,27 +70,33 @@ class BokehDocument(InstancesMixin):
                 break
         else:
             self.plots.append(new_plot)
-            self.widgets.append(widget)
+            if self.widgets:
+                pass
+            else:
+                # For now, let's deal with only one widget
+                self.widgets.append(widget)
+
+        
+        self.widgets[0] = widget
+
         if linked_x_axis:
             for plot in self.plots[1:]:
                 plot.x_range = self.plots[0].x_range
                 plot.x_range.bounds = None
                 plot.y_range.bounds = None
-                
-#        if len(self.plots) > 1:
-#            number_of_rows = int(round(len(self.plots) / 2))
-#            rows = []
-#            number_of_columns = 2
-#            i = 0
-#            for each in range(number_of_rows):
-#                rows.append(list(plot for plot in self.plots[i:i+number_of_columns]))
-#                i += number_of_columns
-#            layout = gridplot(rows)
-#        else:
-#            print('Layout...')
-#            layout = Column(children=self.plots)            
+        
+        div_header_doc = Div(text ="""<div class="header">
+                             <H1> BAC0 Trending Tools </H1>
+                             <h2>For %s (Address : %s | Device ID : %s)</h2></div>""" % (infos.name, infos.address, infos.device_id))        
+        div_header_notes = Div(text="""<div class="TableTitle"><H1> Notes from controller</H1></div>""")
+        div_footer = Div(text="""<div class="footer"><p> <a href="http://www.servisys.com">Servisys inc.</a> | 
+                         <a href="https://pythoninthebuilding.wordpress.com/">Python in the building</a></p></div>""")
 
-        layout = row(gridplot(self.plots, ncols=2), widgetbox(self.widgets))
+        layout = column(widgetbox(div_header_doc), 
+                        gridplot(self.plots, ncols=2), 
+                        widgetbox(div_header_notes),
+                        row(self.widgets),
+                        widgetbox(div_footer))
         self.document.add_root(layout)
         #curdoc().add_root(layout)
         
@@ -135,7 +140,7 @@ class BokehPlot(object):
 
         plot = self.build_plot()
 
-        self.device.properties.network.bokeh_document.add_plot(plot)
+        self.device.properties.network.bokeh_document.add_plot(plot, infos=self.device.properties)
         #curdoc().add_root(plot)
         if update_data:
             self.device.properties.network.bokeh_document.add_periodic_callback(self.update_data, 100)   
@@ -166,9 +171,12 @@ class BokehPlot(object):
         df = self.read_lst()
         notes_df = self.read_notes()
 
-        TOOLS = "hover,resize,save,pan,box_zoom,wheel_zoom,reset"
+        TOOLS = "pan,box_zoom,wheel_zoom,resize,save,reset"
         #plot_width=800, plot_height=600,
-        self.p = Figure(x_axis_type="datetime", title = self.title, tools = TOOLS)
+        self.p = Figure(x_axis_type="datetime", x_axis_label="Time", 
+                        y_axis_label="Numeric Value", title = self.title, 
+                        tools = TOOLS, plot_width=700, plot_height=600,
+                        toolbar_location = 'above')
 
         if self.show_notes:
             self.notes_source = ColumnDataSource(
@@ -192,16 +200,10 @@ class BokehPlot(object):
         self.p.legend.location = 'top_left'
         self.p.extra_y_ranges = {"bool": Range1d(start=0, end=1.1),
                                  "enum": Range1d(start=0, end=10)}
-        self.p.add_layout(LinearAxis(y_range_name="bool"), 'left')
-        self.p.add_layout(LinearAxis(y_range_name="enum"), 'right')
+        self.p.add_layout(LinearAxis(y_range_name="bool", axis_label="Binary"), 'left')
+        self.p.add_layout(LinearAxis(y_range_name="enum", axis_label="Enumerated"), 'right')
+        self.p.legend.location = "bottom_left"
                             
-        #hover = self.p.select(dict(type=HoverTool))
-#        hover.tooltips = OrderedDict([
-#            ('name', '@desc'),
-#            ('value', '@y'),
-#            ('units', '@units'),
-#            ('time', '@time'),
-#        ])
         hover = HoverTool(tooltips=[
             ('name', '@desc'),
             ('value', '@y'),
@@ -240,8 +242,7 @@ class BokehPlot(object):
                             source = self.sources[each],
                             name = each,
                             color=color_mapper[each],
-                            #color = "#%06x" % random.randint(0x000000, 0x777777),
-                            legend=each,
+                            legend=("%s/%s (OFF-ON)" % (each, self.device[each]['description'])),
                             y_range_name="bool",
                             size = 10)
             elif each in self.multi_states:
@@ -250,8 +251,7 @@ class BokehPlot(object):
                             source = self.sources[each],
                             name = each,
                             color=color_mapper[each],
-                            #color = "#%06x" % random.randint(0x000000, 0x777777), 
-                            legend=each,
+                            legend=("%s/%s (%s)" % (each, self.device[each]['description'], self.device[each].properties.units_state)),
                             y_range_name="enum",
                             size = 20)            
             else:
@@ -260,13 +260,11 @@ class BokehPlot(object):
                             source = self.sources[each],
                             name = each,
                             color=color_mapper[each],
-                            #color = "#%06x" % random.randint(0x000000, 0x777777),
-                            legend=each,
+                            legend=("%s/%s (%s)" % (each, self.device[each]['description'], self.device[each].properties.units_state)),
                             line_width = 2)
         if self.show_notes:        
             columns = [
                     TableColumn(field="x", title="Date", formatter=DateFormatter(format='yy-mm-dd')),
-                    TableColumn(field="x", title="Time", formatter=NumberFormatter(format='‘00:00:00’')),
                     TableColumn(field="units", title="Notes"),
                 ]        
             data_table = DataTable(source=self.notes_source, columns=columns)    
