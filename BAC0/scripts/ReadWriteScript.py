@@ -42,6 +42,8 @@ from ..core.io.IOExceptions import BokehServerCantStart
 from ..bokeh.BokehRenderer import BokehSession, BokehDocument
 from ..bokeh.BokehServer import BokehServer
 
+from ..infos import __version__ as version
+
 #------------------------------------------------------------------------------
 
 # some debugging
@@ -64,6 +66,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         set to True.
     """
     def __init__(self, ip=None, bokeh_server=True):
+        print("Starting BAC0 version %s" % version)
         self._log = logging.getLogger('BAC0.script.%s' \
                     % self.__class__.__name__)
         self._log.debug("Configurating app")
@@ -74,6 +77,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             ip_addr = ip
 
         BasicScript.__init__(self, localIPAddr=ip_addr)
+        
 
         self.bokehserver = False
         # Force a global whois to find all devices on the network
