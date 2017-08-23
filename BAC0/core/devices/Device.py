@@ -13,14 +13,11 @@ from collections import namedtuple
 from datetime import datetime
 
 import os.path
-#from abc import ABCMeta     # abstract base classes
 
 #--- 3rd party modules ---
 import sqlite3
 
 import pandas as pd
-#from pandas.lib import Timestamp
-#from pandas.io import sql
 import logging
 log = logging.getLogger('BAC0.core.devices')
 try:
@@ -235,7 +232,6 @@ class Device(SQLMixin):
             lst = []
             for point in list_of_points:
                 if point in self.points_name:
-                    #print('Add %s to list' % point)
                     lst.append(point)
                 else:
                     self._log.warning('Wrong name, removing %s from list' % point)
@@ -839,8 +835,6 @@ class DeviceFromDB(DeviceConnected):
             self.points.append(OfflinePoint(self, point))
         
         self.properties = DeviceProperties()
-        #file_name = "%s_prop.bin"  % self.properties.db_name
-        #device_name = self.properties.name
         self.properties.db_name = dbname
         self.properties.address = self._props['address']
         self.properties.device_id = self._props['device_id']

@@ -43,7 +43,6 @@ from bacpypes.primitivedata import CharacterString
 from ..core.app.ScriptApplication import ScriptApplication
 from .. import infos
 from ..core.io.IOExceptions import NoResponseFromController
-#import BAC0.core.functions as fn
 
 #------------------------------------------------------------------------------
 
@@ -175,20 +174,18 @@ class BasicScript():
         self.t = Thread(target=startBacnetIPApp, kwargs={'sigterm': None,'sigusr1': None}, daemon = True)
         self.t.start()
         self._started = True
-        self._log.info('BACnet started')
+        self._log.info('BAC0 started')
         
 
     @property
     def devices(self):
         lst = []
-        #self.whois()
-        #print(self.discoveredDevices)
         for device in self.discoveredDevices:
             try:
                 deviceName, vendorName = self.readMultiple('%s device %s objectName vendorName' % (device[0], device[1]))
                 lst.append((deviceName, vendorName, device[0], device[1]))
             except NoResponseFromController:
-                #print('No response from %s' % device)
+                self._log.info('No response from %s' % device)
                 continue
         df = pd.DataFrame(lst, columns=['Name', 'Manufacturer', 'Address',' Device ID']).set_index('Name')
         try: 

@@ -127,6 +127,8 @@ class BokehSession(object):
 class BokehPlot(object):
     def __init__(self, device, points_list, *, title = 'My title', show_notes = True, update_data = True):
         self.device = device
+        if len(points_list) < 3:
+            raise ValueError("Provide at least 3 objects to the chart")
         self.points_list = points_list
         self.title = title
         self.units = {}
@@ -172,7 +174,6 @@ class BokehPlot(object):
         notes_df = self.read_notes()
 
         TOOLS = "pan,box_zoom,wheel_zoom,resize,save,reset"
-        #plot_width=800, plot_height=600,
         self.p = Figure(x_axis_type="datetime", x_axis_label="Time", 
                         y_axis_label="Numeric Value", title = self.title, 
                         tools = TOOLS, plot_width=700, plot_height=600,
@@ -216,7 +217,7 @@ class BokehPlot(object):
         if len(self.lst)<=10:
             color_mapper = dict(zip(self.lst, d3['Category10'][len(self.lst)]))
         else:
-            # This would be a very bug trend...
+            # This would be a very loaded trend...
             color_mapper = dict(zip(self.lst, Spectral6[:len(self.lst)]))
             
         for each in self.lst:

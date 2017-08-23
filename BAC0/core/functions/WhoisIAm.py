@@ -56,7 +56,7 @@ class WhoisIAm():
 
         if args:
             args = args[0].split()
-        msg= arg if args else 'any'
+        msg = args if args else 'any'
 
         log_debug(WhoisIAm, "do_whois %r" % msg)
 
