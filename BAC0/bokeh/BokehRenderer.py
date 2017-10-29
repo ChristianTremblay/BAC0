@@ -117,11 +117,11 @@ class BokehSession(object):
     
     def loop(self):
         if BokehSession._loop == None:
-            BokehSession._loop = BokehLoopUntilClosed(BokehSession._session)
+                BokehSession._loop = BokehLoopUntilClosed(BokehSession._session)
+        try:
             BokehSession._loop.start() 
-        else:
+        except RuntimeError:
             BokehSession._loop.stop()
-            BokehSession._loop = BokehLoopUntilClosed(BokehSession._session)
             BokehSession._loop.start()
 
 class BokehPlot(object):

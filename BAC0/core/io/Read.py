@@ -39,7 +39,7 @@ from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB
 
 #--- this application's modules ---
-from .IOExceptions import SegmentationNotSupported, ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted
+from .IOExceptions import SegmentationNotSupported, ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted, UnrecognizedService
 from ..functions.debug import log_debug, log_exception
 
 #------------------------------------------------------------------------------
@@ -235,7 +235,11 @@ class ReadProperty():
                     
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
-            raise NoResponseFromController()
+            print("Error : ", (iocb.ioError.apduAbortRejectReason))
+            if iocb.ioError.apduAbortRejectReason == 9:
+                raise UnrecognizedService()
+            else:
+                raise NoResponseFromController()
     
 #            data = None
 #            while True:

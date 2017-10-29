@@ -119,7 +119,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
         except RuntimeError as rterror:
             self.bokehserver = False
-            self._log.error('Server already running')
+            self._log.warning('Server already running')
 
         except BokehServerCantStart:
             self.bokehserver = False

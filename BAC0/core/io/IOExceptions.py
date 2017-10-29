@@ -45,6 +45,12 @@ class NoResponseFromController(Exception):
     """
     pass
 
+class UnrecognizedService(Exception):
+    """
+    This exception is used when trying to read or write and there is not answer.
+    """
+    pass
+
 class WriteAccessDenied(Exception):
     """
     This exception is used when trying to write and controller refuse it.

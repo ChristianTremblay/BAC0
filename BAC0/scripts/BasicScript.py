@@ -42,7 +42,7 @@ from bacpypes.primitivedata import CharacterString
 #--- this application's modules ---
 from ..core.app.ScriptApplication import ScriptApplication
 from .. import infos
-from ..core.io.IOExceptions import NoResponseFromController
+from ..core.io.IOExceptions import NoResponseFromController, UnrecognizedService
 
 #------------------------------------------------------------------------------
 
@@ -180,13 +180,16 @@ class BasicScript():
     @property
     def devices(self):
         lst = []
-        for device in self.discoveredDevices:
+        for device in list(self.discoveredDevices):
             try:
-                deviceName, vendorName = self.readMultiple('%s device %s objectName vendorName' % (device[0], device[1]))
-                lst.append((deviceName, vendorName, device[0], device[1]))
+                deviceName, vendorName = self.readMultiple('%s device %s objectName vendorName' % (device[0], device[1]))                
+            except UnrecognizedService:
+                deviceName = self.read('%s device %s objectName' % (device[0], device[1])) 
+                vendorName = self.read('%s device %s vendorName' % (device[0], device[1]))
             except NoResponseFromController:
                 self._log.info('No response from %s' % device)
                 continue
+            lst.append((deviceName, vendorName, device[0], device[1]))
         df = pd.DataFrame(lst, columns=['Name', 'Manufacturer', 'Address',' Device ID']).set_index('Name')
         try: 
             return df.sort_values('Address')
