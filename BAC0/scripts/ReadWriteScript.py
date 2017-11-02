@@ -37,13 +37,18 @@ from ..core.io.Write import WriteProperty
 from ..core.functions.GetIPAddr import HostIP
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.io.Simulate import Simulation
-from ..core.io.IOExceptions import BokehServerCantStart
+from ..core.io.IOExceptions import BokehServerCantStart, ApplicationNotStarted
 
 from ..bokeh.BokehRenderer import BokehSession, BokehDocument
 from ..bokeh.BokehServer import BokehServer
 
 from ..infos import __version__ as version
 
+try:
+    import bokeh
+    BOKEH = True
+except ImportError:
+    BOKEH = False
 #------------------------------------------------------------------------------
 
 # some debugging
@@ -65,6 +70,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         from being started. Can help troubleshoot issues with Bokeh. By default,
         set to True.
     """
+    
     def __init__(self, ip=None, bokeh_server=True):
         print("Starting BAC0 version %s" % version)
         self._log = logging.getLogger('BAC0.script.%s' \
@@ -75,19 +81,20 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             ip_addr = host.address
         else:
             ip_addr = ip
-
         BasicScript.__init__(self, localIPAddr=ip_addr)
         
 
         self.bokehserver = False
-        # Force a global whois to find all devices on the network
-        self.whois()
-        if bokeh_server:
+        
+        if bokeh_server and BOKEH:
             self._log.debug('Starting bokeh server')
             self.start_bokeh()
         else:
             self._log.warning('Bokeh server not started. Trend feature will not work')
-            
+        
+        # Force a global whois to find all devices on the network
+        self.whois()
+
         
 
     def start_bokeh(self):
@@ -119,7 +126,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
         except RuntimeError as rterror:
             self.bokehserver = False
-            self._log.warning('Server already running')
+            self._log.warning('Server already running', rterror)
 
         except BokehServerCantStart:
             self.bokehserver = False
@@ -132,6 +139,8 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
     def disconnect(self):
         if self.bokehserver:
             self.bokeh_session._loop.stop()
+            self.BokehServer.stop()
+            # self.BokehServer = None
         super().disconnect()
 
     def __repr__(self):

@@ -31,6 +31,7 @@ class BokehServer(Thread):
     # Init thread running server
     def __init__(self, *, daemon = True):
         Thread.__init__(self, daemon = daemon)
+        self.p = None
         self.exitFlag = False
                 
     def run(self):
@@ -46,22 +47,25 @@ class BokehServer(Thread):
         else:
             commandToExecute = "bokeh serve"
         cmdargs = shlex.split(commandToExecute)
-        p = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE)
-        output, errors = p.communicate()
-        if p.returncode:
+        self.p = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE,  shell=False)
+        output, errors = self.p.communicate()
+        if self.p.returncode:
             print('Failed running %s' % commandToExecute)
             raise Exception(errors)
         return output.decode('utf-8')
     
     def task(self):
         try:
-            self.startServer()
+            if not self.exitFlag:
+                self.startServer()
         except Exception:
             print('Bokeh server already running')
             self.exitFlag = True
 
     def stop(self):
-        self.bokeh_server.stop()
+        print('Trying to stop Bokeh Server')
+        #self.bokeh_server.stop()
+        self.p.terminate()
         self.exitFlag = True
 
     def beforeStop(self):

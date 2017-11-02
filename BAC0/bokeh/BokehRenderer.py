@@ -56,7 +56,7 @@ class BokehDocument(InstancesMixin):
         self.document = Document(title = title)
         self.plots = []
         self.widgets = [None,]
-        logging.getLogger("bokeh").setLevel(logging.INFO)
+        self._log = logging.getLogger("bokeh").setLevel(logging.INFO)
         
     def add_plot(self, new_plot_and_widget, linked_x_axis = True, infos = None):
         self.document.clear()
@@ -121,8 +121,8 @@ class BokehSession(object):
         try:
             BokehSession._loop.start() 
         except RuntimeError:
-            BokehSession._loop.stop()
-            BokehSession._loop.start()
+            # probably started
+            pass
 
 class BokehPlot(object):
     def __init__(self, device, points_list, *, title = 'My title', show_notes = True, update_data = True):
@@ -173,7 +173,7 @@ class BokehPlot(object):
         df = self.read_lst()
         notes_df = self.read_notes()
 
-        TOOLS = "pan,box_zoom,wheel_zoom,resize,save,reset"
+        TOOLS = "pan,box_zoom,wheel_zoom,save,reset"
         self.p = Figure(x_axis_type="datetime", x_axis_label="Time", 
                         y_axis_label="Numeric Value", title = self.title, 
                         tools = TOOLS, plot_width=700, plot_height=600,
