@@ -17,7 +17,10 @@ import time
 import sqlite3
 import pandas as pd
 from pandas.io import sql
-from pandas.lib import Timestamp
+try:
+    from pandas import Timestamp
+except ImportError:
+    from pandas.lib import Timestamp
 
 #--- this application's modules ---
 from ...tasks.Poll import SimplePoll as Poll
@@ -542,7 +545,13 @@ class EnumPoint(Point):
         """
         returns: (str) Enum state value
         """
-        return self.properties.units_state[int(self.history.dropna().iloc[-1]) - 1]
+        try:
+            return self.properties.units_state[int(self.history.dropna().iloc[-1]) - 1]
+        except IndexError:
+            value = 'unknown'
+        except ValueError:
+            value = 'NaN'
+        return value  
 
 
     @property

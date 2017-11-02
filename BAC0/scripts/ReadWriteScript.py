@@ -42,6 +42,8 @@ from ..core.io.IOExceptions import BokehServerCantStart
 from ..bokeh.BokehRenderer import BokehSession, BokehDocument
 from ..bokeh.BokehServer import BokehServer
 
+from ..infos import __version__ as version
+
 #------------------------------------------------------------------------------
 
 # some debugging
@@ -58,8 +60,13 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
     :param ip='127.0.0.1': Address must be in the same subnet as the BACnet network 
         [BBMD and Foreign Device - not supported] 
+        
+    :param bokeh_server: (boolean) If set to false, will prevent Bokeh server
+        from being started. Can help troubleshoot issues with Bokeh. By default,
+        set to True.
     """
-    def __init__(self, ip=None):
+    def __init__(self, ip=None, bokeh_server=True):
+        print("Starting BAC0 version %s" % version)
         self._log = logging.getLogger('BAC0.script.%s' \
                     % self.__class__.__name__)
         self._log.debug("Configurating app")
@@ -70,11 +77,17 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             ip_addr = ip
 
         BasicScript.__init__(self, localIPAddr=ip_addr)
+        
 
         self.bokehserver = False
-        # Force and global whois to find all devices on the network
+        # Force a global whois to find all devices on the network
         self.whois()
-        self.start_bokeh()
+        if bokeh_server:
+            self._log.debug('Starting bokeh server')
+            self.start_bokeh()
+        else:
+            self._log.warning('Bokeh server not started. Trend feature will not work')
+            
         
 
     def start_bokeh(self):
@@ -106,7 +119,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
         except RuntimeError as rterror:
             self.bokehserver = False
-            self._log.error('Server already running')
+            self._log.warning('Server already running')
 
         except BokehServerCantStart:
             self.bokehserver = False
@@ -115,6 +128,11 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
     def new_bokeh_session(self):
         self.bokeh_session = BokehSession(self.bokeh_document.document)
+        
+    def disconnect(self):
+        if self.bokehserver:
+            self.bokeh_session._loop.stop()
+        super().disconnect()
 
     def __repr__(self):
         return 'Bacnet Network using ip %s with device id %s' % (self.localIPAddr, self.Boid)
