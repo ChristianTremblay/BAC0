@@ -173,7 +173,7 @@ class BokehPlot(object):
         df = self.read_lst()
         notes_df = self.read_notes()
 
-        TOOLS = "pan,box_zoom,wheel_zoom,resize,save,reset"
+        TOOLS = "pan,box_zoom,wheel_zoom,save,reset"
         self.p = Figure(x_axis_type="datetime", x_axis_label="Time", 
                         y_axis_label="Numeric Value", title = self.title, 
                         tools = TOOLS, plot_width=700, plot_height=600,
