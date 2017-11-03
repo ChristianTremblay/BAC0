@@ -15,9 +15,14 @@ from bokeh.models.widgets import DataTable, DateFormatter, NumberFormatter, Tabl
 from bokeh.layouts import widgetbox, row, column, gridplot 
 from bokeh.palettes import d3, Spectral6
 from bokeh.models import Column
-from bokeh.client import push_session
+#from bokeh.client import push_session
 from bokeh.document import Document
 from bokeh.io import curdoc
+from bokeh.application import Application
+from bokeh.application.handlers import FunctionHandler
+from bokeh.embed import server_document
+from bokeh.server.server import Server
+from functools import partial
 
 import numpy as np
 
@@ -26,6 +31,10 @@ from collections import OrderedDict
 import logging
 import math
 import weakref
+from threading import Thread
+from flask import Flask, render_template
+
+from tornado.ioloop import IOLoop
 
 from .BokehLoopUntilClosed import BokehLoopUntilClosed
 
@@ -53,13 +62,19 @@ class InstancesMixin(object):
         
 class BokehDocument(InstancesMixin):
     def __init__(self, title = 'Live Trending'):
-        self.document = Document(title = title)
+        
+
+        self.doc = curdoc()
+        self.doc.title = title
+        #self.document = Document(title = title)
         self.plots = []
         self.widgets = [None,]
         logging.getLogger("bokeh").setLevel(logging.INFO)
         
+    
     def add_plot(self, new_plot_and_widget, linked_x_axis = True, infos = None):
-        self.document.clear()
+        doc = curdoc()
+        doc.clear()
         new_plot, widget = new_plot_and_widget
         new_plot.x_range.bounds = None
         new_plot.y_range.bounds = None
@@ -97,32 +112,35 @@ class BokehDocument(InstancesMixin):
                         widgetbox(div_header_notes),
                         row(self.widgets),
                         widgetbox(div_footer))
-        self.document.add_root(layout)
-        #curdoc().add_root(layout)
+        #self.document.add_root(layout)
+        doc.add_root(layout)
         
     def add_periodic_callback(self, cb, update = 100):
-        self.document.add_periodic_callback(cb,update)
+        doc = curdoc()
+        doc.add_periodic_callback(cb,update)
 
-class BokehSession(object):
-    _session = None
-    _loop = None
-    def __init__(self, document):
-        if BokehSession._session == None:
-            BokehSession._session = push_session(document)
-        else:
-            pass
-        self.session_id = BokehSession._session.id
-        print('Click here to open Live Trending Web Page')
-        print('http://localhost:5006/?bokeh-session-id=%s' % self.session_id)
-    
-    def loop(self):
-        if BokehSession._loop == None:
-                BokehSession._loop = BokehLoopUntilClosed(BokehSession._session)
-        try:
-            BokehSession._loop.start() 
-        except RuntimeError:
-            BokehSession._loop.stop()
-            BokehSession._loop.start()
+
+
+#class BokehSession(object):
+#    _session = None
+#    _loop = None
+#    def __init__(self, document):
+#        if BokehSession._session == None:
+#            BokehSession._session = push_session(document)
+#        else:
+#            pass
+#        self.session_id = BokehSession._session.id
+#        print('Click here to open Live Trending Web Page')
+#        print('http://localhost:5006/?bokeh-session-id=%s' % self.session_id)
+#    
+#    def loop(self):
+#        if BokehSession._loop == None:
+#                BokehSession._loop = BokehLoopUntilClosed(BokehSession._session)
+#        try:
+#            BokehSession._loop.start() 
+#        except RuntimeError:
+#            BokehSession._loop.stop()
+#            BokehSession._loop.start()
 
 class BokehPlot(object):
     def __init__(self, device, points_list, *, title = 'My title', show_notes = True, update_data = True):
@@ -145,7 +163,8 @@ class BokehPlot(object):
         self.device.properties.network.bokeh_document.add_plot(plot, infos=self.device.properties)
         #curdoc().add_root(plot)
         if update_data:
-            self.device.properties.network.bokeh_document.add_periodic_callback(self.update_data, 100)   
+            doc = curdoc()
+            doc.add_periodic_callback(self.update_data, 100)   
         print('Chart created, please reload your web page to see changes')
         
      # Get data
@@ -173,7 +192,7 @@ class BokehPlot(object):
         df = self.read_lst()
         notes_df = self.read_notes()
 
-        TOOLS = "pan,box_zoom,wheel_zoom,resize,save,reset"
+        TOOLS = "pan,box_zoom,wheel_zoom,save,reset"
         self.p = Figure(x_axis_type="datetime", x_axis_label="Time", 
                         y_axis_label="Numeric Value", title = self.title, 
                         tools = TOOLS, plot_width=700, plot_height=600,
@@ -272,8 +291,12 @@ class BokehPlot(object):
             return (self.p, data_table)
         else:
             return (self.p, None)
+ 
+    def update_cb(self, renderer, new_dict):
+        renderer.stream(new_dict)
     
     def update_data(self):
+        doc = curdoc()
         if self.device.properties.network._started:           
             df = self.read_lst()
             for renderer in self.p.renderers:
@@ -294,7 +317,8 @@ class BokehPlot(object):
                     else:
                         df['units'] = self.analog_units[name]
                         new_data['units'] = df['units']
-                    glyph_renderer.data_source.data = new_data
+                    #glyph_renderer.data_source.data = new_data
+                    doc.add_next_tick_callback(partial(self.update_cb, renderer = glyph_renderer.data_source, new_dict = new_data))
                 elif name == 'Notes':
                     notes_df = self.read_notes()
                     new_data['x'] = notes_df['index']
@@ -302,4 +326,6 @@ class BokehPlot(object):
                     new_data['desc'] = notes_df['desc']
                     new_data['units'] = notes_df[0]
                     new_data['time'] = notes_df['time_s']
-                    glyph_renderer.data_source.data = new_data
+                    #glyph_renderer.data_source.data = new_data
+                    doc.add_next_tick_callback(partial(self.update_cb, renderer = glyph_renderer.data_source, new_dict = new_data))
+

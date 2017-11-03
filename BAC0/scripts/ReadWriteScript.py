@@ -39,8 +39,8 @@ from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.io.Simulate import Simulation
 from ..core.io.IOExceptions import BokehServerCantStart
 
-from ..bokeh.BokehRenderer import BokehSession, BokehDocument
-from ..bokeh.BokehServer import BokehServer
+from ..bokeh.BokehRenderer import BokehDocument
+from ..bokeh.BokehServer import BokehServer, FlaskServer, Bokeh_Worker
 
 from ..infos import __version__ as version
 
@@ -83,7 +83,6 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         # Force a global whois to find all devices on the network
         self.whois()
         if bokeh_server:
-            self._log.debug('Starting bokeh server')
             self.start_bokeh()
         else:
             self._log.warning('Bokeh server not started. Trend feature will not work')
@@ -95,22 +94,26 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             self._log.info('Starting Bokeh Serve')
             
             self.BokehServer = BokehServer()
-            self.BokehServer.start()
+            self.FlaskServer = FlaskServer()
+            self.bk_worker = Bokeh_Worker()
+            #self.BokehServer.start()
+            self.FlaskServer.start()
+            self.bk_worker.start()
             attemptedConnections = 0
-            while True:
-                try:
-                    requests.get('http://localhost:5006')
-                    break
-                except requests.exceptions.ConnectionError:                 
-                    attemptedConnections += 1
-                    if attemptedConnections > 10:
-                        raise BokehServerCantStart
-                time.sleep(1)                
+#            while True:
+#                try:
+#                    requests.get('http://localhost:5006')
+#                    break
+#                except requests.exceptions.ConnectionError:                 
+#                    attemptedConnections += 1
+#                    if attemptedConnections > 10:
+#                        raise BokehServerCantStart
+#                time.sleep(1)                
 
             self.bokehserver = True
             self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
-            self.new_bokeh_session()
-            self.bokeh_session.loop()
+#            self.new_bokeh_session()
+#            self.bokeh_session.loop()
 
         except OSError as error:
             self.bokehserver = False
@@ -126,12 +129,12 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             self._log.error('No Bokeh Server - controller.chart not available')
 
 
-    def new_bokeh_session(self):
-        self.bokeh_session = BokehSession(self.bokeh_document.document)
+#    def new_bokeh_session(self):
+#        self.bokeh_session = BokehSession(self.bokeh_document.document)
         
     def disconnect(self):
-        if self.bokehserver:
-            self.bokeh_session._loop.stop()
+#        if self.bokehserver:
+#            self.bokeh_session._loop.stop()
         super().disconnect()
 
     def __repr__(self):
