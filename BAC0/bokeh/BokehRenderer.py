@@ -8,35 +8,24 @@
 This module deals with Bokeh Session, Document and Plots
 A connection to the server is mandatory to use update_data
 """
-import random
 from bokeh.plotting import Figure
-from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis, CategoricalColorMapper
-from bokeh.models.widgets import DataTable, DateFormatter, NumberFormatter, TableColumn, Div
+from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis
+from bokeh.models.widgets import DataTable, DateFormatter, TableColumn, Div
 from bokeh.layouts import widgetbox, row, column, gridplot 
 from bokeh.palettes import d3, Spectral6
-from bokeh.models import Column
+
 #from bokeh.client import push_session
 from bokeh.document import Document
 from bokeh.io import curdoc
-from bokeh.application import Application
-from bokeh.application.handlers import FunctionHandler
-from bokeh.embed import server_document
-from bokeh.server.server import Server
+from bokeh.application.handlers.handler import Handler
+
 from functools import partial
 
-import numpy as np
 
 
-from collections import OrderedDict
 import logging
 import math
 import weakref
-from threading import Thread
-from flask import Flask, render_template
-
-from tornado.ioloop import IOLoop
-
-from .BokehLoopUntilClosed import BokehLoopUntilClosed
 
 class InstancesMixin(object):
     _instances = set()
@@ -62,14 +51,15 @@ class InstancesMixin(object):
         
 class BokehDocument(InstancesMixin):
     def __init__(self, title = 'Live Trending'):
-        
-
-        self.doc = curdoc()
+        self.doc = Document
         self.doc.title = title
         #self.document = Document(title = title)
         self.plots = []
         self.widgets = [None,]
         logging.getLogger("bokeh").setLevel(logging.INFO)
+        
+    def get_document(self):
+        return self.doc
         
     
     def add_plot(self, new_plot_and_widget, linked_x_axis = True, infos = None):
@@ -118,29 +108,6 @@ class BokehDocument(InstancesMixin):
     def add_periodic_callback(self, cb, update = 100):
         doc = curdoc()
         doc.add_periodic_callback(cb,update)
-
-
-
-#class BokehSession(object):
-#    _session = None
-#    _loop = None
-#    def __init__(self, document):
-#        if BokehSession._session == None:
-#            BokehSession._session = push_session(document)
-#        else:
-#            pass
-#        self.session_id = BokehSession._session.id
-#        print('Click here to open Live Trending Web Page')
-#        print('http://localhost:5006/?bokeh-session-id=%s' % self.session_id)
-#    
-#    def loop(self):
-#        if BokehSession._loop == None:
-#                BokehSession._loop = BokehLoopUntilClosed(BokehSession._session)
-#        try:
-#            BokehSession._loop.start() 
-#        except RuntimeError:
-#            BokehSession._loop.stop()
-#            BokehSession._loop.start()
 
 class BokehPlot(object):
     def __init__(self, device, points_list, *, title = 'My title', show_notes = True, update_data = True):
@@ -329,3 +296,29 @@ class BokehPlot(object):
                     #glyph_renderer.data_source.data = new_data
                     doc.add_next_tick_callback(partial(self.update_cb, renderer = glyph_renderer.data_source, new_dict = new_data))
 
+
+def trends_Application(doc):
+    doc.title = 'TRENDING'   
+
+
+class DevicesTableHandler(Handler):
+    """ A Bokeh Application handler to initialize Documents from a database
+
+    """
+    def __init__(self, network):
+        self.network = network
+        super().__init__()
+
+    def modify_document(self, doc):
+        devices_df = self.network.devices
+        dev = ColumnDataSource(devices_df)
+        columns = [
+            TableColumn(field=" Device ID", title="Dev ID"),
+            TableColumn(field="Address", title="Address"),
+            TableColumn(field="Manufacturer", title="Manuf"),
+            TableColumn(field="Name", title="Name")]
+        data_table = DataTable(source=dev, columns=columns)
+        layout = row([data_table])
+        doc.add_root(layout)
+        doc.title = 'BACnet devices'
+        return doc

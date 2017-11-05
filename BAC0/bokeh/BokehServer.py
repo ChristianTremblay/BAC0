@@ -13,14 +13,9 @@ So actually, the process is called outside of the script... then communication
 with the server is made using localhost:5006
 """
 from threading import Thread
-import time
 
-from bokeh.application import Application
 from bokeh.server.server import Server
-from bokeh.command.bootstrap import main as bokehserve
 
-from tornado.ioloop import IOLoop
-import os
 import sys
 import subprocess
 from subprocess import PIPE
@@ -29,12 +24,12 @@ import shlex
 from flask import Flask, render_template
 from bokeh.embed import server_document
 
-from bokeh.application import Application
-from bokeh.application.handlers import FunctionHandler
-from bokeh.document import Document
-from bokeh.themes import Theme
+from ..bokeh.BokehRenderer import trends_Application
 
 class BokehServer(Thread):
+    """
+    DEPRECATED
+    """
 
     # Init thread running server
     def __init__(self, *, daemon = True):
@@ -98,16 +93,26 @@ class FlaskServer(Thread):
         self.flask_app.run(port=8111)
 
     def config_flask_app(self):
-        @self.flask_app.route('/', methods=['GET'])
-        def bkapp_page():
-            script = server_document('http://localhost:5006/bac0')
+#        @self.flask_app.route('/trends', methods=['GET'])
+#        def bkapp_trends_page():
+#            script = server_document('http://localhost:5006/trends')
+#            return render_template("embed.html", script=script, template="Flask")
+ 
+        @self.flask_app.route('/devices', methods=['GET'])
+        def bkapp_devices_page():
+            script = server_document('http://localhost:5006/devices')
             return render_template("embed.html", script=script, template="Flask")
-    
+        
+        @self.flask_app.route('/', methods=['GET'])
+        def home_page():
+            #script = server_document('http://localhost:5006')
+            return render_template("index.html", template="Flask")   
+        
     def task(self):
         try:
             self.startServer()
-        except Exception:
-            print('Flask server already running')
+        except Exception as err:
+            print('Flask server already running', err)
             self.exitFlag = True
 
     def stop(self):
@@ -123,13 +128,9 @@ class FlaskServer(Thread):
 class Bokeh_Worker(Thread):
 
     # Init thread running server
-    def __init__(self, *, daemon = True):
+    def __init__(self, dev, *, daemon = True):
         Thread.__init__(self, daemon = daemon)
-        def new_doc(doc):
-            doc.title = "Test BAC0"
-            doc.theme = Theme(filename=r"C:\0Programmes\Github\BAC0\BAC0\bokeh\templates\theme.yaml")
-            
-        self.bkapp = Application(FunctionHandler(new_doc))
+        self.dev = dev
         self.exitFlag = False
                 
     def run(self):
@@ -140,15 +141,15 @@ class Bokeh_Worker(Thread):
             self.task()
 
     def startServer(self):
-        server = Server({'/bac0' : self.bkapp}, allow_websocket_origin=["localhost:8111", "localhost:5006"])
-        server.start()
-        server.io_loop.start()
+        self.server = Server({'/devices' : self.dev}, allow_websocket_origin=["localhost:8111", "localhost:5006"])
+        self.server.start()
+        self.server.io_loop.start()
     
     def task(self):
         try:
             self.startServer()
-        except Exception:
-            print('Flask server already running')
+        except Exception as err:
+            print('Bokeh server already running', err)
             self.exitFlag = True
 
     def stop(self):
