@@ -38,7 +38,7 @@ from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.io.Simulate import Simulation
 from ..core.io.IOExceptions import BokehServerCantStart
 
-from ..bokeh.BokehRenderer import BokehDocument, DevicesTableHandler
+from ..bokeh.BokehRenderer import BokehDocument, DevicesTableHandler, DynamicPlotHandler
 from ..bokeh.BokehServer import FlaskServer, Bokeh_Worker
 
 from ..infos import __version__ as version
@@ -99,7 +99,9 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             # Need to create the device document here
             devHandler = DevicesTableHandler(self)
             dev_app = Application(devHandler)
-            self.bk_worker = Bokeh_Worker(dev_app)
+            trendHandler = DynamicPlotHandler(self.bokeh_document)
+            trend_app = Application(trendHandler)
+            self.bk_worker = Bokeh_Worker(dev_app, trend_app)
             self.FlaskServer = FlaskServer()        
             self.bk_worker.start()        
             self.bokehserver = True

@@ -8,24 +8,27 @@
 This module deals with Bokeh Session, Document and Plots
 A connection to the server is mandatory to use update_data
 """
+import random
 from bokeh.plotting import Figure
-from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis
-from bokeh.models.widgets import DataTable, DateFormatter, TableColumn, Div
+from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis, CategoricalColorMapper
+from bokeh.models.widgets import DataTable, DateFormatter, NumberFormatter, TableColumn, Div
 from bokeh.layouts import widgetbox, row, column, gridplot 
 from bokeh.palettes import d3, Spectral6
-
-#from bokeh.client import push_session
+from bokeh.models import Column
+from bokeh.client import push_session
 from bokeh.document import Document
 from bokeh.io import curdoc
-from bokeh.application.handlers.handler import Handler
+from bokeh.application.handlers import Handler
 
-from functools import partial
+import numpy as np
 
 
-
+from collections import OrderedDict
 import logging
 import math
 import weakref
+
+from .BokehLoopUntilClosed import BokehLoopUntilClosed
 
 class InstancesMixin(object):
     _instances = set()
@@ -51,20 +54,15 @@ class InstancesMixin(object):
         
 class BokehDocument(InstancesMixin):
     def __init__(self, title = 'Live Trending'):
-        self.doc = Document
-        self.doc.title = title
-        #self.document = Document(title = title)
+        self.document = Document(title = title)
+        self.layout = None
+        self.cb = (None, 0)
         self.plots = []
         self.widgets = [None,]
-        logging.getLogger("bokeh").setLevel(logging.INFO)
+        self._log = logging.getLogger("bokeh").setLevel(logging.INFO)
         
-    def get_document(self):
-        return self.doc
-        
-    
     def add_plot(self, new_plot_and_widget, linked_x_axis = True, infos = None):
-        doc = curdoc()
-        doc.clear()
+        #self.document.clear()
         new_plot, widget = new_plot_and_widget
         new_plot.x_range.bounds = None
         new_plot.y_range.bounds = None
@@ -90,24 +88,40 @@ class BokehDocument(InstancesMixin):
                 plot.x_range.bounds = None
                 plot.y_range.bounds = None
         
-        div_header_doc = Div(text ="""<div class="header">
+        self.div_header_doc = Div(text ="""<div class="header">
                              <H1> BAC0 Trending Tools </H1>
                              <h2>For %s (Address : %s | Device ID : %s)</h2></div>""" % (infos.name, infos.address, infos.device_id))        
-        div_header_notes = Div(text="""<div class="TableTitle"><H1> Notes from controller</H1></div>""")
-        div_footer = Div(text="""<div class="footer"><p> <a href="http://www.servisys.com">Servisys inc.</a> | 
+        self.div_header_notes = Div(text="""<div class="TableTitle"><H1> Notes from controller</H1></div>""")
+        self.div_footer = Div(text="""<div class="footer"><p> <a href="http://www.servisys.com">Servisys inc.</a> | 
                          <a href="https://pythoninthebuilding.wordpress.com/">Python in the building</a></p></div>""")
 
-        layout = column(widgetbox(div_header_doc), 
-                        gridplot(self.plots, ncols=2), 
-                        widgetbox(div_header_notes),
-                        row(self.widgets),
-                        widgetbox(div_footer))
+
         #self.document.add_root(layout)
-        doc.add_root(layout)
+        #curdoc().add_root(layout)
         
-    def add_periodic_callback(self, cb, update = 100):
-        doc = curdoc()
-        doc.add_periodic_callback(cb,update)
+#    def add_periodic_callback(self, cb, update = 100):
+#        doc.add_periodic_callback(cb,update)
+
+#class BokehSession(object):
+#    _session = None
+#    _loop = None
+#    def __init__(self, document):
+#        if BokehSession._session == None:
+#            BokehSession._session = push_session(document)
+#        else:
+#            pass
+#        self.session_id = BokehSession._session.id
+#        print('Click here to open Live Trending Web Page')
+#        print('http://localhost:5006/?bokeh-session-id=%s' % self.session_id)
+#    
+#    def loop(self):
+#        if BokehSession._loop == None:
+#                BokehSession._loop = BokehLoopUntilClosed(BokehSession._session)
+#        try:
+#            BokehSession._loop.start() 
+#        except RuntimeError:
+#            # probably started
+#            pass
 
 class BokehPlot(object):
     def __init__(self, device, points_list, *, title = 'My title', show_notes = True, update_data = True):
@@ -130,8 +144,7 @@ class BokehPlot(object):
         self.device.properties.network.bokeh_document.add_plot(plot, infos=self.device.properties)
         #curdoc().add_root(plot)
         if update_data:
-            doc = curdoc()
-            doc.add_periodic_callback(self.update_data, 100)   
+            self.device.properties.network.bokeh_document.cb = (self.update_data, 100)
         print('Chart created, please reload your web page to see changes')
         
      # Get data
@@ -258,12 +271,8 @@ class BokehPlot(object):
             return (self.p, data_table)
         else:
             return (self.p, None)
- 
-    def update_cb(self, renderer, new_dict):
-        renderer.stream(new_dict)
     
     def update_data(self):
-        doc = curdoc()
         if self.device.properties.network._started:           
             df = self.read_lst()
             for renderer in self.p.renderers:
@@ -284,8 +293,7 @@ class BokehPlot(object):
                     else:
                         df['units'] = self.analog_units[name]
                         new_data['units'] = df['units']
-                    #glyph_renderer.data_source.data = new_data
-                    doc.add_next_tick_callback(partial(self.update_cb, renderer = glyph_renderer.data_source, new_dict = new_data))
+                    glyph_renderer.data_source.data = new_data
                 elif name == 'Notes':
                     notes_df = self.read_notes()
                     new_data['x'] = notes_df['index']
@@ -293,16 +301,31 @@ class BokehPlot(object):
                     new_data['desc'] = notes_df['desc']
                     new_data['units'] = notes_df[0]
                     new_data['time'] = notes_df['time_s']
-                    #glyph_renderer.data_source.data = new_data
-                    doc.add_next_tick_callback(partial(self.update_cb, renderer = glyph_renderer.data_source, new_dict = new_data))
+                    glyph_renderer.data_source.data = new_data
 
 
-def trends_Application(doc):
-    doc.title = 'TRENDING'   
-
+class DynamicPlotHandler(Handler):
+    def __init__(self, bac0_document):
+        self.bac0_document = bac0_document
+        super().__init__()
+    
+    def modify_document(self, doc):
+        d = self.bac0_document
+        doc.clear()
+        layout = column(widgetbox(d.div_header_doc), 
+                gridplot(d.plots, ncols=2), 
+                widgetbox(d.div_header_notes),
+                #row(d.widgets),
+                widgetbox(d.div_footer))
+        doc.add_root(layout)
+        cb, delay = d.cb
+        if cb:
+            doc.add_periodic_callback(cb,delay)
+        return doc
 
 class DevicesTableHandler(Handler):
-    """ A Bokeh Application handler to initialize Documents from a database
+    """ 
+    This handler will poll the network and show devices.
 
     """
     def __init__(self, network):
@@ -310,6 +333,7 @@ class DevicesTableHandler(Handler):
         super().__init__()
 
     def modify_document(self, doc):
+        self.network.whois()
         devices_df = self.network.devices
         dev = ColumnDataSource(devices_df)
         columns = [

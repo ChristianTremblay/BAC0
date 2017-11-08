@@ -24,7 +24,6 @@ import shlex
 from flask import Flask, render_template
 from bokeh.embed import server_document
 
-from ..bokeh.BokehRenderer import trends_Application
 
 class BokehServer(Thread):
     """
@@ -93,10 +92,10 @@ class FlaskServer(Thread):
         self.flask_app.run(port=8111)
 
     def config_flask_app(self):
-#        @self.flask_app.route('/trends', methods=['GET'])
-#        def bkapp_trends_page():
-#            script = server_document('http://localhost:5006/trends')
-#            return render_template("embed.html", script=script, template="Flask")
+        @self.flask_app.route('/trends', methods=['GET'])
+        def bkapp_trends_page():
+            script = server_document('http://localhost:5006/trends')
+            return render_template("embed.html", script=script, template="Flask")
  
         @self.flask_app.route('/devices', methods=['GET'])
         def bkapp_devices_page():
@@ -128,9 +127,10 @@ class FlaskServer(Thread):
 class Bokeh_Worker(Thread):
 
     # Init thread running server
-    def __init__(self, dev, *, daemon = True):
+    def __init__(self, dev, trends, *, daemon = True):
         Thread.__init__(self, daemon = daemon)
         self.dev = dev
+        self.trends= trends
         self.exitFlag = False
                 
     def run(self):
@@ -141,7 +141,7 @@ class Bokeh_Worker(Thread):
             self.task()
 
     def startServer(self):
-        self.server = Server({'/devices' : self.dev}, allow_websocket_origin=["localhost:8111", "localhost:5006"])
+        self.server = Server({'/devices' : self.dev, '/trends' : self.trends}, allow_websocket_origin=["localhost:8111", "localhost:5006"])
         self.server.start()
         self.server.io_loop.start()
     
