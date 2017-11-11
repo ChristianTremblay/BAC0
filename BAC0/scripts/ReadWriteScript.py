@@ -44,6 +44,7 @@ from ..bokeh.BokehServer import FlaskServer, Bokeh_Worker
 from ..infos import __version__ as version
 
 from bokeh.application import Application
+from pandas import DataFrame
 
 #------------------------------------------------------------------------------
 
@@ -96,15 +97,17 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         try:
             self._log.info('Starting Bokeh Serve')
             self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
+            self.trends = []
             # Need to create the device document here
             devHandler = DevicesTableHandler(self)
             dev_app = Application(devHandler)
-            trendHandler = DynamicPlotHandler(self.bokeh_document)
+            trendHandler = DynamicPlotHandler(self)
             trend_app = Application(trendHandler)
             self.bk_worker = Bokeh_Worker(dev_app, trend_app)
             self.FlaskServer = FlaskServer()        
             self.bk_worker.start()        
             self.bokehserver = True
+
 
         except OSError as error:
             self.bokehserver = False
