@@ -38,7 +38,7 @@ from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.io.Simulate import Simulation
 from ..core.io.IOExceptions import BokehServerCantStart
 
-from ..bokeh.BokehRenderer import BokehDocument, DevicesTableHandler, DynamicPlotHandler
+from ..bokeh.BokehRenderer import DevicesTableHandler, DynamicPlotHandler
 from ..bokeh.BokehServer import FlaskServer, Bokeh_Worker
 
 from ..infos import __version__ as version
@@ -96,14 +96,14 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
     def start_bokeh(self):
         try:
             self._log.info('Starting Bokeh Serve')
-            self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
-            self.trends = []
+            #self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
+            self.points_to_trend = []
             # Need to create the device document here
             devHandler = DevicesTableHandler(self)
             dev_app = Application(devHandler)
             trendHandler = DynamicPlotHandler(self)
-            trend_app = Application(trendHandler)
-            self.bk_worker = Bokeh_Worker(dev_app, trend_app)
+            self.trend_app = Application(trendHandler)
+            self.bk_worker = Bokeh_Worker(dev_app, self.trend_app)
             self.FlaskServer = FlaskServer()        
             self.bk_worker.start()        
             self.bokehserver = True
