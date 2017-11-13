@@ -38,13 +38,12 @@ from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.io.Simulate import Simulation
 from ..core.io.IOExceptions import BokehServerCantStart
 
-from ..bokeh.BokehRenderer import DevicesTableHandler, DynamicPlotHandler
+from ..bokeh.BokehRenderer import DevicesTableHandler, DynamicPlotHandler, NotesTableHandler
 from ..bokeh.BokehServer import FlaskServer, Bokeh_Worker
 
 from ..infos import __version__ as version
 
 from bokeh.application import Application
-from pandas import DataFrame
 
 #------------------------------------------------------------------------------
 
@@ -67,11 +66,13 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         from being started. Can help troubleshoot issues with Bokeh. By default,
         set to True.
     """
-    def __init__(self, ip=None, bokeh_server=True):
+    def __init__(self, ip=None, bokeh_server=True, flask_port = 8111):
         print("Starting BAC0 version %s" % version)
         self._log = logging.getLogger('BAC0.script.%s' \
                     % self.__class__.__name__)
         self._log.debug("Configurating app")
+        self.flask_port = flask_port
+        self.notes = ('Not Set', None)
         if ip is None:
             host = HostIP()
             ip_addr = host.address
@@ -80,7 +81,6 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
         BasicScript.__init__(self, localIPAddr=ip_addr)
         
-
         self.bokehserver = False
         # Force a global whois to find all devices on the network
         self.whois()
@@ -91,23 +91,22 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         else:
             self._log.warning('Bokeh server not started. Trend feature will not work')
             
-        
-
     def start_bokeh(self):
         try:
             self._log.info('Starting Bokeh Serve')
-            #self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
             self.points_to_trend = []
             # Need to create the device document here
             devHandler = DevicesTableHandler(self)
             dev_app = Application(devHandler)
             trendHandler = DynamicPlotHandler(self)
+            notesHandler = NotesTableHandler(self)
             self.trend_app = Application(trendHandler)
-            self.bk_worker = Bokeh_Worker(dev_app, self.trend_app)
-            self.FlaskServer = FlaskServer()        
+            self.notes_app = Application(notesHandler)
+            self.bk_worker = Bokeh_Worker(dev_app, self.trend_app, self.notes_app)
+            self.FlaskServer = FlaskServer(port=self.flask_port)        
             self.bk_worker.start()        
             self.bokehserver = True
-
+            print('Server started : http://localhost:%s' % self.flask_port)
 
         except OSError as error:
             self.bokehserver = False
@@ -122,7 +121,6 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             self.bokehserver = False
             self._log.error('No Bokeh Server - controller.chart not available')
 
-
     def disconnect(self):
 #        if self.bokehserver:
 #            self.bokeh_session._loop.stop()
@@ -130,7 +128,6 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
     def __repr__(self):
         return 'Bacnet Network using ip %s with device id %s' % (self.localIPAddr, self.Boid)
-
 
 def log_debug(txt, *args):
     """ Helper function to log debug messages
