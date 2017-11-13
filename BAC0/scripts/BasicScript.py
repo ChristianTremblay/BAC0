@@ -62,6 +62,7 @@ class BasicScript():
     :param maxSegmentsAccepted='1024':
     :param segmentationSupported='segmentedBoth':
     """
+    
     def __init__(self, localIPAddr='127.0.0.1', localObjName='BAC0', DeviceId=None,
                  maxAPDULengthAccepted='1024', maxSegmentsAccepted='1024', segmentationSupported='segmentedBoth'):
 
@@ -135,7 +136,7 @@ class BasicScript():
             try:
                 self._startAppThread()
             except:
-                self._log.debug("Error opening socket")
+                self._log.warning("Error opening socket")
                 raise
             self._log.debug("Running")
 

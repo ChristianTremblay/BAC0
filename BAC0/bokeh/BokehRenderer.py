@@ -20,7 +20,6 @@ import logging
 import math
 import pandas as pd
 
-
 class DynamicPlotHandler(Handler):
     def __init__(self, network):
         self.network = network

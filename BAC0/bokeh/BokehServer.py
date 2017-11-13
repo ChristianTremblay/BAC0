@@ -68,7 +68,9 @@ class FlaskServer(Thread):
             self.exitFlag = True
 
     def stop(self):
-        self.bokeh_server.stop()
+        print('Trying to stop Bokeh Server')
+        #self.bokeh_server.stop()
+        self.p.terminate()
         self.exitFlag = True
 
     def beforeStop(self):
