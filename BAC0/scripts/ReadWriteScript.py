@@ -22,7 +22,6 @@ Once the class is created, create the local object and use it::
 
 '''
 #--- standard Python modules ---
-import requests
 import time
 import logging
 
@@ -37,18 +36,15 @@ from ..core.io.Write import WriteProperty
 from ..core.functions.GetIPAddr import HostIP
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.io.Simulate import Simulation
-from ..core.io.IOExceptions import BokehServerCantStart, ApplicationNotStarted
+from ..core.io.IOExceptions import BokehServerCantStart
 
-from ..bokeh.BokehRenderer import BokehSession, BokehDocument
-from ..bokeh.BokehServer import BokehServer
+from ..bokeh.BokehRenderer import DevicesTableHandler, DynamicPlotHandler, NotesTableHandler
+from ..bokeh.BokehServer import FlaskServer, Bokeh_Worker
 
 from ..infos import __version__ as version
 
-try:
-    import bokeh
-    BOKEH = True
-except ImportError:
-    BOKEH = False
+from bokeh.application import Application
+
 #------------------------------------------------------------------------------
 
 # some debugging
@@ -70,54 +66,47 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         from being started. Can help troubleshoot issues with Bokeh. By default,
         set to True.
     """
-    
-    def __init__(self, ip=None, bokeh_server=True):
+    def __init__(self, ip=None, bokeh_server=True, flask_port = 8111):
         print("Starting BAC0 version %s" % version)
         self._log = logging.getLogger('BAC0.script.%s' \
                     % self.__class__.__name__)
         self._log.debug("Configurating app")
+        self.flask_port = flask_port
+        self.notes = ('Not Set', None)
         if ip is None:
             host = HostIP()
             ip_addr = host.address
         else:
             ip_addr = ip
+
         BasicScript.__init__(self, localIPAddr=ip_addr)
         
-
         self.bokehserver = False
-        
-        if bokeh_server and BOKEH:
-            self._log.debug('Starting bokeh server')
-            self.start_bokeh()
-        else:
-            self._log.warning('Bokeh server not started. Trend feature will not work')
-        
         # Force a global whois to find all devices on the network
         self.whois()
-
-        
-
+        time.sleep(2)
+        if bokeh_server:
+            self.start_bokeh()
+            self.FlaskServer.start()
+        else:
+            self._log.warning('Bokeh server not started. Trend feature will not work')
+            
     def start_bokeh(self):
         try:
             self._log.info('Starting Bokeh Serve')
-            
-            self.BokehServer = BokehServer()
-            self.BokehServer.start()
-            attemptedConnections = 0
-            while True:
-                try:
-                    requests.get('http://localhost:5006')
-                    break
-                except requests.exceptions.ConnectionError:                 
-                    attemptedConnections += 1
-                    if attemptedConnections > 10:
-                        raise BokehServerCantStart
-                time.sleep(1)                
-
+            self.points_to_trend = []
+            # Need to create the device document here
+            devHandler = DevicesTableHandler(self)
+            dev_app = Application(devHandler)
+            trendHandler = DynamicPlotHandler(self)
+            notesHandler = NotesTableHandler(self)
+            self.trend_app = Application(trendHandler)
+            self.notes_app = Application(notesHandler)
+            self.bk_worker = Bokeh_Worker(dev_app, self.trend_app, self.notes_app)
+            self.FlaskServer = FlaskServer(port=self.flask_port)        
+            self.bk_worker.start()        
             self.bokehserver = True
-            self.bokeh_document = BokehDocument(title = 'BAC0 - Live Trending')
-            self.new_bokeh_session()
-            self.bokeh_session.loop()
+            print('Server started : http://localhost:%s' % self.flask_port)
 
         except OSError as error:
             self.bokehserver = False
@@ -126,26 +115,19 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
         except RuntimeError as rterror:
             self.bokehserver = False
-            self._log.warning('Server already running', rterror)
+            self._log.warning('Server already running')
 
         except BokehServerCantStart:
             self.bokehserver = False
             self._log.error('No Bokeh Server - controller.chart not available')
 
-
-    def new_bokeh_session(self):
-        self.bokeh_session = BokehSession(self.bokeh_document.document)
-        
     def disconnect(self):
-        if self.bokehserver:
-            self.bokeh_session._loop.stop()
-            self.BokehServer.stop()
-            # self.BokehServer = None
+#        if self.bokehserver:
+#            self.bokeh_session._loop.stop()
         super().disconnect()
 
     def __repr__(self):
         return 'Bacnet Network using ip %s with device id %s' % (self.localIPAddr, self.Boid)
-
 
 def log_debug(txt, *args):
     """ Helper function to log debug messages

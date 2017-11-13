@@ -135,6 +135,17 @@ class Point():
         returns : (pd.Series) containing timestamp and value of all readings
         """
         his_table = pd.Series(self._history.value, index=self._history.timestamp)
+        his_table.name = ('%s/%s') % (self.properties.device.properties.name, self.properties.name)
+        his_table.units = self.properties.units_state
+        if self.properties.name in self.properties.device.binary_states:
+            his_table.states = 'binary'
+        elif self.properties.name in self.properties.device.multi_states:
+            his_table.states = 'multistates'
+        else:
+            his_table.states = 'analog'
+        his_table.description = self.properties.description
+            
+        his_table.datatype = self.properties.type
         return his_table
 
 

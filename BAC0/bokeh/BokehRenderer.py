@@ -8,298 +8,233 @@
 This module deals with Bokeh Session, Document and Plots
 A connection to the server is mandatory to use update_data
 """
-import random
 from bokeh.plotting import Figure
-from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis, CategoricalColorMapper
-from bokeh.models.widgets import DataTable, DateFormatter, NumberFormatter, TableColumn, Div
+from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis
+from bokeh.models.widgets import DataTable, TableColumn, Div
 from bokeh.layouts import widgetbox, row, column, gridplot 
 from bokeh.palettes import d3, Spectral6
-from bokeh.models import Column
-from bokeh.client import push_session
-from bokeh.document import Document
 from bokeh.io import curdoc
+from bokeh.application.handlers import Handler
 
-import numpy as np
-
-
-from collections import OrderedDict
 import logging
 import math
-import weakref
+import pandas as pd
 
-from .BokehLoopUntilClosed import BokehLoopUntilClosed
-
-class InstancesMixin(object):
-    _instances = set()
-    
-    def checkInstances(self, cls):
-        for obj in cls.getinstances():
-            if obj.title == self.title:
-                del obj
-        list(self.getinstances())
-
-        self._instances.add(weakref.ref(self)) 
+class DynamicPlotHandler(Handler):
+    def __init__(self, network):
+        self.network = network
+        self.sources = {}
+        self._last_time_list = None
+        super().__init__()
         
-    @classmethod
-    def getinstances(cls):
-        dead = set()
-        for ref in cls._instances:
-            obj = ref()
-            if obj is not None:
-                yield obj
-            else:
-                dead.add(ref)
-        cls._instances -= dead
-        
-class BokehDocument(InstancesMixin):
-    def __init__(self, title = 'Live Trending'):
-        self.document = Document(title = title)
-        self.plots = []
-        self.widgets = [None,]
-        self._log = logging.getLogger("bokeh").setLevel(logging.INFO)
-        
-    def add_plot(self, new_plot_and_widget, linked_x_axis = True, infos = None):
-        self.document.clear()
-        new_plot, widget = new_plot_and_widget
-        new_plot.x_range.bounds = None
-        new_plot.y_range.bounds = None
-        for key, plot in enumerate(self.plots):
-            if new_plot.title == plot.title:
-                self.plots.pop(key)
-                self.plots.append(new_plot)
-                break
-        else:
-            self.plots.append(new_plot)
-            if self.widgets:
-                pass
-            else:
-                # For now, let's deal with only one widget
-                self.widgets.append(widget)
-
-        
-        self.widgets[0] = widget
-
-        if linked_x_axis:
-            for plot in self.plots[1:]:
-                plot.x_range = self.plots[0].x_range
-                plot.x_range.bounds = None
-                plot.y_range.bounds = None
-        
-        div_header_doc = Div(text ="""<div class="header">
-                             <H1> BAC0 Trending Tools </H1>
-                             <h2>For %s (Address : %s | Device ID : %s)</h2></div>""" % (infos.name, infos.address, infos.device_id))        
-        div_header_notes = Div(text="""<div class="TableTitle"><H1> Notes from controller</H1></div>""")
-        div_footer = Div(text="""<div class="footer"><p> <a href="http://www.servisys.com">Servisys inc.</a> | 
+    def organize_data(self):
+        self.s = {}
+        for point in self.network.points_to_trend:
+            self.s[point.history.name] = (point.history, point.history.units)
+        self.lst_of_trends = [his[0] for name, his in self.s.items()]  
+       
+    def build_plot(self):     
+        self.organize_data()
+        for each in self.lst_of_trends:
+            df = pd.DataFrame(each)
+            df = df.reset_index()
+            #print(df)
+            df['name'] = each.name
+            df['units'] = str(each.units)
+            df['time_s'] = df['index'].apply(str)
+            df.states = each.states
+            try:
+                df = df.fillna(method='ffill').fillna(method='bfill').replace(['inactive', 'active'], [0, 1])
+            except TypeError:
+                df = df.fillna(method='ffill').fillna(method='bfill')
+            
+            self.sources[each.name] = ColumnDataSource(
+                            data=dict(
+                            x = df['index'],
+                            y = df[each.name],
+                            time = df['time_s'],
+                            name = df['name'],
+                            units = df['units']
+                        )
+                            )
+        self.div_header_doc = Div(text ="""<div class="header">
+                             <H1> BAC0 Trending Tools </H1></div>""")     
+        #self.div_header_notes = Div(text="""<div class="TableTitle"><H1> Notes from controller</H1></div>""")
+        self.div_footer = Div(text="""<div class="footer"><p> <a href="http://www.servisys.com">Servisys inc.</a> | 
                          <a href="https://pythoninthebuilding.wordpress.com/">Python in the building</a></p></div>""")
-
-        layout = column(widgetbox(div_header_doc), 
-                        gridplot(self.plots, ncols=2), 
-                        widgetbox(div_header_notes),
-                        row(self.widgets),
-                        widgetbox(div_footer))
-        self.document.add_root(layout)
-        #curdoc().add_root(layout)
-        
-    def add_periodic_callback(self, cb, update = 100):
-        self.document.add_periodic_callback(cb,update)
-
-class BokehSession(object):
-    _session = None
-    _loop = None
-    def __init__(self, document):
-        if BokehSession._session == None:
-            BokehSession._session = push_session(document)
-        else:
-            pass
-        self.session_id = BokehSession._session.id
-        print('Click here to open Live Trending Web Page')
-        print('http://localhost:5006/?bokeh-session-id=%s' % self.session_id)
-    
-    def loop(self):
-        if BokehSession._loop == None:
-                BokehSession._loop = BokehLoopUntilClosed(BokehSession._session)
-        try:
-            BokehSession._loop.start() 
-        except RuntimeError:
-            # probably started
-            pass
-
-class BokehPlot(object):
-    def __init__(self, device, points_list, *, title = 'My title', show_notes = True, update_data = True):
-        self.device = device
-        if len(points_list) < 3:
-            raise ValueError("Provide at least 3 objects to the chart")
-        self.points_list = points_list
-        self.title = title
-        self.units = {}
-        self.show_notes = show_notes
-
-        self.lst = self.points_list
-
-        self.multi_states = self.device.multi_states
-        self.binary_states = self.device.binary_states
-        self.analog_units = self.device.analog_units
-
-        plot = self.build_plot()
-
-        self.device.properties.network.bokeh_document.add_plot(plot, infos=self.device.properties)
-        #curdoc().add_root(plot)
-        if update_data:
-            self.device.properties.network.bokeh_document.add_periodic_callback(self.update_data, 100)   
-        print('Chart created, please reload your web page to see changes')
-        
-     # Get data
-    def read_lst(self):
-        df = self.device[self.lst]
-        try:
-            df = df.fillna(method='ffill').fillna(method='bfill').replace(['inactive', 'active'], [0, 1])
-        except TypeError:
-            df = df.fillna(method='ffill').fillna(method='bfill')
-                                      
-        df = df.reset_index()
-        df['name'] = 'nameToReplace'
-        df['units'] = 'waiting for refresh'
-        df['time_s'] = df['index'].apply(str)
-        return df
-
-    def read_notes(self):
-        notes_df = self.device.notes.reset_index()
-        notes_df['value'] = -5
-        notes_df['desc'] = 'Notes'
-        notes_df['time_s'] = notes_df['index'].apply(str)
-        return notes_df
-
-    def build_plot(self):        
-        df = self.read_lst()
-        notes_df = self.read_notes()
 
         TOOLS = "pan,box_zoom,wheel_zoom,save,reset"
         self.p = Figure(x_axis_type="datetime", x_axis_label="Time", 
-                        y_axis_label="Numeric Value", title = self.title, 
-                        tools = TOOLS, plot_width=700, plot_height=600,
+                        y_axis_label="Numeric Value", title = 'BAC0 Trends', 
+                        tools = TOOLS, plot_width=1024, plot_height=768,
                         toolbar_location = 'above')
 
-        if self.show_notes:
-            self.notes_source = ColumnDataSource(
-                    data=dict(
-                        x = notes_df['index'],
-                        y = notes_df['value'],
-                        time = notes_df['time_s'],
-                        desc = notes_df['desc'],
-                        units = notes_df[0]
-                    )
-                )
-
-            self.p.asterisk('x', 
-                            'y',
-                            source = self.notes_source,
-                            name = 'Notes',
-                            #color = "#%06x" % random.randint(0x000000, 0x777777), 
-                            legend='Notes',
-                            size = 40) 
-
-        self.p.legend.location = 'top_left'
         self.p.extra_y_ranges = {"bool": Range1d(start=0, end=1.1),
                                  "enum": Range1d(start=0, end=10)}
         self.p.add_layout(LinearAxis(y_range_name="bool", axis_label="Binary"), 'left')
         self.p.add_layout(LinearAxis(y_range_name="enum", axis_label="Enumerated"), 'right')
-        self.p.legend.location = "bottom_left"
                             
         hover = HoverTool(tooltips=[
-            ('name', '@desc'),
+            ('name', '@name'),
             ('value', '@y'),
             ('units', '@units'),
             ('time', '@time'),
         ])
         self.p.add_tools(hover)
-
-        self.sources = {}
-        if len(self.lst)<=10:
-            color_mapper = dict(zip(self.lst, d3['Category10'][len(self.lst)]))
+        
+        length = len(self.s.keys())
+        if length<=10:
+            if length < 3:
+                length = 3
+            color_mapper = dict(zip(self.s.keys(), d3['Category10'][length]))
         else:
             # This would be a very loaded trend...
-            color_mapper = dict(zip(self.lst, Spectral6[:len(self.lst)]))
-            
-        for each in self.lst:
-            
-            try:
-                df['name'] = df['name'].replace('nameToReplace', ('%s / %s' % (each, self.device[each]['description'])))            
-            except TypeError:
-                continue
-            self.sources[each] = ColumnDataSource(
-                            data=dict(
-                            x = df['index'],
-                            y = df[each],
-                            time = df['time_s'],
-                            name = df['name'],
-                            units = df['units']
-                        )
-                    )
-            
-            
-            if each in self.binary_states:
+            color_mapper = dict(zip(self.s.keys(), Spectral6[:length]))
+          
+
+        for each in self.lst_of_trends:
+            if each.states == 'binary':
                 self.p.circle('x', 
                             'y',
-                            source = self.sources[each],
-                            name = each,
-                            color=color_mapper[each],
-                            legend=("%s/%s (OFF-ON)" % (each, self.device[each]['description'])),
+                            source = self.sources[each.name],
+                            name = each.name,
+                            color=color_mapper[each.name],
+                            legend=("%s | %s (OFF-ON)" % (each.name, each.description)),
                             y_range_name="bool",
                             size = 10)
-            elif each in self.multi_states:
+            elif each.states == 'multistates':
                 self.p.diamond('x', 
                             'y',
-                            source = self.sources[each],
-                            name = each,
-                            color=color_mapper[each],
-                            legend=("%s/%s (%s)" % (each, self.device[each]['description'], self.device[each].properties.units_state)),
+                            source = self.sources[each.name],
+                            name = each.name,
+                            color=color_mapper[each.name],
+                            legend=("%s | %s (%s)" % (each.name, each.description, each.units)),
                             y_range_name="enum",
                             size = 20)            
             else:
                 self.p.line('x',
                             'y',
-                            source = self.sources[each],
-                            name = each,
-                            color=color_mapper[each],
-                            legend=("%s/%s (%s)" % (each, self.device[each]['description'], self.device[each].properties.units_state)),
+                            source = self.sources[each.name],
+                            name = each.name,
+                            color=color_mapper[each.name],
+                            legend=("%s | %s (%s)" % (each.name, each.description, each.units)),
                             line_width = 2)
-        if self.show_notes:        
-            columns = [
-                    TableColumn(field="x", title="Date", formatter=DateFormatter(format='yy-mm-dd')),
-                    TableColumn(field="units", title="Notes"),
-                ]        
-            data_table = DataTable(source=self.notes_source, columns=columns)    
-            return (self.p, data_table)
-        else:
-            return (self.p, None)
+                
+            self.p.legend.location = 'bottom_left'
+            self.p.legend.click_policy = "hide"
+
+            self.plots = [self.p,]
     
     def update_data(self):
-        if self.device.properties.network._started:           
-            df = self.read_lst()
-            for renderer in self.p.renderers:
-                name = renderer.name
-                glyph_renderer = renderer
-                new_data = {}
-                if name in self.points_list:     
-                    df['name'] = ('%s / %s' % (name, self.device[name]['description']))
-                    new_data['x'] = df['index']
-                    new_data['y'] = df[name]
-                    new_data['desc'] = df['name']
-                    new_data['time'] = df['time_s']
-                    if name in self.multi_states:
-                        new_data['units'] = [self.multi_states[name][int(math.fabs(x-1))] for x in df[name]]
-                    elif name in self.binary_states:
-                        new_data['y'] = df[name]
-                        new_data['units'] = [self.binary_states[name][int(x/1)] for x in df[name]]
-                    else:
-                        df['units'] = self.analog_units[name]
-                        new_data['units'] = df['units']
-                    glyph_renderer.data_source.data = new_data
-                elif name == 'Notes':
-                    notes_df = self.read_notes()
-                    new_data['x'] = notes_df['index']
-                    new_data['y'] = notes_df['value']
-                    new_data['desc'] = notes_df['desc']
-                    new_data['units'] = notes_df[0]
-                    new_data['time'] = notes_df['time_s']
-                    glyph_renderer.data_source.data = new_data
+        self.organize_data()
+        if self._last_time_list:
+            if self._last_time_list != self.s.keys():
+                self._list_have_changed = True
+                curdoc().remove_periodic_callback(self.update_data)
+                self.modify_document(curdoc())
+            else:
+                self._list_have_changed = False
+        
+        l = []
+        for each in self.p.renderers:
+            l.append(each.name)
+        
+        for each in self.lst_of_trends:
+            df = pd.DataFrame(each)
+            df = df.reset_index()
+            df['name'] = each.name
+            df['units'] = str(each.units)
+            df['time_s'] = df['index'].apply(str)
+            
+            try:
+                df = df.fillna(method='ffill').fillna(method='bfill').replace(['inactive', 'active'], [0, 1])
+            except TypeError:
+                df = df.fillna(method='ffill').fillna(method='bfill')
+            
+            index = l.index(each.name)
+            renderer = self.p.renderers[index]
+            new_data = {}
+            new_data['name'] = df['name']
+            new_data['x'] = df['index']
+            new_data['y'] = df[each.name]
+            if each.states == 'binary':
+                new_data['units'] = [each.units[int(x)] for x in df[each.name]]
+            elif each.states == 'multistates':
+                new_data['units'] = [each.units[int(math.fabs(x-1))] for x in df[each.name]]
+            else:
+                new_data['units'] = df['units']
+            new_data['time'] = df['time_s']
+            renderer.data_source.data = new_data
+        self._last_time_list = self.s.keys()
+            
+    def modify_document(self, doc):
+        curdoc().clear()
+        try:
+            curdoc().remove_periodic_callback(self.update_data)
+        except:
+            pass
+        doc.clear()
+        self.build_plot()
+        layout = column(widgetbox(self.div_header_doc), 
+                gridplot(self.plots, ncols=2), 
+                #widgetbox(self.div_header_notes),
+                widgetbox(self.div_footer))
+        doc.add_root(layout)
+        doc.add_periodic_callback(self.update_data,100)          
+        return doc
+
+class DevicesTableHandler(Handler):
+    """ 
+    This handler will poll the network and show devices.
+
+    """
+    def __init__(self, network):
+        self.network = network
+        super().__init__()
+
+    def modify_document(self, doc):
+        self.network.whois()
+        devices_df = self.network.devices
+        dev = ColumnDataSource(devices_df)
+        columns = [
+            TableColumn(field=" Device ID", title="Dev ID"),
+            TableColumn(field="Address", title="Address"),
+            TableColumn(field="Manufacturer", title="Manuf"),
+            TableColumn(field="Name", title="Name")]
+        data_table = DataTable(source=dev, columns=columns)
+        layout = row([data_table])
+        doc.add_root(layout)
+        doc.title = 'BACnet devices'
+        return doc
+
+class NotesTableHandler(Handler):
+    """ 
+    This handler will poll the network and show devices.
+
+    """
+    def __init__(self, network):
+        self.network = network
+        super().__init__()
+
+    def modify_document(self, doc):
+        controller = self.network.notes[0]
+        notes_df = pd.DataFrame(self.network.notes[1]).reset_index()
+        notes_df.columns = ['index', 'notes']
+        notes = ColumnDataSource(notes_df)
+        self.columns = [
+            TableColumn(field="index", title="Timestamp"),
+            TableColumn(field="notes", title="Notes")]
+        self.data_table = DataTable(source=notes, columns=self.columns)
+        layout = row([self.data_table])
+        doc.add_root(layout)
+        doc.title = 'Notes for %s' % controller
+        #doc.add_periodic_callback(self.update_data,100)  
+        return doc
+    
+    def update_data(self):
+        controller = self.network.notes[0]
+        notes_df = pd.DataFrame(self.network.notes[1]).reset_index()
+        notes_df.columns = ['index', 'notes']
+        notes = ColumnDataSource(notes_df)
+        self.data_table.source.data.update(notes.data)
+        curdoc().title = 'Notes for %s' % controller
