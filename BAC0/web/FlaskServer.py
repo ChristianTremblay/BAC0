@@ -14,17 +14,18 @@ with the server is made using localhost:5006
 """
 from threading import Thread
 
-from bokeh.server.server import Server
-
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 from bokeh.embed import server_document
+
+from .templates import create_sidebar, create_card
 
 class FlaskServer(Thread):
 
     # Init thread running server
-    def __init__(self, port=8111, *, daemon = True):
+    def __init__(self, network, port=8111, *, daemon = True):
         Thread.__init__(self, daemon = daemon)
         self.flask_app = Flask(__name__)
+        self.network = network
         self.port = port
         self.config_flask_app()
         self.exitFlag = False
@@ -54,11 +55,44 @@ class FlaskServer(Thread):
         def bkapp_notes_page():
             script = server_document('http://localhost:5006/notes')
             return render_template("embed.html", script=script, template="Flask")
+
+        @self.flask_app.route('/dash', methods=['GET'])
+        def dashboard_page():
+            # Stat number of devices
+            cnod = create_card(icon = 'ti-server',
+                               title = 'Number of devices',
+                               data = self.network.number_of_devices,
+                               name = '#devices',
+                               foot_icon = 'ti-reload',
+                               foot_data = 'Refresh to update')
+            cnot = create_card(icon = 'ti-pulse',
+                               title = 'Number of trends',
+                               data = self.network.number_of_registered_trends,
+                               name = '#trends',
+                               foot_icon = 'ti-timer',
+                               foot_data = 'Add trends !')
+            return render_template("dashboard.html", 
+                                   sidebar=create_sidebar(),
+                                   card_number_of_devices = cnod,
+                                   card_number_of_trends = cnot,
+                                   template="Flask")
+
+        @self.flask_app.route('/dash_devices', methods=['GET'])
+        def dashboard_devices_page():
+            return render_template("table.html",
+                                   sidebar=create_sidebar(),
+                                   template="Flask")
         
         @self.flask_app.route('/', methods=['GET'])
         def home_page():
             #script = server_document('http://localhost:5006')
-            return render_template("index.html", template="Flask")   
+            return render_template("template.html", template="Flask") 
+        
+        @self.flask_app.route('/_dash_live_data', methods= ['GET'])
+        def dash_live_data():
+            devices=self.network.number_of_devices
+            trends=self.network.number_of_registered_trends
+            return jsonify(number_of_devices=devices, number_of_registered_trends=trends)
         
     def task(self):
         try:
@@ -79,43 +113,3 @@ class FlaskServer(Thread):
         """
         pass
     
-class Bokeh_Worker(Thread):
-
-    # Init thread running server
-    def __init__(self, dev, trends,notes, *, daemon = True):
-        Thread.__init__(self, daemon = daemon)
-        self.dev = dev
-        self.trends= trends
-        self.notes= notes
-        self.exitFlag = False
-                
-    def run(self):
-        self.process()
-
-    def process(self):
-        while not self.exitFlag:
-            self.task()
-
-    def startServer(self):
-        self.server = Server({'/devices' : self.dev, 
-                              '/trends' : self.trends,
-                              '/notes' : self.notes}, allow_websocket_origin=["localhost:8111", "localhost:5006"])
-        self.server.start()
-        self.server.io_loop.start()
-    
-    def task(self):
-        try:
-            self.startServer()
-        except Exception as err:
-            print('Bokeh server already running', err)
-            self.exitFlag = True
-
-    def stop(self):
-        self.bokeh_server.stop()
-        self.exitFlag = True
-
-    def beforeStop(self):
-        """
-        Action done when closing thread
-        """
-        pass

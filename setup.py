@@ -28,7 +28,7 @@ setup(name='BAC0',
           'BAC0.core.devices.mixins',
           'BAC0.scripts',
           'BAC0.tasks',
-          'BAC0.bokeh',
+          'BAC0.web',
           'BAC0.sql'
           ],
       requires=requirements,

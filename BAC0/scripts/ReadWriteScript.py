@@ -38,8 +38,9 @@ from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.io.Simulate import Simulation
 from ..core.io.IOExceptions import BokehServerCantStart
 
-from ..bokeh.BokehRenderer import DevicesTableHandler, DynamicPlotHandler, NotesTableHandler
-from ..bokeh.BokehServer import FlaskServer, Bokeh_Worker
+from ..web.BokehRenderer import DevicesTableHandler, DynamicPlotHandler, NotesTableHandler
+from ..web.BokehServer import Bokeh_Worker
+from ..web.FlaskServer import FlaskServer
 
 from ..infos import __version__ as version
 
@@ -103,7 +104,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             self.trend_app = Application(trendHandler)
             self.notes_app = Application(notesHandler)
             self.bk_worker = Bokeh_Worker(dev_app, self.trend_app, self.notes_app)
-            self.FlaskServer = FlaskServer(port=self.flask_port)        
+            self.FlaskServer = FlaskServer(network = self, port=self.flask_port)        
             self.bk_worker.start()        
             self.bokehserver = True
             print('Server started : http://localhost:%s' % self.flask_port)
@@ -120,6 +121,17 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         except BokehServerCantStart:
             self.bokehserver = False
             self._log.error('No Bokeh Server - controller.chart not available')
+
+    @property
+    def number_of_devices(self):
+        return len(self.devices)
+    
+    @property
+    def number_of_registered_trends(self):
+        if self.points_to_trend:
+            return len(self.points_to_trend)
+        else:
+            return 0
 
     def disconnect(self):
 #        if self.bokehserver:
