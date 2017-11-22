@@ -57,18 +57,20 @@ class DynamicPlotHandler(Handler):
                             units = df['units']
                         )
                             )
-        self.div_header_doc = Div(text ="""<div class="header">
-                             <H1> BAC0 Trending Tools </H1></div>""")     
-        #self.div_header_notes = Div(text="""<div class="TableTitle"><H1> Notes from controller</H1></div>""")
-        self.div_footer = Div(text="""<div class="footer"><p> <a href="http://www.servisys.com">Servisys inc.</a> | 
-                         <a href="https://pythoninthebuilding.wordpress.com/">Python in the building</a></p></div>""")
+#        self.div_header_doc = Div(text ="""<div class="header">
+#                             <H1> BAC0 Trending Tools </H1></div>""")     
+#        #self.div_header_notes = Div(text="""<div class="TableTitle"><H1> Notes from controller</H1></div>""")
+#        self.div_footer = Div(text="""<div class="footer"><p> <a href="http://www.servisys.com">Servisys inc.</a> | 
+#                         <a href="https://pythoninthebuilding.wordpress.com/">Python in the building</a></p></div>""")
 
         TOOLS = "pan,box_zoom,wheel_zoom,save,reset"
         self.p = Figure(x_axis_type="datetime", x_axis_label="Time", 
                         y_axis_label="Numeric Value", title = 'BAC0 Trends', 
-                        tools = TOOLS, plot_width=1024, plot_height=768,
+                        tools = TOOLS, plot_width=1300, plot_height=600,
                         toolbar_location = 'above')
 
+        self.p.background_fill_color = "#f4f3ef"
+        self.p.border_fill_color = "#f4f3ef"
         self.p.extra_y_ranges = {"bool": Range1d(start=0, end=1.1),
                                  "enum": Range1d(start=0, end=10)}
         self.p.add_layout(LinearAxis(y_range_name="bool", axis_label="Binary"), 'left')
@@ -175,10 +177,11 @@ class DynamicPlotHandler(Handler):
             pass
         doc.clear()
         self.build_plot()
-        layout = column(widgetbox(self.div_header_doc), 
-                gridplot(self.plots, ncols=2), 
+        #column(widgetbox(self.div_header_doc), 
+        layout = gridplot(self.plots, ncols=2)
                 #widgetbox(self.div_header_notes),
-                widgetbox(self.div_footer))
+                #widgetbox(self.div_footer)
+                
         doc.add_root(layout)
         doc.add_periodic_callback(self.update_data,100)          
         return doc

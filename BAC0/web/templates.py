@@ -5,7 +5,7 @@ Created on Mon Nov 13 21:37:02 2017
 @author: CTremblay
 """
 
-def create_sidebar():
+def create_sidebar(dash_class = "", devices_class = "", trends_class = ""):
     sb = """
     	<div class="wrapper">
     <div class="sidebar" data-background-color="white" data-active-color="danger">
@@ -17,19 +17,25 @@ def create_sidebar():
 
     	<div class="sidebar-wrapper">
             <div class="logo">
-                <a href="http://www.creative-tim.com" class="simple-text">
+                <a href="https://github.com/ChristianTremblay/BAC0" class="simple-text">
                     BAC0
                 </a>
             </div>
 
             <ul class="nav">
-                <li class="active">
-                    <a href="/dash">
+                <li %s>
+                    <a href="/">
                         <i class="ti-panel"></i>
                         <p>Dashboard</p>
                     </a>
                 </li>
-                <li>
+                <li %s>
+                    <a href="/trends">
+                        <i class="ti-panel"></i>
+                        <p>Trend</p>
+                    </a>
+                </li>
+                <li %s>
                     <a href="/dash_devices">
                         <i class="ti-view-list-alt"></i>
                         <p>Devices</p>
@@ -38,10 +44,12 @@ def create_sidebar():
             </ul>
     	</div>
     </div>
-    """
+    """ % (dash_class, trends_class, devices_class)
     return sb
 
-def create_card(icon = 'ti-server', title = 'title', data = 'None', name = '#name', foot_icon = 'ti-reload', foot_data = 'None'):
+def create_card(icon = 'ti-server', title = 'title', 
+                data = 'None', id_data = 'generic_data',  
+                foot_icon = 'ti-reload', foot_data = 'None', id_foot_data = 'generic_foot_data'):
     card = """
         <div class="col-lg-3 col-sm-6">
         <div class="card">
@@ -55,18 +63,18 @@ def create_card(icon = 'ti-server', title = 'title', data = 'None', name = '#nam
                     <div class="col-xs-7">
                         <div class="numbers">
                             <p>%s</p>
-                            <div name = "%s">%s</div>
+                            <div id="%s">%s</div>
                         </div>
                     </div>
                 </div>
                 <div class="footer">
                     <hr />
                     <div class="stats">
-                        <i class="%s"></i> %s
+                        <i class="%s"></i> <div id="%s">%s</div>
                     </div>
                 </div>
             </div>
         </div>
         </div>
-        """ % (icon, title, name, data, foot_icon, foot_data)
+        """ % (icon, title, id_data, data, foot_icon, id_foot_data, foot_data)
     return card

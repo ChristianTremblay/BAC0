@@ -24,6 +24,7 @@ Once the class is created, create the local object and use it::
 #--- standard Python modules ---
 import time
 import logging
+from datetime import datetime
 
 #--- 3rd party modules ---
 from bacpypes.debugging import bacpypes_debugging
@@ -37,6 +38,7 @@ from ..core.functions.GetIPAddr import HostIP
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.io.Simulate import Simulation
 from ..core.io.IOExceptions import BokehServerCantStart
+from ..core.functions.PrintDebug import print_list
 
 from ..web.BokehRenderer import DevicesTableHandler, DynamicPlotHandler, NotesTableHandler
 from ..web.BokehServer import Bokeh_Worker
@@ -84,14 +86,17 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         
         self.bokehserver = False
         # Force a global whois to find all devices on the network
-        self.whois()
+        self.whois_answer = self.update_whois()
         time.sleep(2)
         if bokeh_server:
             self.start_bokeh()
             self.FlaskServer.start()
         else:
             self._log.warning('Bokeh server not started. Trend feature will not work')
-            
+
+    def update_whois(self):
+        return (self.whois(),str(datetime.now())) 
+    
     def start_bokeh(self):
         try:
             self._log.info('Starting Bokeh Serve')
@@ -124,7 +129,9 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
 
     @property
     def number_of_devices(self):
-        return len(self.devices)
+        s = []
+        [s.append(x) for x in self.whois_answer[0].items() if x[1]>0]
+        return len(s)
     
     @property
     def number_of_registered_trends(self):
@@ -132,6 +139,54 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             return len(self.points_to_trend)
         else:
             return 0
+        
+    def number_of_devices_per_network(self):
+        total = float(self.number_of_devices)
+        if total == 0:
+            return (['No Devices'], ['0'], ['0%%'])
+        labels = ['IP']
+        series_pct = ['%.2f %%' % (len(self.network_stats['ip_devices'])/total * 100)]
+        series = [len(self.network_stats['ip_devices'])/total * 100]
+        for each in (self.network_stats['mstp_map'].keys()):
+            labels.append('MSTP #%s'% each)
+            series_pct.append('%.2f %%' % (len(self.network_stats['mstp_map'][each])/total * 100))
+            series.append(len(self.network_stats['mstp_map'][each])/total * 100)
+        return (labels, series, series_pct)
+    
+    @property
+    def network_stats(self):
+        statistics = {}
+        mstp_networks = []
+        mstp_map = {}
+        ip_devices = []
+        bacoids = []
+        mstp_devices = []
+        for address, bacoid in self.whois_answer[0].keys():            
+            if ':' in address:
+                net, mac = address.split(':')
+                mstp_networks.append(net)
+                mstp_devices.append(mac)
+                try:
+                    mstp_map[net].append(mac)
+                except KeyError:
+                    mstp_map[net] = []
+                    mstp_map[net].append(mac)
+            else:
+                net = 'ip'
+                mac = address
+                ip_devices.append(address)
+            bacoids.append((bacoid, address))
+        mstpnetworks = sorted(set(mstp_networks))
+        statistics['mstp_networks'] = mstpnetworks                   
+        statistics['ip_devices'] = sorted(ip_devices)
+        statistics['bacoids'] = sorted(bacoids)
+        statistics['mstp_map'] = mstp_map
+        statistics['timestamp'] = str(datetime.now())
+        statistics['number_of_devices'] = self.number_of_devices
+        statistics['print_mstpnetworks'] = print_list(mstpnetworks)
+        return statistics
+
+        
 
     def disconnect(self):
 #        if self.bokehserver:
