@@ -210,6 +210,30 @@ class DevicesTableHandler(Handler):
         doc.title = 'BACnet devices'
         return doc
 
+class NetworkPieChartHandler(Handler):
+    """ 
+    This handler will poll the network and show devices.
+
+    """
+    def __init__(self, network):
+        self.network = network
+        super().__init__()
+
+    def modify_document(self, doc):
+        self.network.whois()
+        devices_df = self.network.devices
+        dev = ColumnDataSource(devices_df)
+        columns = [
+            TableColumn(field=" Device ID", title="Dev ID"),
+            TableColumn(field="Address", title="Address"),
+            TableColumn(field="Manufacturer", title="Manuf"),
+            TableColumn(field="Name", title="Name")]
+        data_table = DataTable(source=dev, columns=columns)
+        layout = row([data_table])
+        doc.add_root(layout)
+        doc.title = 'BACnet devices'
+        return doc
+
 class NotesTableHandler(Handler):
     """ 
     This handler will poll the network and show devices.

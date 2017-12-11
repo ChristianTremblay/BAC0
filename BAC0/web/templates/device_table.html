@@ -6,7 +6,7 @@
 	<link rel="icon" type="image/png" sizes="96x96" href="static/assets/img/favicon.png">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
 
-	<title>BAC0 - A Python App for BACnet</title>
+	<title>BAC0 - Trends</title>
 
 	<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
     <meta name="viewport" content="width=device-width" />
@@ -21,10 +21,8 @@
     <!--  Paper Dashboard core CSS    -->
     <link href="static/assets/css/paper-dashboard.css" rel="stylesheet"/>
 
-
     <!--  CSS for Demo Purpose, don't include it in your project     -->
     <link href="static/assets/css/demo.css" rel="stylesheet" />
-
 
     <!--  Fonts and icons     -->
     <link href="http://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" rel="stylesheet">
@@ -33,6 +31,7 @@
 
 </head>
 <body>
+
 <div class="wrapper">
 
 {{sidebar|safe}}
@@ -47,7 +46,7 @@
                         <span class="icon-bar bar2"></span>
                         <span class="icon-bar bar3"></span>
                     </button>
-                    <a class="navbar-brand" href="#">Dashboard</a>
+                    <a class="navbar-brand" href="#">Devices - Table</a>
                 </div>
                 <div class="collapse navbar-collapse">
                     <ul class="nav navbar-nav navbar-right">
@@ -88,26 +87,7 @@
         <div class="content">
             <div class="container-fluid">
                 <div class="row">
-                    {{card_number_of_devices|safe}}
-                    
-                    {{card_number_of_mstp_networks|safe}}
-
-                    {{card_number_of_trends|safe}}
-                    
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="header">
-                                <h4 class="title">Networks and devices Statistics</h4>
-                                <p class="category">Distribution over networks</p>
-                            </div>
-                            <div class="content">
-                                {{bokeh_pie|safe}}
-                            </div>
-                        </div>
-                    </div>
+                    {{bokeh_script|safe}}
                     
                 </div>
             </div>
@@ -120,24 +100,14 @@
                     <ul>
 
                         <li>
-                            <a href="http://www.creative-tim.com">
-                                Creative Tim
-                            </a>
-                        </li>
-                        <li>
-                            <a href="http://blog.creative-tim.com">
-                               Blog
-                            </a>
-                        </li>
-                        <li>
-                            <a href="http://www.creative-tim.com/license">
-                                Licenses
+                            <a href="/">
+                                Home
                             </a>
                         </li>
                     </ul>
                 </nav>
-                <div class="copyright pull-right">
-                    &copy; <script>document.write(new Date().getFullYear())</script>, made with <i class="fa fa-heart heart"></i> by <a href="http://www.creative-tim.com">Creative Tim</a>
+				<div class="copyright pull-right">
+                    &copy; <script>document.write(new Date().getFullYear())</script>, GUI framework made with <i class="fa fa-heart heart"></i> by <a href="http://www.creative-tim.com">Creative Tim</a>
                 </div>
             </div>
         </footer>
@@ -166,63 +136,9 @@
 
     <!-- Paper Dashboard Core javascript and methods for Demo purpose -->
 	<script src="static/assets/js/paper-dashboard.js"></script>
-    
-    <!-- Paper Dashboard DEMO methods, don't include it in your project! -->
+
+	<!-- Paper Dashboard DEMO methods, don't include it in your project! -->
 	<script src="static/assets/js/demo.js"></script>
 
-
-	<script type="text/javascript">
-	  $(document).ready(function(){
-
-        	updatePieChart();
-
-        	$.notify({
-            	icon: 'ti-github',
-            	message: "Join the project on Github and contribute to this open source project !"
-
-            },{
-                type: 'success',
-                timer: 4000
-            });
-
-    	});
-
-    	$('#discover').bind('click', function(event){
-
-          callWhois();
-
-        	$.notify({
-            	icon: 'ti-world',
-            	message: "Discovering devices"
-
-            },{
-                type: 'success',
-                timer: 1000
-            });
-
-    	});
-
-       var intervalID = setInterval(update_values, 1000);
-    	function update_values() {
-                $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-                $.getJSON($SCRIPT_ROOT+"/_dash_live_stats",
-                    function(data) {
-                        $("#mstpnetworks").text(data.print_mstpnetworks)
-                        $("#lastwhoisupdate").text(data.timestamp)
-                    });
-                $.getJSON($SCRIPT_ROOT+"/_dash_live_data",
-                    function(data) {
-                        $("#devices").text(data.number_of_devices)
-                        $("#trends").text(data.number_of_registered_trends)
-                    });
-            }
-            
-        function callWhois() {
-                $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-                $.getJSON($SCRIPT_ROOT+"/_whois");
-            }
-            
-                   
-    </script>
 
 </html>

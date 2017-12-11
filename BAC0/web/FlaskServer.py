@@ -53,10 +53,10 @@ class FlaskServer(Thread):
                                    bokeh_script=script, 
                                    template="Flask")
  
-        @self.flask_app.route('/devices', methods=['GET'])
-        def bkapp_devices_page():
-            script = server_document('http://localhost:5006/devices')
-            return render_template("embed.html", script=script, template="Flask")
+#        @self.flask_app.route('/devices', methods=['GET'])
+#        def bkapp_devices_page():
+#            script = server_document('http://localhost:5006/devices')
+#            return render_template("embed.html", script=script, template="Flask")
 
         @self.flask_app.route('/notes', methods=['GET'])
         def bkapp_notes_page():
@@ -95,8 +95,10 @@ class FlaskServer(Thread):
 
         @self.flask_app.route('/dash_devices', methods=['GET'])
         def dashboard_devices_page():
-            return render_template("table.html",
+            script = server_document('http://localhost:5006/devices')
+            return render_template("device_table.html",
                                    sidebar=create_sidebar(devices_class = 'class="active"'),
+                                   bokeh_script = script,
                                    template="Flask")
         
         @self.flask_app.route('/_dash_live_data', methods= ['GET'])
