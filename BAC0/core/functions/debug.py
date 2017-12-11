@@ -49,6 +49,14 @@ def log_debug(cls,txt, *args):
         # pylint: disable=E1101,W0212
         cls._debug(msg)
 
+def log_warning(cls,txt, *args):
+    """
+    Helper function to log debug messages
+    """
+    if _DEBUG:
+        msg= (txt % args) if args else txt
+        # pylint: disable=E1101,W0212
+        cls._warning(msg)
 
 def log_exception(cls,txt, *args):
     """
