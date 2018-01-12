@@ -25,9 +25,11 @@ Once the class is created, create the local object and use it::
 import time
 import logging
 from datetime import datetime
+import weakref
 
 #--- 3rd party modules ---
 from bacpypes.debugging import bacpypes_debugging
+from bokeh.application import Application
 
 #--- this application's modules ---
 from ..scripts.BasicScript import BasicScript
@@ -38,7 +40,9 @@ from ..core.functions.GetIPAddr import HostIP
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.io.Simulate import Simulation
 from ..core.io.IOExceptions import BokehServerCantStart
+from ..core.devices.Points import Point
 from ..core.functions.PrintDebug import print_list
+from ..core.utils.notes import Notes
 
 from ..web.BokehRenderer import DevicesTableHandler, DynamicPlotHandler, NotesTableHandler
 from ..web.BokehServer import Bokeh_Worker
@@ -46,7 +50,7 @@ from ..web.FlaskServer import FlaskServer
 
 from ..infos import __version__ as version
 
-from bokeh.application import Application
+
 
 #------------------------------------------------------------------------------
 
@@ -75,7 +79,8 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
                     % self.__class__.__name__)
         self._log.debug("Configurating app")
         self.flask_port = flask_port
-        self.notes = ('Not Set', None)
+        self.notes = Notes("Starting BACnet network")
+        self._registered_devices = weakref.WeakValueDictionary()
         if ip is None:
             host = HostIP()
             ip_addr = host.address
@@ -85,6 +90,7 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         BasicScript.__init__(self, localIPAddr=ip_addr)
         
         self.bokehserver = False
+        self._points_to_trend = weakref.WeakValueDictionary()
         # Force a global whois to find all devices on the network
         self.whois_answer = self.update_whois()
         time.sleep(2)
@@ -100,7 +106,6 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
     def start_bokeh(self):
         try:
             self._log.info('Starting Bokeh Serve')
-            self.points_to_trend = []
             # Need to create the device document here
             devHandler = DevicesTableHandler(self)
             dev_app = Application(devHandler)
@@ -183,10 +188,32 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         statistics['mstp_map'] = mstp_map
         statistics['timestamp'] = str(datetime.now())
         statistics['number_of_devices'] = self.number_of_devices
+        statistics['number_of_registered_devices'] = len(self.registered_devices)
         statistics['print_mstpnetworks'] = print_list(mstpnetworks)
         return statistics
 
+    def register_device(self, device):
+        oid = id(device)
+        self._registered_devices[oid] = device
         
+    @property
+    def registered_devices(self):
+        return list(self._registered_devices.values())
+
+    def unregister_device(self, device):
+        oid = id(device)
+        del self._registered_devices[oid]
+
+    def add_trend(self, trend):
+        if isinstance(trend, Point):
+            oid = id(trend)
+            self._points_to_trend[oid] = trend
+        else:
+            raise TypeError('Please provide point containing history')
+
+    @property
+    def points_to_trend(self):
+        return list(self._points_to_trend.values())
 
     def disconnect(self):
 #        if self.bokehserver:

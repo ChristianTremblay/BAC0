@@ -11,6 +11,7 @@ Device.py - describe a BACnet Device
 #--- standard Python modules ---
 from collections import namedtuple
 from datetime import datetime
+import weakref
 
 import os.path
 
@@ -37,6 +38,8 @@ from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleExce
 from ...sql.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
 from .mixins.read_mixin import ReadPropertyMultiple, ReadProperty
+
+from ..utils.notes import Notes
 
 
 #------------------------------------------------------------------------------
@@ -130,11 +133,8 @@ class Device(SQLMixin):
         self._polling_task.task = None
         self._polling_task.running = False
 
-        self._notes = namedtuple('_notes',['timestamp', 'notes'])
-        self._notes.timestamp = []
-        self._notes.notes = []
-        self._notes.notes.append("Controller initialized")
-        self._notes.timestamp.append(datetime.now())
+        self._notes = Notes("Controller initialized")
+
         
         if from_backup:
             filename = from_backup
@@ -189,8 +189,7 @@ class Device(SQLMixin):
 
         :returns: pd.Series
         """
-        notes_table = pd.Series(self._notes.notes, index=self._notes.timestamp)
-        return notes_table
+        return self._notes.get_serie()
 
 
     @notes.setter
@@ -200,8 +199,7 @@ class Device(SQLMixin):
 
         :param note: (str)
         """
-        self._notes.timestamp.append(datetime.now())
-        self._notes.notes.append(note)
+        self._notes.add(note)
 
 
     def df(self, list_of_points, force_read=True):
@@ -424,12 +422,13 @@ class DeviceConnected(Device):
     """
 
     def _init_state(self):
-        self._buildPointList()
-
+        self._buildPointList()            
+        self.properties.network.register_device(self)
 
     def disconnect(self):
         self._log.info('Wait while stopping polling')
         self.poll(command='stop')
+        self.properties.network.unregister_device(self)
         self.new_state(DeviceFromDB)
 
 
@@ -707,7 +706,7 @@ class DeviceDisconnected(Device):
             self._log.warning('Segmentation not supported.... expect slow responses.')
             self.new_state(RPDeviceConnected)
 
-        except (NoResponseFromController, AttributeError):
+        except (NoResponseFromController, AttributeError) as error:
             if self.properties.db_name:
                 self.new_state(DeviceFromDB)
             else:

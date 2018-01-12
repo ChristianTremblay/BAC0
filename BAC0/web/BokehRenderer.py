@@ -19,13 +19,18 @@ from bokeh.application.handlers import Handler
 import logging
 import math
 import pandas as pd
+import weakref
 
 class DynamicPlotHandler(Handler):
     def __init__(self, network):
-        self.network = network
+        self._network = weakref.ref(network)
         self.sources = {}
         self._last_time_list = None
         super().__init__()
+    
+    @property
+    def network(self):
+        return self._network()
         
     def organize_data(self):
         self.s = {}
@@ -192,8 +197,12 @@ class DevicesTableHandler(Handler):
 
     """
     def __init__(self, network):
-        self.network = network
+        self._network = weakref.ref(network)
         super().__init__()
+        
+    @property
+    def network(self):
+        return self._network()
 
     def modify_document(self, doc):
         self.network.whois()
@@ -216,9 +225,13 @@ class NetworkPieChartHandler(Handler):
 
     """
     def __init__(self, network):
-        self.network = network
+        self._network = weakref.ref(network)
         super().__init__()
 
+    @property
+    def network(self):
+        return self._network()
+    
     def modify_document(self, doc):
         self.network.whois()
         devices_df = self.network.devices
@@ -240,8 +253,12 @@ class NotesTableHandler(Handler):
 
     """
     def __init__(self, network):
-        self.network = network
+        self._network_ref = weakref.ref(network)
         super().__init__()
+
+    @property
+    def network(self):
+        return self._network_ref()
 
     def modify_document(self, doc):
         controller = self.network.notes[0]

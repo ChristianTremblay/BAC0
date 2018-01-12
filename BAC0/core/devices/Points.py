@@ -421,7 +421,7 @@ class NumericPoint(Point):
 
 
     def __repr__(self):
-        return '%s : %.2f %s' % (self.properties.name, self.history.dropna().iloc[-1], self.properties.units_state)
+        return '%s/%s : %.2f %s' % (self.properties.device.properties.name, self.properties.name, self.history.dropna().iloc[-1], self.properties.units_state)
 
         
     def __add__(self,other):
@@ -522,7 +522,7 @@ class BooleanPoint(Point):
                 'Value must be boolean True, False or "active"/"inactive"')
 
     def __repr__(self):
-        return '%s : %s' % (self.properties.name, self.boolValue)
+        return '%s/%s : %s' % (self.properties.device.properties.name, self.properties.name, self.boolValue)
         
     def __or__(self,other):
         return self.boolValue | other
@@ -587,7 +587,7 @@ class EnumPoint(Point):
 
     def __repr__(self):
         # return '%s : %s' % (self.name, )
-        return '%s : %s' % (self.properties.name, self.enumValue)
+        return '%s/%s : %s' % (self.properties.device.properties.name, self.properties.name, self.enumValue)
 
 
     def __eq__(self,other):
@@ -667,7 +667,7 @@ class NumericPointOffline(NumericPoint):
         raise OfflineException('Must be online to write')
 
     def __repr__(self):
-        return '%s : %.2f %s' % (self.properties.name, self.value, self.properties.units_state)
+        return '%s/%s : %.2f %s' % (self.properties.device.properties.name, self.properties.name, self.value, self.properties.units_state)
 
 
 class BooleanPointOffline(BooleanPoint):

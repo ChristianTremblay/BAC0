@@ -13,6 +13,7 @@ So actually, the process is called outside of the script... then communication
 with the server is made using localhost:5006
 """
 from threading import Thread
+import weakref
 
 from flask import Flask, render_template, jsonify
 from bokeh.embed import server_document
@@ -26,10 +27,14 @@ class FlaskServer(Thread):
     def __init__(self, network, port=8111, *, daemon = True):
         Thread.__init__(self, daemon = daemon)
         self.flask_app = Flask(__name__)
-        self.network = network
+        self._network_ref = weakref.ref(network)
         self.port = port
         self.config_flask_app()
         self.exitFlag = False
+
+    @property
+    def network(self):
+        return self._network_ref()
                 
     def run(self):
         self.process()
