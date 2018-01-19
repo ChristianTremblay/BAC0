@@ -147,16 +147,20 @@ class Point():
             
         his_table.datatype = self.properties.type
         return his_table
+    
+    def clear_history(self):
+        self._history.timestamp = []
+        self._history.value = []
 
 
-    def chart(self, *args):
+    def chart(self, remove=False):
         """
-        Simple shortcut to plot function
+        Add point to the bacnet trending list
         """
-        args = args.split()
-        return self.history.replace(['inactive', 'active'], [0, 1]).plot(
-                     '{}, title = {} / {}'.format(args, self.properties.name, self.properties.description))
-
+        if remove:
+            self.properties.device.properties.network.remove_trend(self)
+        else:
+            self.properties.device.properties.network.add_trend(self)
 
     def __getitem__(self, key):
         """

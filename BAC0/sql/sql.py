@@ -34,10 +34,10 @@ class SQLMixin(object):
 
     def dev_properties_df(self):
         dic = self.properties.asdict.copy()
-        dic.pop('charts', None)
+        #dic.pop('charts', None)
         dic.pop('network', None)
         dic.pop('pss', None)
-        dic.pop('serving_chart', None)
+        #dic.pop('serving_chart', None)
         return dic
         
     
@@ -48,7 +48,7 @@ class SQLMixin(object):
         pprops = {}
         for each in self.points:
             p = each.properties.asdict.copy()
-            p.pop('charts', None)
+            #p.pop('charts', None)
             p.pop('device', None)
             p.pop('network', None)
             p.pop('simulated', None)
@@ -87,7 +87,7 @@ class SQLMixin(object):
             
         # Does file exist? If so, append data
         if os.path.isfile('%s.db' % (self.properties.db_name)):
-            print('File exists, appending data...')
+            #print('File exists, appending data...')
 
             db = sqlite3.connect('%s.db' % (self.properties.db_name))
             his = sql.read_sql('select * from "%s"' % 'history', db)  
@@ -111,7 +111,7 @@ class SQLMixin(object):
         with open( "%s.bin"  % self.properties.db_name, "wb" ) as file:
             pickle.dump(prop_backup, file)
                 
-        print('%s saved to disk' % self.properties.db_name)
+        #print('%s saved to disk' % self.properties.db_name)
         
 
     def points_from_sql(self, db):

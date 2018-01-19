@@ -34,7 +34,7 @@ class DynamicPlotHandler(Handler):
         
     def organize_data(self):
         self.s = {}
-        for point in self.network.points_to_trend:
+        for point in self.network.trends:
             self.s[point.history.name] = (point.history, point.history.units)
         self.lst_of_trends = [his[0] for name, his in self.s.items()]  
        

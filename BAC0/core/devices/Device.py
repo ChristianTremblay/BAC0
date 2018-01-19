@@ -33,7 +33,7 @@ except ImportError:
 from bacpypes.basetypes import ServicesSupported
 
 from .Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
-from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException, SegmentationNotSupported
+from ..io.IOExceptions import NoResponseFromController, SegmentationNotSupported
 #from ...bokeh.BokehRenderer import BokehPlot
 from ...sql.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
@@ -57,8 +57,8 @@ class DeviceProperties(object):
         self.pollDelay = None
         self.objects_list = None
         self.pss = ServicesSupported()
-        self.serving_chart = None
-        self.charts = None
+        #self.serving_chart = None
+        #self.charts = None
         self.multistates = None
         self.db_name = None
         self.segmentation_supported = True
@@ -103,7 +103,8 @@ class Device(SQLMixin):
     """
     def __init__(self, address, device_id, network, *, poll=10, 
                  from_backup = None, segmentation_supported = True,
-                 object_list = None):
+                 object_list = None, auto_save = 6, 
+                 clear_history_on_save = False):
         self._log = logging.getLogger('BAC0.core.devices.%s' \
                     % self.__class__.__name__)
         self._log.setLevel(logging.INFO)
@@ -117,9 +118,12 @@ class Device(SQLMixin):
         self.properties.name = ''
         self.properties.objects_list = []
         self.properties.pss = ServicesSupported()
-        self.properties.serving_chart = {}
-        self.properties.charts = []
+        #self.properties.serving_chart = {}
+        #self.properties.charts = []
         self.properties.multistates = {}
+        self.properties.auto_save = auto_save
+        self.properties.clear_history_on_save = clear_history_on_save
+        
         self.segmentation_supported = segmentation_supported
         self.custom_object_list = object_list
 
@@ -212,76 +216,6 @@ class Device(SQLMixin):
         raise NotImplementedError()
 
 
-    def old_chart(self, list_of_points, *, title='Live Trending', show_notes=True):
-        """
-        Draw a chart from a list of points.  Refer to the pandas and matplotlib doc for details on 
-        the plot() function and the args they accept.
-
-        :param list_of_points: a list of point name as str
-        :param plot_args: arg for plot function
-        :returns: plot()
-        """
-        if self.__class__ == DeviceFromDB:
-            update_data = False
-        else:
-            update_data = True
-
-#        if self.properties.network.bokehserver:
-#            lst = []
-#            for point in list_of_points:
-#                if point in self.points_name:
-#                    lst.append(point)
-#                else:
-#                    self._log.warning('Wrong name, removing %s from list' % point)
-#
-#            try:
-#                self.properties.serving_chart[title] = BokehPlot(
-#                    self, lst, title=title, show_notes=show_notes, update_data=update_data)
-#            except Exception as error:
-#                self._log.error('A problem occurred : %s' % error)
-#        else:
-#            self._log.warning("No bokeh server running, can't display chart")
-
-    def chart(self, list_of_points, *, title='Live Trending', show_notes=True):
-        """
-        Draw a chart from a list of points.  Refer to the pandas and matplotlib doc for details on 
-        the plot() function and the args they accept.
-
-        :param list_of_points: a list of point name as str
-        :param plot_args: arg for plot function
-        :returns: plot()
-        """
-        if self.__class__ == DeviceFromDB:
-            update_data = False
-        else:
-            update_data = True
-
-        if self.properties.network.bokehserver:
-            lst = []
-            for point in list_of_points:
-                if point in self.points_name:
-                    lst.append(point)
-                else:
-                    self._log.warning('Wrong name, removing %s from list' % point)
-
-            try:
-                #s = []
-                #u = {}
-                for point in lst:
-                    #s.append(point.history)
-                    self.properties.network.trends.append(point.history)
-                    #u[point.history.name] = (point.units)
-               
-                #df = pd.concat(s, axis=1)
-                #df.units = u
-                #self.network.trend_df.drop(self.device.properties.name, axis=1, inplace=True)
-                #self.network.trend_df[self.device.properties.name] = s
-                
-                #self.network.trends.append(s)
-            except Exception as error:
-                self._log.error('A problem occurred : %s' % error)
-        else:
-            self._log.warning("No bokeh server running, can't display chart")
 
     @property
     def simulated_points(self):
@@ -371,7 +305,10 @@ class Device(SQLMixin):
         pointName = ' '.join(args[:-1])
         value = args[-1]
         return (pointName, value)
-
+    
+    def clear_histories(self):
+        for point in self.points:
+            point.clear_history()
 
     @property
     def analog_units(self):

@@ -5,18 +5,12 @@
 #
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 """
-This module starts an external process : bokeh serve
-As Bokeh use Tornado, I didn't find a way to include the server in the code.
-The IOLoop creates some conflicts. 
-
-So actually, the process is called outside of the script... then communication
-with the server is made using localhost:5006
+This will start the Bokeh Server
 """
 from threading import Thread
 
 from bokeh.server.server import Server
 
-from bokeh.embed import server_document
 import weakref
    
 class Bokeh_Worker(Thread):

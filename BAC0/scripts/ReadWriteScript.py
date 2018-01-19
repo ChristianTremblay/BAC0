@@ -24,6 +24,7 @@ Once the class is created, create the local object and use it::
 #--- standard Python modules ---
 import time
 import logging
+import logging.handlers
 from datetime import datetime
 import weakref
 
@@ -57,9 +58,83 @@ from ..infos import __version__ as version
 # some debugging
 _DEBUG = 0
 
+logger = logging.getLogger('Synchronous Logging')
+http_handler = logging.handlers.HTTPHandler(
+    '127.0.0.1:8111',
+    '/log',
+    method='POST',
+)
+logger.addHandler(http_handler)
+
+class Stats_Mixin():
+    """
+    Statistics used by Flask App
+    """
+    @property
+    def number_of_devices(self):
+        s = []
+        [s.append(x) for x in self.whois_answer[0].items() if x[1]>0]
+        return len(s)
+    
+    @property
+    def number_of_registered_trends(self):
+        if self.trends:
+            return len(self.trends)
+        else:
+            return 0
+        
+    def number_of_devices_per_network(self):
+        total = float(self.number_of_devices)
+        if total == 0:
+            return (['No Devices'], ['0'], ['0%%'])
+        labels = ['IP']
+        series_pct = ['%.2f %%' % (len(self.network_stats['ip_devices'])/total * 100)]
+        series = [len(self.network_stats['ip_devices'])/total * 100]
+        for each in (self.network_stats['mstp_map'].keys()):
+            labels.append('MSTP #%s'% each)
+            series_pct.append('%.2f %%' % (len(self.network_stats['mstp_map'][each])/total * 100))
+            series.append(len(self.network_stats['mstp_map'][each])/total * 100)
+        return (labels, series, series_pct)
+    
+    @property
+    def network_stats(self):
+        """
+        Used by Flask to show informations on the network
+        """
+        statistics = {}
+        mstp_networks = []
+        mstp_map = {}
+        ip_devices = []
+        bacoids = []
+        mstp_devices = []
+        for address, bacoid in self.whois_answer[0].keys():            
+            if ':' in address:
+                net, mac = address.split(':')
+                mstp_networks.append(net)
+                mstp_devices.append(mac)
+                try:
+                    mstp_map[net].append(mac)
+                except KeyError:
+                    mstp_map[net] = []
+                    mstp_map[net].append(mac)
+            else:
+                net = 'ip'
+                mac = address
+                ip_devices.append(address)
+            bacoids.append((bacoid, address))
+        mstpnetworks = sorted(set(mstp_networks))
+        statistics['mstp_networks'] = mstpnetworks                   
+        statistics['ip_devices'] = sorted(ip_devices)
+        statistics['bacoids'] = sorted(bacoids)
+        statistics['mstp_map'] = mstp_map
+        statistics['timestamp'] = str(datetime.now())
+        statistics['number_of_devices'] = self.number_of_devices
+        statistics['number_of_registered_devices'] = len(self.registered_devices)
+        statistics['print_mstpnetworks'] = print_list(mstpnetworks)
+        return statistics
 
 @bacpypes_debugging
-class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simulation):
+class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simulation, Stats_Mixin):
     """
     Build a BACnet application to accept read and write requests.
     [Basic Whois/IAm functions are implemented in parent BasicScript class.]
@@ -132,92 +207,60 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             self.bokehserver = False
             self._log.error('No Bokeh Server - controller.chart not available')
 
-    @property
-    def number_of_devices(self):
-        s = []
-        [s.append(x) for x in self.whois_answer[0].items() if x[1]>0]
-        return len(s)
-    
-    @property
-    def number_of_registered_trends(self):
-        if self.points_to_trend:
-            return len(self.points_to_trend)
-        else:
-            return 0
-        
-    def number_of_devices_per_network(self):
-        total = float(self.number_of_devices)
-        if total == 0:
-            return (['No Devices'], ['0'], ['0%%'])
-        labels = ['IP']
-        series_pct = ['%.2f %%' % (len(self.network_stats['ip_devices'])/total * 100)]
-        series = [len(self.network_stats['ip_devices'])/total * 100]
-        for each in (self.network_stats['mstp_map'].keys()):
-            labels.append('MSTP #%s'% each)
-            series_pct.append('%.2f %%' % (len(self.network_stats['mstp_map'][each])/total * 100))
-            series.append(len(self.network_stats['mstp_map'][each])/total * 100)
-        return (labels, series, series_pct)
-    
-    @property
-    def network_stats(self):
-        statistics = {}
-        mstp_networks = []
-        mstp_map = {}
-        ip_devices = []
-        bacoids = []
-        mstp_devices = []
-        for address, bacoid in self.whois_answer[0].keys():            
-            if ':' in address:
-                net, mac = address.split(':')
-                mstp_networks.append(net)
-                mstp_devices.append(mac)
-                try:
-                    mstp_map[net].append(mac)
-                except KeyError:
-                    mstp_map[net] = []
-                    mstp_map[net].append(mac)
-            else:
-                net = 'ip'
-                mac = address
-                ip_devices.append(address)
-            bacoids.append((bacoid, address))
-        mstpnetworks = sorted(set(mstp_networks))
-        statistics['mstp_networks'] = mstpnetworks                   
-        statistics['ip_devices'] = sorted(ip_devices)
-        statistics['bacoids'] = sorted(bacoids)
-        statistics['mstp_map'] = mstp_map
-        statistics['timestamp'] = str(datetime.now())
-        statistics['number_of_devices'] = self.number_of_devices
-        statistics['number_of_registered_devices'] = len(self.registered_devices)
-        statistics['print_mstpnetworks'] = print_list(mstpnetworks)
-        return statistics
-
     def register_device(self, device):
         oid = id(device)
         self._registered_devices[oid] = device
         
     @property
     def registered_devices(self):
+        """
+        Devices that have been created using BAC0.device(args)
+        """
         return list(self._registered_devices.values())
 
     def unregister_device(self, device):
+        """
+        Remove from the registered list
+        """
         oid = id(device)
         del self._registered_devices[oid]
 
-    def add_trend(self, trend):
-        if isinstance(trend, Point):
-            oid = id(trend)
-            self._points_to_trend[oid] = trend
+    def add_trend(self, point_to_trend):
+        """
+        Add point to the list of histories that will be handled by Bokeh
+        
+        Argument provided must be of type Point
+        ex. bacnet.add_trend(controller['point_name'])
+        """
+        if isinstance(point_to_trend, Point):
+            oid = id(point_to_trend)
+            self._points_to_trend[oid] = point_to_trend
         else:
             raise TypeError('Please provide point containing history')
 
+    def remove_trend(self, point_to_remove):
+        """
+        Remove point from the list of histories that will be handled by Bokeh
+        
+        Argument provided must be of type Point
+        ex. bacnet.remove_trend(controller['point_name'])
+        """
+        if isinstance(point_to_remove, Point):
+            oid = id(point_to_remove)
+        else:
+            raise TypeError('Please provide point containing history')
+        if oid in self._points_to_trend.keys():
+            del self._points_to_trend[oid]
+
+
     @property
-    def points_to_trend(self):
+    def trends(self):
+        """
+        This will present a list of all registered trends used by Bokeh Server
+        """
         return list(self._points_to_trend.values())
 
     def disconnect(self):
-#        if self.bokehserver:
-#            self.bokeh_session._loop.stop()
         super().disconnect()
 
     def __repr__(self):
@@ -236,3 +279,5 @@ def log_exception(txt, *args):
     """
     msg= (txt % args) if args else txt
     BasicScript._exception(msg)
+    
+    

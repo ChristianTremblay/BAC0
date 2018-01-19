@@ -15,7 +15,8 @@ with the server is made using localhost:5006
 from threading import Thread
 import weakref
 
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
+import json
 from bokeh.embed import server_document
 
 from .templates import create_sidebar, create_card
@@ -126,6 +127,11 @@ class FlaskServer(Thread):
         def net_pie_chart():
             stats=self.network.number_of_devices_per_network()
             return jsonify(stats=stats)
+        
+        @self.flask_app.route('/log',methods=['POST', 'GET'])
+        def log_page():
+            #print(json.dumps(request.form))
+            return json.dumps(request.form)
         
     def task(self):
         try:
