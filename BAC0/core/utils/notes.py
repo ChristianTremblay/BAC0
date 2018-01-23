@@ -31,9 +31,20 @@ class Notes():
         return notes_table  
 
 def note_and_log(cls):
+    """
+    This will be used as a decorator on class to activate
+    logging and store messages in the variable cls._notes
+    This will allow quick access to events in the web app.
+
+    A note can be added to cls._notes without logging if passing
+    the argument log=false to function note()
+    Something can be logged without addind a note using function log()
+    """
+    # Notes object
     cls._notes = namedtuple('_notes',['timestamp', 'notes'])
-    cls._notes.timestamp = []
-    cls._notes.notes = []
+    self.clear_notes()
+
+    # Defining log object
     logname = 'BAC0'
     cls._log = logging.getLogger(logname)
     ch = logging.StreamHandler()
@@ -46,14 +57,42 @@ def note_and_log(cls):
     cls._log.addHandler(ch)
     cls._log.addHandler(fh)
     
-    def add_note(self, note='', level=logging.INFO):
+    def note(self, note='', level=logging.INFO, log=True):
+        """
+        Add note to the object. By default, the note will also
+        be logged
+
+        :param note: (str) The note itself
+        :param level: (logging.level)
+        :param log: (boolean) Enable or disable logging of note
+        """
         cls._notes.timestamp.append(datetime.now())
         cls._notes.notes.append(note)
+        if log:
+            self.log(level, note)
+
+    def log(self, note='', level=logging.DEBUG):
+        """
+        Add a log entry...no note
+        """
         cls._log.log(level, note)
     
-    def get_notes(self):
+    @property
+    def notes(self):
+        """
+        Retrieve notes list as a Pandas Series
+        """
         return pd.Series(self._notes.notes, index=self._notes.timestamp)
 
-    cls.add_note = add_note
-    cls.get_notes = get_notes
+    def clear_notes(self):
+        """
+        Clear notes object
+        """
+        cls._notes.timestamp = []
+        cls._notes.notes = []
+
+    # Add the functions to the decorated class
+    cls.clear_notes = clear_notes
+    cls.note = note
+    cls.notes = notes
     return cls
