@@ -28,11 +28,11 @@ from bacpypes.pdu import Address
 
 #--- this application's modules ---
 from ..functions.debug import log_debug
-
+from ..utils.notes import note_and_log
 
 #------------------------------------------------------------------------------
 
-@bacpypes_debugging
+@note_and_log
 class ScriptApplication(BIPSimpleApplication):
     """
     Defines a basic BACnet/IP application to process BACnet requests.
@@ -41,9 +41,7 @@ class ScriptApplication(BIPSimpleApplication):
         See BAC0.scripts.BasicScript for more details.
         
     """
-    def __init__(self, *args):
-        logging.getLogger("comtypes").setLevel(logging.INFO)
-        
+    def __init__(self, *args):        
         self.localAddress = None
 
         super().__init__(*args)
@@ -63,7 +61,7 @@ class ScriptApplication(BIPSimpleApplication):
     
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
-        if self._debug: ScriptApplication._debug("do_WhoIsRequest %r", apdu)
+        self.log(("do_WhoIsRequest %r", apdu))
 
         # build a key from the source and parameters
         key = (str(apdu.pduSource),
@@ -79,7 +77,7 @@ class ScriptApplication(BIPSimpleApplication):
 
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
-        if self._debug: ScriptApplication._debug("do_IAmRequest %r", apdu)
+        self.log(("do_IAmRequest %r", apdu))
 
         # build a key from the source, just use the instance number
         key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1] )
@@ -87,4 +85,5 @@ class ScriptApplication(BIPSimpleApplication):
 
         # continue with the default implementation
         BIPSimpleApplication.do_IAmRequest(self, apdu)
+
 

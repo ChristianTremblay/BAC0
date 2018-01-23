@@ -43,7 +43,7 @@ from ..core.io.Simulate import Simulation
 from ..core.io.IOExceptions import BokehServerCantStart
 from ..core.devices.Points import Point
 from ..core.functions.PrintDebug import print_list
-from ..core.utils.notes import Notes
+from ..core.utils.notes import note_and_log
 
 from ..web.BokehRenderer import DevicesTableHandler, DynamicPlotHandler, NotesTableHandler
 from ..web.BokehServer import Bokeh_Worker
@@ -54,17 +54,6 @@ from ..infos import __version__ as version
 
 
 #------------------------------------------------------------------------------
-
-# some debugging
-_DEBUG = 0
-
-logger = logging.getLogger('Synchronous Logging')
-http_handler = logging.handlers.HTTPHandler(
-    '127.0.0.1:8111',
-    '/log',
-    method='POST',
-)
-logger.addHandler(http_handler)
 
 class Stats_Mixin():
     """
@@ -133,7 +122,7 @@ class Stats_Mixin():
         statistics['print_mstpnetworks'] = print_list(mstpnetworks)
         return statistics
 
-@bacpypes_debugging
+@note_and_log
 class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simulation, Stats_Mixin):
     """
     Build a BACnet application to accept read and write requests.
@@ -150,11 +139,8 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
     """
     def __init__(self, ip=None, bokeh_server=True, flask_port = 8111):
         print("Starting BAC0 version %s" % version)
-        self._log = logging.getLogger('BAC0.script.%s' \
-                    % self.__class__.__name__)
-        self._log.debug("Configurating app")
+        self.log("Configurating app")
         self.flask_port = flask_port
-        self.notes = Notes("Starting BACnet network")
         self._registered_devices = weakref.WeakValueDictionary()
         if ip is None:
             host = HostIP()
@@ -173,14 +159,14 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             self.start_bokeh()
             self.FlaskServer.start()
         else:
-            self._log.warning('Bokeh server not started. Trend feature will not work')
+            self.log('Bokeh server not started. Trend feature will not work', level=logging.WARNING)
 
     def update_whois(self):
         return (self.whois(),str(datetime.now())) 
     
     def start_bokeh(self):
         try:
-            self._log.info('Starting Bokeh Serve')
+            self.note('Starting Bokeh Serve')
             # Need to create the device document here
             devHandler = DevicesTableHandler(self)
             dev_app = Application(devHandler)
@@ -266,18 +252,5 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
     def __repr__(self):
         return 'Bacnet Network using ip %s with device id %s' % (self.localIPAddr, self.Boid)
 
-def log_debug(txt, *args):
-    """ Helper function to log debug messages
-    """
-    if _DEBUG:
-        msg= (txt % args) if args else txt
-        BasicScript._debug(msg)
-
-
-def log_exception(txt, *args):
-    """ Helper function to log debug messages
-    """
-    msg= (txt % args) if args else txt
-    BasicScript._exception(msg)
     
     

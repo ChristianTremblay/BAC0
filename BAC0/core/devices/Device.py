@@ -20,12 +20,10 @@ import sqlite3
 
 import pandas as pd
 import logging
-log = logging.getLogger('BAC0.core.devices')
 try:
     from xlwings import Workbook, Sheet, Range, Chart
     _XLWINGS = True
 except ImportError:
-    log.debug('xlwings not installed. If using Windows or OSX, install to get more features.')
     _XLWINGS = False
 
 
@@ -39,7 +37,7 @@ from ...sql.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
 from .mixins.read_mixin import ReadPropertyMultiple, ReadProperty
 
-from ..utils.notes import Notes
+from ..utils.notes import note_and_log
 
 
 #------------------------------------------------------------------------------
@@ -70,7 +68,7 @@ class DeviceProperties(object):
     def asdict(self):
         return self.__dict__
 
-
+@note_and_log
 class Device(SQLMixin):
     """
     Represent a BACnet device.  Once defined, it allows use of read, write, sim, release 
@@ -105,9 +103,6 @@ class Device(SQLMixin):
                  from_backup = None, segmentation_supported = True,
                  object_list = None, auto_save = 6, 
                  clear_history_on_save = False):
-        self._log = logging.getLogger('BAC0.core.devices.%s' \
-                    % self.__class__.__name__)
-        self._log.setLevel(logging.INFO)
                 
         self.properties = DeviceProperties()
 
@@ -118,8 +113,6 @@ class Device(SQLMixin):
         self.properties.name = ''
         self.properties.objects_list = []
         self.properties.pss = ServicesSupported()
-        #self.properties.serving_chart = {}
-        #self.properties.charts = []
         self.properties.multistates = {}
         self.properties.auto_save = auto_save
         self.properties.clear_history_on_save = clear_history_on_save

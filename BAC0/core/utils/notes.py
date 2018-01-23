@@ -42,22 +42,31 @@ def note_and_log(cls):
     """
     # Notes object
     cls._notes = namedtuple('_notes',['timestamp', 'notes'])
-    self.clear_notes()
+    cls._notes.timestamp = []
+    cls._notes.notes = []
 
     # Defining log object
     logname = 'BAC0'
     cls._log = logging.getLogger(logname)
-    ch = logging.StreamHandler()
-    ch.setLevel = logging.ERROR
+    #ch = logging.StreamHandler()
+    #ch.setLevel = logging.ERROR
     fh = logging.FileHandler('BAC0.log')
     fh.setLevel = logging.DEBUG
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
+    #ch.setFormatter(formatter)
     fh.setFormatter(formatter)
-    cls._log.addHandler(ch)
+    #cls._log.addHandler(ch)
     cls._log.addHandler(fh)
     
-    def note(self, note='', level=logging.INFO, log=True):
+    def log(self, note,*, level=logging.DEBUG):
+        """
+        Add a log entry...no note
+        """
+        if not note:
+            raise ValueError('Provide something to log')
+        cls._log.log(level, note)
+    
+    def note(self, note,*, level=logging.INFO, log=True):
         """
         Add note to the object. By default, the note will also
         be logged
@@ -66,17 +75,13 @@ def note_and_log(cls):
         :param level: (logging.level)
         :param log: (boolean) Enable or disable logging of note
         """
+        if not note:
+            raise ValueError('Provide something to log')
         cls._notes.timestamp.append(datetime.now())
         cls._notes.notes.append(note)
         if log:
-            self.log(level, note)
+            cls.log(level, note)
 
-    def log(self, note='', level=logging.DEBUG):
-        """
-        Add a log entry...no note
-        """
-        cls._log.log(level, note)
-    
     @property
     def notes(self):
         """
@@ -95,4 +100,5 @@ def note_and_log(cls):
     cls.clear_notes = clear_notes
     cls.note = note
     cls.notes = notes
+    cls.log = log
     return cls

@@ -43,13 +43,11 @@ from bacpypes.primitivedata import CharacterString
 from ..core.app.ScriptApplication import ScriptApplication
 from .. import infos
 from ..core.io.IOExceptions import NoResponseFromController, UnrecognizedService
+from ..core.utils.notes import note_and_log
 
 #------------------------------------------------------------------------------
 
-_DEBUG = 1
-
-
-@bacpypes_debugging
+@note_and_log
 class BasicScript():
     """
     Build a running BACnet/IP device that accepts WhoIs and IAm requests
@@ -66,8 +64,6 @@ class BasicScript():
     def __init__(self, localIPAddr='127.0.0.1', localObjName='BAC0', DeviceId=None,
                  maxAPDULengthAccepted='1024', maxSegmentsAccepted='1024', segmentationSupported='segmentedBoth'):
 
-        self._log = logging.getLogger('BAC0.script.%s' \
-                    % self.__class__.__name__)
         self._log.debug("Configurating app")
         
         self.response = None
@@ -196,19 +192,3 @@ class BasicScript():
             return df.sort_values('Address')
         except AttributeError:
             return df
-
-
-
-def log_debug(txt, *args):
-    """ Helper function to log debug messages
-    """
-    if _DEBUG:
-        msg= (txt % args) if args else txt
-        BasicScript._debug(msg)
-
-
-def log_exception(txt, *args):
-    """ Helper function to log debug messages
-    """
-    msg= (txt % args) if args else txt
-    BasicScript._exception(msg)
