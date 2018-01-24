@@ -130,7 +130,7 @@ class Device(SQLMixin):
         self._polling_task.task = None
         self._polling_task.running = False
 
-        self._notes = Notes("Controller initialized")
+        self.note("Controller initialized")
 
         
         if from_backup:
@@ -176,27 +176,6 @@ class Device(SQLMixin):
 
     def initialize_device_from_db(self):
         raise NotImplementedError()
-
-
-    @property
-    def notes(self):
-        """
-        Allow the addition of text notes to the device.
-        Notes are stored as timeseries (same than points)
-
-        :returns: pd.Series
-        """
-        return self._notes.get_serie()
-
-
-    @notes.setter
-    def notes(self, note):
-        """
-        Setter for notes
-
-        :param note: (str)
-        """
-        self._notes.add(note)
 
 
     def df(self, list_of_points, force_read=True):
