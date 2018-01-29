@@ -97,14 +97,15 @@ class HostIP():
             iface = "eth0"
             socket.inet_ntoa(fcntl.ioctl(socket.socket(socket.AF_INET, socket.SOCK_DGRAM), 35099, struct.pack('256s', iface))[20:24])
             """
-            pattern = re.compile(r"(\d+\.\d+\.\d+\.\d+)$")
+            pattern = re.compile(r"((255)+\.\d+\.\d+\.\d+)$")
+
             try:
                 proc = subprocess.Popen('ifconfig', stdout=subprocess.PIPE)
                 while True:
                     line = proc.stdout.readline()
                     if ip.encode() in line:
                         break
-                ip, mask, bcast = re.findall(pattern,line.rstrip().decode())
+                mask = re.findall(pattern,line.decode())[0][0]
             except:
                 mask = '255.255.255.255'
         return mask

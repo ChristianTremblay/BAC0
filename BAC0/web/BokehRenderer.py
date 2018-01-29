@@ -16,16 +16,24 @@ from bokeh.palettes import d3, Spectral6
 from bokeh.io import curdoc
 from bokeh.application.handlers import Handler
 
+from tornado import gen
+
 import logging
 import math
 import pandas as pd
 import weakref
 
+from ..tasks.RecurringTask import RecurringTask
+from ..core.utils.notes import note_and_log
+
+@note_and_log
 class DynamicPlotHandler(Handler):
     def __init__(self, network):
         self._network = weakref.ref(network)
         self.sources = {}
         self._last_time_list = None
+        self._update_complete = False
+        self._recurring_update = RecurringTask(self.plan_update_data, delay = 5)
         super().__init__()
     
     @property
@@ -33,12 +41,18 @@ class DynamicPlotHandler(Handler):
         return self._network()
         
     def organize_data(self):
+        
+        self._log.debug('Organize Data')
+        
         self.s = {}
         for point in self.network.trends:
             self.s[point.history.name] = (point.history, point.history.units)
         self.lst_of_trends = [his[0] for name, his in self.s.items()]  
        
-    def build_plot(self):     
+    def build_plot(self):
+        self._log.debug('Build Plot')
+        
+        self.stop_update_data()
         self.organize_data()
         for each in self.lst_of_trends:
             df = pd.DataFrame(each)
@@ -131,14 +145,17 @@ class DynamicPlotHandler(Handler):
             self.p.legend.click_policy = "hide"
 
             self.plots = [self.p,]
-    
+            
+    #@gen.coroutine
     def update_data(self):
+        self._log.debug('Update Data')
+        doc = curdoc()
         self.organize_data()
         if self._last_time_list:
             if self._last_time_list != self.s.keys():
                 self._list_have_changed = True
-                curdoc().remove_periodic_callback(self.update_data)
-                self.modify_document(curdoc())
+                self.stop_update_data()
+                self.modify_document(doc)
             else:
                 self._list_have_changed = False
         
@@ -173,6 +190,8 @@ class DynamicPlotHandler(Handler):
             new_data['time'] = df['time_s']
             renderer.data_source.data = new_data
         self._last_time_list = self.s.keys()
+        #self.start_update_data()
+        self._update_complete = True
             
     def modify_document(self, doc):
         curdoc().clear()
@@ -188,8 +207,34 @@ class DynamicPlotHandler(Handler):
                 #widgetbox(self.div_footer)
                 
         doc.add_root(layout)
-        doc.add_periodic_callback(self.update_data,100)          
+        doc.add_periodic_callback(self.update_data,10000)  
         return doc
+    
+    def plan_update_data(self):
+        doc = curdoc()
+        if self._update_complete == True:
+            self._update_complete = False
+            doc.add_next_tick_callback(self.update_data)
+        
+    def stop_update_data(self):
+        doc = curdoc()
+        if self._recurring_update.is_running:           
+            self._recurring_update.stop()
+            while self._recurring_update.is_running:
+                pass
+            try:
+                doc.remove_next_tick_callback(self.update_data)
+            except (ValueError, RuntimeError):
+                pass # Already gone
+            
+    def start_update_data(self):
+        if not self._recurring_update.is_running:
+            try:
+                self._recurring_update.start()
+                while not self._recurring_update.is_running:
+                    pass
+            except RuntimeError:
+                pass
 
 class DevicesTableHandler(Handler):
     """ 
@@ -261,6 +306,7 @@ class NotesTableHandler(Handler):
         return self._network_ref()
 
     def modify_document(self, doc):
+        
         controller = self.network.notes[0]
         notes_df = pd.DataFrame(self.network.notes[1]).reset_index()
         notes_df.columns = ['index', 'notes']
@@ -282,3 +328,5 @@ class NotesTableHandler(Handler):
         notes = ColumnDataSource(notes_df)
         self.data_table.source.data.update(notes.data)
         curdoc().title = 'Notes for %s' % controller
+        
+  

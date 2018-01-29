@@ -97,7 +97,7 @@ class SQLMixin(object):
             db.close()
             
         else:
-            print('Creating a new backup database')
+            self._log.debug('Creating a new backup database')
             df_to_backup = self.backup_histories_df()
         
         cnx = sqlite3.connect('%s.db' % (self.properties.db_name))
