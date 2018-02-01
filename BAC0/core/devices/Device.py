@@ -94,6 +94,11 @@ class Device(SQLMixin):
                      ('analogInput', 4),
                      ('analogInput', 0),
                      ('analogInput', 1)]
+    :auto_save: (False or int) If False or 0, auto_save is disabled. To
+                Activate, pass an integer representing the number of polls
+                before auto_save is called. Will write the histories to
+                SQLite db locally.
+    :clear_history_on_save: (boolean) Will clear device history
 
     :type address: (str)
     :type device_id: int
@@ -101,7 +106,7 @@ class Device(SQLMixin):
     """
     def __init__(self, address, device_id, network, *, poll=10, 
                  from_backup = None, segmentation_supported = True,
-                 object_list = None, auto_save = 6, 
+                 object_list = None, auto_save = False, 
                  clear_history_on_save = False):
                 
         self.properties = DeviceProperties()
