@@ -46,21 +46,28 @@ def note_and_log(cls):
     ch = logging.StreamHandler()
     ch.setLevel(logging.WARNING)
     # Rotating File Handler
+    _PERMISSION_TO_WRITE = True
     logUserPath = expanduser('~')
     logSaveFilePath = r'%s\.BAC0' %(logUserPath)
 
     logFile = r'%s\%s' % (logSaveFilePath,'BAC0.log')
     if not os.path.exists(logSaveFilePath):
-        os.makedirs(logSaveFilePath)
-    fh = RotatingFileHandler(logFile, mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=False)
-    fh.setLevel = logging.DEBUG
+        try:
+            os.makedirs(logSaveFilePath)           
+        except:
+            _PERMISSION_TO_WRITE = False
+    if _PERMISSION_TO_WRITE:
+        fh = RotatingFileHandler(logFile, mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=False)
+        fh.setLevel = logging.DEBUG
     
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        fh.setFormatter(formatter)
+    
     ch.setFormatter(formatter)
     # Add handlers the first time only... 
     if not len(cls._log.handlers):
-        cls._log.addHandler(fh)
+        if _PERMISSION_TO_WRITE:
+            cls._log.addHandler(fh)
         cls._log.addHandler(ch)
     
     def log(self, note,*, level=logging.DEBUG):
