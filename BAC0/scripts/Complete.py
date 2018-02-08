@@ -22,36 +22,26 @@ Once the class is created, create the local object and use it::
 
 '''
 #--- standard Python modules ---
-import time
 import logging
 import logging.handlers
 from datetime import datetime
-import weakref
 
+import pandas as pd
+
+    
 #--- 3rd party modules ---
-from bacpypes.debugging import bacpypes_debugging
 from bokeh.application import Application
 
 #--- this application's modules ---
-from ..scripts.BasicScript import BasicScript
+from ..scripts.Lite import Lite
 
-from ..core.io.Read import ReadProperty
-from ..core.io.Write import WriteProperty
-from ..core.functions.GetIPAddr import HostIP
-from ..core.functions.WhoisIAm import WhoisIAm
-from ..core.io.Simulate import Simulation
-from ..core.io.IOExceptions import BokehServerCantStart
-from ..core.devices.Points import Point
+from ..core.io.IOExceptions import BokehServerCantStart,NoResponseFromController, UnrecognizedService
 from ..core.functions.PrintDebug import print_list
 from ..core.utils.notes import note_and_log
 
 from ..web.BokehRenderer import DevicesTableHandler, DynamicPlotHandler, NotesTableHandler
 from ..web.BokehServer import Bokeh_Worker
 from ..web.FlaskServer import FlaskServer
-
-from ..infos import __version__ as version
-
-
 
 #------------------------------------------------------------------------------
 
@@ -123,7 +113,7 @@ class Stats_Mixin():
         return statistics
 
 @note_and_log
-class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simulation, Stats_Mixin):
+class Complete(Lite, Stats_Mixin):
     """
     Build a BACnet application to accept read and write requests.
     [Basic Whois/IAm functions are implemented in parent BasicScript class.]
@@ -138,31 +128,32 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
         set to True.
     """
     def __init__(self, ip=None, bokeh_server=True, flask_port = 8111):
-        print("Starting BAC0 version %s" % version)
-        self.log("Configurating app")
-        self.flask_port = flask_port
-        self._registered_devices = weakref.WeakValueDictionary()
-        if ip is None:
-            host = HostIP()
-            ip_addr = host.address
-        else:
-            ip_addr = ip
-
-        BasicScript.__init__(self, localIPAddr=ip_addr)
-        
-        self.bokehserver = False
-        self._points_to_trend = weakref.WeakValueDictionary()
-        # Force a global whois to find all devices on the network
-        self.whois_answer = self.update_whois()
-        time.sleep(2)
+        Lite.__init__(self, ip=ip)
+        self.flask_port = flask_port   
         if bokeh_server:
             self.start_bokeh()
             self.FlaskServer.start()
         else:
             self.log('Bokeh server not started. Trend feature will not work', level=logging.WARNING)
 
-    def update_whois(self):
-        return (self.whois(),str(datetime.now())) 
+    @property
+    def devices(self):
+        lst = []
+        for device in list(self.discoveredDevices):
+            try:
+                deviceName, vendorName = self.readMultiple('%s device %s objectName vendorName' % (device[0], device[1]))                
+            except UnrecognizedService:
+                deviceName = self.read('%s device %s objectName' % (device[0], device[1])) 
+                vendorName = self.read('%s device %s vendorName' % (device[0], device[1]))
+            except NoResponseFromController:
+                self._log.info('No response from %s' % device)
+                continue
+            lst.append((deviceName, vendorName, device[0], device[1]))
+        df = pd.DataFrame(lst, columns=['Name', 'Manufacturer', 'Address',' Device ID']).set_index('Name')
+        try: 
+            return df.sort_values('Address')
+        except AttributeError:
+            return df
     
     def start_bokeh(self):
         try:
@@ -193,64 +184,8 @@ class ReadWriteScript(BasicScript, WhoisIAm, ReadProperty, WriteProperty, Simula
             self.bokehserver = False
             self._log.error('No Bokeh Server - controller.chart not available')
 
-    def register_device(self, device):
-        oid = id(device)
-        self._registered_devices[oid] = device
-        
-    @property
-    def registered_devices(self):
-        """
-        Devices that have been created using BAC0.device(args)
-        """
-        return list(self._registered_devices.values())
-
-    def unregister_device(self, device):
-        """
-        Remove from the registered list
-        """
-        oid = id(device)
-        del self._registered_devices[oid]
-
-    def add_trend(self, point_to_trend):
-        """
-        Add point to the list of histories that will be handled by Bokeh
-        
-        Argument provided must be of type Point
-        ex. bacnet.add_trend(controller['point_name'])
-        """
-        if isinstance(point_to_trend, Point):
-            oid = id(point_to_trend)
-            self._points_to_trend[oid] = point_to_trend
-        else:
-            raise TypeError('Please provide point containing history')
-
-    def remove_trend(self, point_to_remove):
-        """
-        Remove point from the list of histories that will be handled by Bokeh
-        
-        Argument provided must be of type Point
-        ex. bacnet.remove_trend(controller['point_name'])
-        """
-        if isinstance(point_to_remove, Point):
-            oid = id(point_to_remove)
-        else:
-            raise TypeError('Please provide point containing history')
-        if oid in self._points_to_trend.keys():
-            del self._points_to_trend[oid]
-
-
-    @property
-    def trends(self):
-        """
-        This will present a list of all registered trends used by Bokeh Server
-        """
-        return list(self._points_to_trend.values())
-
-    def disconnect(self):
-        super().disconnect()
-
     def __repr__(self):
-        return 'Bacnet Network using ip %s with device id %s' % (self.localIPAddr, self.Boid)
+        return 'Bacnet Network using ip %s with device id %s | Featuring Bokeh and Pandas' % (self.localIPAddr, self.Boid)
 
     
     

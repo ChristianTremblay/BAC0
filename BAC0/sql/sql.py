@@ -14,13 +14,17 @@ import os.path
 
 #--- 3rd party modules ---
 import sqlite3
-import pandas as pd
-from pandas.io import sql
-try:
-    from pandas import Timestamp
-except ImportError:
-    from pandas.lib import Timestamp
 
+try:
+    import pandas as pd
+    from pandas.io import sql
+    try:
+        from pandas import Timestamp
+    except ImportError:
+        from pandas.lib import Timestamp
+    _PANDAS = True
+except ImportError:
+    _PANDAS = False
 #--- this application's modules ---
 
 #------------------------------------------------------------------------------

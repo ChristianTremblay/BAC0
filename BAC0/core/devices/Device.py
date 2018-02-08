@@ -18,7 +18,11 @@ import os.path
 #--- 3rd party modules ---
 import sqlite3
 
-import pandas as pd
+try:
+    import pandas as pd
+    _PANDAS = True
+except ImportError:
+    _PANDAS = False
 import logging
 try:
     from xlwings import Workbook, Sheet, Range, Chart
@@ -364,6 +368,7 @@ class DeviceConnected(Device):
         """
         When connected, calling DF should force a reading on the network.
         """
+        
         his = []
         for point in list_of_points:
             try:
@@ -372,7 +377,8 @@ class DeviceConnected(Device):
             except ValueError as ve:
                 self._log.error('%s' % ve)
                 continue
-
+        if not _PANDAS:
+            return dict(zip(list_of_points, his))
         return pd.DataFrame(dict(zip(list_of_points, his)))
 
 
@@ -443,27 +449,29 @@ class DeviceConnected(Device):
             yield each.properties.name
 
 
-    def to_excel(self):
-        """
-        Create an Excel spreadsheet from the device's point histories.
-        """
-        his = {}
-        for name in list(self.points_name):
-            try:
-                his[name] = self._findPoint(name, force_read=False).history.replace(
-                    ['inactive', 'active'], [0, 1]).resample('1ms')
-            except TypeError:
-                his[name] = self._findPoint(
-                    name, force_read=False).history.resample('1ms')
-
-        his['Notes'] = self.notes
-        df = pd.DataFrame(his).fillna(method='ffill').fillna(method='bfill')
-
-        if _XLWINGS:
-            wb = Workbook()
-            Range('A1').value = df
-        else:
-            df.to_csv()
+#    def to_excel(self):
+#        """
+#        Create an Excel spreadsheet from the device's point histories.
+#        """
+#        if not _PANDAS:
+#            return dict(zip(list_of_points, his))
+#        his = {}
+#        for name in list(self.points_name):
+#            try:
+#                his[name] = self._findPoint(name, force_read=False).history.replace(
+#                    ['inactive', 'active'], [0, 1]).resample('1ms')
+#            except TypeError:
+#                his[name] = self._findPoint(
+#                    name, force_read=False).history.resample('1ms')
+#
+#        his['Notes'] = self.notes
+#        df = pd.DataFrame(his).fillna(method='ffill').fillna(method='bfill')
+#
+#        if _XLWINGS:
+#            wb = Workbook()
+#            Range('A1').value = df
+#        else:
+#            df.to_csv()
 
 
     def __setitem__(self, point_name, value):
@@ -556,6 +564,9 @@ class DeviceConnected(Device):
 
     def __repr__(self):
         return '%s / Connected' % self.properties.name
+
+
+
 
 
 #------------------------------------------------------------------------------

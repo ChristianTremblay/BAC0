@@ -14,8 +14,15 @@ from datetime import datetime
 import logging
 from logging.handlers import RotatingFileHandler
 
+import os
+from os.path import expanduser
+
 #--- 3rd party modules ---
-import pandas as pd
+try:
+    import pandas as pd
+    _PANDAS = True
+except ImportError:
+    _PANDAS = False
 
 def note_and_log(cls):
     """
@@ -39,7 +46,13 @@ def note_and_log(cls):
     ch = logging.StreamHandler()
     ch.setLevel(logging.WARNING)
     # Rotating File Handler
-    fh = RotatingFileHandler('BAC0.log', mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=False)
+    logUserPath = expanduser('~')
+    logSaveFilePath = r'%s\.BAC0' %(logUserPath)
+
+    logFile = logSaveFilePath+'\\' + 'BAC0.log'
+    if not os.path.exists(logSaveFilePath):
+        os.makedirs(logSaveFilePath)
+    fh = RotatingFileHandler(logFile, mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=False)
     fh.setLevel = logging.DEBUG
     
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -79,6 +92,8 @@ def note_and_log(cls):
         """
         Retrieve notes list as a Pandas Series
         """
+        if not _PANDAS:
+            return dict(zip(self._notes.timestamp,self._notes.notes))
         return pd.Series(self._notes.notes, index=self._notes.timestamp)
 
     def clear_notes(self):

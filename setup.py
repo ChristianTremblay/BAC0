@@ -6,8 +6,6 @@ import BAC0.infos as infos
 
 requirements = [
     'bacpypes',
-    'pandas',
-    'bokeh',
 ]
 
 setup(name='BAC0',

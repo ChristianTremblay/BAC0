@@ -21,15 +21,10 @@ Class::
 """
 #--- standard Python modules ---
 from threading import Thread
-from queue import Queue
 import random
 import sys
-import logging
 
 #--- 3rd party modules ---
-import pandas as pd
-
-from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
 from bacpypes.core import run as startBacnetIPApp
 from bacpypes.core import stop as stopBacnetIPApp
@@ -42,13 +37,13 @@ from bacpypes.primitivedata import CharacterString
 #--- this application's modules ---
 from ..core.app.ScriptApplication import ScriptApplication
 from .. import infos
-from ..core.io.IOExceptions import NoResponseFromController, UnrecognizedService
+
 from ..core.utils.notes import note_and_log
 
 #------------------------------------------------------------------------------
 
 @note_and_log
-class BasicScript():
+class Base():
     """
     Build a running BACnet/IP device that accepts WhoIs and IAm requests
     Initialization requires some minimial information about the local device.
@@ -174,21 +169,4 @@ class BasicScript():
         self._log.info('BAC0 started')
         
 
-    @property
-    def devices(self):
-        lst = []
-        for device in list(self.discoveredDevices):
-            try:
-                deviceName, vendorName = self.readMultiple('%s device %s objectName vendorName' % (device[0], device[1]))                
-            except UnrecognizedService:
-                deviceName = self.read('%s device %s objectName' % (device[0], device[1])) 
-                vendorName = self.read('%s device %s vendorName' % (device[0], device[1]))
-            except NoResponseFromController:
-                self._log.info('No response from %s' % device)
-                continue
-            lst.append((deviceName, vendorName, device[0], device[1]))
-        df = pd.DataFrame(lst, columns=['Name', 'Manufacturer', 'Address',' Device ID']).set_index('Name')
-        try: 
-            return df.sort_values('Address')
-        except AttributeError:
-            return df
+
