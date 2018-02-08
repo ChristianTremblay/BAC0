@@ -6,12 +6,22 @@ Example::
 
     import BAC0
     bacnet = BAC0.connect()
-    # or specify the IP you want to use / bacnet = BAC0.connect(ip='192.168.1.10')
+    # or specify the IP you want to use / bacnet = BAC0.connect(ip='192.168.1.10/24')
     # by default, it will attempt an internet connection and use the network adapter
     # connected to the internet.
+    # Specifying the network mask will allow the usage of a local broadcast address
+    # like 192.168.1.255 instead of the global broadcast address 255.255.255.255
+    # which could be blocked in some cases.
+
+    # Get the list of devices seen on the network
+    bacnet.devices
 
     # Define a controller (this one is on MSTP #3, MAC addr 4, device ID 5504)    
     mycontroller = BAC0.device('3:4', 5504, bacnet)
+    
+    # Get the list of "registered" devices 
+    bacnet.registered_devices
+    
 
 Some caveats
 *************

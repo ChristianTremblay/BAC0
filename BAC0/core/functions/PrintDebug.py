@@ -18,3 +18,16 @@ def print_debug(msg, args):
     args = args.split()
     if _DEBUG:
         WriteProperty._debug(msg, args)
+        
+def print_list(lst):
+            s = ''
+            try:
+                s = s + lst[0]
+            except IndexError:
+                return s
+            try:
+                for each in lst[1:]:
+                    s = s + ', ' + each
+            except IndexError:
+                pass
+            return s

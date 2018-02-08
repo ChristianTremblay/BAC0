@@ -11,20 +11,23 @@ Device.py - describe a BACnet Device
 #--- standard Python modules ---
 from collections import namedtuple
 from datetime import datetime
+import weakref
 
 import os.path
 
 #--- 3rd party modules ---
 import sqlite3
 
-import pandas as pd
+try:
+    import pandas as pd
+    _PANDAS = True
+except ImportError:
+    _PANDAS = False
 import logging
-log = logging.getLogger('BAC0.core.devices')
 try:
     from xlwings import Workbook, Sheet, Range, Chart
     _XLWINGS = True
 except ImportError:
-    log.debug('xlwings not installed. If using Windows or OSX, install to get more features.')
     _XLWINGS = False
 
 
@@ -32,11 +35,13 @@ except ImportError:
 from bacpypes.basetypes import ServicesSupported
 
 from .Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
-from ..io.IOExceptions import NoResponseFromController, ReadPropertyMultipleException, SegmentationNotSupported
+from ..io.IOExceptions import NoResponseFromController, SegmentationNotSupported
 #from ...bokeh.BokehRenderer import BokehPlot
 from ...sql.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
 from .mixins.read_mixin import ReadPropertyMultiple, ReadProperty
+
+from ..utils.notes import note_and_log
 
 
 #------------------------------------------------------------------------------
@@ -54,8 +59,8 @@ class DeviceProperties(object):
         self.pollDelay = None
         self.objects_list = None
         self.pss = ServicesSupported()
-        self.serving_chart = None
-        self.charts = None
+        #self.serving_chart = None
+        #self.charts = None
         self.multistates = None
         self.db_name = None
         self.segmentation_supported = True
@@ -67,7 +72,7 @@ class DeviceProperties(object):
     def asdict(self):
         return self.__dict__
 
-
+@note_and_log
 class Device(SQLMixin):
     """
     Represent a BACnet device.  Once defined, it allows use of read, write, sim, release 
@@ -93,6 +98,11 @@ class Device(SQLMixin):
                      ('analogInput', 4),
                      ('analogInput', 0),
                      ('analogInput', 1)]
+    :auto_save: (False or int) If False or 0, auto_save is disabled. To
+                Activate, pass an integer representing the number of polls
+                before auto_save is called. Will write the histories to
+                SQLite db locally.
+    :clear_history_on_save: (boolean) Will clear device history
 
     :type address: (str)
     :type device_id: int
@@ -100,10 +110,8 @@ class Device(SQLMixin):
     """
     def __init__(self, address, device_id, network, *, poll=10, 
                  from_backup = None, segmentation_supported = True,
-                 object_list = None):
-        self._log = logging.getLogger('BAC0.core.devices.%s' \
-                    % self.__class__.__name__)
-        self._log.setLevel(logging.INFO)
+                 object_list = None, auto_save = False, 
+                 clear_history_on_save = False):
                 
         self.properties = DeviceProperties()
 
@@ -114,9 +122,10 @@ class Device(SQLMixin):
         self.properties.name = ''
         self.properties.objects_list = []
         self.properties.pss = ServicesSupported()
-        self.properties.serving_chart = {}
-        self.properties.charts = []
         self.properties.multistates = {}
+        self.properties.auto_save = auto_save
+        self.properties.clear_history_on_save = clear_history_on_save
+        
         self.segmentation_supported = segmentation_supported
         self.custom_object_list = object_list
 
@@ -130,11 +139,8 @@ class Device(SQLMixin):
         self._polling_task.task = None
         self._polling_task.running = False
 
-        self._notes = namedtuple('_notes',['timestamp', 'notes'])
-        self._notes.timestamp = []
-        self._notes.notes = []
-        self._notes.notes.append("Controller initialized")
-        self._notes.timestamp.append(datetime.now())
+        self.note("Controller initialized")
+
         
         if from_backup:
             filename = from_backup
@@ -181,29 +187,6 @@ class Device(SQLMixin):
         raise NotImplementedError()
 
 
-    @property
-    def notes(self):
-        """
-        Allow the addition of text notes to the device.
-        Notes are stored as timeseries (same than points)
-
-        :returns: pd.Series
-        """
-        notes_table = pd.Series(self._notes.notes, index=self._notes.timestamp)
-        return notes_table
-
-
-    @notes.setter
-    def notes(self, note):
-        """
-        Setter for notes
-
-        :param note: (str)
-        """
-        self._notes.timestamp.append(datetime.now())
-        self._notes.notes.append(note)
-
-
     def df(self, list_of_points, force_read=True):
         """
         Build a pandas DataFrame from a list of points.  DataFrames are used to present and analyze data.
@@ -214,76 +197,6 @@ class Device(SQLMixin):
         raise NotImplementedError()
 
 
-    def old_chart(self, list_of_points, *, title='Live Trending', show_notes=True):
-        """
-        Draw a chart from a list of points.  Refer to the pandas and matplotlib doc for details on 
-        the plot() function and the args they accept.
-
-        :param list_of_points: a list of point name as str
-        :param plot_args: arg for plot function
-        :returns: plot()
-        """
-        if self.__class__ == DeviceFromDB:
-            update_data = False
-        else:
-            update_data = True
-
-#        if self.properties.network.bokehserver:
-#            lst = []
-#            for point in list_of_points:
-#                if point in self.points_name:
-#                    lst.append(point)
-#                else:
-#                    self._log.warning('Wrong name, removing %s from list' % point)
-#
-#            try:
-#                self.properties.serving_chart[title] = BokehPlot(
-#                    self, lst, title=title, show_notes=show_notes, update_data=update_data)
-#            except Exception as error:
-#                self._log.error('A problem occurred : %s' % error)
-#        else:
-#            self._log.warning("No bokeh server running, can't display chart")
-
-    def chart(self, list_of_points, *, title='Live Trending', show_notes=True):
-        """
-        Draw a chart from a list of points.  Refer to the pandas and matplotlib doc for details on 
-        the plot() function and the args they accept.
-
-        :param list_of_points: a list of point name as str
-        :param plot_args: arg for plot function
-        :returns: plot()
-        """
-        if self.__class__ == DeviceFromDB:
-            update_data = False
-        else:
-            update_data = True
-
-        if self.properties.network.bokehserver:
-            lst = []
-            for point in list_of_points:
-                if point in self.points_name:
-                    lst.append(point)
-                else:
-                    self._log.warning('Wrong name, removing %s from list' % point)
-
-            try:
-                #s = []
-                #u = {}
-                for point in lst:
-                    #s.append(point.history)
-                    self.properties.network.trends.append(point.history)
-                    #u[point.history.name] = (point.units)
-               
-                #df = pd.concat(s, axis=1)
-                #df.units = u
-                #self.network.trend_df.drop(self.device.properties.name, axis=1, inplace=True)
-                #self.network.trend_df[self.device.properties.name] = s
-                
-                #self.network.trends.append(s)
-            except Exception as error:
-                self._log.error('A problem occurred : %s' % error)
-        else:
-            self._log.warning("No bokeh server running, can't display chart")
 
     @property
     def simulated_points(self):
@@ -373,7 +286,10 @@ class Device(SQLMixin):
         pointName = ' '.join(args[:-1])
         value = args[-1]
         return (pointName, value)
-
+    
+    def clear_histories(self):
+        for point in self.points:
+            point.clear_history()
 
     @property
     def analog_units(self):
@@ -424,12 +340,13 @@ class DeviceConnected(Device):
     """
 
     def _init_state(self):
-        self._buildPointList()
-
+        self._buildPointList()            
+        self.properties.network.register_device(self)
 
     def disconnect(self):
         self._log.info('Wait while stopping polling')
         self.poll(command='stop')
+        self.properties.network.unregister_device(self)
         self.new_state(DeviceFromDB)
 
 
@@ -451,6 +368,7 @@ class DeviceConnected(Device):
         """
         When connected, calling DF should force a reading on the network.
         """
+        
         his = []
         for point in list_of_points:
             try:
@@ -459,7 +377,8 @@ class DeviceConnected(Device):
             except ValueError as ve:
                 self._log.error('%s' % ve)
                 continue
-
+        if not _PANDAS:
+            return dict(zip(list_of_points, his))
         return pd.DataFrame(dict(zip(list_of_points, his)))
 
 
@@ -530,27 +449,29 @@ class DeviceConnected(Device):
             yield each.properties.name
 
 
-    def to_excel(self):
-        """
-        Create an Excel spreadsheet from the device's point histories.
-        """
-        his = {}
-        for name in list(self.points_name):
-            try:
-                his[name] = self._findPoint(name, force_read=False).history.replace(
-                    ['inactive', 'active'], [0, 1]).resample('1ms')
-            except TypeError:
-                his[name] = self._findPoint(
-                    name, force_read=False).history.resample('1ms')
-
-        his['Notes'] = self.notes
-        df = pd.DataFrame(his).fillna(method='ffill').fillna(method='bfill')
-
-        if _XLWINGS:
-            wb = Workbook()
-            Range('A1').value = df
-        else:
-            df.to_csv()
+#    def to_excel(self):
+#        """
+#        Create an Excel spreadsheet from the device's point histories.
+#        """
+#        if not _PANDAS:
+#            return dict(zip(list_of_points, his))
+#        his = {}
+#        for name in list(self.points_name):
+#            try:
+#                his[name] = self._findPoint(name, force_read=False).history.replace(
+#                    ['inactive', 'active'], [0, 1]).resample('1ms')
+#            except TypeError:
+#                his[name] = self._findPoint(
+#                    name, force_read=False).history.resample('1ms')
+#
+#        his['Notes'] = self.notes
+#        df = pd.DataFrame(his).fillna(method='ffill').fillna(method='bfill')
+#
+#        if _XLWINGS:
+#            wb = Workbook()
+#            Range('A1').value = df
+#        else:
+#            df.to_csv()
 
 
     def __setitem__(self, point_name, value):
@@ -645,6 +566,9 @@ class DeviceConnected(Device):
         return '%s / Connected' % self.properties.name
 
 
+
+
+
 #------------------------------------------------------------------------------
 
 class RPDeviceConnected(DeviceConnected, ReadProperty):
@@ -707,7 +631,7 @@ class DeviceDisconnected(Device):
             self._log.warning('Segmentation not supported.... expect slow responses.')
             self.new_state(RPDeviceConnected)
 
-        except (NoResponseFromController, AttributeError):
+        except (NoResponseFromController, AttributeError) as error:
             if self.properties.db_name:
                 self.new_state(DeviceFromDB)
             else:

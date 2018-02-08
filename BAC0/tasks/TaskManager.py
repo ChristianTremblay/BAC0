@@ -33,6 +33,7 @@ class Task(Thread):
 
     def __init__(self, delay=5, daemon = True, name='recurring'):
         Thread.__init__(self, name=name, daemon = daemon)
+        self.is_running = False
         self.exitFlag = False
         self.lock = Manager.threadLock
         self.delay = delay
@@ -45,6 +46,7 @@ class Task(Thread):
 
 
     def process(self):
+        self.is_running = True
         while not self.exitFlag:
             self.lock.acquire()
             self.task()
@@ -63,6 +65,7 @@ class Task(Thread):
 
 
     def stop(self):
+        self.is_running = False
         self.exitFlag = True
 
 
