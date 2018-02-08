@@ -3,7 +3,6 @@ python:
 - '3.4'
 - '3.5'
 - '3.6'
-- 3.7-dev
 bundler_args: "--retry 3"
 install:
 - pip install -r requirements.txt
