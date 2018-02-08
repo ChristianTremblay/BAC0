@@ -45,6 +45,9 @@ def note_and_log(cls):
     # Console Handler
     ch = logging.StreamHandler()
     ch.setLevel(logging.WARNING)
+    
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        
     # Rotating File Handler
     _PERMISSION_TO_WRITE = True
     logUserPath = expanduser('~')
@@ -59,8 +62,6 @@ def note_and_log(cls):
     if _PERMISSION_TO_WRITE:
         fh = RotatingFileHandler(logFile, mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=False)
         fh.setLevel = logging.DEBUG
-    
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         fh.setFormatter(formatter)
     
     ch.setFormatter(formatter)
