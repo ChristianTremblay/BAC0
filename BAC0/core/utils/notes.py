@@ -49,7 +49,7 @@ def note_and_log(cls):
     logUserPath = expanduser('~')
     logSaveFilePath = r'%s\.BAC0' %(logUserPath)
 
-    logFile = logSaveFilePath+'\\' + 'BAC0.log'
+    logFile = r'%s\%s' (logSaveFilePath,'BAC0.log')
     if not os.path.exists(logSaveFilePath):
         os.makedirs(logSaveFilePath)
     fh = RotatingFileHandler(logFile, mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=False)
