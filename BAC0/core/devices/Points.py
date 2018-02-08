@@ -14,18 +14,21 @@ from collections import namedtuple
 import time
 
 #--- 3rd party modules ---
-import sqlite3
-import pandas as pd
-from pandas.io import sql
 try:
-    from pandas import Timestamp
+    import pandas as pd
+    from pandas.io import sql
+    try:
+        from pandas import Timestamp
+    except ImportError:
+        from pandas.lib import Timestamp
+    _PANDAS = True
 except ImportError:
-    from pandas.lib import Timestamp
+    _PANDAS = False
 
 #--- this application's modules ---
 from ...tasks.Poll import SimplePoll as Poll
 from ...tasks.Match import Match, Match_Value
-from ..io.IOExceptions import NoResponseFromController, WriteAccessDenied, UnknownPropertyError
+from ..io.IOExceptions import NoResponseFromController
 
 #------------------------------------------------------------------------------
 
@@ -126,7 +129,10 @@ class Point():
         """
         returns: last value read
         """
-        return self._history.value[-1]
+        if _PANDAS:
+            return self.history.dropna().iloc[-1]
+        else:
+            return self._history.value[-1]
 
 
     @property
@@ -134,6 +140,8 @@ class Point():
         """
         returns : (pd.Series) containing timestamp and value of all readings
         """
+        if not _PANDAS:
+            return dict(zip(self._history.timestamp, self._history.value))
         his_table = pd.Series(self._history.value, index=self._history.timestamp)
         his_table.name = ('%s/%s') % (self.properties.device.properties.name, self.properties.name)
         his_table.units = self.properties.units_state
@@ -147,16 +155,20 @@ class Point():
             
         his_table.datatype = self.properties.type
         return his_table
+    
+    def clear_history(self):
+        self._history.timestamp = []
+        self._history.value = []
 
 
-    def chart(self, *args):
+    def chart(self, remove=False):
         """
-        Simple shortcut to plot function
+        Add point to the bacnet trending list
         """
-        args = args.split()
-        return self.history.replace(['inactive', 'active'], [0, 1]).plot(
-                     '{}, title = {} / {}'.format(args, self.properties.name, self.properties.description))
-
+        if remove:
+            self.properties.device.properties.network.remove_trend(self)
+        else:
+            self.properties.device.properties.network.add_trend(self)
 
     def __getitem__(self, key):
         """
@@ -412,7 +424,7 @@ class NumericPoint(Point):
         else:
             try:
                 if isinstance(value,Point):
-                    value = value.history.dropna().iloc[-1]
+                    value = value.lastValue
                 val = float(value)
                 if isinstance(val, float):
                     self._setitem(value)
@@ -421,8 +433,7 @@ class NumericPoint(Point):
 
 
     def __repr__(self):
-        return '%s : %.2f %s' % (self.properties.name, self.history.dropna().iloc[-1], self.properties.units_state)
-
+        return '%s/%s : %.2f %s' % (self.properties.device.properties.name, self.properties.name, self.lastValue, self.properties.units_state)
         
     def __add__(self,other):
         return self.value + other
@@ -493,7 +504,7 @@ class BooleanPoint(Point):
         """
         returns : (boolean) Value
         """
-        if self.history.dropna().iloc[-1] == 1 or self.history.dropna().iloc[-1] == 'active':
+        if self.lastValue == 1 or self.lastValue == 'active':
             self._key = 1
             self._boolKey = True
         else:
@@ -522,7 +533,7 @@ class BooleanPoint(Point):
                 'Value must be boolean True, False or "active"/"inactive"')
 
     def __repr__(self):
-        return '%s : %s' % (self.properties.name, self.boolValue)
+        return '%s/%s : %s' % (self.properties.device.properties.name, self.properties.name, self.boolValue)
         
     def __or__(self,other):
         return self.boolValue | other
@@ -557,7 +568,7 @@ class EnumPoint(Point):
         returns: (str) Enum state value
         """
         try:
-            return self.properties.units_state[int(self.history.dropna().iloc[-1]) - 1]
+            return self.properties.units_state[int(self.lastValue) - 1]
         except IndexError:
             value = 'unknown'
         except ValueError:
@@ -587,7 +598,7 @@ class EnumPoint(Point):
 
     def __repr__(self):
         # return '%s : %s' % (self.name, )
-        return '%s : %s' % (self.properties.name, self.enumValue)
+        return '%s/%s : %s' % (self.properties.device.properties.name, self.properties.name, self.enumValue)
 
 
     def __eq__(self,other):
@@ -643,7 +654,7 @@ class NumericPointOffline(NumericPoint):
         Take last known value as the value
         """
         try:
-            value = self.history.dropna().iloc[-1]
+            value = self.lastValue
         except IndexError:
             value = 65535
         return value      
@@ -667,7 +678,7 @@ class NumericPointOffline(NumericPoint):
         raise OfflineException('Must be online to write')
 
     def __repr__(self):
-        return '%s : %.2f %s' % (self.properties.name, self.value, self.properties.units_state)
+        return '%s/%s : %.2f %s' % (self.properties.device.properties.name, self.properties.name, self.value, self.properties.units_state)
 
 
 class BooleanPointOffline(BooleanPoint):
@@ -680,7 +691,7 @@ class BooleanPointOffline(BooleanPoint):
     @property
     def value(self):
         try:
-            value = self.history.dropna().iloc[-1]
+            value = self.lastValue
         except IndexError:
             value = 'NaN'
         return value 
@@ -712,7 +723,7 @@ class EnumPointOffline(EnumPoint):
         Take last known value as the value
         """
         try:
-            value = self.history.dropna().iloc[-1]
+            value = self.lastValue
         except IndexError:
             value = 'NaN'
         except ValueError:
@@ -726,7 +737,7 @@ class EnumPointOffline(EnumPoint):
         returns: (str) Enum state value
         """
         try:
-            value = self.properties.units_state[int(self.history.dropna().iloc[-1]) - 1]
+            value = self.properties.units_state[int(self.lastValue) - 1]
         except IndexError:
             value = 'unknown'
         except ValueError:

@@ -35,39 +35,31 @@ To use the live trending features, a bokeh server needs to be running locally on
 When the BAC0 starts, it starts a bokeh server for you, running locally.  This server is available 
 at localhost:5006, on your machine.
 
-The server can be started manually, from the command line via::
+The server will then be included inside the Flask app
 
-    bokeh serve
-
-Note : Once started, the bokeh server won't be stopped by the BAC0. It will terminate when your 
-Jupyter session is closed.
-
-
-Add plots to Bokeh Document
+Add/Remove plots to Bokeh
 ---------------------------
-The web page seen on the server is called a document. You open it through a session which is
-given by the script at startup.
-Empty at first, you need to send the data you want to the server using ::
+Points to trends are added to a list monitored by the "network" object. This will allow 
+to add trends coming from multiple controllers easily ::
 
-    # This script will add four plots to the server
-    lst = ['nvoAI1', 'nvoAI2', 'nvoDO1', 'nvoTempRdC']
-    fx.chart(lst, title = 'First Floor temperature')
+    #each point can be added 
+    controller['nvoAI1'].chart()
     
-    lst2 = ['nvoAI3']
-    fx.chart(lst2, title = 'Outdoor Temp')
+    #or we can add them using the "network" object
+    bacnet.add_chart(controller['nvoAI1'])
     
-    lst3 = ['nvoPCCTAli', 'nvoAI1']
-    fx.chart(lst3, title = 'Discharge Air Temp and setpoint')
-    
-    lst4 = ['nvoEffTempEtage', 'nvoEffPCEtage']
-    fx.chart(lst4, title = 'Heating second floor')
+The list of trended points can be retrieve ::
+
+    bacnet.trends
+    #will give a list of all points added    
+
+To remove points ::
+
+    #on the point directly
+    controller['nvoAI1'].chart(remove=True)
+    bacnet.remove_chart(controller['nvoAI1'])
 
 |bokeh_plots|
-
-At startup, BAC0 prints the complete URL address for your web browser to view trends ::
-
-    Click here to open Live Trending Web Page
-    http://localhost:5006/?bokeh-session-id=f9OdQd0LWSPXsnuNdCqVSoEa5xxwd32cZR0ioi9ACXzl
 
 
 Bokeh Features

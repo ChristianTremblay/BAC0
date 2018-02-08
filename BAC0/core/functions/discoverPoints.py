@@ -14,7 +14,7 @@ discoverPoints.py - allow discovery of BACnet points in a controller.
 try:
     import pandas as pd
     _PANDA = True
-except:
+except ImportError:
     _PANDA = False
 
 #--- this application's modules ---

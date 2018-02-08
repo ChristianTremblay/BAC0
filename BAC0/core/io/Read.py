@@ -21,8 +21,6 @@ Read.py - creation of ReadProperty and ReadPropertyMultiple requests
 '''
 
 #--- standard Python modules ---
-from queue import Queue, Empty
-import time
 
 #--- 3rd party modules ---
 from bacpypes.debugging import bacpypes_debugging
@@ -39,8 +37,8 @@ from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB
 
 #--- this application's modules ---
-from .IOExceptions import SegmentationNotSupported, ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted, UnrecognizedService
-from ..functions.debug import log_debug, log_exception
+from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted, UnrecognizedService
+from ..functions.debug import log_debug, log_exception, log_warning
 
 #------------------------------------------------------------------------------
 
@@ -56,14 +54,6 @@ class ReadProperty():
     A timeout of 10 seconds allows detection of invalid device or communciation errors.
     """
     _TIMEOUT = 10
-
-#    def __init__(self, *args):
-#        """ This function is a fake one so spyder can see local variables
-#        """
-#        #self.this_application = None
-#        #self.this_application.ResponseQueue = Queue()
-#        #self.this_application._lock = False
-#        self._started = False
 
     def read(self, args, arr_index = None):
         """
@@ -88,11 +78,11 @@ class ReadProperty():
             #time.sleep(0.5)
             #self.this_application._lock = True
 
-        args = args.split()
-        log_debug(ReadProperty, "do_read %r", args)
+        args_split = args.split()
+        log_debug(ReadProperty, "do_read %r", args_split)
 
         try:
-            iocb = IOCB(self.build_rp_request(args, arr_index))     # build ReadProperty request
+            iocb = IOCB(self.build_rp_request(args_split, arr_index))     # build ReadProperty request
             self.this_application.request_io(iocb)                  # pass to the BACnet stack
             log_debug(ReadProperty,"    - iocb: %r", iocb)
 
@@ -127,25 +117,33 @@ class ReadProperty():
             return value
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
-            raise NoResponseFromController()
-    
-            # Share response with Queue
-#            data = None
-#            while True:
-#                try:
-#                    data, evt = self.this_application.ResponseQueue.get(
-#                        timeout=self._TIMEOUT)
-#                    evt.set()             
-#                    if data == 'err_seg':
-#                        raise SegmentationNotSupported
-#                    #self.this_application._lock = False
-#                    return data
-#                except SegmentationNotSupported:
-#                    raise
-#                except Empty as error:
-#                    #log_exception(ReadProperty, 'No response from controller')
-#                    #self.this_application._lock = False
-#                    raise NoResponseFromController()
+            if iocb.ioError.apduAbortRejectReason == 4:
+                log_warning(ReadProperty,"Segmentation not supported... will read properties one by one...")
+                log_warning(ReadProperty,"The Request was : %s", args_split)
+                value = self._split_the_read_request(args, arr_index)
+                return value
+            else:
+                # Segmentation not supported
+                raise NoResponseFromController("Abort Reason : %s" % iocb.ioError.apduAbortRejectReason)
+
+            
+    def _split_the_read_request(self, args, arr_index):
+        """
+        When a device doesn't support segmentation, this function
+        will split the request according to the length of the 
+        predicted result which can be known when readin the array_index
+        number 0.
+        
+        This can be a very long process as some devices count a large
+        number of properties without supporting segmentation
+        (FieldServers are a good example)
+        """
+        objlist = []
+        nmbr_obj = self.read(args, arr_index = 0)
+        for i in range(1,nmbr_obj+1):
+                objlist.append(self.read(
+                args, arr_index = i))
+        return objlist
 
 
     def readMultiple(self, args):
@@ -237,26 +235,14 @@ class ReadProperty():
         if iocb.ioError:        # unsuccessful: error/reject/abort
             print("Error : ", (iocb.ioError.apduAbortRejectReason))
             if iocb.ioError.apduAbortRejectReason == 9:
+                log_warning(ReadProperty, "Unrecognized Service")
                 raise UnrecognizedService()
             else:
-                raise NoResponseFromController()
-    
-#            data = None
-#            while True:
-#                try:
-#                    data, evt = self.this_application.ResponseQueue.get(
-#                        timeout=self._TIMEOUT)
-#                    evt.set()
-#                    #self.this_application._lock = False
-#                    return data
-#                except SegmentationNotSupported:
-#                    raise
-#                except Empty:
-#                    print('No response from controller')
-#                    #self.this_application._lock = False
-#                    raise NoResponseFromController
-#                    #return None
-                
+                log_warning(ReadProperty, "No response from controller : %s", iocb.ioError.apduAbortRejectReason)
+                #raise NoResponseFromController()
+                values.append("")
+                return values
+          
     def build_rp_request(self, args, arr_index = None):
         addr, obj_type, obj_inst, prop_id = args[:4]
 

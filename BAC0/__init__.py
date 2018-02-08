@@ -1,16 +1,27 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
+from . import core
+from . import tasks
+from .scripts.Base import Base
+from .core.devices.Device import Device as device
+from .core.devices.Device import DeviceLoad as load
+from .tasks.Poll import SimplePoll as poll
+from .tasks.Match import Match as match
+from .infos import __version__ as version
+
+# To be able to use the complete version pandas, flask and bokeh must be installed.
 try:
-    from . import core
-    from . import tasks
-    from .scripts.BasicScript import BasicScript 
-    from .scripts.ReadWriteScript import ReadWriteScript as connect
-    from .core.devices.Device import Device as device
-    from .core.devices.Device import DeviceLoad as load
-    from .tasks.Poll import SimplePoll as poll
-    from .tasks.Match import Match as match
-    #from .bokeh.BokehRenderer import BokehPlot as chart
-    from .infos import __version__ as version
-except ImportError as error:
-    print(error)
-    # Not installed yet
+    import pandas
+    import bokeh
+    import flask
+    _COMPLETE = True
+except ImportError:
+    _COMPLETE = False
+
+if _COMPLETE:
+    from .scripts.Complete import Complete as connect
+else:
+    from .scripts.Lite import Lite as connect
+    
+

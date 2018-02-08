@@ -94,7 +94,7 @@ class ReadPropertyMultiple():
                     
                     try:
                         request = ('{} {}'.format(self.properties.address, ''.join(request)))
-                        self._log.debug('RPM_Request: ', request)
+                        self._log.debug('RPM_Request: %s ' % request)
                         val = self.properties.network.readMultiple(request)
 
                         #print('val : ', val, len(val), type(val))
@@ -181,7 +181,11 @@ class ReadPropertyMultiple():
             try : 
                     objList = self.properties.network.read(
                     '{} device {} objectList'.format(self.properties.address, self.properties.device_id))
-                
+            
+            except NoResponseFromController:
+                self.log.error('No object list available. Please provide a custom list using the object_list parameter')
+                objList = []
+
             except SegmentationNotSupported:
                 objList = []
                 number_of_objects = self.properties.network.read(
