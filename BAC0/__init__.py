@@ -21,7 +21,6 @@ except ImportError:
 
 if _COMPLETE:
     from .scripts.Complete import Complete as connect
+    from .scripts.Lite import Lite as lite
 else:
     from .scripts.Lite import Lite as connect
-    
-

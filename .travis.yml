@@ -9,6 +9,9 @@ install:
 - pip install coveralls
 - pip install pytest
 - pip install pytest-cov
+  pip install pandas
+  pip install bokeh
+  pip install flask
 script:
 - coverage run --source BAC0 -m pytest -v
 - coverage report

@@ -28,7 +28,7 @@ from bacpypes.debugging import bacpypes_debugging
 from bacpypes.pdu import Address
 from bacpypes.object import get_object_class, get_datatype
 from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
-    ReadPropertyRequest, ReadPropertyMultipleRequest
+    ReadPropertyRequest, ReadPropertyMultipleRequest, RejectReason
 
 from bacpypes.basetypes import PropertyIdentifier
 from bacpypes.apdu import ReadPropertyMultipleACK, ReadPropertyACK
@@ -55,7 +55,7 @@ class ReadProperty():
     """
     _TIMEOUT = 10
 
-    def read(self, args, arr_index = None):
+    def read(self, args, arr_index=None):
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -73,21 +73,25 @@ class ReadProperty():
         its analog input 1 (AI:1).
         """
         if not self._started:
-            raise ApplicationNotStarted('BACnet stack not running - use startApp()')
-        #with self.this_application._lock:
-            #time.sleep(0.5)
+            raise ApplicationNotStarted(
+                'BACnet stack not running - use startApp()')
+        # with self.this_application._lock:
+            # time.sleep(0.5)
             #self.this_application._lock = True
 
         args_split = args.split()
         log_debug(ReadProperty, "do_read %r", args_split)
 
         try:
-            iocb = IOCB(self.build_rp_request(args_split, arr_index))     # build ReadProperty request
-            self.this_application.request_io(iocb)                  # pass to the BACnet stack
-            log_debug(ReadProperty,"    - iocb: %r", iocb)
+            # build ReadProperty request
+            iocb = IOCB(self.build_rp_request(args_split, arr_index))
+            # pass to the BACnet stack
+            self.this_application.request_io(iocb)
+            log_debug(ReadProperty, "    - iocb: %r", iocb)
 
         except ReadPropertyException as error:
-            log_exception("exception: %r", error)                   # construction error
+            # construction error
+            log_exception("exception: %r", error)
 
         iocb.wait()             # Wait for BACnet response
 
@@ -95,12 +99,13 @@ class ReadProperty():
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, ReadPropertyACK):               # expecting an ACK
-                log_debug(ReadProperty,"    - not an ack")
+                log_debug(ReadProperty, "    - not an ack")
                 return
 
             # find the datatype
-            datatype = get_datatype(apdu.objectIdentifier[0], apdu.propertyIdentifier)
-            log_debug(ReadProperty,"    - datatype: %r", datatype)
+            datatype = get_datatype(
+                apdu.objectIdentifier[0], apdu.propertyIdentifier)
+            log_debug(ReadProperty, "    - datatype: %r", datatype)
             if not datatype:
                 raise TypeError("unknown datatype")
 
@@ -112,39 +117,42 @@ class ReadProperty():
                     value = apdu.propertyValue.cast_out(datatype.subtype)
             else:
                 value = apdu.propertyValue.cast_out(datatype)
-            log_debug(ReadProperty,"    - value: %r", value)
+            log_debug(ReadProperty, "    - value: %r", value)
 
             return value
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
-            if iocb.ioError.apduAbortRejectReason == 4:
-                log_warning(ReadProperty,"Segmentation not supported... will read properties one by one...")
-                log_warning(ReadProperty,"The Request was : %s", args_split)
+            code = iocb.ioError.apduAbortRejectReason
+            reason = [k for k, v in RejectReason.enumerations.items()
+                      if v == code][0]
+            if code == 4:
+                log_warning(
+                    ReadProperty, "Segmentation not supported... will read properties one by one...")
+                log_warning(ReadProperty, "The Request was : %s", args_split)
                 value = self._split_the_read_request(args, arr_index)
                 return value
             else:
                 # Segmentation not supported
-                raise NoResponseFromController("Abort Reason : %s" % iocb.ioError.apduAbortRejectReason)
+                raise NoResponseFromController(
+                    "APDU Abort Reason : %s" % reason)
 
-            
     def _split_the_read_request(self, args, arr_index):
         """
         When a device doesn't support segmentation, this function
         will split the request according to the length of the 
         predicted result which can be known when readin the array_index
         number 0.
-        
+
         This can be a very long process as some devices count a large
         number of properties without supporting segmentation
         (FieldServers are a good example)
         """
         objlist = []
-        nmbr_obj = self.read(args, arr_index = 0)
-        for i in range(1,nmbr_obj+1):
-                objlist.append(self.read(
-                args, arr_index = i))
+        nmbr_obj = self.read(args, arr_index=0)
+        for i in range(1, nmbr_obj+1):
+            objlist.append(self.read(
+                args, arr_index=i))
         return objlist
-
 
     def readMultiple(self, args):
         """ Build a ReadPropertyMultiple request, wait for the answer and return the values
@@ -163,19 +171,22 @@ class ReadProperty():
         its analog input 1 (AI:1).
         """
         if not self._started:
-            raise ApplicationNotStarted('BACnet stack not running - use startApp()')
+            raise ApplicationNotStarted(
+                'BACnet stack not running - use startApp()')
 
         args = args.split()
         values = []
         log_debug(ReadProperty, "readMultiple %r", args)
 
         try:
-            iocb = IOCB(self.build_rpm_request(args))               # build an ReadPropertyMultiple request
-            self.this_application.request_io(iocb)                  # pass to the BACnet stack
+            # build an ReadPropertyMultiple request
+            iocb = IOCB(self.build_rpm_request(args))
+            # pass to the BACnet stack
+            self.this_application.request_io(iocb)
 
         except ReadPropertyMultipleException as error:
-            log_exception("exception: %r", error)                   # construction error
-
+            # construction error
+            log_exception("exception: %r", error)
 
         iocb.wait()             # Wait for BACnet response
 
@@ -183,22 +194,25 @@ class ReadProperty():
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, ReadPropertyMultipleACK):       # expecting an ACK
-                log_debug(ReadProperty,"    - not an ack")
+                log_debug(ReadProperty, "    - not an ack")
                 return
 
             # loop through the results
             for result in apdu.listOfReadAccessResults:
                 # here is the object identifier
                 objectIdentifier = result.objectIdentifier
-                log_debug(ReadProperty,"    - objectIdentifier: %r", objectIdentifier)
+                log_debug(ReadProperty, "    - objectIdentifier: %r",
+                          objectIdentifier)
 
                 # now come the property values per object
                 for element in result.listOfResults:
                     # get the property and array index
                     propertyIdentifier = element.propertyIdentifier
-                    log_debug(ReadProperty,"    - propertyIdentifier: %r", propertyIdentifier)
+                    log_debug(
+                        ReadProperty, "    - propertyIdentifier: %r", propertyIdentifier)
                     propertyArrayIndex = element.propertyArrayIndex
-                    log_debug(ReadProperty,"    - propertyArrayIndex: %r", propertyArrayIndex)
+                    log_debug(
+                        ReadProperty, "    - propertyArrayIndex: %r", propertyArrayIndex)
 
                     readResult = element.readResult
 
@@ -212,8 +226,9 @@ class ReadProperty():
                         propertyValue = readResult.propertyValue
 
                         # find the datatype
-                        datatype = get_datatype(objectIdentifier[0], propertyIdentifier)
-                        log_debug(ReadProperty,"    - datatype: %r", datatype)
+                        datatype = get_datatype(
+                            objectIdentifier[0], propertyIdentifier)
+                        log_debug(ReadProperty, "    - datatype: %r", datatype)
                         if not datatype:
                             raise TypeError("unknown datatype")
 
@@ -222,28 +237,30 @@ class ReadProperty():
                             if propertyArrayIndex == 0:
                                 value = propertyValue.cast_out(Unsigned)
                             else:
-                                value = propertyValue.cast_out(datatype.subtype)
+                                value = propertyValue.cast_out(
+                                    datatype.subtype)
                         else:
                             value = propertyValue.cast_out(datatype)
-                        log_debug(ReadProperty,"    - value: %r", value)
+                        log_debug(ReadProperty, "    - value: %r", value)
 
                         values.append(value)
 
             return values
-                    
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
-            print("Error : ", (iocb.ioError.apduAbortRejectReason))
-            if iocb.ioError.apduAbortRejectReason == 9:
-                log_warning(ReadProperty, "Unrecognized Service")
+            code = iocb.ioError.apduAbortRejectReason
+            reason = [k for k, v in RejectReason.enumerations.items()
+                      if v == code][0]
+            log_warning(ReadProperty, "APDU Abort Reject Reason : %s", reason)
+            log_warning(ReadProperty, "The Request was : %s", args)
+            if code == 9:
                 raise UnrecognizedService()
             else:
-                log_warning(ReadProperty, "No response from controller : %s", iocb.ioError.apduAbortRejectReason)
-                #raise NoResponseFromController()
+                log_warning(ReadProperty, "No response from controller")
                 values.append("")
                 return values
-          
-    def build_rp_request(self, args, arr_index = None):
+
+    def build_rp_request(self, args, arr_index=None):
         addr, obj_type, obj_inst, prop_id = args[:4]
 
         if obj_type.isdigit():
@@ -269,8 +286,7 @@ class ReadProperty():
             request.propertyArrayIndex = int(args[4])
         log_debug(ReadProperty, "    - request: %r", request)
 
-        return request              
-                
+        return request
 
     def build_rpm_request(self, args):
         """
@@ -325,7 +341,7 @@ class ReadProperty():
             # build a read access specification
             read_access_spec = ReadAccessSpecification(
                 objectIdentifier=(obj_type, obj_inst),
-                listOfPropertyReferences=prop_reference_list )
+                listOfPropertyReferences=prop_reference_list)
 
             read_access_spec_list.append(read_access_spec)
 
@@ -334,7 +350,8 @@ class ReadProperty():
                 "at least one read access specification required")
 
         # build the request
-        request = ReadPropertyMultipleRequest(listOfReadAccessSpecs=read_access_spec_list )
+        request = ReadPropertyMultipleRequest(
+            listOfReadAccessSpecs=read_access_spec_list)
         request.pduDestination = Address(addr)
         log_debug(ReadProperty, "    - request: %r", request)
 
