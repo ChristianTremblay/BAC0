@@ -5,7 +5,8 @@ Created on Mon Nov 13 21:37:02 2017
 @author: CTremblay
 """
 
-def create_sidebar(dash_class = "", devices_class = "", trends_class = ""):
+
+def create_sidebar(dash_class="", devices_class="", trends_class=""):
     sb = """
     	<div class="wrapper">
     <div class="sidebar" data-background-color="white" data-active-color="danger">
@@ -47,9 +48,28 @@ def create_sidebar(dash_class = "", devices_class = "", trends_class = ""):
     """ % (dash_class, trends_class, devices_class)
     return sb
 
-def create_card(icon = 'ti-server', title = 'title', 
-                data = 'None', id_data = 'generic_data',  
-                foot_icon = 'ti-reload', foot_data = 'None', id_foot_data = 'generic_foot_data'):
+
+def update_notifications(log, new_msg):
+    notif_log = log
+    max_notifications = 5
+    if new_msg:
+        notif_log.insert(0, new_msg)
+    if len(notif_log) > max_notifications:
+        notif_log.pop()
+
+    notif_list = '<ul class="dropdown-menu">'
+    for notif in notif_log:
+        notif_list += '<li><a href="#">' + notif + "</a></li>"
+    if len(notif_log) == 0:
+        notif_list += '<li><a href="#">Nothing yet</a></li>'
+    notif_list += '</ul>'
+    return notif_list
+
+
+def create_card(icon='ti-server', title='title',
+                data='None', id_data='generic_data',
+                foot_icon='ti-reload', foot_data='None',
+                id_foot_data='generic_foot_data'):
     card = """
         <div class="col-lg-3 col-sm-6">
         <div class="card">
@@ -57,7 +77,8 @@ def create_card(icon = 'ti-server', title = 'title',
                 <div class="row">
                     <div class="col-xs-5">
                         <div class="icon-big icon-success text-center">
-                            <i class="%s"></i>
+                
+            <i class="%s"></i>
                         </div>
                     </div>
                     <div class="col-xs-7">

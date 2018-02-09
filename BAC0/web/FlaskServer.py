@@ -14,7 +14,7 @@ from flask import Flask, render_template, jsonify, request
 import json
 from bokeh.embed import server_document
 
-from .templates import create_sidebar, create_card
+from .templates import create_sidebar, create_card, update_notifications
 from ..core.functions.PrintDebug import print_list
 
 
@@ -27,6 +27,8 @@ class FlaskServer(Thread):
         self._network_ref = weakref.ref(network)
         self.port = port
         self.ip = ip
+        self.notifications_log = []
+        self.notifications_list = ""
         self.config_flask_app()
         self.exitFlag = False
 
@@ -82,20 +84,26 @@ class FlaskServer(Thread):
                                id_data='trends',
                                foot_icon='ti-timer',
                                foot_data='Add trends !')
+
             cnmn = create_card(icon='ti-plug',
-                               title='MSTP Networks',
-                               data='%s' % (
+                               title='%s MSTP Networks' % len(
+                                   self.network.network_stats['mstp_networks']),
+                               data='# %s' % (
                                    self.network.network_stats['print_mstpnetworks']),
                                id_data='mstpnetworks',
                                foot_icon='ti-timer',
                                foot_data='Last update : %s' % self.network.network_stats['timestamp'],
                                id_foot_data='lastwhoisupdate')
+
+            notif = update_notifications(
+                self.notifications_log, None)
             return render_template("dashboard.html",
                                    sidebar=create_sidebar(
                                        dash_class='class="active"'),
                                    card_number_of_devices=cnod,
                                    card_number_of_mstp_networks=cnmn,
                                    card_number_of_trends=cnot,
+                                   notifications=notif,
                                    template="Flask")
 
         @self.flask_app.route('/dash_devices', methods=['GET'])
@@ -115,6 +123,8 @@ class FlaskServer(Thread):
 
         @self.flask_app.route('/_whois', methods=['GET'])
         def whois():
+            self.notifications_list = update_notifications(
+                self.notifications_log, 'Sent a WhoIs Request')
             self.network.whois_answer = self.network.update_whois()
             return jsonify(done='done')
 
