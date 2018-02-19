@@ -294,7 +294,7 @@ class ReadPropertyMultiple():
             else:
                 #raise ValueError('Not enough values returned', each, point_infos)
                 # SHOULD SWITCH TO SEGMENTATION_SUPPORTED = FALSE HERE
-                self._log.warning('Cannot add {} / {]'.format(point_type, point_address))
+                self._log.warning('Cannot add {} / {}'.format(point_type, point_address))
                 continue
 
             i += 1
