@@ -35,6 +35,7 @@ from bacpypes.apdu import ReadPropertyMultipleACK, ReadPropertyACK
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB
+from bacpypes.core import deferred
 
 #--- this application's modules ---
 from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted, UnrecognizedService
@@ -86,7 +87,7 @@ class ReadProperty():
             # build ReadProperty request
             iocb = IOCB(self.build_rp_request(args_split, arr_index))
             # pass to the BACnet stack
-            self.this_application.request_io(iocb)
+            deferred(self.this_application.request_io, iocb)
             log_debug(ReadProperty, "    - iocb: %r", iocb)
 
         except ReadPropertyException as error:
@@ -100,6 +101,8 @@ class ReadProperty():
 
             if not isinstance(apdu, ReadPropertyACK):               # expecting an ACK
                 log_debug(ReadProperty, "    - not an ack")
+                log_warning(ReadProperty, "APDU : %s / %s" %
+                            (apdu, type(apdu)))
                 return
 
             # find the datatype
@@ -123,8 +126,8 @@ class ReadProperty():
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
             code = iocb.ioError.apduAbortRejectReason
-            reason = [k for k, v in RejectReason.enumerations.items()
-                      if v == code][0]
+            reason = [k if v == code else code for k,
+                      v in RejectReason.enumerations.items()][0]
             if code == 4:
                 log_warning(
                     ReadProperty, "Segmentation not supported... will read properties one by one...")
@@ -182,7 +185,7 @@ class ReadProperty():
             # build an ReadPropertyMultiple request
             iocb = IOCB(self.build_rpm_request(args))
             # pass to the BACnet stack
-            self.this_application.request_io(iocb)
+            deferred(self.this_application.request_io, iocb)
 
         except ReadPropertyMultipleException as error:
             # construction error
@@ -195,6 +198,8 @@ class ReadProperty():
 
             if not isinstance(apdu, ReadPropertyMultipleACK):       # expecting an ACK
                 log_debug(ReadProperty, "    - not an ack")
+                log_warning(ReadProperty, "APDU : %s / %s" %
+                            (apdu, type(apdu)))
                 return
 
             # loop through the results
@@ -249,8 +254,8 @@ class ReadProperty():
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
             code = iocb.ioError.apduAbortRejectReason
-            reason = [k for k, v in RejectReason.enumerations.items()
-                      if v == code][0]
+            reason = [k if v == code else code for k,
+                      v in RejectReason.enumerations.items()][0]
             log_warning(ReadProperty, "APDU Abort Reject Reason : %s", reason)
             log_warning(ReadProperty, "The Request was : %s", args)
             if code == 9:
