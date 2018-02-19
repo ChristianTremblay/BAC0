@@ -37,6 +37,7 @@ from bacpypes.apdu import WritePropertyRequest, SimpleAckPDU
 from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
 from bacpypes.constructeddata import Array, Any
 from bacpypes.iocb import IOCB
+from bacpypes.core import deferred
 
 #--- this application's modules ---
 from .IOExceptions import WritePropertyCastError, NoResponseFromController, WritePropertyException, WriteAccessDenied, ApplicationNotStarted
@@ -55,10 +56,7 @@ class WriteProperty():
     """
     Defines BACnet Write functions: WriteProperty [WritePropertyMultiple not supported]
 
-    A timeout of 10 seconds allows detection of invalid device or communciation errors.
     """
-    _TIMEOUT = 10
-
 
     def write(self, args):
         """ Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
@@ -77,42 +75,30 @@ class WriteProperty():
         its analogValue 1 (AV:1)
         """
         if not self._started:
-            raise ApplicationNotStarted('BACnet stack not running - use startApp()')
-        #with self.this_application._lock:
-        #    time.sleep(0.5)
-        #self.this_application._lock = True
+            raise ApplicationNotStarted(
+                'BACnet stack not running - use startApp()')
         args = args.split()
         log_debug(WriteProperty, "do_write %r", args)
 
         try:
-            iocb = IOCB(self.build_wp_request(args))            # build a WriteProperty request
-            self.this_application.request_io(iocb)              # pass to the BACnet stack
+            # build a WriteProperty request
+            iocb = IOCB(self.build_wp_request(args))
+            # pass to the BACnet stack
+            deferred(self.this_application.request_io, iocb)
 
         except WritePropertyException as error:
-            log_exception("exception: %r", error)               # construction error
-
+            # construction error
+            log_exception("exception: %r", error)
 
         iocb.wait()             # Wait for BACnet response
 
         if iocb.ioResponse:     # successful response
             if not isinstance(iocb.ioResponse, SimpleAckPDU):   # expect an ACK
-                log_debug(WriteProperty,"    - not an ack")
+                log_debug(WriteProperty, "    - not an ack")
                 return
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
-            raise NoResponseFromController()  
-
-#            while True:
-#                try:
-#                    data, evt = self.this_application.ResponseQueue.get(
-#                        timeout=self._TIMEOUT)
-#                    evt.set()
-#                    #self.this_application._lock = False
-#                    return data
-#                except Empty:
-#                    #self.this_application._lock = False
-#                    raise NoResponseFromController
-                
+            raise NoResponseFromController()
 
     def build_wp_request(self, args):
         addr, obj_type, obj_inst, prop_id = args[:4]
@@ -172,7 +158,7 @@ class WriteProperty():
 
         # build a request
         request = WritePropertyRequest(
-            objectIdentifier=(obj_type, obj_inst), propertyIdentifier=prop_id )
+            objectIdentifier=(obj_type, obj_inst), propertyIdentifier=prop_id)
         request.pduDestination = Address(addr)
 
         # save the value
