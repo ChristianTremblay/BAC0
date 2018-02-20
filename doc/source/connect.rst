@@ -2,6 +2,23 @@ How to connect to a device and interact with points
 ===================================================
 Define a bacnet network and a controller
 ----------------------------------------
+
+Once imported, BAC0 will rely on a 'network' variable that will connect to the BACnet network you want to reach. This variable will be tied to a network interface (that can be a network card or a VPN connection) and all the traffice will pass on this variable.
+
+More than one network variable can be created but only one connection by interface is supported.
+
+Typically, we'll call this variable 'bacnet' to illustrate that it represents the network. But you can call it like you want.
+
+This variable will also be passed to some functions when you will define a device for example. As the device needs to know on which network it can be found.
+
+When creating the connection to the network, BAC0 needs to know the ip network of the interface on which it will work. It also needs to know the subnet mask (as BACnet operations often use broadcast messages).If you don't provide one, BAC0 will try to detect the interface for you.
+
+..Note
+
+    If you use ios, you will need to provide a ip manually. The script is unable to detect the subnet mask yet.
+
+By default, if Bokeh, Pandas and Flask are installed, using the connect script will launch the complete version. But you can also use the lite version if you want something simple.
+    
 Example::
 
     import BAC0
@@ -12,6 +29,9 @@ Example::
     # Specifying the network mask will allow the usage of a local broadcast address
     # like 192.168.1.255 instead of the global broadcast address 255.255.255.255
     # which could be blocked in some cases.
+    # You can also use :
+    # bacnet = BAC0.lite() to force the script to load only minimum features.
+    # Please note that if Bokeh, Pandas or Flask are not installed, using connect() will in fact call the lite version.
 
     # Get the list of devices seen on the network
     bacnet.devices

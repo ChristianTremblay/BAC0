@@ -16,10 +16,11 @@ lot as the majority of important modules will be installed for you.
 If you are using Windows, it will simplify your life as some modules needs a
 C compiler and it can be hard sometimes to compile a module by yourself. 
 
-
 Some examples of complete distributions are Anaconda_ or `Enthought Canopy <https://www.enthought.com/products/canopy/>`_.
 As I use Anaconda_, I'll focus on this one but you're free to choose the one
 you prefer.
+
+If you are using a RaspberryPi, have a look to miniconda_ or berryconda_. Both can allow a complete installation of modules like bokeh_ and Flask_
 
 .. _installing-a-complete-distribution:
 
@@ -73,10 +74,14 @@ There you'll be able to open issues if you find bugs.
 Dependencies
 ------------
 * BAC0 is based on BACpypes_ for all BACnet/IP communication.
-* It uses Bokeh_ for Live trending features 
-* It uses Pandas for every Series and DataFrame (histories) 
 
-Normally, if you have installed Anaconda_, Bokeh_ and Pandas_ will already
+  Starting at version 0.9.900, BAC0 will not strictly depend on bokeh_ or Flask_ or Pandas_ to work. Having them will allow to use the complete set of features (the web app with live trending features) but if you don't have them installed, you will be able to use the 'lite' version of BAC0 which is sufficient to interact with BACnet devices.
+
+* It uses Bokeh_ for Live trending features 
+* It uses Pandas_ for every Series and DataFrame (histories)
+* It uses Flask_ to serve the Web app
+
+Normally, if you have installed Anaconda_, Flask_, Bokeh_ and Pandas_ will already
 be installed. You'll only need to install BACpypes_ ::
 
     pip install bacpypes
@@ -100,8 +105,14 @@ You're ready to begin using BAC0 !
 
 .. _bokeh : http://www.bokehplots.com
 
+.. _Flask : http://flask.pocoo.org/
+
 .. _Pandas : http://pandas.pydata.org/
 
 .. _anaconda : https://www.continuum.io/downloads
 
 .. _Pypi : https://pypi.python.org/pypi
+
+.. _miniconda : https://conda.io/miniconda.html
+
+.. _berryconda : https://github.com/jjhelmus/berryconda
