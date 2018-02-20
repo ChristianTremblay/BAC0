@@ -22,10 +22,6 @@ Write.py - creation of WriteProperty requests
         print_debug()
 
 '''
-#--- standard Python modules ---
-from queue import Empty
-import time
-
 #--- 3rd party modules ---
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
@@ -58,7 +54,7 @@ class WriteProperty():
 
     """
 
-    def write(self, args):
+    def write(self, args, vendor_id = 0):
         """ Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
 
         :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]
@@ -82,7 +78,7 @@ class WriteProperty():
 
         try:
             # build a WriteProperty request
-            iocb = IOCB(self.build_wp_request(args))
+            iocb = IOCB(self.build_wp_request(args, vendor_id=vendor_id))
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
 
@@ -100,8 +96,9 @@ class WriteProperty():
         if iocb.ioError:        # unsuccessful: error/reject/abort
             raise NoResponseFromController()
 
-    def build_wp_request(self, args):
+    def build_wp_request(self, args, vendor_id=0):
         addr, obj_type, obj_inst, prop_id = args[:4]
+        vendor_id = vendor_id
         if obj_type.isdigit():
             obj_type = int(obj_type)
         obj_inst = int(obj_inst)
@@ -119,9 +116,11 @@ class WriteProperty():
         log_debug(WriteProperty, "    - priority: %r", priority)
 
         # get the datatype
-        datatype = get_datatype(obj_type, prop_id)
+        
+        if prop_id.isdigit():
+            prop_id = int(prop_id)
+        datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
         log_debug(WriteProperty, "    - datatype: %r", datatype)
-
         # change atomic values into something encodeable, null is a special
         # case
         if value == 'null':

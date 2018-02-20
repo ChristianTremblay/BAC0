@@ -38,7 +38,7 @@ from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
 
 #--- this application's modules ---
-from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted, UnrecognizedService
+from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted, UnrecognizedService, SegmentationNotSupported
 from ..functions.debug import log_debug, log_exception, log_warning
 
 #------------------------------------------------------------------------------
@@ -56,7 +56,7 @@ class ReadProperty():
     """
     _TIMEOUT = 10
 
-    def read(self, args, arr_index=None):
+    def read(self, args, arr_index=None, vendor_id=0, bacoid=None):
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -82,10 +82,12 @@ class ReadProperty():
 
         args_split = args.split()
         log_debug(ReadProperty, "do_read %r", args_split)
+        vendor_id = vendor_id
+        bacoid = bacoid
 
         try:
             # build ReadProperty request
-            iocb = IOCB(self.build_rp_request(args_split, arr_index))
+            iocb = IOCB(self.build_rp_request(args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid))
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
             log_debug(ReadProperty, "    - iocb: %r", iocb)
@@ -107,7 +109,7 @@ class ReadProperty():
 
             # find the datatype
             datatype = get_datatype(
-                apdu.objectIdentifier[0], apdu.propertyIdentifier)
+                apdu.objectIdentifier[0], apdu.propertyIdentifier, vendor_id = vendor_id)
             log_debug(ReadProperty, "    - datatype: %r", datatype)
             if not datatype:
                 raise TypeError("unknown datatype")
@@ -257,16 +259,21 @@ class ReadProperty():
             reason = [k if v == code else code for k,
                       v in RejectReason.enumerations.items()][0]
             log_warning(ReadProperty, "APDU Abort Reject Reason : %s", reason)
-            log_warning(ReadProperty, "The Request was : %s", args)
+            log_debug(ReadProperty, "The Request was : %s", args)
             if code == 9:
                 raise UnrecognizedService()
+            elif code == 4:
+                raise SegmentationNotSupported()
+                
             else:
                 log_warning(ReadProperty, "No response from controller")
                 values.append("")
                 return values
 
-    def build_rp_request(self, args, arr_index=None):
+    def build_rp_request(self, args, arr_index=None, vendor_id=0, bacoid=None):
         addr, obj_type, obj_inst, prop_id = args[:4]
+        vendor_id = vendor_id
+        bacoid = bacoid
 
         if obj_type.isdigit():
             obj_type = int(obj_type)
@@ -275,7 +282,9 @@ class ReadProperty():
 
         obj_inst = int(obj_inst)
 
-        datatype = get_datatype(obj_type, prop_id)
+        if prop_id.isdigit():
+            prop_id = int(prop_id)
+        datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
         if not datatype:
             raise ValueError("invalid property for object type")
 
