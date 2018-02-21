@@ -125,7 +125,7 @@ class ReadProperty():
 
             return value
 
-        if iocb.ioError.apduAbortRejectReason:        # unsuccessful: error/reject/abort
+        if iocb.ioError:        # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
             if reason == 'segmentationNotSupported':
@@ -253,7 +253,7 @@ class ReadProperty():
 
             return values
 
-        if iocb.ioError.apduAbortRejectReason:        # unsuccessful: error/reject/abort
+        if iocb.ioError:        # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
             log_warning(ReadProperty, "APDU Abort Reject Reason : %s", reason)
@@ -376,8 +376,9 @@ def find_reason(apdu):
     elif apdu.pduType == AbortPDU.pduType:
         reasons = AbortReason.enumerations
     else:
-        raise TypeError('Cannot identify error : %s / %s' %
+        log_warning('Cannot identify error : %s / %s' %
                         apdu.pduType, apdu.apduAbortRejectReason)
+        return 0
     code = apdu.apduAbortRejectReason
     try:
         return [k for k, v in reasons.items() if v == code][0]
