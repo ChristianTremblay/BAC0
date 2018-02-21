@@ -1,3 +1,5 @@
+
+
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -28,7 +30,7 @@ from bacpypes.debugging import bacpypes_debugging
 from bacpypes.pdu import Address
 from bacpypes.object import get_object_class, get_datatype
 from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
-    ReadPropertyRequest, ReadPropertyMultipleRequest, RejectReason
+    ReadPropertyRequest, ReadPropertyMultipleRequest, RejectReason, AbortReason, RejectPDU, AbortPDU
 
 from bacpypes.basetypes import PropertyIdentifier
 from bacpypes.apdu import ReadPropertyMultipleACK, ReadPropertyACK
@@ -54,7 +56,6 @@ class ReadProperty():
     Data exchange is made via a Queue object
     A timeout of 10 seconds allows detection of invalid device or communciation errors.
     """
-    _TIMEOUT = 10
 
     def read(self, args, arr_index=None, vendor_id=0, bacoid=None):
         """
@@ -66,19 +67,16 @@ class ReadProperty():
         *Example*::
 
             import BAC0
-            myIPAddr = '192.168.1.10'
-            bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)
+            myIPAddr = '192.168.1.10/24'
+            bacnet = BAC0.connect(ip = myIPAddr)
             bacnet.read('2:5 analogInput 1 presentValue')
 
-        Requests the controller at (Network 2, address 5) for the presentValue of 
+        Requests the controller at (Network 2, address 5) for the presentValue of
         its analog input 1 (AI:1).
         """
         if not self._started:
             raise ApplicationNotStarted(
                 'BACnet stack not running - use startApp()')
-        # with self.this_application._lock:
-            # time.sleep(0.5)
-            #self.this_application._lock = True
 
         args_split = args.split()
         log_debug(ReadProperty, "do_read %r", args_split)
@@ -87,7 +85,8 @@ class ReadProperty():
 
         try:
             # build ReadProperty request
-            iocb = IOCB(self.build_rp_request(args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid))
+            iocb = IOCB(self.build_rp_request(
+                args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid))
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
             log_debug(ReadProperty, "    - iocb: %r", iocb)
@@ -109,7 +108,7 @@ class ReadProperty():
 
             # find the datatype
             datatype = get_datatype(
-                apdu.objectIdentifier[0], apdu.propertyIdentifier, vendor_id = vendor_id)
+                apdu.objectIdentifier[0], apdu.propertyIdentifier, vendor_id=vendor_id)
             log_debug(ReadProperty, "    - datatype: %r", datatype)
             if not datatype:
                 raise TypeError("unknown datatype")
@@ -126,25 +125,25 @@ class ReadProperty():
 
             return value
 
-        if iocb.ioError:        # unsuccessful: error/reject/abort
-            code = iocb.ioError.apduAbortRejectReason
-            reason = [k if v == code else code for k,
-                      v in RejectReason.enumerations.items()][0]
-            if code == 4:
+        if iocb.ioError.apduAbortRejectReason:        # unsuccessful: error/reject/abort
+            apdu = iocb.ioError
+            reason = find_reason(apdu)
+            if reason == 'segmentationNotSupported':
                 log_warning(
                     ReadProperty, "Segmentation not supported... will read properties one by one...")
-                log_warning(ReadProperty, "The Request was : %s", args_split)
+                log_debug(ReadProperty, "The Request was : %s", args_split)
                 value = self._split_the_read_request(args, arr_index)
                 return value
             else:
-                # Segmentation not supported
+                # Other error... consider NoResponseFromController (65)
+                # even if the realy reason is another one
                 raise NoResponseFromController(
                     "APDU Abort Reason : %s" % reason)
 
     def _split_the_read_request(self, args, arr_index):
         """
         When a device doesn't support segmentation, this function
-        will split the request according to the length of the 
+        will split the request according to the length of the
         predicted result which can be known when readin the array_index
         number 0.
 
@@ -168,11 +167,11 @@ class ReadProperty():
         *Example*::
 
             import BAC0
-            myIPAddr = '192.168.1.10'
-            bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)
+            myIPAddr = '192.168.1.10/24'
+            bacnet = BAC0.connect(ip = myIPAddr)
             bacnet.readMultiple('2:5 analogInput 1 presentValue units')
 
-        Requests the controller at (Network 2, address 5) for the (presentValue and units) of 
+        Requests the controller at (Network 2, address 5) for the (presentValue and units) of
         its analog input 1 (AI:1).
         """
         if not self._started:
@@ -254,17 +253,16 @@ class ReadProperty():
 
             return values
 
-        if iocb.ioError:        # unsuccessful: error/reject/abort
-            code = iocb.ioError.apduAbortRejectReason
-            reason = [k if v == code else code for k,
-                      v in RejectReason.enumerations.items()][0]
+        if iocb.ioError.apduAbortRejectReason:        # unsuccessful: error/reject/abort
+            apdu = iocb.ioError
+            reason = find_reason(apdu)
             log_warning(ReadProperty, "APDU Abort Reject Reason : %s", reason)
             log_debug(ReadProperty, "The Request was : %s", args)
-            if code == 9:
+            if reason == 'unrecognizedService':
                 raise UnrecognizedService()
-            elif code == 4:
+            elif reason == 'segmentationNotSupported':
                 raise SegmentationNotSupported()
-                
+
             else:
                 log_warning(ReadProperty, "No response from controller")
                 values.append("")
@@ -370,3 +368,18 @@ class ReadProperty():
         log_debug(ReadProperty, "    - request: %r", request)
 
         return request
+
+
+def find_reason(apdu):
+    if apdu.pduType == RejectPDU.pduType:
+        reasons = RejectReason.enumerations
+    elif apdu.pduType == AbortPDU.pduType:
+        reasons = AbortReason.enumerations
+    else:
+        raise TypeError('Cannot identify error : %s / %s' %
+                        apdu.pduType, apdu.apduAbortRejectReason)
+    code = apdu.apduAbortRejectReason
+    try:
+        return [k for k, v in reasons.items() if v == code][0]
+    except IndexError:
+        return code
