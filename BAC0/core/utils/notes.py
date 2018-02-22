@@ -12,7 +12,7 @@ the web interface.
 from collections import namedtuple
 from datetime import datetime
 import logging
-from logging.handlers import RotatingFileHandler
+from logging import FileHandler
 
 import os
 from os.path import expanduser, join
@@ -35,6 +35,16 @@ def note_and_log(cls):
     the argument log=false to function note()
     Something can be logged without addind a note using function log()
     """
+    if hasattr(cls, 'DEBUG_LEVEL'):
+        if cls.DEBUG_LEVEL == 'debug':
+            file_level = logging.DEBUG
+            console_level = logging.DEBUG
+        elif cls.DEBUG_LEVEL == 'info':
+            file_level = logging.INFO
+            console_level = logging.INFO
+    else:
+        file_level = logging.WARNING
+        console_level = logging.WARNING
     # Notes object
     cls._notes = namedtuple('_notes', ['timestamp', 'notes'])
     cls._notes.timestamp = []
@@ -45,12 +55,12 @@ def note_and_log(cls):
     cls._log = logging.getLogger(logname)
     # Console Handler
     ch = logging.StreamHandler()
-    ch.setLevel(logging.WARNING)
+    ch.setLevel(console_level)
 
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    # Rotating File Handler
+    # File Handler
     _PERMISSION_TO_WRITE = True
     logUserPath = expanduser('~')
     logSaveFilePath = join(logUserPath, '.BAC0')
@@ -62,9 +72,8 @@ def note_and_log(cls):
         except:
             _PERMISSION_TO_WRITE = False
     if _PERMISSION_TO_WRITE:
-        fh = RotatingFileHandler(
-            logFile, mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=False)
-        fh.setLevel = logging.DEBUG
+        fh = FileHandler(logFile)
+        fh.setLevel(file_level)
         fh.setFormatter(formatter)
 
     ch.setFormatter(formatter)
