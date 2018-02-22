@@ -135,6 +135,10 @@ class ReadProperty():
                 value = self._split_the_read_request(args, arr_index)
                 return value
             else:
+
+                if reason == 'unknownProperty':
+                    log_warning(ReadProperty, 'Unknown property %s', args)
+
                 # Other error... consider NoResponseFromController (65)
                 # even if the realy reason is another one
                 raise NoResponseFromController(
@@ -262,7 +266,10 @@ class ReadProperty():
                 raise UnrecognizedService()
             elif reason == 'segmentationNotSupported':
                 raise SegmentationNotSupported()
-
+            elif reason == 'unknownProperty':
+                log_warning(ReadProperty, 'Unknown property %s', args)
+                values.append("")
+                return values
             else:
                 log_warning(ReadProperty, "No response from controller")
                 values.append("")
@@ -376,9 +383,12 @@ def find_reason(apdu):
     elif apdu.pduType == AbortPDU.pduType:
         reasons = AbortReason.enumerations
     else:
-        log_warning('Cannot identify error : %s / %s' %
-                        apdu.pduType, apdu.apduAbortRejectReason)
-        return 0
+        if apdu.errorCode and apdu.errorClass:
+            return '%s' % (apdu.errorCode)
+        else:
+            log_warning(ReadProperty, 'Cannot identify error : %s' %
+                        apdu.__dict__)
+            return 'UnKnown Error...'
     code = apdu.apduAbortRejectReason
     try:
         return [k for k, v in reasons.items() if v == code][0]

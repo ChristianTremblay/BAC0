@@ -15,7 +15,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 import os
-from os.path import expanduser
+from os.path import expanduser, join
 
 #--- 3rd party modules ---
 try:
@@ -23,6 +23,7 @@ try:
     _PANDAS = True
 except ImportError:
     _PANDAS = False
+
 
 def note_and_log(cls):
     """
@@ -35,7 +36,7 @@ def note_and_log(cls):
     Something can be logged without addind a note using function log()
     """
     # Notes object
-    cls._notes = namedtuple('_notes',['timestamp', 'notes'])
+    cls._notes = namedtuple('_notes', ['timestamp', 'notes'])
     cls._notes.timestamp = []
     cls._notes.notes = []
 
@@ -45,41 +46,43 @@ def note_and_log(cls):
     # Console Handler
     ch = logging.StreamHandler()
     ch.setLevel(logging.WARNING)
-    
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        
+
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
     # Rotating File Handler
     _PERMISSION_TO_WRITE = True
     logUserPath = expanduser('~')
-    logSaveFilePath = r'%s\.BAC0' %(logUserPath)
+    logSaveFilePath = join(logUserPath, '.BAC0')
 
-    logFile = r'%s\%s' % (logSaveFilePath,'BAC0.log')
+    logFile = join(logSaveFilePath, 'BAC0.log')
     if not os.path.exists(logSaveFilePath):
         try:
-            os.makedirs(logSaveFilePath)           
+            os.makedirs(logSaveFilePath)
         except:
             _PERMISSION_TO_WRITE = False
     if _PERMISSION_TO_WRITE:
-        fh = RotatingFileHandler(logFile, mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=False)
+        fh = RotatingFileHandler(
+            logFile, mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=False)
         fh.setLevel = logging.DEBUG
         fh.setFormatter(formatter)
-    
+
     ch.setFormatter(formatter)
-    # Add handlers the first time only... 
+    # Add handlers the first time only...
     if not len(cls._log.handlers):
         if _PERMISSION_TO_WRITE:
             cls._log.addHandler(fh)
         cls._log.addHandler(ch)
-    
-    def log(self, note,*, level=logging.DEBUG):
+
+    def log(self, note, *, level=logging.DEBUG):
         """
         Add a log entry...no note
         """
         if not note:
             raise ValueError('Provide something to log')
         cls._log.log(level, note)
-    
-    def note(self, note,*, level=logging.INFO, log=True):
+
+    def note(self, note, *, level=logging.INFO, log=True):
         """
         Add note to the object. By default, the note will also
         be logged
@@ -101,7 +104,7 @@ def note_and_log(cls):
         Retrieve notes list as a Pandas Series
         """
         if not _PANDAS:
-            return dict(zip(self._notes.timestamp,self._notes.notes))
+            return dict(zip(self._notes.timestamp, self._notes.notes))
         return pd.Series(self._notes.notes, index=self._notes.timestamp)
 
     def clear_notes(self):
