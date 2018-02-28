@@ -18,22 +18,18 @@ extending it with more functions. [See BAC0.scripts for more examples of this.]
 '''
 #--- standard Python modules ---
 from collections import defaultdict
-import logging
 
 #--- 3rd party modules ---
-from bacpypes.debugging import bacpypes_debugging
-
-from bacpypes.app import BIPSimpleApplication
+from bacpypes.app import BIPSimpleApplication, BIPForeignApplication
 from bacpypes.pdu import Address
 
 #--- this application's modules ---
-from ..functions.debug import log_debug
 from ..utils.notes import note_and_log
 
 #------------------------------------------------------------------------------
 
 @note_and_log
-class ScriptApplication(BIPSimpleApplication):
+class ScriptApplication(BIPForeignApplication):
     """
     Defines a basic BACnet/IP application to process BACnet requests.
 
@@ -41,10 +37,10 @@ class ScriptApplication(BIPSimpleApplication):
         See BAC0.scripts.BasicScript for more details.
         
     """
-    def __init__(self, *args):        
+    def __init__(self, *args, bbmdAddress=None, bbmdTTL=0):        
         self.localAddress = None
 
-        super().__init__(*args)
+        super().__init__(*args, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL)
         
         self._request = None
 

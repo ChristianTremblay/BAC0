@@ -135,7 +135,12 @@ class Base():
             self._log.error("an error has occurred: %s", error)
         finally:
             self._log.debug("finally")
+            
+    def register_foreign_device(self, addr=None, ttl=0):
+        self.this_application.bip.register(addr, ttl)
 
+    def unregister_foreign_device(self):
+        self.this_application.bip.unregister()
 
     def disconnect(self):
         """
