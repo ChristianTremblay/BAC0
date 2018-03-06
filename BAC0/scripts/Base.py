@@ -35,7 +35,7 @@ from bacpypes.basetypes import ServicesSupported, DeviceStatus
 from bacpypes.primitivedata import CharacterString
 
 #--- this application's modules ---
-from ..core.app.ScriptApplication import ScriptApplication
+from ..core.app.ScriptApplication import SimpleApplication, ForeignDeviceApplication
 from .. import infos
 
 from ..core.utils.notes import note_and_log
@@ -57,7 +57,9 @@ class Base():
     """
     
     def __init__(self, localIPAddr='127.0.0.1', localObjName='BAC0', DeviceId=None,
-                 maxAPDULengthAccepted='1024', maxSegmentsAccepted='1024', segmentationSupported='segmentedBoth'):
+                 maxAPDULengthAccepted='1024', maxSegmentsAccepted='1024', 
+                 segmentationSupported='segmentedBoth',
+                 bbmdAddress = None, bbmdTTL = 0):
 
         self._log.debug("Configurating app")
         
@@ -80,6 +82,9 @@ class Base():
 
         self.discoveredDevices = None
         self.systemStatus = DeviceStatus(1)
+        
+        self.bbmdAddress = bbmdAddress
+        self.bbmdTTL = bbmdTTL
 
         self.startApp()
 
@@ -119,8 +124,13 @@ class Base():
             # set the property value to be just the bits
             self.this_device.protocolServicesSupported = pss.value
 
-            # make a simple application
-            self.this_application = ScriptApplication(self.this_device, self.localIPAddr)
+            # make an application
+            if self.bbmdAddress and self.bbmdTTL > 0:
+                
+                self.this_application = ForeignDeviceApplication(self.this_device, self.localIPAddr,
+                                                    bbmdAddress=self.bbmdAddress, bbmdTTL = self.bbmdTTL)
+            else:
+                self.this_application = SimpleApplication(self.this_device, self.localIPAddr)
 
             self._log.debug("Starting")
             self._initialized = True

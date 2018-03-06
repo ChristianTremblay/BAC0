@@ -134,8 +134,10 @@ class Complete(Lite, Stats_Mixin):
         set to True.
     """
 
-    def __init__(self, ip=None, bokeh_server=True, flask_port=8111):
-        Lite.__init__(self, ip=ip)
+    def __init__(self, ip=None,
+                 bbmdAddress = None, bbmdTTL = 0,
+                 bokeh_server=True, flask_port=8111):
+        Lite.__init__(self, ip=ip, bbmdAddress = bbmdAddress, bbmdTTL = bbmdTTL)
         self.flask_port = flask_port
         if bokeh_server:
             self.start_bokeh()

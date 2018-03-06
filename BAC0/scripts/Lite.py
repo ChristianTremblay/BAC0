@@ -63,7 +63,7 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         from being started. Can help troubleshoot issues with Bokeh. By default,
         set to True.
     """
-    def __init__(self, ip=None):
+    def __init__(self, ip=None, bbmdAddress = None, bbmdTTL = 0):
         print("Starting BAC0 version %s (%s)" % (version, self.__module__.split('.')[-1]))
         self.log("Configurating app")
         self._registered_devices = weakref.WeakValueDictionary()
@@ -73,7 +73,8 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         else:
             ip_addr = ip
 
-        Base.__init__(self, localIPAddr=ip_addr)
+        Base.__init__(self, localIPAddr=ip_addr, 
+                      bbmdAddress = bbmdAddress, bbmdTTL = bbmdTTL)
         
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
