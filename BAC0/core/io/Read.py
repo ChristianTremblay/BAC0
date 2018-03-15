@@ -42,14 +42,11 @@ from bacpypes.core import deferred
 #--- this application's modules ---
 from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted, UnrecognizedService, SegmentationNotSupported
 from ..functions.debug import log_debug, log_exception, log_warning
-
+from ..utils.notes import note_and_log
 #------------------------------------------------------------------------------
 
-# some debugging
-_DEBUG = 0
 
-
-@bacpypes_debugging
+@note_and_log
 class ReadProperty():
     """
     Defines BACnet Read functions: readProperty and readPropertyMultiple.
@@ -79,7 +76,7 @@ class ReadProperty():
                 'BACnet stack not running - use startApp()')
 
         args_split = args.split()
-        log_debug(ReadProperty, "do_read %r", args_split)
+        self._log.debug("do_read %r" % args_split)
         vendor_id = vendor_id
         bacoid = bacoid
 
@@ -89,11 +86,11 @@ class ReadProperty():
                 args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid))
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
-            log_debug(ReadProperty, "    - iocb: %r", iocb)
+            self._log.debug("    - iocb: %r" % iocb)
 
         except ReadPropertyException as error:
             # construction error
-            log_exception("exception: %r", error)
+            self._log.error("exception: %r" % error)
 
         iocb.wait()             # Wait for BACnet response
 
@@ -101,15 +98,15 @@ class ReadProperty():
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, ReadPropertyACK):               # expecting an ACK
-                log_debug(ReadProperty, "    - not an ack")
-                log_warning(ReadProperty, "APDU : %s / %s" %
-                            (apdu, type(apdu)))
+                self._log.debug("    - not an ack")
+                self._log.warning("APDU : %s / %s" %
+                                  (apdu, type(apdu)))
                 return
 
             # find the datatype
             datatype = get_datatype(
                 apdu.objectIdentifier[0], apdu.propertyIdentifier, vendor_id=vendor_id)
-            log_debug(ReadProperty, "    - datatype: %r", datatype)
+            self._log.debug("    - datatype: %r" % datatype)
             if not datatype:
                 raise TypeError("unknown datatype")
 
@@ -121,7 +118,7 @@ class ReadProperty():
                     value = apdu.propertyValue.cast_out(datatype.subtype)
             else:
                 value = apdu.propertyValue.cast_out(datatype)
-            log_debug(ReadProperty, "    - value: %r", value)
+            self._log.debug("    - value: %r" % value)
 
             return value
 
@@ -129,15 +126,15 @@ class ReadProperty():
             apdu = iocb.ioError
             reason = find_reason(apdu)
             if reason == 'segmentationNotSupported':
-                log_warning(
-                    ReadProperty, "Segmentation not supported... will read properties one by one...")
-                log_debug(ReadProperty, "The Request was : %s", args_split)
+                self._log.warning(
+                    "Segmentation not supported... will read properties one by one...")
+                self._log.debug("The Request was : %s" % args_split)
                 value = self._split_the_read_request(args, arr_index)
                 return value
             else:
 
                 if reason == 'unknownProperty':
-                    log_warning(ReadProperty, 'Unknown property %s', args)
+                    self._log.warning('Unknown property %s' % args)
 
                 # Other error... consider NoResponseFromController (65)
                 # even if the realy reason is another one
@@ -184,7 +181,7 @@ class ReadProperty():
 
         args = args.split()
         values = []
-        log_debug(ReadProperty, "readMultiple %r", args)
+        self._log.debug("readMultiple %r" % args)
 
         try:
             # build an ReadPropertyMultiple request
@@ -194,7 +191,7 @@ class ReadProperty():
 
         except ReadPropertyMultipleException as error:
             # construction error
-            log_exception("exception: %r", error)
+            self._log.error("exception: %r" % error)
 
         iocb.wait()             # Wait for BACnet response
 
@@ -202,27 +199,27 @@ class ReadProperty():
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, ReadPropertyMultipleACK):       # expecting an ACK
-                log_debug(ReadProperty, "    - not an ack")
-                log_warning(ReadProperty, "APDU : %s / %s" %
-                            (apdu, type(apdu)))
+                self._log.debug("    - not an ack")
+                self._log.warning("APDU : %s / %s" %
+                                  (apdu, type(apdu)))
                 return
 
             # loop through the results
             for result in apdu.listOfReadAccessResults:
                 # here is the object identifier
                 objectIdentifier = result.objectIdentifier
-                log_debug(ReadProperty, "    - objectIdentifier: %r",
-                          objectIdentifier)
+                self._log.debug("    - objectIdentifier: %r" %
+                                objectIdentifier)
 
                 # now come the property values per object
                 for element in result.listOfResults:
                     # get the property and array index
                     propertyIdentifier = element.propertyIdentifier
-                    log_debug(
-                        ReadProperty, "    - propertyIdentifier: %r", propertyIdentifier)
+                    self._log.debug(
+                        "    - propertyIdentifier: %r" % propertyIdentifier)
                     propertyArrayIndex = element.propertyArrayIndex
-                    log_debug(
-                        ReadProperty, "    - propertyArrayIndex: %r", propertyArrayIndex)
+                    self._log.debug(
+                        "    - propertyArrayIndex: %r" % propertyArrayIndex)
 
                     readResult = element.readResult
 
@@ -238,7 +235,7 @@ class ReadProperty():
                         # find the datatype
                         datatype = get_datatype(
                             objectIdentifier[0], propertyIdentifier)
-                        log_debug(ReadProperty, "    - datatype: %r", datatype)
+                        self._log.debug("    - datatype: %r" % datatype)
                         if not datatype:
                             raise TypeError("unknown datatype")
 
@@ -251,7 +248,7 @@ class ReadProperty():
                                     datatype.subtype)
                         else:
                             value = propertyValue.cast_out(datatype)
-                        log_debug(ReadProperty, "    - value: %r", value)
+                        self._log.debug("    - value: %r" % value)
 
                         values.append(value)
 
@@ -260,18 +257,20 @@ class ReadProperty():
         if iocb.ioError:        # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
-            log_warning(ReadProperty, "APDU Abort Reject Reason : %s", reason)
-            log_debug(ReadProperty, "The Request was : %s", args)
+            self._log.warning("APDU Abort Reject Reason : %s" % reason)
+            self._log.debug("The Request was : %s" % args)
             if reason == 'unrecognizedService':
                 raise UnrecognizedService()
             elif reason == 'segmentationNotSupported':
                 raise SegmentationNotSupported()
+            elif reason == 'unknownObject':
+                self._log.warning('Unknown object %s' % args)
             elif reason == 'unknownProperty':
-                log_warning(ReadProperty, 'Unknown property %s', args)
+                self._log.warning('Unknown property %s' % args)
                 values.append("")
                 return values
             else:
-                log_warning(ReadProperty, "No response from controller")
+                self._log.warning("No response from controller")
                 values.append("")
                 return values
 
@@ -303,7 +302,7 @@ class ReadProperty():
 
         if len(args) == 5:
             request.propertyArrayIndex = int(args[4])
-        log_debug(ReadProperty, "    - request: %r", request)
+        self._log.debug("    - request: %r" % request)
 
         return request
 
@@ -372,7 +371,7 @@ class ReadProperty():
         request = ReadPropertyMultipleRequest(
             listOfReadAccessSpecs=read_access_spec_list)
         request.pduDestination = Address(addr)
-        log_debug(ReadProperty, "    - request: %r", request)
+        self._log.debug("    - request: %r" % request)
 
         return request
 
@@ -386,8 +385,8 @@ def find_reason(apdu):
         if apdu.errorCode and apdu.errorClass:
             return '%s' % (apdu.errorCode)
         else:
-            log_warning(ReadProperty, 'Cannot identify error : %s' %
-                        apdu.__dict__)
+            self._log.warning('Cannot identify error : %s' %
+                              apdu.__dict__)
             return 'UnKnown Error...'
     code = apdu.apduAbortRejectReason
     try:
