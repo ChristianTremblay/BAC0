@@ -18,7 +18,6 @@ from bokeh.application.handlers import Handler
 
 from tornado import gen
 
-import logging
 import math
 import pandas as pd
 import weakref
@@ -78,11 +77,6 @@ class DynamicPlotHandler(Handler):
                     units=df['units']
                 )
             )
-#        self.div_header_doc = Div(text ="""<div class="header">
-#                             <H1> BAC0 Trending Tools </H1></div>""")
-#        #self.div_header_notes = Div(text="""<div class="TableTitle"><H1> Notes from controller</H1></div>""")
-#        self.div_footer = Div(text="""<div class="footer"><p> <a href="http://www.servisys.com">Servisys inc.</a> |
-#                         <a href="https://pythoninthebuilding.wordpress.com/">Python in the building</a></p></div>""")
 
         TOOLS = "pan,box_zoom,wheel_zoom,save,reset"
         self.p = Figure(x_axis_type="datetime", x_axis_label="Time",

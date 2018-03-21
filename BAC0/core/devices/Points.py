@@ -420,7 +420,7 @@ class NumericPoint(Point):
                 raise ValueError('Value must be numeric')
 
     def __repr__(self):
-        return '{}/{} : {:.2f} {}' % (self.properties.device.properties.name, self.properties.name, self.lastValue, self.properties.units_state)
+        return '{}/{} : {:.2f} {}'.format(self.properties.device.properties.name, self.properties.name, self.lastValue, self.properties.units_state)
 
     def __add__(self, other):
         return self.value + other
