@@ -7,7 +7,7 @@ Test Simulation
 """
 
 from BAC0.core.io.Simulate import Simulation
-from BAC0.core.app.ScriptApplication import ScriptApplication
+from BAC0.core.app.ScriptApplication import SimpleApplication
 from BAC0.core.io.IOExceptions import OutOfServiceNotSet, OutOfServiceSet, ApplicationNotStarted
 
 from mock import Mock, patch, call
@@ -24,7 +24,7 @@ from threading import Event
 from queue import Empty
 
 
-class TestScriptApplication(ScriptApplication):
+class TestSimpleApplication(SimpleApplication):
     """
     This class replaces the __init__ method for testing purposes.
     This way, we can mock the behaviour.
@@ -46,7 +46,7 @@ class TestSimulateClass(Simulation):
     """
 
     def __init__(self):
-        self.this_application = TestScriptApplication()
+        self.this_application = TestSimpleApplication()
         self.simulatedPoints = []
         self.read = Mock()
         self.write = Mock()
@@ -61,7 +61,7 @@ class TestSimulate(unittest.TestCase):
     @patch('bacpypes.app.BIPSimpleApplication.__init__')
     def setUp(self, mock_BIPSimpleApplication, mock_ScriptApplication, mock_read):
         self.req = '2:5 analogValue 1 presentValue 100'
-        mock_ScriptApplication.return_value = TestScriptApplication()
+        mock_ScriptApplication.return_value = TestSimpleApplication()
         mock_BIPSimpleApplication.return_value = None
         self.simulation = TestSimulateClass()
         self.simulation._started = True
