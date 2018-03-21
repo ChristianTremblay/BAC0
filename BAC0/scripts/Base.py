@@ -42,12 +42,13 @@ from ..core.utils.notes import note_and_log
 
 #------------------------------------------------------------------------------
 
+
 @note_and_log
 class Base():
     """
     Build a running BACnet/IP device that accepts WhoIs and IAm requests
     Initialization requires some minimial information about the local device.
-    
+
     :param localIPAddr='127.0.0.1':
     :param localObjName='BAC0':
     :param DeviceId=None:
@@ -55,21 +56,22 @@ class Base():
     :param maxSegmentsAccepted='1024':
     :param segmentationSupported='segmentedBoth':
     """
-    
+
     def __init__(self, localIPAddr='127.0.0.1', localObjName='BAC0', DeviceId=None,
-                 maxAPDULengthAccepted='1024', maxSegmentsAccepted='1024', 
+                 maxAPDULengthAccepted='1024', maxSegmentsAccepted='1024',
                  segmentationSupported='segmentedBoth',
-                 bbmdAddress = None, bbmdTTL = 0):
+                 bbmdAddress=None, bbmdTTL=0):
 
         self._log.debug("Configurating app")
-        
+
         self.response = None
         self._initialized = False
         self._started = False
         self._stopped = False
 
-        self.localIPAddr= localIPAddr
-        self.Boid = int(DeviceId) if DeviceId else (3056177 + int(random.uniform(0, 1000)))
+        self.localIPAddr = localIPAddr
+        self.Boid = int(DeviceId) if DeviceId else (
+            3056177 + int(random.uniform(0, 1000)))
 
         self.segmentationSupported = segmentationSupported
         self.maxSegmentsAccepted = maxSegmentsAccepted
@@ -82,12 +84,11 @@ class Base():
 
         self.discoveredDevices = None
         self.systemStatus = DeviceStatus(1)
-        
+
         self.bbmdAddress = bbmdAddress
         self.bbmdTTL = bbmdTTL
 
         self.startApp()
-
 
     def startApp(self):
         """
@@ -98,14 +99,14 @@ class Base():
         try:
             # make a device object
             self.this_device = LocalDeviceObject(
-                objectName= self.localObjName,
-                objectIdentifier= self.Boid,
+                objectName=self.localObjName,
+                objectIdentifier=self.Boid,
                 maxApduLengthAccepted=int(self.maxAPDULengthAccepted),
                 segmentationSupported=self.segmentationSupported,
-                vendorIdentifier= self.vendorId,
-                vendorName= self.vendorName,
-                modelName= self.modelName,
-                systemStatus= self.systemStatus,
+                vendorIdentifier=self.vendorId,
+                vendorName=self.vendorName,
+                modelName=self.modelName,
+                systemStatus=self.systemStatus,
                 description='http://christiantremblay.github.io/BAC0/',
                 firmwareRevision=''.join(sys.version.split('|')[:2]),
                 applicationSoftwareVersion=infos.__version__,
@@ -126,11 +127,12 @@ class Base():
 
             # make an application
             if self.bbmdAddress and self.bbmdTTL > 0:
-                
+
                 self.this_application = ForeignDeviceApplication(self.this_device, self.localIPAddr,
-                                                    bbmdAddress=self.bbmdAddress, bbmdTTL = self.bbmdTTL)
+                                                                 bbmdAddress=self.bbmdAddress, bbmdTTL=self.bbmdTTL)
             else:
-                self.this_application = SimpleApplication(self.this_device, self.localIPAddr)
+                self.this_application = SimpleApplication(
+                    self.this_device, self.localIPAddr)
 
             self._log.debug("Starting")
             self._initialized = True
@@ -142,10 +144,10 @@ class Base():
             self._log.debug("Running")
 
         except Exception as error:
-            self._log.error("an error has occurred: %s", error)
+            self._log.error("an error has occurred: {}".format(error))
         finally:
             self._log.debug("finally")
-            
+
     def register_foreign_device(self, addr=None, ttl=0):
         self.this_application.bip.register(addr, ttl)
 
@@ -169,7 +171,6 @@ class Base():
         self._started = False
         print('BACnet stopped')
 
-
     def _startAppThread(self):
         """
         Starts the BACnet stack in its own thread so requests can be processed.
@@ -178,10 +179,8 @@ class Base():
         """
         self._log.info('Starting app...')
         enable_sleeping(0.0005)
-        self.t = Thread(target=startBacnetIPApp, kwargs={'sigterm': None,'sigusr1': None}, daemon = True)
+        self.t = Thread(target=startBacnetIPApp, kwargs={
+                        'sigterm': None, 'sigusr1': None}, daemon=True)
         self.t.start()
         self._started = True
         self._log.info('BAC0 started')
-        
-
-

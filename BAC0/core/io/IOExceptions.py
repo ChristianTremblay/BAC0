@@ -8,6 +8,7 @@
 IOExceptions.py - BAC0 application level exceptions 
 '''
 
+
 class WritePropertyException(Exception):
     """
     This exception is used when trying to write a property.
@@ -21,7 +22,12 @@ class WritePropertyCastError(Exception):
     """
     pass
 
+
 class UnknownPropertyError(Exception):
+    pass
+
+
+class UnknownObjectError(Exception):
     pass
 
 
@@ -45,11 +51,13 @@ class NoResponseFromController(Exception):
     """
     pass
 
+
 class UnrecognizedService(Exception):
     """
     This exception is used when trying to read or write and there is not answer.
     """
     pass
+
 
 class WriteAccessDenied(Exception):
     """
@@ -57,8 +65,10 @@ class WriteAccessDenied(Exception):
     """
     pass
 
+
 class APDUError(Exception):
     pass
+
 
 class OutOfServiceNotSet(Exception):
     """
@@ -74,18 +84,21 @@ class OutOfServiceSet(Exception):
     """
     pass
 
+
 class NetworkInterfaceException(Exception):
     """
     This exception covers different network related exc eption (like finding IP 
     or subnet mask...)
-    """    
+    """
     pass
+
 
 class ApplicationNotStarted(Exception):
     """
     Application not started, no communication available.
     """
     pass
+
 
 class BokehServerCantStart(Exception):
     """

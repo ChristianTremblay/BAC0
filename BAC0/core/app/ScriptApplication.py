@@ -28,6 +28,7 @@ from ..utils.notes import note_and_log
 
 #------------------------------------------------------------------------------
 
+
 @note_and_log
 class SimpleApplication(BIPSimpleApplication):
     """
@@ -35,13 +36,14 @@ class SimpleApplication(BIPSimpleApplication):
 
     :param *args: local object device, local IP address
         See BAC0.scripts.BasicScript for more details.
-        
+
     """
-    def __init__(self, *args, bbmdAddress=None, bbmdTTL=0):        
+
+    def __init__(self, *args, bbmdAddress=None, bbmdTTL=0):
         self.localAddress = None
 
         super().__init__(*args)
-        
+
         self._request = None
 
         self.i_am_counter = defaultdict(int)
@@ -54,15 +56,14 @@ class SimpleApplication(BIPSimpleApplication):
             self.local_unicast_tuple = ('', 47808)
             self.local_broadcast_tuple = ('255.255.255.255', 47808)
 
-    
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
-        self.log(("do_WhoIsRequest %r", apdu))
+        self.log(("do_WhoIsRequest {!r}".format(apdu)))
 
         # build a key from the source and parameters
         key = (str(apdu.pduSource),
-            apdu.deviceInstanceRangeLowLimit,
-            apdu.deviceInstanceRangeHighLimit )
+               apdu.deviceInstanceRangeLowLimit,
+               apdu.deviceInstanceRangeHighLimit)
 
         # count the times this has been received
         self.who_is_counter[key] += 1
@@ -70,13 +71,12 @@ class SimpleApplication(BIPSimpleApplication):
         # continue with the default implementation
         BIPSimpleApplication.do_WhoIsRequest(self, apdu)
 
-
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
-        self.log(("do_IAmRequest %r", apdu))
+        self.log(("do_IAmRequest {!r}".format(apdu)))
 
         # build a key from the source, just use the instance number
-        key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1] )
+        key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
         self.i_am_counter[key] += 1
 
         # continue with the default implementation
@@ -90,13 +90,14 @@ class ForeignDeviceApplication(BIPForeignApplication):
 
     :param *args: local object device, local IP address
         See BAC0.scripts.BasicScript for more details.
-        
+
     """
-    def __init__(self, *args, bbmdAddress=None, bbmdTTL=0):        
+
+    def __init__(self, *args, bbmdAddress=None, bbmdTTL=0):
         self.localAddress = None
 
         super().__init__(*args, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL)
-        
+
         self._request = None
 
         self.i_am_counter = defaultdict(int)
@@ -109,15 +110,14 @@ class ForeignDeviceApplication(BIPForeignApplication):
             self.local_unicast_tuple = ('', 47808)
             self.local_broadcast_tuple = ('255.255.255.255', 47808)
 
-    
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
-        self.log(("do_WhoIsRequest %r", apdu))
+        self.log(("do_WhoIsRequest {!r}".format(apdu)))
 
         # build a key from the source and parameters
         key = (str(apdu.pduSource),
-            apdu.deviceInstanceRangeLowLimit,
-            apdu.deviceInstanceRangeHighLimit )
+               apdu.deviceInstanceRangeLowLimit,
+               apdu.deviceInstanceRangeHighLimit)
 
         # count the times this has been received
         self.who_is_counter[key] += 1
@@ -125,13 +125,12 @@ class ForeignDeviceApplication(BIPForeignApplication):
         # continue with the default implementation
         BIPSimpleApplication.do_WhoIsRequest(self, apdu)
 
-
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
         self.log(("do_IAmRequest %r", apdu))
 
         # build a key from the source, just use the instance number
-        key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1] )
+        key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
         self.i_am_counter[key] += 1
 
         # continue with the default implementation
