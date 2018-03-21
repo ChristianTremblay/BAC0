@@ -22,8 +22,6 @@ Once the class is created, create the local object and use it::
 
 '''
 #--- standard Python modules ---
-import logging
-import logging.handlers
 from datetime import datetime
 
 import pandas as pd
@@ -142,8 +140,8 @@ class Complete(Lite, Stats_Mixin):
             self.start_bokeh()
             self.FlaskServer.start()
         else:
-            self.log(
-                'Bokeh server not started. Trend feature will not work', level=logging.WARNING)
+            self._log.warning(
+                'Bokeh server not started. Trend feature will not work')
 
     @property
     def devices(self):

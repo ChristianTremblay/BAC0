@@ -23,8 +23,6 @@ Once the class is created, create the local object and use it::
 '''
 #--- standard Python modules ---
 import time
-import logging
-import logging.handlers
 from datetime import datetime
 import weakref
 
@@ -144,7 +142,7 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
                 vendorName = self.read(
                     '{} device {} vendorName'.format(device[0], device[1]))
             except NoResponseFromController:
-                self._log.info('No response from %s' % device)
+                self._log.info('No response from {}'.format(device))
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
         return lst
