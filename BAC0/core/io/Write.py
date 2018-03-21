@@ -37,8 +37,7 @@ from bacpypes.core import deferred
 
 #--- this application's modules ---
 from .IOExceptions import WritePropertyCastError, NoResponseFromController, WritePropertyException, WriteAccessDenied, ApplicationNotStarted
-from ..functions.debug import log_debug, log_exception
-
+from ...core.utils.notes import note_and_log
 
 #------------------------------------------------------------------------------
 
@@ -47,14 +46,14 @@ _debug = 0
 _LOG = ModuleLogger(globals())
 
 
-@bacpypes_debugging
+@note_and_log
 class WriteProperty():
     """
     Defines BACnet Write functions: WriteProperty [WritePropertyMultiple not supported]
 
     """
 
-    def write(self, args, vendor_id = 0):
+    def write(self, args, vendor_id=0):
         """ Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
 
         :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]
@@ -67,14 +66,14 @@ class WriteProperty():
             bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)
             bacnet.write('2:5 analogValue 1 presentValue 100')
 
-        Direct the controller at (Network 2, address 5) to write 100 to the presentValues of 
+        Direct the controller at (Network 2, address 5) to write 100 to the presentValues of
         its analogValue 1 (AV:1)
         """
         if not self._started:
             raise ApplicationNotStarted(
                 'BACnet stack not running - use startApp()')
         args = args.split()
-        log_debug(WriteProperty, "do_write %r", args)
+        self._log.debug("do_write {!r}".format(args))
 
         try:
             # build a WriteProperty request
@@ -84,13 +83,13 @@ class WriteProperty():
 
         except WritePropertyException as error:
             # construction error
-            log_exception("exception: %r", error)
+            self._log.error("exception: {!r}".format(error))
 
         iocb.wait()             # Wait for BACnet response
 
         if iocb.ioResponse:     # successful response
             if not isinstance(iocb.ioResponse, SimpleAckPDU):   # expect an ACK
-                log_debug(WriteProperty, "    - not an ack")
+                self._log.debug("{:>12}".format("- not an ack"))
                 return
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
@@ -108,19 +107,18 @@ class WriteProperty():
         if len(args) >= 6:
             if args[5] != "-":
                 indx = int(args[5])
-        log_debug(WriteProperty, "    - indx: %r", indx)
+        self._log.debug("{:>12} {!r}".format("- indx", indx))
 
         priority = None
         if len(args) >= 7:
             priority = int(args[6])
-        log_debug(WriteProperty, "    - priority: %r", priority)
-
+        self._log.debug("{:>12} {!r}".format("- priority", priority))
         # get the datatype
-        
+
         if prop_id.isdigit():
             prop_id = int(prop_id)
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
-        log_debug(WriteProperty, "    - datatype: %r", datatype)
+        self._log.debug("{:>12} {!r}".format("- datatype", datatype))
         # change atomic values into something encodeable, null is a special
         # case
         if value == 'null':
@@ -142,22 +140,19 @@ class WriteProperty():
                 value = datatype.subtype(value)
             elif not isinstance(value, datatype.subtype):
                 raise TypeError(
-                    "invalid result datatype, expecting %s" %
-                    (datatype.subtype.__name__,))
+                    "invalid result datatype, expecting {}".format(
+                        (datatype.subtype.__name__,)))
 
         elif not isinstance(value, datatype):
             raise TypeError(
-                "invalid result datatype, expecting %s" %
-                (datatype.__name__,))
-        log_debug(
-            WriteProperty,
-            "    - encodeable value: %r %s",
-            value,
-            type(value))
+                "invalid result datatype, expecting {}".format(
+                    (datatype.__name__,)))
+        self._log.debug("{:>12} {!r} {}".format(
+            "- encodeable value", value, type(value)))
 
         # build a request
-        request = WritePropertyRequest(
-            objectIdentifier=(obj_type, obj_inst), propertyIdentifier=prop_id)
+        request = WritePropertyRequest(objectIdentifier=(obj_type, obj_inst),
+                                       propertyIdentifier=prop_id)
         request.pduDestination = Address(addr)
 
         # save the value
@@ -165,7 +160,7 @@ class WriteProperty():
         try:
             request.propertyValue.cast_in(value)
         except WritePropertyCastError as error:
-            log_exception("WriteProperty cast error: %r", error)
+            self._log.error("WriteProperty cast error: {!r}".format(error))
 
         # optional array index
         if indx is not None:
@@ -175,5 +170,5 @@ class WriteProperty():
         if priority is not None:
             request.priority = priority
 
-        log_debug(WriteProperty, "    - request: %r", request)
+        self._log.debug("{:>12} {}".format("- request", request))
         return request

@@ -15,7 +15,6 @@ import json
 from bokeh.embed import server_document
 
 from .templates import create_sidebar, create_card, update_notifications
-from ..core.functions.PrintDebug import print_list
 
 
 class FlaskServer(Thread):

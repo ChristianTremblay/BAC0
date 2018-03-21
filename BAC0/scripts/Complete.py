@@ -36,7 +36,6 @@ from bokeh.application import Application
 from ..scripts.Lite import Lite
 
 from ..core.io.IOExceptions import BokehServerCantStart, NoResponseFromController, UnrecognizedService
-from ..core.functions.PrintDebug import print_list
 from ..core.utils.notes import note_and_log
 
 from ..web.BokehRenderer import DevicesTableHandler, DynamicPlotHandler, NotesTableHandler
@@ -152,18 +151,18 @@ class Complete(Lite, Stats_Mixin):
         for device in list(self.discoveredDevices):
             try:
                 deviceName, vendorName = self.readMultiple(
-                    '{} device {} objectName vendorName'.format(device[0], device[1])))
+                    '{} device {} objectName vendorName'.format(device[0], device[1]))
             except UnrecognizedService:
-                deviceName=self.read(
-                    '{} device {} objectName'.format(device[0], device[1])))
-                vendorName=self.read(
-                    '{} device {} vendorName'.format(device[0], device[1])))
+                deviceName = self.read(
+                    '{} device {} objectName'.format(device[0], device[1]))
+                vendorName = self.read(
+                    '{} device {} vendorName'.format(device[0], device[1]))
             except NoResponseFromController:
                 self._log.info('No response from {}'.format(device))
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
-        df=pd.DataFrame(lst, columns=[
-                          'Name', 'Manufacturer', 'Address', ' Device ID']).set_index('Name')
+        df = pd.DataFrame(lst, columns=[
+            'Name', 'Manufacturer', 'Address', ' Device ID']).set_index('Name')
         try:
             return df.sort_values('Address')
         except AttributeError:
@@ -173,32 +172,32 @@ class Complete(Lite, Stats_Mixin):
         try:
             self.note('Starting Bokeh Serve')
             # Need to create the device document here
-            devHandler=DevicesTableHandler(self)
-            dev_app=Application(devHandler)
-            trendHandler=DynamicPlotHandler(self)
-            notesHandler=NotesTableHandler(self)
-            self.trend_app=Application(trendHandler)
-            self.notes_app=Application(notesHandler)
-            self.bk_worker=Bokeh_Worker(
+            devHandler = DevicesTableHandler(self)
+            dev_app = Application(devHandler)
+            trendHandler = DynamicPlotHandler(self)
+            notesHandler = NotesTableHandler(self)
+            self.trend_app = Application(trendHandler)
+            self.notes_app = Application(notesHandler)
+            self.bk_worker = Bokeh_Worker(
                 dev_app, self.trend_app, self.notes_app, self.localIPAddr)
-            self.FlaskServer=FlaskServer(
+            self.FlaskServer = FlaskServer(
                 network=self, port=self.flask_port, ip=self.localIPAddr)
             self.bk_worker.start()
-            self.bokehserver=True
+            self.bokehserver = True
             print('Server started : http://localhost:{}'.format(self.flask_port))
 
         except OSError as error:
-            self.bokehserver=False
+            self.bokehserver = False
             self._log.error(
                 '[bokeh serve] required for trending (controller.chart) features')
             self._log.error(error)
 
         except RuntimeError as rterror:
-            self.bokehserver=False
+            self.bokehserver = False
             self._log.warning('Server already running')
 
         except BokehServerCantStart:
-            self.bokehserver=False
+            self.bokehserver = False
             self._log.error('No Bokeh Server - controller.chart not available')
 
     def __repr__(self):

@@ -65,7 +65,7 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
 
     def __init__(self, ip=None, bbmdAddress=None, bbmdTTL=0):
         print("Starting BAC0 version {} ({})".format(
-              (version, self.__module__.split('.')[-1])))
+              version, self.__module__.split('.')[-1]))
         self.log("Configurating app")
         self._registered_devices = weakref.WeakValueDictionary()
         if ip is None:
@@ -137,12 +137,12 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         for device in list(self.discoveredDevices):
             try:
                 deviceName, vendorName = self.readMultiple(
-                    '{} device {} objectName vendorName'.format(device[0], device[1])))
+                    '{} device {} objectName vendorName'.format(device[0], device[1]))
             except UnrecognizedService:
-                deviceName=self.read(
+                deviceName = self.read(
                     '{} device {} objectName'.format((device[0], device[1])))
-                vendorName=self.read(
-                    '{} device {} vendorName'.format(device[0], device[1])))
+                vendorName = self.read(
+                    '{} device {} vendorName'.format(device[0], device[1]))
             except NoResponseFromController:
                 self._log.info('No response from %s' % device)
                 continue
