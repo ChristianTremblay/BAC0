@@ -5,7 +5,7 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 '''
-ScriptApplication 
+SimpleApplication 
 =================
 
 A basic BACnet application (bacpypes BIPSimpleApplication) for interacting with 
