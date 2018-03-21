@@ -292,10 +292,10 @@ class ReadPropertyMultiple():
                 point_description = point_infos[2]
 
             elif len(point_infos) == 5:
-                point_units_state = (point_infos[2], point_infos[3])           
-                try:
-                    point_description = point_infos[4]
-                except IndexError:
+                point_units_state = (point_infos[2], point_infos[3])
+                point_description = point_infos[4]
+
+                if point_description is None:
                     point_description = ""
 
             elif len(point_infos) == 2:

@@ -195,15 +195,19 @@ class Point():
             if isinstance(float(priority), float)\
                     and float(priority) >= 1\
                     and float(priority) <= 16:
-                priority = '{- {}'.format(priority)
+                priority = '- {}'.format(priority)
             else:
                 raise ValueError('Priority must be a number between 1 and 16')
 
         try:
             self.properties.device.properties.network.write(
                 '{} {} {} {} {} {}'.format(
-                    (self.properties.device.properties.address, self.properties.type, str(
-                        self.properties.address), prop, str(value), str(priority))))
+                    self.properties.device.properties.address,
+                    self.properties.type,
+                    self.properties.address,
+                    prop,
+                    value,
+                    priority))
         except Exception:
             raise NoResponseFromController()
 

@@ -233,6 +233,7 @@ class ReadProperty():
                     if readResult.propertyAccessError is not None:
                         self._log.debug(
                             " ! " + str(readResult.propertyAccessError))
+                        values.append(None)
                     else:
                         # here is the value
                         propertyValue = readResult.propertyValue
