@@ -64,14 +64,14 @@ class TestReadProperty(unittest.TestCase):
     # def setUp(self):
 
     @patch('BAC0.core.io.Read.ReadProperty.this_application.request')
-    @patch('BAC0.core.app.ScriptApplication.ScriptApplication.__init__')
+    @patch('BAC0.core.app.ScriptApplication.SimpleApplication.__init__')
     @patch('bacpypes.app.BIPSimpleApplication.__init__')
     @patch('bacpypes.service.device.LocalDeviceObject')
     @patch('BAC0.core.io.Read.ReadProperty')
     def setUp(self, mock_rp, mock_localDevice,
-              mock_BIPSimpleApplication, mock_ScriptApplication, mock_request):
+              mock_BIPSimpleApplication, mock_SimpleApplication, mock_request):
         self.req = '2:5 analogValue 1 presentValue'
-        mock_ScriptApplication.return_value = TestSimpleApplication()
+        mock_SimpleApplication.return_value = TestSimpleApplication()
         mock_BIPSimpleApplication.return_value = None
         
         self.read_property = TestReadPropertyClass()

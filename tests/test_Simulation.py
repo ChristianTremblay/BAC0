@@ -57,11 +57,11 @@ class TestSimulate(unittest.TestCase):
     Test with mock
     """
     @patch('BAC0.core.io.Read.ReadProperty.read')
-    @patch('BAC0.core.app.ScriptApplication.ScriptApplication.__init__')
+    @patch('BAC0.core.app.ScriptApplication.SimpleApplication.__init__')
     @patch('bacpypes.app.BIPSimpleApplication.__init__')
-    def setUp(self, mock_BIPSimpleApplication, mock_ScriptApplication, mock_read):
+    def setUp(self, mock_BIPSimpleApplication, mock_SimpleApplication, mock_read):
         self.req = '2:5 analogValue 1 presentValue 100'
-        mock_ScriptApplication.return_value = TestSimpleApplication()
+        mock_SimpleApplication.return_value = TestSimpleApplication()
         mock_BIPSimpleApplication.return_value = None
         self.simulation = TestSimulateClass()
         self.simulation._started = True
