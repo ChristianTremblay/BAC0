@@ -75,7 +75,9 @@ class ReadProperty():
                 'BACnet stack not running - use startApp()')
 
         args_split = args.split()
-        self._log.debug("do_read {!r}".format(args_split))
+        
+        self.log_title("Read property",args_split)
+                       
         vendor_id = vendor_id
         bacoid = bacoid
 
@@ -85,7 +87,7 @@ class ReadProperty():
                 args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid))
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
-            self._log.debug("{:>12} {!r}".format('- iocb', iocb))
+            self._log.debug("{:<20} {!r}".format('iocb', iocb))
 
         except ReadPropertyException as error:
             # construction error
@@ -97,14 +99,13 @@ class ReadProperty():
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, ReadPropertyACK):               # expecting an ACK
-                self._log.debug("    - not an ack")
-                self._log.warning("APDU : {} / {}".format((apdu, type(apdu))))
+                self._log.warning("Not an ack, see debug for more infos.")
+                self._log.debug("Not an ack. | APDU : {} / {}".format((apdu, type(apdu))))
                 return
 
             # find the datatype
             datatype = get_datatype(
                 apdu.objectIdentifier[0], apdu.propertyIdentifier, vendor_id=vendor_id)
-            self._log.debug("{:>12} {!r}".format('- datatype', datatype))
             if not datatype:
                 raise TypeError("unknown datatype")
 
@@ -116,8 +117,15 @@ class ReadProperty():
                     value = apdu.propertyValue.cast_out(datatype.subtype)
             else:
                 value = apdu.propertyValue.cast_out(datatype)
-            self._log.debug("{:>12} {!r}".format('- value', value))
 
+            self._log.info(
+                "{:<20} {:<20}".format(
+                'value',
+                'datatype'))
+            self._log.info(
+                "{!r:<20} {!r:<20}".format(
+                value,
+                datatype))
             return value
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
@@ -187,17 +195,19 @@ class ReadProperty():
 
         args = args.split()
         values = []
-        self._log.debug("readMultiple {!r}".format(args))
+
+        self.log_title("Read Multiple",args)
 
         try:
             # build an ReadPropertyMultiple request
             iocb = IOCB(self.build_rpm_request(args))
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
+            self._log.debug("{:<20} {!r}".format('iocb', iocb))
 
         except ReadPropertyMultipleException as error:
             # construction error
-            self._log.error("exception: {!r}".format(error))
+            self._log.exception("exception: {!r}".format(error))
 
         iocb.wait()             # Wait for BACnet response
 
@@ -205,34 +215,36 @@ class ReadProperty():
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, ReadPropertyMultipleACK):       # expecting an ACK
-                self._log.debug("{:>12}".format("- not an ack"))
-                self._log.warning("APDU : {} / {}".format((apdu, type(apdu))))
+                self._log.debug("{:<20}".format("not an ack"))
+                self._log.warning("Not an Ack. | APDU : {} / {}".format((apdu, type(apdu))))
                 return
 
             # loop through the results
             for result in apdu.listOfReadAccessResults:
                 # here is the object identifier
                 objectIdentifier = result.objectIdentifier
-                self._log.debug("{:>12} {!r}".format(
-                    '- objectIdentifier', objectIdentifier))
+                               
+                self.log_subtitle('{!r} : {!r}'.format(objectIdentifier[0],objectIdentifier[1]), width=114)
+                self._log.info(
+                    "{:<20} {:<20} {:<30} {:<20}".format(
+                    'propertyIdentifier',
+                    'propertyArrayIndex',
+                    'value',
+                    'datatype'))
+                self._log.info(
+                    "-"*114)
+
                 # now come the property values per object
                 for element in result.listOfResults:
                     # get the property and array index
                     propertyIdentifier = element.propertyIdentifier
-                    self._log.debug("{:>12} {!r}".format(
-                        '- propertyIdentifier', propertyIdentifier))
                     propertyArrayIndex = element.propertyArrayIndex
-                    self._log.debug("{:>12} {!r}".format(
-                        '- propertyArrayIndex', propertyArrayIndex))
-
-                    readResult = element.readResult
-
-                    if propertyArrayIndex is not None:
-                        self._log.debug("[" + str(propertyArrayIndex) + "]")
+                    
+                    readResult = element.readResult 
 
                     if readResult.propertyAccessError is not None:
-                        self._log.debug(
-                            " ! " + str(readResult.propertyAccessError))
+                        self._log.debug('Property Access Error for {}'.format(
+                                readResult.propertyAccessError))
                         values.append(None)
                     else:
                         # here is the value
@@ -241,8 +253,7 @@ class ReadProperty():
                         # find the datatype
                         datatype = get_datatype(
                             objectIdentifier[0], propertyIdentifier)
-                        self._log.debug("{:>12} {!r}".format(
-                            '- datatype', datatype))
+
                         if not datatype:
                             raise TypeError("unknown datatype")
 
@@ -255,8 +266,14 @@ class ReadProperty():
                                     datatype.subtype)
                         else:
                             value = propertyValue.cast_out(datatype)
-                            self._log.debug("{:>12} {!r}".format(
-                                '- value', value))
+                            
+
+                        self._log.info(
+                            "{!r:<20} {!r:<20} {!r:<30} {!r:<20}".format(
+                            propertyIdentifier,
+                            propertyArrayIndex,
+                            value,
+                            datatype))                        
                         values.append(value)
 
             return values
@@ -310,8 +327,8 @@ class ReadProperty():
 
         if len(args) == 5:
             request.propertyArrayIndex = int(args[4])
-        self._log.debug("{:>12} {!r}".format(
-            '- request', request))
+        self._log.debug("{:<20} {!r}".format(
+            'REQUEST', request))
         return request
 
     def build_rpm_request(self, args):
@@ -379,8 +396,8 @@ class ReadProperty():
         request = ReadPropertyMultipleRequest(
             listOfReadAccessSpecs=read_access_spec_list)
         request.pduDestination = Address(addr)
-        self._log.debug("{:>12} {!r}".format(
-            '- request', request))
+        self._log.debug("{:<20} {!r}".format(
+            'REQUEST', request))
         return request
 
 
@@ -393,9 +410,7 @@ def find_reason(apdu):
         if apdu.errorCode and apdu.errorClass:
             return '{}'.format(apdu.errorCode)
         else:
-            self._log.warning('Cannot identify error : {}'.format(
-                              apdu.__dict__))
-            return 'UnKnown Error...'
+            raise ValueError('Cannot find reason...')
     code = apdu.apduAbortRejectReason
     try:
         return [k for k, v in reasons.items() if v == code][0]

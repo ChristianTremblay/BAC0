@@ -24,6 +24,11 @@ try:
 except ImportError:
     _PANDAS = False
 
+def update_log_level(level):
+    BAC0_logger = logging.getLogger('BAC0')
+    BAC0_logger.setLevel(level)
+    for handler in BAC0_logger.handlers:
+        handler.setLevel(level)
 
 def note_and_log(cls):
     """
@@ -51,14 +56,14 @@ def note_and_log(cls):
     cls._notes.notes = []
 
     # Defining log object
-    logname = '%s | %s' % (cls.__module__, cls.__name__)
-    cls._log = logging.getLogger(logname)
+    cls.logname = '{} | {}'.format(cls.__module__, cls.__name__)
+    cls._log = logging.getLogger('BAC0')
     # Console Handler
     ch = logging.StreamHandler()
     ch.setLevel(console_level)
 
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        '{asctime} - {levelname:<8}| {message}', style='{')
 
     # File Handler
     _PERMISSION_TO_WRITE = True
@@ -82,6 +87,24 @@ def note_and_log(cls):
         if _PERMISSION_TO_WRITE:
             cls._log.addHandler(fh)
         cls._log.addHandler(ch)
+        
+    def log_title(self, title, args=None, width=35):
+        cls._log.info("")
+        cls._log.info("#"*width)
+        cls._log.info("# {}".format(title))
+        cls._log.info("#"*width)
+        if args:
+            cls._log.debug("{!r}".format(args))
+            cls._log.debug("#"*35)
+
+    def log_subtitle(self, subtitle, args=None, width=35):
+        cls._log.info("")
+        cls._log.info("="*width)
+        cls._log.info("{}".format(subtitle))
+        cls._log.info("="*width)
+        if args:
+            cls._log.debug("{!r}".format(args))
+            cls._log.debug("="*width)
 
     def log(self, note, *, level=logging.DEBUG):
         """
@@ -89,6 +112,7 @@ def note_and_log(cls):
         """
         if not note:
             raise ValueError('Provide something to log')
+        note = '{} | {}'.format(cls.logname, note)
         cls._log.log(level, note)
 
     def note(self, note, *, level=logging.INFO, log=True):
@@ -102,6 +126,7 @@ def note_and_log(cls):
         """
         if not note:
             raise ValueError('Provide something to log')
+        note = '{} | {}'.format(cls.logname, note)
         cls._notes.timestamp.append(datetime.now())
         cls._notes.notes.append(note)
         if log:
@@ -128,4 +153,6 @@ def note_and_log(cls):
     cls.note = note
     cls.notes = notes
     cls.log = log
+    cls.log_title = log_title
+    cls.log_subtitle = log_subtitle
     return cls

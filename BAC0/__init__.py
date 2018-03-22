@@ -8,6 +8,7 @@ from .core.devices.Device import Device as device
 from .core.devices.Device import DeviceLoad as load
 from .tasks.Poll import SimplePoll as poll
 from .tasks.Match import Match as match
+from .core.utils.notes import update_log_level as log_level
 from .infos import __version__ as version
 
 # To be able to use the complete version pandas, flask and bokeh must be installed.
