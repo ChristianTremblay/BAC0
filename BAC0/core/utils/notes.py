@@ -13,6 +13,7 @@ from collections import namedtuple
 from datetime import datetime
 import logging
 from logging import FileHandler
+import sys
 
 import os
 from os.path import expanduser, join
@@ -24,11 +25,50 @@ try:
 except ImportError:
     _PANDAS = False
 
-def update_log_level(level):
+def convert_level(level):
+    if not level:
+        return None
+    if level.lower() == 'info':
+        level = logging.INFO
+    elif level.lower() == 'debug':
+        level = logging.DEBUG
+    elif level.lower() == 'warning':
+        level = logging.WARNING
+    elif level.lower() == 'error':
+        level = logging.ERROR
+    elif level.lower() == 'critical':
+        level = logging.CRITICAL
+    return level
+
+def update_log_level(file, stderr = None, stdout = None):
+    """
+    Typical usage : 
+        Normal
+        BAC0.log_level(file='warning', stdout='warning', stderr='error')
+        Info on console....but not in file
+        BAC0.log_level(file='warning', stdout='info', stderr='error')
+        Debug
+        BAC0.log_level(file='debug', stdout='info', stderr='error')
+    """
+    file = convert_level(file)
+    stderr = convert_level(stderr)
+    stdout = convert_level(stdout)       
     BAC0_logger = logging.getLogger('BAC0')
-    BAC0_logger.setLevel(level)
+#    if console:
+#        BAC0_logger.setLevel(console)
+#        BAC0_logger.warning('Changed log level of console to {}'.format(logging.getLevelName(level)))
+
     for handler in BAC0_logger.handlers:
-        handler.setLevel(level)
+        if file and handler.get_name() == 'file_handler':
+            handler.setLevel(file)
+            BAC0_logger.info('Changed log level of file to {}'.format(logging.getLevelName(file)))
+        elif stdout and handler.get_name() == 'stdout':
+            handler.setLevel(stdout)
+            BAC0_logger.info('Changed log level of console stdout to {}'.format(logging.getLevelName(stdout)))
+        elif stderr and handler.get_name() == 'stderr':
+            handler.setLevel(stderr)
+            BAC0_logger.info('Changed log level of console stderr to {}'.format(logging.getLevelName(stderr)))
+
 
 def note_and_log(cls):
     """
@@ -48,7 +88,7 @@ def note_and_log(cls):
             file_level = logging.INFO
             console_level = logging.INFO
     else:
-        file_level = logging.WARNING
+        file_level = logging.INFO
         console_level = logging.WARNING
     # Notes object
     cls._notes = namedtuple('_notes', ['timestamp', 'notes'])
@@ -57,10 +97,18 @@ def note_and_log(cls):
 
     # Defining log object
     cls.logname = '{} | {}'.format(cls.__module__, cls.__name__)
+    root_logger = logging.getLogger()
     cls._log = logging.getLogger('BAC0')
+    if not len(root_logger.handlers):
+        root_logger.addHandler(cls._log)
+    
     # Console Handler
     ch = logging.StreamHandler()
+    ch.set_name('stderr')
+    ch2 = logging.StreamHandler(sys.stdout)
+    ch2.set_name('stdout')
     ch.setLevel(console_level)
+    ch2.setLevel(logging.CRITICAL)
 
     formatter = logging.Formatter(
         '{asctime} - {levelname:<8}| {message}', style='{')
@@ -78,15 +126,20 @@ def note_and_log(cls):
             _PERMISSION_TO_WRITE = False
     if _PERMISSION_TO_WRITE:
         fh = FileHandler(logFile)
+        fh.set_name('file_handler')
         fh.setLevel(file_level)
         fh.setFormatter(formatter)
 
     ch.setFormatter(formatter)
+    ch2.setFormatter(formatter)
     # Add handlers the first time only...
     if not len(cls._log.handlers):
         if _PERMISSION_TO_WRITE:
             cls._log.addHandler(fh)
         cls._log.addHandler(ch)
+        cls._log.addHandler(ch2)
+    
+#    cls._log.setLevel(logging.CRITICAL)
         
     def log_title(self, title, args=None, width=35):
         cls._log.info("")

@@ -73,23 +73,27 @@ class WriteProperty():
             raise ApplicationNotStarted(
                 'BACnet stack not running - use startApp()')
         args = args.split()
-        self._log.debug("do_write {!r}".format(args))
+        self.log_title("Write property",args)
 
         try:
             # build a WriteProperty request
             iocb = IOCB(self.build_wp_request(args, vendor_id=vendor_id))
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
+            self._log.debug("{:<20} {!r}".format('iocb', iocb))
 
         except WritePropertyException as error:
             # construction error
-            self._log.error("exception: {!r}".format(error))
+            self._log.exception("exception: {!r}".format(error))
 
         iocb.wait()             # Wait for BACnet response
 
         if iocb.ioResponse:     # successful response
+            apdu = iocb.ioResponse
+            
             if not isinstance(iocb.ioResponse, SimpleAckPDU):   # expect an ACK
-                self._log.debug("{:>12}".format("- not an ack"))
+                self._log.warning("Not an ack, see debug for more infos.")
+                self._log.debug("Not an ack. | APDU : {} / {}".format((apdu, type(apdu))))
                 return
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
@@ -107,18 +111,31 @@ class WriteProperty():
         if len(args) >= 6:
             if args[5] != "-":
                 indx = int(args[5])
-        self._log.debug("{:>12} {!r}".format("- indx", indx))
 
         priority = None
         if len(args) >= 7:
             priority = int(args[6])
-        self._log.debug("{:>12} {!r}".format("- priority", priority))
-        # get the datatype
 
+        # get the datatype
         if prop_id.isdigit():
             prop_id = int(prop_id)
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
-        self._log.debug("{:>12} {!r}".format("- datatype", datatype))
+
+        self.log_subtitle("Creating Request")
+        self._log.info(
+                "{:<20} {:<20} {:<20} {:<20}".format(
+                'indx',
+                'priority',
+                'datatype',
+                'value'))
+        self._log.info(
+                "{!r:<20} {!r:<20} {!r:<20} {!r:<20}".format(
+                indx,
+                priority,
+                datatype,
+                value
+                ))
+        
         # change atomic values into something encodeable, null is a special
         # case
         if value == 'null':
@@ -147,8 +164,8 @@ class WriteProperty():
             raise TypeError(
                 "invalid result datatype, expecting {}".format(
                     (datatype.__name__,)))
-        self._log.debug("{:>12} {!r} {}".format(
-            "- encodeable value", value, type(value)))
+        self._log.info("{:<20} {!r} {}".format(
+            "Encodeable value", value, type(value)))
 
         # build a request
         request = WritePropertyRequest(objectIdentifier=(obj_type, obj_inst),
@@ -170,5 +187,5 @@ class WriteProperty():
         if priority is not None:
             request.priority = priority
 
-        self._log.debug("{:>12} {}".format("- request", request))
+        self._log.debug("{:<20} {}".format("REQUEST", request))
         return request

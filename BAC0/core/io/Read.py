@@ -91,7 +91,7 @@ class ReadProperty():
 
         except ReadPropertyException as error:
             # construction error
-            self._log.error("exception: {!r}".format(error))
+            self._log.exception("exception: {!r}".format(error))
 
         iocb.wait()             # Wait for BACnet response
 
