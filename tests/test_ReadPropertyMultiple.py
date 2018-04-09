@@ -83,7 +83,7 @@ class TestReadPropertyMultiple(unittest.TestCase):
     @patch('BAC0.core.io.Read.ReadProperty.this_application.request')
     @patch('BAC0.core.app.ScriptApplication.SimpleApplication.__init__')
     @patch('bacpypes.app.BIPSimpleApplication.__init__')
-    @patch('bacpypes.service.device.LocalDeviceObject')
+    @patch('bacpypes.local.device.LocalDeviceObject')
     @patch('BAC0.core.io.Read.ReadProperty')
     def setUp(self, mock_rp, mock_localDevice,
               mock_BIPSimpleApplication, mock_SimpleApplication, mock_request):

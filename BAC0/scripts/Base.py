@@ -29,8 +29,7 @@ import sys
 from bacpypes.core import run as startBacnetIPApp
 from bacpypes.core import stop as stopBacnetIPApp
 from bacpypes.core import enable_sleeping
-
-from bacpypes.service.device import LocalDeviceObject
+from bacpypes.local.device import LocalDeviceObject
 from bacpypes.basetypes import ServicesSupported, DeviceStatus
 from bacpypes.primitivedata import CharacterString
 
@@ -115,15 +114,15 @@ class Base():
             )
 
             # build a bit string that knows about the bit names
-            pss = ServicesSupported()
-            pss['whoIs'] = 1
-            pss['iAm'] = 1
-            pss['readProperty'] = 1
-            pss['writeProperty'] = 1
-            pss['readPropertyMultiple'] = 1
-
-            # set the property value to be just the bits
-            self.this_device.protocolServicesSupported = pss.value
+#            pss = ServicesSupported()
+#            pss['whoIs'] = 1
+#            pss['iAm'] = 1
+#            pss['readProperty'] = 1
+#            pss['writeProperty'] = 1
+#            pss['readPropertyMultiple'] = 1
+#
+#            # set the property value to be just the bits
+#            self.this_device.protocolServicesSupported = pss.value
 
             # make an application
             if self.bbmdAddress and self.bbmdTTL > 0:
