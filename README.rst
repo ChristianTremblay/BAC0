@@ -13,6 +13,10 @@ tool to test devices an interact with controllers.
 
 BAC0 takes its name from the default IP port used by BACnet/IP communication which is port 47808. In hexadecimal, it's written 0xBAC0.
 
+Web features included
+=====================
+BAC0 includes a local web page that will help the user providing basic informations about the netwok seen by the script and also provide a simple interface to historical trends. Flask is used to render the web page and a Bokeh server is also provided to serve live trends to the user.
+
 Test driven development (TDD) for DDC controls
 ==============================================
 BAC0 is made for building automation system (BAS) programmers. Controllers used in this field are commonly called DDC Controllers (Direct Digital Control).

@@ -9,6 +9,7 @@ Poll.py - create a Polling task to repeatedly read a point.
 '''
 
 #--- standard Python modules ---
+import weakref
 
 #--- 3rd party modules ---
 from bacpypes.core import deferred
@@ -63,9 +64,19 @@ class DevicePoll(Task):
         """
         if delay < 5:
             delay = 5
-        self._device = device
+        self._device = weakref.ref(device)
         Task.__init__(self, name='rpm_poll', delay=delay, daemon = True)
+        self._counter = 0
 
+    @property
+    def device(self):
+        return self._device()
 
     def task(self):
-        self._device.read_multiple(list(self._device.points_name), points_per_request=25)
+        self.device.read_multiple(list(self.device.points_name), points_per_request=25)
+        self._counter += 1
+        if self._counter == self.device.properties.auto_save:
+            self.device.save()
+            if self.device.properties.clear_history_on_save:
+                self.device.clear_histories()
+            self._counter = 0

@@ -62,7 +62,7 @@ class ReadPropertyMultiple():
         return (requests, points)
 
 
-    def read_multiple(self, points_list, *, points_per_request=25, discover_request=(None, 6)):
+    def read_multiple(self, points_list, *, points_per_request=25, discover_request=(None, 6), force_single=False):
         """
         Read points from a device using a ReadPropertyMultiple request.
         [ReadProperty requests are very slow in comparison].
@@ -78,7 +78,7 @@ class ReadPropertyMultiple():
 
         device.read_multiple(['point1', 'point2', 'point3'], points_per_request = 10)
         """
-        if not self.properties.pss['readPropertyMultiple']:
+        if not self.properties.pss['readPropertyMultiple'] or force_single:
             self._log.warning('Read property Multiple Not supported')
             self.read_single(points_list,points_per_request=1, discover_request=discover_request)
         else:
@@ -94,7 +94,7 @@ class ReadPropertyMultiple():
                     
                     try:
                         request = ('{} {}'.format(self.properties.address, ''.join(request)))
-                        self._log.debug('RPM_Request: ', request)
+                        self._log.debug('RPM_Request: %s ' % request)
                         val = self.properties.network.readMultiple(request)
 
                         #print('val : ', val, len(val), type(val))
@@ -107,9 +107,14 @@ class ReadPropertyMultiple():
                         
                     except SegmentationNotSupported as error:
                         self.properties.segmentation_supported = False
-                        self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
+                        #self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
                         self._log.warning('Segmentation not supported')
-
+                
+                        self._log.warning('Request too big...will reduce it')
+                        if points_per_request == 1:
+                            raise
+                        self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
+                        
                     else:
                         for points_info in self._batches(val, info_length):
                             values.append(points_info)
@@ -181,7 +186,11 @@ class ReadPropertyMultiple():
             try : 
                     objList = self.properties.network.read(
                     '{} device {} objectList'.format(self.properties.address, self.properties.device_id))
-                
+            
+            except NoResponseFromController:
+                self.log.error('No object list available. Please provide a custom list using the object_list parameter')
+                objList = []
+
             except SegmentationNotSupported:
                 objList = []
                 number_of_objects = self.properties.network.read(
@@ -243,8 +252,11 @@ class ReadPropertyMultiple():
         for multistate_points, address in list_of_multistate:
             multistate_request.append('{} {} objectName presentValue stateText description '.format(multistate_points, address))
 
-        multistate_points_info= self.read_multiple('', discover_request=(multistate_request, 4), points_per_request=5)
-
+        try:
+            multistate_points_info= self.read_multiple('', discover_request=(multistate_request, 4), points_per_request=5)
+        except SegmentationNotSupported:
+            raise
+            
         i = 0
         for each in retrieve_type(objList, 'multi'):
             point_type = str(each[0])
@@ -263,8 +275,11 @@ class ReadPropertyMultiple():
         for binary_points, address in list_of_binary:
             binary_request.append('{} {} objectName presentValue inactiveText activeText description '.format(binary_points, address))
 
-        binary_points_info= self.read_multiple('', discover_request=(binary_request, 5), points_per_request=5)
-
+        try:
+            binary_points_info= self.read_multiple('', discover_request=(binary_request, 5), points_per_request=5)
+        except SegmentationNotSupported:
+            raise
+            
         i = 0
         for each in retrieve_type(objList, 'binary'):
             point_type = str(each[0])
@@ -277,10 +292,10 @@ class ReadPropertyMultiple():
                 point_description = point_infos[2]
 
             elif len(point_infos) == 5:
-                point_units_state = (point_infos[2], point_infos[3])           
-                try:
-                    point_description = point_infos[4]
-                except IndexError:
+                point_units_state = (point_infos[2], point_infos[3])
+                point_description = point_infos[4]
+
+                if point_description is None:
                     point_description = ""
 
             elif len(point_infos) == 2:
@@ -290,7 +305,7 @@ class ReadPropertyMultiple():
             else:
                 #raise ValueError('Not enough values returned', each, point_infos)
                 # SHOULD SWITCH TO SEGMENTATION_SUPPORTED = FALSE HERE
-                self._log.warning('Cannot add {} / {]'.format(point_type, point_address))
+                self._log.warning('Cannot add {} / {}'.format(point_type, point_address))
                 continue
 
             i += 1

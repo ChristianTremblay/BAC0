@@ -5,7 +5,7 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 '''
-ScriptApplication 
+SimpleApplication 
 =================
 
 A basic BACnet application (bacpypes BIPSimpleApplication) for interacting with 
@@ -18,36 +18,32 @@ extending it with more functions. [See BAC0.scripts for more examples of this.]
 '''
 #--- standard Python modules ---
 from collections import defaultdict
-import logging
 
 #--- 3rd party modules ---
-from bacpypes.debugging import bacpypes_debugging
-
-from bacpypes.app import BIPSimpleApplication
+from bacpypes.app import BIPSimpleApplication, BIPForeignApplication
 from bacpypes.pdu import Address
 
 #--- this application's modules ---
-from ..functions.debug import log_debug
-
+from ..utils.notes import note_and_log
 
 #------------------------------------------------------------------------------
 
-@bacpypes_debugging
-class ScriptApplication(BIPSimpleApplication):
+
+@note_and_log
+class SimpleApplication(BIPSimpleApplication):
     """
     Defines a basic BACnet/IP application to process BACnet requests.
 
     :param *args: local object device, local IP address
         See BAC0.scripts.BasicScript for more details.
-        
+
     """
-    def __init__(self, *args):
-        logging.getLogger("comtypes").setLevel(logging.INFO)
-        
+
+    def __init__(self, *args, bbmdAddress=None, bbmdTTL=0):
         self.localAddress = None
 
         super().__init__(*args)
-        
+
         self._request = None
 
         self.i_am_counter = defaultdict(int)
@@ -60,15 +56,14 @@ class ScriptApplication(BIPSimpleApplication):
             self.local_unicast_tuple = ('', 47808)
             self.local_broadcast_tuple = ('255.255.255.255', 47808)
 
-    
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
-        if self._debug: ScriptApplication._debug("do_WhoIsRequest %r", apdu)
+        self.log(("do_WhoIsRequest {!r}".format(apdu)))
 
         # build a key from the source and parameters
         key = (str(apdu.pduSource),
-            apdu.deviceInstanceRangeLowLimit,
-            apdu.deviceInstanceRangeHighLimit )
+               apdu.deviceInstanceRangeLowLimit,
+               apdu.deviceInstanceRangeHighLimit)
 
         # count the times this has been received
         self.who_is_counter[key] += 1
@@ -76,15 +71,67 @@ class ScriptApplication(BIPSimpleApplication):
         # continue with the default implementation
         BIPSimpleApplication.do_WhoIsRequest(self, apdu)
 
-
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
-        if self._debug: ScriptApplication._debug("do_IAmRequest %r", apdu)
+        self.log(("do_IAmRequest {!r}".format(apdu)))
 
         # build a key from the source, just use the instance number
-        key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1] )
+        key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
         self.i_am_counter[key] += 1
 
         # continue with the default implementation
         BIPSimpleApplication.do_IAmRequest(self, apdu)
 
+
+@note_and_log
+class ForeignDeviceApplication(BIPForeignApplication):
+    """
+    Defines a basic BACnet/IP application to process BACnet requests.
+
+    :param *args: local object device, local IP address
+        See BAC0.scripts.BasicScript for more details.
+
+    """
+
+    def __init__(self, *args, bbmdAddress=None, bbmdTTL=0):
+        self.localAddress = None
+
+        super().__init__(*args, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL)
+
+        self._request = None
+
+        self.i_am_counter = defaultdict(int)
+        self.who_is_counter = defaultdict(int)
+
+        if isinstance(self.localAddress, Address):
+            self.local_unicast_tuple = self.localAddress.addrTuple
+            self.local_broadcast_tuple = self.localAddress.addrBroadcastTuple
+        else:
+            self.local_unicast_tuple = ('', 47808)
+            self.local_broadcast_tuple = ('255.255.255.255', 47808)
+
+    def do_WhoIsRequest(self, apdu):
+        """Respond to a Who-Is request."""
+        self.log(("do_WhoIsRequest {!r}".format(apdu)))
+
+        # build a key from the source and parameters
+        key = (str(apdu.pduSource),
+               apdu.deviceInstanceRangeLowLimit,
+               apdu.deviceInstanceRangeHighLimit)
+
+        # count the times this has been received
+        self.who_is_counter[key] += 1
+
+        # continue with the default implementation
+        BIPSimpleApplication.do_WhoIsRequest(self, apdu)
+
+    def do_IAmRequest(self, apdu):
+        """Given an I-Am request, cache it."""
+        self.log(("do_IAmRequest %r", apdu))
+
+        # build a key from the source, just use the instance number
+        key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
+        self.i_am_counter[key] += 1
+
+        # continue with the default implementation
+        BIPSimpleApplication.do_IAmRequest(self, apdu)

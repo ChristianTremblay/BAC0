@@ -16,12 +16,16 @@ Table of contents
    
    getstarted
    connect
+   controller
+   proprietary_objects
    histories
    trending
    savedevice
+   webinterface
    jupyter
    tests
    pytest
+   logging
 
 
 Developer documentation

@@ -1,3 +1,4 @@
+
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -21,8 +22,6 @@ Read.py - creation of ReadProperty and ReadPropertyMultiple requests
 '''
 
 #--- standard Python modules ---
-from queue import Queue, Empty
-import time
 
 #--- 3rd party modules ---
 from bacpypes.debugging import bacpypes_debugging
@@ -30,42 +29,31 @@ from bacpypes.debugging import bacpypes_debugging
 from bacpypes.pdu import Address
 from bacpypes.object import get_object_class, get_datatype
 from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
-    ReadPropertyRequest, ReadPropertyMultipleRequest
+    ReadPropertyRequest, ReadPropertyMultipleRequest, RejectReason, AbortReason, RejectPDU, AbortPDU
 
 from bacpypes.basetypes import PropertyIdentifier
 from bacpypes.apdu import ReadPropertyMultipleACK, ReadPropertyACK
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB
+from bacpypes.core import deferred
 
 #--- this application's modules ---
-from .IOExceptions import SegmentationNotSupported, ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted, UnrecognizedService
-from ..functions.debug import log_debug, log_exception
+from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted, UnrecognizedService, SegmentationNotSupported, UnknownPropertyError, UnknownObjectError
 
+from ..utils.notes import note_and_log
 #------------------------------------------------------------------------------
 
-# some debugging
-_DEBUG = 0
 
-
-@bacpypes_debugging
+@note_and_log
 class ReadProperty():
     """
     Defines BACnet Read functions: readProperty and readPropertyMultiple.
     Data exchange is made via a Queue object
     A timeout of 10 seconds allows detection of invalid device or communciation errors.
     """
-    _TIMEOUT = 10
 
-#    def __init__(self, *args):
-#        """ This function is a fake one so spyder can see local variables
-#        """
-#        #self.this_application = None
-#        #self.this_application.ResponseQueue = Queue()
-#        #self.this_application._lock = False
-#        self._started = False
-
-    def read(self, args, arr_index = None):
+    def read(self, args, arr_index=None, vendor_id=0, bacoid=None):
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -75,29 +63,35 @@ class ReadProperty():
         *Example*::
 
             import BAC0
-            myIPAddr = '192.168.1.10'
-            bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)
+            myIPAddr = '192.168.1.10/24'
+            bacnet = BAC0.connect(ip = myIPAddr)
             bacnet.read('2:5 analogInput 1 presentValue')
 
-        Requests the controller at (Network 2, address 5) for the presentValue of 
+        Requests the controller at (Network 2, address 5) for the presentValue of
         its analog input 1 (AI:1).
         """
         if not self._started:
-            raise ApplicationNotStarted('BACnet stack not running - use startApp()')
-        #with self.this_application._lock:
-            #time.sleep(0.5)
-            #self.this_application._lock = True
+            raise ApplicationNotStarted(
+                'BACnet stack not running - use startApp()')
 
-        args = args.split()
-        log_debug(ReadProperty, "do_read %r", args)
+        args_split = args.split()
+        
+        self.log_title("Read property",args_split)
+                       
+        vendor_id = vendor_id
+        bacoid = bacoid
 
         try:
-            iocb = IOCB(self.build_rp_request(args, arr_index))     # build ReadProperty request
-            self.this_application.request_io(iocb)                  # pass to the BACnet stack
-            log_debug(ReadProperty,"    - iocb: %r", iocb)
+            # build ReadProperty request
+            iocb = IOCB(self.build_rp_request(
+                args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid))
+            # pass to the BACnet stack
+            deferred(self.this_application.request_io, iocb)
+            self._log.debug("{:<20} {!r}".format('iocb', iocb))
 
         except ReadPropertyException as error:
-            log_exception("exception: %r", error)                   # construction error
+            # construction error
+            self._log.exception("exception: {!r}".format(error))
 
         iocb.wait()             # Wait for BACnet response
 
@@ -105,12 +99,13 @@ class ReadProperty():
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, ReadPropertyACK):               # expecting an ACK
-                log_debug(ReadProperty,"    - not an ack")
+                self._log.warning("Not an ack, see debug for more infos.")
+                self._log.debug("Not an ack. | APDU : {} / {}".format((apdu, type(apdu))))
                 return
 
             # find the datatype
-            datatype = get_datatype(apdu.objectIdentifier[0], apdu.propertyIdentifier)
-            log_debug(ReadProperty,"    - datatype: %r", datatype)
+            datatype = get_datatype(
+                apdu.objectIdentifier[0], apdu.propertyIdentifier, vendor_id=vendor_id)
             if not datatype:
                 raise TypeError("unknown datatype")
 
@@ -122,31 +117,61 @@ class ReadProperty():
                     value = apdu.propertyValue.cast_out(datatype.subtype)
             else:
                 value = apdu.propertyValue.cast_out(datatype)
-            log_debug(ReadProperty,"    - value: %r", value)
 
+            self._log.info(
+                "{:<20} {:<20}".format(
+                'value',
+                'datatype'))
+            self._log.info(
+                "{!r:<20} {!r:<20}".format(
+                value,
+                datatype))
             return value
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
-            raise NoResponseFromController()
-    
-            # Share response with Queue
-#            data = None
-#            while True:
-#                try:
-#                    data, evt = self.this_application.ResponseQueue.get(
-#                        timeout=self._TIMEOUT)
-#                    evt.set()             
-#                    if data == 'err_seg':
-#                        raise SegmentationNotSupported
-#                    #self.this_application._lock = False
-#                    return data
-#                except SegmentationNotSupported:
-#                    raise
-#                except Empty as error:
-#                    #log_exception(ReadProperty, 'No response from controller')
-#                    #self.this_application._lock = False
-#                    raise NoResponseFromController()
+            apdu = iocb.ioError
+            reason = find_reason(apdu)
+            if reason == 'segmentationNotSupported':
+                self._log.warning(
+                    "Segmentation not supported... will read properties one by one...")
+                self._log.debug("The Request was : {}".format(args_split))
+                value = self._split_the_read_request(args, arr_index)
+                return value
+            else:
+                if reason == 'unknownProperty':
+                    self._log.warning('Unknown property {}'.format(args))
+                    if 'description' in args:
+                        return ''
+                    else:
+                        raise UnknownPropertyError(
+                            'Unknown property {}'.format(args))
+                elif reason == 'unknownObject':
+                    self._log.warning('Unknown object {}'.format(args))
+                    raise UnknownObjectError(
+                        'Unknown object {}'.format(args))
+                else:
+                    # Other error... consider NoResponseFromController (65)
+                    # even if the realy reason is another one
+                    raise NoResponseFromController(
+                        "APDU Abort Reason : {}".format(reason))
 
+    def _split_the_read_request(self, args, arr_index):
+        """
+        When a device doesn't support segmentation, this function
+        will split the request according to the length of the
+        predicted result which can be known when readin the array_index
+        number 0.
+
+        This can be a very long process as some devices count a large
+        number of properties without supporting segmentation
+        (FieldServers are a good example)
+        """
+        objlist = []
+        nmbr_obj = self.read(args, arr_index=0)
+        for i in range(1, nmbr_obj+1):
+            objlist.append(self.read(
+                args, arr_index=i))
+        return objlist
 
     def readMultiple(self, args):
         """ Build a ReadPropertyMultiple request, wait for the answer and return the values
@@ -157,27 +182,32 @@ class ReadProperty():
         *Example*::
 
             import BAC0
-            myIPAddr = '192.168.1.10'
-            bacnet = BAC0.ReadWriteScript(localIPAddr = myIPAddr)
+            myIPAddr = '192.168.1.10/24'
+            bacnet = BAC0.connect(ip = myIPAddr)
             bacnet.readMultiple('2:5 analogInput 1 presentValue units')
 
-        Requests the controller at (Network 2, address 5) for the (presentValue and units) of 
+        Requests the controller at (Network 2, address 5) for the (presentValue and units) of
         its analog input 1 (AI:1).
         """
         if not self._started:
-            raise ApplicationNotStarted('BACnet stack not running - use startApp()')
+            raise ApplicationNotStarted(
+                'BACnet stack not running - use startApp()')
 
         args = args.split()
         values = []
-        log_debug(ReadProperty, "readMultiple %r", args)
+
+        self.log_title("Read Multiple",args)
 
         try:
-            iocb = IOCB(self.build_rpm_request(args))               # build an ReadPropertyMultiple request
-            self.this_application.request_io(iocb)                  # pass to the BACnet stack
+            # build an ReadPropertyMultiple request
+            iocb = IOCB(self.build_rpm_request(args))
+            # pass to the BACnet stack
+            deferred(self.this_application.request_io, iocb)
+            self._log.debug("{:<20} {!r}".format('iocb', iocb))
 
         except ReadPropertyMultipleException as error:
-            log_exception("exception: %r", error)                   # construction error
-
+            # construction error
+            self._log.exception("exception: {!r}".format(error))
 
         iocb.wait()             # Wait for BACnet response
 
@@ -185,37 +215,45 @@ class ReadProperty():
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, ReadPropertyMultipleACK):       # expecting an ACK
-                log_debug(ReadProperty,"    - not an ack")
+                self._log.debug("{:<20}".format("not an ack"))
+                self._log.warning("Not an Ack. | APDU : {} / {}".format((apdu, type(apdu))))
                 return
 
             # loop through the results
             for result in apdu.listOfReadAccessResults:
                 # here is the object identifier
                 objectIdentifier = result.objectIdentifier
-                log_debug(ReadProperty,"    - objectIdentifier: %r", objectIdentifier)
+                               
+                self.log_subtitle('{!r} : {!r}'.format(objectIdentifier[0],objectIdentifier[1]), width=114)
+                self._log.info(
+                    "{:<20} {:<20} {:<30} {:<20}".format(
+                    'propertyIdentifier',
+                    'propertyArrayIndex',
+                    'value',
+                    'datatype'))
+                self._log.info(
+                    "-"*114)
 
                 # now come the property values per object
                 for element in result.listOfResults:
                     # get the property and array index
                     propertyIdentifier = element.propertyIdentifier
-                    log_debug(ReadProperty,"    - propertyIdentifier: %r", propertyIdentifier)
                     propertyArrayIndex = element.propertyArrayIndex
-                    log_debug(ReadProperty,"    - propertyArrayIndex: %r", propertyArrayIndex)
-
-                    readResult = element.readResult
-
-                    if propertyArrayIndex is not None:
-                        print("[" + str(propertyArrayIndex) + "]")
+                    
+                    readResult = element.readResult 
 
                     if readResult.propertyAccessError is not None:
-                        print(" ! " + str(readResult.propertyAccessError))
+                        self._log.debug('Property Access Error for {}'.format(
+                                readResult.propertyAccessError))
+                        values.append(None)
                     else:
                         # here is the value
                         propertyValue = readResult.propertyValue
 
                         # find the datatype
-                        datatype = get_datatype(objectIdentifier[0], propertyIdentifier)
-                        log_debug(ReadProperty,"    - datatype: %r", datatype)
+                        datatype = get_datatype(
+                            objectIdentifier[0], propertyIdentifier)
+
                         if not datatype:
                             raise TypeError("unknown datatype")
 
@@ -224,41 +262,47 @@ class ReadProperty():
                             if propertyArrayIndex == 0:
                                 value = propertyValue.cast_out(Unsigned)
                             else:
-                                value = propertyValue.cast_out(datatype.subtype)
+                                value = propertyValue.cast_out(
+                                    datatype.subtype)
                         else:
                             value = propertyValue.cast_out(datatype)
-                        log_debug(ReadProperty,"    - value: %r", value)
+                            
 
+                        self._log.info(
+                            "{!r:<20} {!r:<20} {!r:<30} {!r:<20}".format(
+                            propertyIdentifier,
+                            propertyArrayIndex,
+                            value,
+                            datatype))                        
                         values.append(value)
 
             return values
-                    
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
-            print("Error : ", (iocb.ioError.apduAbortRejectReason))
-            if iocb.ioError.apduAbortRejectReason == 9:
+            apdu = iocb.ioError
+            reason = find_reason(apdu)
+            self._log.warning("APDU Abort Reject Reason : {}".format(reason))
+            self._log.debug("The Request was : {}".format(args))
+            if reason == 'unrecognizedService':
                 raise UnrecognizedService()
+            elif reason == 'segmentationNotSupported':
+                raise SegmentationNotSupported()
+            elif reason == 'unknownObject':
+                self._log.warning('Unknown object {}'.format(args))
+                raise UnknownObjectError('Unknown object {}'.format(args))
+            elif reason == 'unknownProperty':
+                self._log.warning('Unknown property {}'.format(args))
+                values.append("")
+                return values
             else:
-                raise NoResponseFromController()
-    
-#            data = None
-#            while True:
-#                try:
-#                    data, evt = self.this_application.ResponseQueue.get(
-#                        timeout=self._TIMEOUT)
-#                    evt.set()
-#                    #self.this_application._lock = False
-#                    return data
-#                except SegmentationNotSupported:
-#                    raise
-#                except Empty:
-#                    print('No response from controller')
-#                    #self.this_application._lock = False
-#                    raise NoResponseFromController
-#                    #return None
-                
-    def build_rp_request(self, args, arr_index = None):
+                self._log.warning("No response from controller")
+                values.append("")
+                return values
+
+    def build_rp_request(self, args, arr_index=None, vendor_id=0, bacoid=None):
         addr, obj_type, obj_inst, prop_id = args[:4]
+        vendor_id = vendor_id
+        bacoid = bacoid
 
         if obj_type.isdigit():
             obj_type = int(obj_type)
@@ -267,7 +311,9 @@ class ReadProperty():
 
         obj_inst = int(obj_inst)
 
-        datatype = get_datatype(obj_type, prop_id)
+        if prop_id.isdigit():
+            prop_id = int(prop_id)
+        datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
         if not datatype:
             raise ValueError("invalid property for object type")
 
@@ -281,10 +327,9 @@ class ReadProperty():
 
         if len(args) == 5:
             request.propertyArrayIndex = int(args[4])
-        log_debug(ReadProperty, "    - request: %r", request)
-
-        return request              
-                
+        self._log.debug("{:<20} {!r}".format(
+            'REQUEST', request))
+        return request
 
     def build_rpm_request(self, args):
         """
@@ -320,8 +365,8 @@ class ReadProperty():
                     datatype = get_datatype(obj_type, prop_id)
                     if not datatype:
                         raise ValueError(
-                            "invalid property for object type : %s | %s" %
-                            (obj_type, prop_id))
+                            "invalid property for object type : {} | {}".format(
+                                (obj_type, prop_id)))
 
                 # build a property reference
                 prop_reference = PropertyReference(propertyIdentifier=prop_id)
@@ -339,7 +384,7 @@ class ReadProperty():
             # build a read access specification
             read_access_spec = ReadAccessSpecification(
                 objectIdentifier=(obj_type, obj_inst),
-                listOfPropertyReferences=prop_reference_list )
+                listOfPropertyReferences=prop_reference_list)
 
             read_access_spec_list.append(read_access_spec)
 
@@ -348,8 +393,26 @@ class ReadProperty():
                 "at least one read access specification required")
 
         # build the request
-        request = ReadPropertyMultipleRequest(listOfReadAccessSpecs=read_access_spec_list )
+        request = ReadPropertyMultipleRequest(
+            listOfReadAccessSpecs=read_access_spec_list)
         request.pduDestination = Address(addr)
-        log_debug(ReadProperty, "    - request: %r", request)
-
+        self._log.debug("{:<20} {!r}".format(
+            'REQUEST', request))
         return request
+
+
+def find_reason(apdu):
+    if apdu.pduType == RejectPDU.pduType:
+        reasons = RejectReason.enumerations
+    elif apdu.pduType == AbortPDU.pduType:
+        reasons = AbortReason.enumerations
+    else:
+        if apdu.errorCode and apdu.errorClass:
+            return '{}'.format(apdu.errorCode)
+        else:
+            raise ValueError('Cannot find reason...')
+    code = apdu.apduAbortRejectReason
+    try:
+        return [k for k, v in reasons.items() if v == code][0]
+    except IndexError:
+        return code

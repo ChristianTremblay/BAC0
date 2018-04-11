@@ -19,7 +19,7 @@ import socket
 import subprocess
 import ipaddress
 import sys
-
+import re
 
 class HostIP():
     """
@@ -77,7 +77,7 @@ class HostIP():
         """
         ip = ip
 
-        if 'win' in sys.platform:
+        if 'win32' in sys.platform:
             try:
                 proc = subprocess.Popen('ipconfig', stdout=subprocess.PIPE)
                 while True:
@@ -97,20 +97,17 @@ class HostIP():
             iface = "eth0"
             socket.inet_ntoa(fcntl.ioctl(socket.socket(socket.AF_INET, socket.SOCK_DGRAM), 35099, struct.pack('256s', iface))[20:24])
             """
+            pattern = re.compile(r"(255.\d{1,3}.\d{1,3}.\d{1,3})")
+
             try:
                 proc = subprocess.Popen('ifconfig', stdout=subprocess.PIPE)
                 while True:
                     line = proc.stdout.readline()
                     if ip.encode() in line:
                         break
-                mask = line.rstrip().split(
-                    b':')[-1].replace(b' ', b'').decode()
+                mask = re.findall(pattern,line.decode())[0]
             except:
                 mask = '255.255.255.255'
-
+        #self._log.debug('Mask found : %s' %  mask)
         return mask
 
-
-if __name__ == '__main__':
-    h = HostIP()
-    print(h.ip_address)

@@ -7,7 +7,7 @@ Test Read Property
 """
 
 from BAC0.core.io.Write import WriteProperty
-from BAC0.core.app.ScriptApplication import ScriptApplication
+from BAC0.core.app.ScriptApplication import SimpleApplication
 from BAC0.core.io.IOExceptions import WritePropertyException, WritePropertyCastError, NoResponseFromController, ApplicationNotStarted
 
 from mock import Mock, patch, call
@@ -26,7 +26,7 @@ from threading import Event, Lock
 from queue import Queue, Empty
 
 
-class TestScriptApplication(ScriptApplication):
+class TestSimpleApplication(SimpleApplication):
     """
     This class replaces the __init__ method for testing purposes.
     This way, we can mock the behaviour.
@@ -48,7 +48,7 @@ class TestWritePropertyClass(WriteProperty):
     """
 
     def __init__(self):
-        self.this_application = TestScriptApplication()
+        self.this_application = TestSimpleApplication()
         self.this_application._lock = Lock()
 
 
@@ -59,14 +59,14 @@ class TestWriteProperty(unittest.TestCase):
     # def setUp(self):
 
     @patch('BAC0.core.io.Read.ReadProperty.this_application.ResponseQueue.get')
-    @patch('BAC0.core.app.ScriptApplication.ScriptApplication.__init__')
+    @patch('BAC0.core.app.ScriptApplication.SimpleApplication.__init__')
     @patch('bacpypes.app.BIPSimpleApplication.__init__')
-    @patch('bacpypes.service.device.LocalDeviceObject')
+    @patch('bacpypes.local.device.LocalDeviceObject')
     @patch('BAC0.core.io.Read.ReadProperty')
     def setUp(self, mock_rp, mock_localDevice,
-              mock_BIPSimpleApplication, mock_ScriptApplication, mock_ResponseQueueGet):
+              mock_BIPSimpleApplication, mock_SimpleApplication, mock_ResponseQueueGet):
         self.req = '2:5 analogValue 1 presentValue 100 - 8'
-        mock_ScriptApplication.return_value = TestScriptApplication()
+        mock_SimpleApplication.return_value = TestSimpleApplication()
         mock_BIPSimpleApplication.return_value = None
         self.write_property = TestWritePropertyClass()
         self.write_property._started = True

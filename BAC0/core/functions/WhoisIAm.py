@@ -26,12 +26,13 @@ from bacpypes.object import get_object_class, get_datatype
 from bacpypes.iocb import IOCB
 
 #--- this application's modules ---
-from ..functions.debug import log_debug, log_exception
 from ..io.IOExceptions import SegmentationNotSupported, ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted
+from ...core.utils.notes import note_and_log
 
 #------------------------------------------------------------------------------
 
-@bacpypes_debugging
+
+@note_and_log
 class WhoisIAm():
     """
     Define BACnet WhoIs and IAm functions.
@@ -52,14 +53,14 @@ class WhoisIAm():
 
         """
         if not self._started:
-            raise ApplicationNotStarted('BACnet stack not running - use startApp()')
+            raise ApplicationNotStarted(
+                'BACnet stack not running - use startApp()')
 
         if args:
             args = args[0].split()
         msg = args if args else 'any'
 
-        log_debug(WhoisIAm, "do_whois %r" % msg)
-
+        self._log.debug("do_whois {!r}".format(msg))
 
         # build a request
         request = WhoIsRequest()
@@ -72,61 +73,23 @@ class WhoisIAm():
         if len(args) == 2:
             request.deviceInstanceRangeLowLimit = int(args[0])
             request.deviceInstanceRangeHighLimit = int(args[1])
-        log_debug(WhoisIAm, "    - request: %r" % request)
-
+        self._log.debug("{:>12} {}".format("- request:", request))
 
         iocb = IOCB(request)                            # make an IOCB
 
-        self.this_application.request_io(iocb)          # pass to the BACnet stack
+        # pass to the BACnet stack
+        self.this_application.request_io(iocb)
 
         iocb.wait()             # Wait for BACnet response
 
         if iocb.ioResponse:     # successful response
             apdu = iocb.ioResponse
-#            # should be an ack
-#            if not isinstance(apdu, IAmRequest) and not isinstance(apdu, WhoIsRequest):
-#                log_debug(WhoisIAm,"    - not an ack")
-#                return
-#            # find the datatype
-#            datatype = get_datatype(apdu.objectIdentifier[0], apdu.propertyIdentifier)
-#            log_debug(WhoisIAm,"    - datatype: %r", datatype)
-#            if not datatype:
-#                raise TypeError("unknown datatype")
-#                
-#            # special case for array parts, others are managed by cast_out
-#            if issubclass(datatype, Array) and (apdu.propertyArrayIndex is not None):
-#                if apdu.propertyArrayIndex == 0:
-#                    value = apdu.propertyValue.cast_out(Unsigned)
-#                else:
-#                    value = apdu.propertyValue.cast_out(datatype.subtype)
-#            else:
-#                value = apdu.propertyValue.cast_out(datatype)
-#            log_debug(WhoisIAm,"    - value: %r", value)
-#                
-#            if isinstance(apdu, IAmRequest):
-#                # build a key from the source, just use the instance number
-#                key = (str(apdu.pduSource),
-#                       apdu.iAmDeviceIdentifier[1],)
-#                # count the times this has been received
-#                self.i_am_counter[key] += 1
-#    
-#            # Given an Who Is request, cache it.
-#            if isinstance(apdu, WhoIsRequest):
-#                # build a key from the source and parameters
-#                key = (str(apdu.pduSource),
-#                       apdu.deviceInstanceRangeLowLimit,
-#                       apdu.deviceInstanceRangeHighLimit,
-#                       )
-#
-#            # count the times this has been received
-#            self.who_is_counter[key] += 1
 
         if iocb.ioError:        # unsuccessful: error/reject/abort
             pass
 
         self.discoveredDevices = self.this_application.i_am_counter
         return self.discoveredDevices
-
 
     def iam(self):
         """
@@ -141,7 +104,7 @@ class WhoisIAm():
             iam()
         """
 
-        log_debug(WhoisIAm, "do_iam")
+        self._log.debug("do_iam")
 
         try:
             # build a response
@@ -153,12 +116,13 @@ class WhoisIAm():
             request.maxAPDULengthAccepted = self.this_device.maxApduLengthAccepted
             request.segmentationSupported = self.this_device.segmentationSupported
             request.vendorID = self.this_device.vendorIdentifier
-            log_debug(WhoisIAm, "    - request: %r" % request)
+            self._log.debug("{:>12} {}".format("- request:", request))
 
-            iocb = self.this_application.request(request)       # pass to the BACnet stack
+            iocb = self.this_application.request(
+                request)       # pass to the BACnet stack
             iocb.wait()
             return True
 
         except Exception as error:
-            log_exception("exception: %r" % error)
+            self._log.error("exception: {!r}".format(error))
             return False
