@@ -21,6 +21,7 @@ Table of contents
    histories
    trending
    savedevice
+   webinterface
    jupyter
    tests
    pytest

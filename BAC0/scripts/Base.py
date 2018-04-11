@@ -129,14 +129,16 @@ class Base():
 
                 self.this_application = ForeignDeviceApplication(self.this_device, self.localIPAddr,
                                                                  bbmdAddress=self.bbmdAddress, bbmdTTL=self.bbmdTTL)
+                app_type = 'Foreign Device'
             else:
                 self.this_application = SimpleApplication(
                     self.this_device, self.localIPAddr)
-
+                app_type = 'Simple BACnet/IP App'
             self._log.debug("Starting")
             self._initialized = True
             try:
                 self._startAppThread()
+                print("Registered as {}".format(app_type))
             except:
                 self._log.warning("Error opening socket")
                 raise
