@@ -75,6 +75,19 @@ class Stats_Mixin():
             series.append(
                 len(self.network_stats['mstp_map'][each])/total * 100)
         return (labels, series, series_pct)
+    
+    def print_list(self,lst):
+            s = ''
+            try:
+                s = s + lst[0]
+            except IndexError:
+                return s
+            try:
+                for each in lst[1:]:
+                    s = s + ', ' + each
+            except IndexError:
+                pass
+            return s
 
     @property
     def network_stats(self):
@@ -111,8 +124,9 @@ class Stats_Mixin():
         statistics['number_of_devices'] = self.number_of_devices
         statistics['number_of_registered_devices'] = len(
             self.registered_devices)
-        statistics['print_mstpnetworks'] = print_list(mstpnetworks)
+        statistics['print_mstpnetworks'] = self.print_list(mstpnetworks)
         return statistics
+
 
 
 @note_and_log
@@ -182,7 +196,7 @@ class Complete(Lite, Stats_Mixin):
                 network=self, port=self.flask_port, ip=self.localIPAddr)
             self.bk_worker.start()
             self.bokehserver = True
-            print('Server started : http://localhost:{}'.format(self.flask_port))
+            print('Server started : http://{}:{}'.format(self.localIPAddr,self.flask_port))
 
         except OSError as error:
             self.bokehserver = False
