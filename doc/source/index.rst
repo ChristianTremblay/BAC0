@@ -16,6 +16,8 @@ Table of contents
    
    getstarted
    connect
+   controllers
+   proprietary_objects
    histories
    trending
    savedevice
