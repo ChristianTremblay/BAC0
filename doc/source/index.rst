@@ -16,7 +16,7 @@ Table of contents
    
    getstarted
    connect
-   controllers
+   controller
    proprietary_objects
    histories
    trending
@@ -24,6 +24,7 @@ Table of contents
    jupyter
    tests
    pytest
+   logging
 
 
 Developer documentation
