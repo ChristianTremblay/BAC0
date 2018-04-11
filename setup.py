@@ -2,7 +2,7 @@
 Setup.py
 """
 from setuptools import setup
-import BAC0.infos as infos
+from BAC0 import infos
 
 requirements = [
     'bacpypes',
