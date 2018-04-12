@@ -80,16 +80,9 @@ def note_and_log(cls):
     the argument log=false to function note()
     Something can be logged without addind a note using function log()
     """
-    if hasattr(cls, 'DEBUG_LEVEL'):
-        if cls.DEBUG_LEVEL == 'debug':
-            file_level = logging.DEBUG
-            console_level = logging.DEBUG
-        elif cls.DEBUG_LEVEL == 'info':
-            file_level = logging.INFO
-            console_level = logging.INFO
-    else:
-        file_level = logging.INFO
-        console_level = logging.WARNING
+
+    file_level = logging.WARNING
+    console_level = logging.WARNING
     # Notes object
     cls._notes = namedtuple('_notes', ['timestamp', 'notes'])
     cls._notes.timestamp = []
@@ -98,6 +91,7 @@ def note_and_log(cls):
     # Defining log object
     cls.logname = '{} | {}'.format(cls.__module__, cls.__name__)
     root_logger = logging.getLogger()
+    root_logger.setLevel(logging.CRITICAL)
     cls._log = logging.getLogger('BAC0')
     if not len(root_logger.handlers):
         root_logger.addHandler(cls._log)

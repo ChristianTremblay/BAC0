@@ -28,7 +28,8 @@ except ImportError:
 #--- this application's modules ---
 from ...tasks.Poll import SimplePoll as Poll
 from ...tasks.Match import Match, Match_Value
-from ..io.IOExceptions import NoResponseFromController
+from ..io.IOExceptions import NoResponseFromController, UnknownPropertyError
+
 
 #------------------------------------------------------------------------------
 
@@ -47,6 +48,7 @@ class PointProperties(object):
         self.units_state = None
         self.simulated = (False, None)
         self.overridden = (False, None)
+        self.priority_array = None
 
     def __repr__(self):
         return '%s' % self.asdict
@@ -110,6 +112,54 @@ class Point():
                 'Problem reading : {}'.format(self.properties.name))
 
         return res
+    
+    def read_priority_array(self):
+        """
+        Retrieve priority array of the point
+        """
+        if self.properties.priority_array != False:
+            try:
+                res = self.properties.device.properties.network.read('{} {} {} priorityArray'.format(
+                    self.properties.device.properties.address, self.properties.type, str(self.properties.address)))
+                self.properties.priority_array = res
+            except (ValueError, UnknownPropertyError):
+                self.properties.priority_array = False
+            except Exception:
+                raise Exception(
+                    'Problem reading : {}'.format(self.properties.name))
+   
+    
+    @property
+    def is_overridden(self):
+        self.read_priority_array()  
+        if self.properties.priority_array == False:
+            return False      
+        if self.priority(8) or self.priority(1):
+            self.properties.overridden = (True, self.value)
+            return True
+        else:
+            return False
+   
+    def priority(self, priority=None):
+        if self.properties.priority_array == False:
+            return None
+
+        self.read_priority_array()
+        if not priority:
+            return self.properties.priority_array.debug_contents()
+        if priority < 1 or priority > 16:
+            raise IndexError('Please provide priority to read (1-16)')
+
+        else:
+            pa = self.properties.priority_array.value[priority]
+            try:
+                key, value = zip(*pa.dict_contents().items())
+                if key[0] == 'null':
+                    return None
+                else:
+                    return (key[0], value[0])
+            except ValueError:
+                return None
 
     def _trend(self, res):
         self._history.timestamp.append(datetime.now())
@@ -257,6 +307,11 @@ class Point():
     def auto(self):
         self.write('null', priority=8)
         self.properties.overridden = (False, 0)
+
+    def release_ovr(self):
+        self.write('null', priority=1)
+        self.write('null', priority=8)
+        self.properties.overridden = (False, None)
 
     def _setitem(self, value):
         """

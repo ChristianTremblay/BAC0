@@ -306,6 +306,19 @@ class Device(SQLMixin):
         :rtype: BAC0.core.devices.Point.Point (NumericPoint, EnumPoint or BooleanPoint)
         """
         raise NotImplementedError()
+        
+    def find_overrides(self):
+        lst = []
+        def _find_overrides():
+            self._log.warning('Overrides are being checked, wait for completion message.')
+            for point in self.points:
+                if point.is_overridden:
+                    lst.append(point)
+            self._log.warning('Override check ready, results available in device.properties.points_overridden')
+            self.properties.points_overridden = lst
+            
+        self.do(_find_overrides)
+        
 
     def do(self, func):
         DoOnce(func).start()

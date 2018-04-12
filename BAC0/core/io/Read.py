@@ -139,7 +139,10 @@ class ReadProperty():
                 return value
             else:
                 if reason == 'unknownProperty':
-                    self._log.warning('Unknown property {}'.format(args))
+                    if 'priorityArray' in args:
+                        self._log.debug('Unknown property {}'.format(args))
+                    else:
+                        self._log.warning('Unknown property {}'.format(args))
                     if 'description' in args:
                         return ''
                     else:
