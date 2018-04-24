@@ -118,11 +118,11 @@ class ReadProperty():
             else:
                 value = apdu.propertyValue.cast_out(datatype)
 
-            self._log.info(
+            self._log.debug(
                 "{:<20} {:<20}".format(
                 'value',
                 'datatype'))
-            self._log.info(
+            self._log.debug(
                 "{!r:<20} {!r:<20}".format(
                 value,
                 datatype))
@@ -228,13 +228,13 @@ class ReadProperty():
                 objectIdentifier = result.objectIdentifier
                                
                 self.log_subtitle('{!r} : {!r}'.format(objectIdentifier[0],objectIdentifier[1]), width=114)
-                self._log.info(
+                self._log.debug(
                     "{:<20} {:<20} {:<30} {:<20}".format(
                     'propertyIdentifier',
                     'propertyArrayIndex',
                     'value',
                     'datatype'))
-                self._log.info(
+                self._log.debug(
                     "-"*114)
 
                 # now come the property values per object
@@ -271,7 +271,7 @@ class ReadProperty():
                             value = propertyValue.cast_out(datatype)
                             
 
-                        self._log.info(
+                        self._log.debug(
                             "{!r:<20} {!r:<20} {!r:<30} {!r:<20}".format(
                             propertyIdentifier,
                             propertyArrayIndex,

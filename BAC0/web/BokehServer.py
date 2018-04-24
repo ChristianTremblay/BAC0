@@ -46,7 +46,7 @@ class Bokeh_Worker(Thread):
         try:
             self.startServer()
         except Exception as err:
-            print('Bokeh server already running', err)
+            self._log.warning('Bokeh server already running', err)
             self.exitFlag = True
 
     def stop(self):

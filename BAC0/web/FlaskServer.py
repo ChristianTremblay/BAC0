@@ -145,11 +145,11 @@ class FlaskServer(Thread):
         try:
             self.startServer()
         except Exception as err:
-            print('Flask server already running', err)
+            self._log.warning('Flask server already running', err)
             self.exitFlag = True
 
     def stop(self):
-        print('Trying to stop Bokeh Server')
+        self._log.debug('Trying to stop Bokeh Server')
         # self.bokeh_server.stop()
         self.p.terminate()
         self.exitFlag = True

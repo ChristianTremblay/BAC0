@@ -58,7 +58,7 @@ class HostIP():
         try:
             s.connect(('google.com', 0))
             addr = s.getsockname()[0]
-            print('Using ip : {addr}'.format(addr=addr))
+            #print('Using ip : {addr}'.format(addr=addr))
             s.close()
         except socket.error:
             raise NetworkInterfaceException(

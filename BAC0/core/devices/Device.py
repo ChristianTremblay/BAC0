@@ -64,6 +64,7 @@ class DeviceProperties(object):
         self.multistates = None
         self.db_name = None
         self.segmentation_supported = True
+        self.history_size = None
 
     def __repr__(self):
         return '%s' % self.asdict
@@ -113,8 +114,8 @@ class Device(SQLMixin):
     def __init__(self, address, device_id, network, *, poll=10,
                  from_backup=None, segmentation_supported=True,
                  object_list=None, auto_save=False,
-                 clear_history_on_save=False):
-
+                 clear_history_on_save=False, history_size=None):
+        
         self.properties = DeviceProperties()
 
         self.properties.address = address
@@ -127,6 +128,7 @@ class Device(SQLMixin):
         self.properties.multistates = {}
         self.properties.auto_save = auto_save
         self.properties.clear_history_on_save = clear_history_on_save
+        self.properties.history_size = history_size
 
         self.segmentation_supported = segmentation_supported
         self.custom_object_list = object_list
@@ -140,6 +142,10 @@ class Device(SQLMixin):
         self._polling_task = namedtuple('_polling_task', ['task', 'running'])
         self._polling_task.task = None
         self._polling_task.running = False
+
+        self._find_overrides_running = False
+        self._release_overrides_running = False
+
 
         self.note("Controller initialized")
 
@@ -161,7 +167,7 @@ class Device(SQLMixin):
         Used to make transitions between device states.
         Take care to call the state init function.
         """
-        self._log.info('Changing device state to {}'.format(newstate))
+        self._log.info('Changing device state to {}'.format(str(newstate).split('.')[-1]))
         self.__class__ = newstate
         self._init_state()
 
@@ -275,6 +281,11 @@ class Device(SQLMixin):
     def clear_histories(self):
         for point in self.points:
             point.clear_history()
+            
+    def update_history_size(self, size):
+        self.properties.history_size = size
+        for point in self.points:
+            point.properties.history_size = size
 
     @property
     def analog_units(self):
@@ -307,19 +318,57 @@ class Device(SQLMixin):
         """
         raise NotImplementedError()
         
-    def find_overrides(self):
+    def find_overrides(self, force=False):
+        if self._find_overrides_running and not force:
+            self._log.warning('Already running ({:.1%})... please wait.'.format(self._find_overrides_progress))
+            return
         lst = []
+        self._find_overrides_progress = 0
+        self._find_overrides_running = True
+        total = len(self.points)
         def _find_overrides():
             self._log.warning('Overrides are being checked, wait for completion message.')
-            for point in self.points:
+            for idx, point in enumerate(self.points):
                 if point.is_overridden:
                     lst.append(point)
+                self._find_overrides_progress = (idx/total)
             self._log.warning('Override check ready, results available in device.properties.points_overridden')
             self.properties.points_overridden = lst
+            self._find_overrides_running = False
+            self._find_overrides_progress = 1
             
         self.do(_find_overrides)
         
-
+    def find_overrides_progress(self):
+        return self._find_overrides_progress
+    
+    def release_all_overrides(self, force=False):
+        if self._release_overrides_running and not force:
+            self._log.warning('Already running ({:.1%})... please wait.'.format(self._release_overrides_progress))
+            return        
+        self._release_overrides_running = True
+        self._release_overrides_progress = 0
+        def _release_all_overrides():
+            self.find_overrides()
+            while self._find_overrides_running:
+                self._release_overrides_progress = self._find_overrides_progress * 0.5
+            
+            if self.properties.points_overridden:
+                total = len(self.properties.points_overridden)
+                self._log.info('=================================')
+                self._log.info('Overrides found... releasing them')
+                self._log.info('=================================')
+                for idx, point in enumerate(self.properties.points_overridden):
+                    self._log.info('Releasing {}'.format(point))
+                    point.release_ovr()
+                    self._release_overrides_progress = (idx/total)/2 + 0.5
+            else:
+                self._log.info('No override found')
+            
+            self._release_overrides_running = False
+            self._release_overrides_progress = 1
+        self.do(_release_all_overrides)
+        
     def do(self, func):
         DoOnce(func).start()
 
@@ -406,6 +455,9 @@ class DeviceConnected(Device):
         except NoResponseFromController as error:
             self._log.error('Cannot retrieve object list, disconnecting...')
             self.segmentation_supported = False
+            self.new_state(DeviceDisconnected)
+        except IndexError as error:
+            self._log.error('Device creation failed... disconnecting')
             self.new_state(DeviceDisconnected)
 
     def __getitem__(self, point_name):
@@ -752,7 +804,7 @@ class DeviceFromDB(DeviceConnected):
         self.properties.serving_chart = {}
         self.properties.charts = []
         self.properties.multistates = self._props['multistates']
-        print('Device restored from db')
+        self._log.info('Device restored from db')
 
     @property
     def simulated_points(self):

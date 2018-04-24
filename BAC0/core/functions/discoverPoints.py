@@ -44,7 +44,7 @@ def discoverPoints(bacnetapp, address, devID):
     pss = bacnetapp.read('{} device {} protocolServicesSupported'.format(address, devID))
     deviceName = bacnetapp.read('{} device {} objectName'.format(address, devID))
 
-    print('Device {}- building points list'.format(deviceName))
+    #print('Device {}- building points list'.format(deviceName))
     objList = bacnetapp.read('{} device {] objectList'.format(address, devID))
 
     newLine = []
@@ -96,5 +96,5 @@ def discoverPoints(bacnetapp, address, devID):
     else:
         df = result
         
-    print('Ready!')
+    #print('Ready!')
     return (deviceName, pss, objList, df, points)

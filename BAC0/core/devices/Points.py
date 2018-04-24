@@ -29,6 +29,7 @@ except ImportError:
 from ...tasks.Poll import SimplePoll as Poll
 from ...tasks.Match import Match, Match_Value
 from ..io.IOExceptions import NoResponseFromController, UnknownPropertyError
+from ..utils.notes import note_and_log
 
 
 #------------------------------------------------------------------------------
@@ -49,6 +50,7 @@ class PointProperties(object):
         self.simulated = (False, None)
         self.overridden = (False, None)
         self.priority_array = None
+        self.history_size = None
 
     def __repr__(self):
         return '%s' % self.asdict
@@ -59,7 +61,7 @@ class PointProperties(object):
 
 #------------------------------------------------------------------------------
 
-
+@note_and_log
 class Point():
     """
     Represents a device BACnet point.  Used to NumericPoint, BooleanPoint and EnumPoints.
@@ -70,7 +72,8 @@ class Point():
 
     def __init__(self, device=None,
                  pointType=None,    pointAddress=None,  pointName=None,
-                 description=None,  presentValue=None,  units_state=None):
+                 description=None,  presentValue=None,  units_state=None,
+                 history_size=None):
 
         self._history = namedtuple('_history', ['timestamp', 'value'])
         self.properties = PointProperties()
@@ -87,6 +90,7 @@ class Point():
         self._history.value = []
         self._history.value.append(presentValue)
         self._history.timestamp.append(datetime.now())
+        self.history_size = history_size
 
         self.properties.device = device
         self.properties.name = pointName
@@ -164,6 +168,18 @@ class Point():
     def _trend(self, res):
         self._history.timestamp.append(datetime.now())
         self._history.value.append(res)
+        if self.properties.history_size == None:
+            return
+        else:
+            if self.properties.history_size < 1:
+                self.properties.history_size = 1
+            if len(self._history.timestamp) >= self.properties.history_size:
+                try:
+                    self._history.timestamp = self._history.timestamp[-self.properties.history_size:]
+                    self._history.value = self._history.value[-self.properties.history_size:]
+                    assert len(self._history.timestamp) == len(self._history.value)
+                except Exception as e:
+                    self._log.exception("Can't append to history")
 
     @property
     def units(self):
@@ -455,11 +471,13 @@ class NumericPoint(Point):
 
     def __init__(self, device=None,
                  pointType=None,    pointAddress=None,  pointName=None,
-                 description=None,  presentValue=None,  units_state=None):
+                 description=None,  presentValue=None,  units_state=None,
+                 history_size=None):
 
         Point.__init__(self, device=device,
                        pointType=pointType,     pointAddress=pointAddress,  pointName=pointName,
-                       description=description, presentValue=presentValue,  units_state=units_state)
+                       description=description, presentValue=presentValue,  units_state=units_state,
+                       history_size=history_size)
 
     @property
     def units(self):
@@ -518,11 +536,13 @@ class BooleanPoint(Point):
 
     def __init__(self, device=None,
                  pointType=None,    pointAddress=None,  pointName=None,
-                 description=None,  presentValue=None,  units_state=None):
+                 description=None,  presentValue=None,  units_state=None,
+                 history_size=None):
 
         Point.__init__(self, device=device,
                        pointType=pointType,     pointAddress=pointAddress,  pointName=pointName,
-                       description=description, presentValue=presentValue,  units_state=units_state)
+                       description=description, presentValue=presentValue,  units_state=units_state,
+                       history_size=history_size)
 
     @property
     def value(self):
@@ -602,11 +622,13 @@ class EnumPoint(Point):
 
     def __init__(self, device=None,
                  pointType=None,    pointAddress=None,  pointName=None,
-                 description=None,  presentValue=None,  units_state=None):
+                 description=None,  presentValue=None,  units_state=None,
+                 history_size=None):
 
         Point.__init__(self, device=device,
                        pointType=pointType,     pointAddress=pointAddress,  pointName=pointName,
-                       description=description, presentValue=presentValue,  units_state=units_state)
+                       description=description, presentValue=presentValue,  units_state=units_state,
+                       history_size=history_size)
 
     @property
     def enumValue(self):

@@ -196,7 +196,7 @@ class Complete(Lite, Stats_Mixin):
                 network=self, port=self.flask_port, ip=self.localIPAddr)
             self.bk_worker.start()
             self.bokehserver = True
-            print('Server started : http://{}:{}'.format(self.localIPAddr,self.flask_port))
+            self._log.info('Server started : http://{}:{}'.format(self.localIPAddr,self.flask_port))
 
         except OSError as error:
             self.bokehserver = False

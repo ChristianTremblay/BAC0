@@ -138,7 +138,7 @@ class Base():
             self._initialized = True
             try:
                 self._startAppThread()
-                print("Registered as {}".format(app_type))
+                self._log.info("Registered as {}".format(app_type))
             except:
                 self._log.warning("Error opening socket")
                 raise
@@ -159,7 +159,7 @@ class Base():
         """
         Stop the BACnet stack.  Free the IP socket.
         """
-        print('Stopping BACnet stack')
+        self._log.debug('Stopping BACnet stack')
         # Freeing socket
         try:
             self.this_application.mux.directPort.handle_close()
@@ -170,7 +170,7 @@ class Base():
         self._stopped = True        # Stop stack thread
         self.t.join()
         self._started = False
-        print('BACnet stopped')
+        self._log.info('BACnet stopped')
 
     def _startAppThread(self):
         """

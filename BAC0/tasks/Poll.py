@@ -73,10 +73,16 @@ class DevicePoll(Task):
         return self._device()
 
     def task(self):
-        self.device.read_multiple(list(self.device.points_name), points_per_request=25)
-        self._counter += 1
-        if self._counter == self.device.properties.auto_save:
-            self.device.save()
-            if self.device.properties.clear_history_on_save:
-                self.device.clear_histories()
-            self._counter = 0
+        try:
+            self.device.read_multiple(list(self.device.points_name), points_per_request=25)
+            self._counter += 1
+            if self._counter == self.device.properties.auto_save:
+                self.device.save()
+                if self.device.properties.clear_history_on_save:
+                    self.device.clear_histories()
+                self._counter = 0
+        except AttributeError:
+            # This error can be seen when defining a controller on a busy network...
+            # When creation fail, polling is created and fail the first time...
+            # So kill the task
+            self.stop()
