@@ -63,7 +63,7 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
 
     def __init__(self, ip=None, bbmdAddress=None, bbmdTTL=0):
         self._log.info("Starting BAC0 version {} ({})".format(
-              version, self.__module__.split('.')[-1]))
+            version, self.__module__.split('.')[-1]))
         self._log.debug("Configurating app")
         self._registered_devices = weakref.WeakValueDictionary()
         if ip is None:
@@ -139,8 +139,10 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
                 deviceName, vendorName = self.readMultiple(
                     '{} device {} objectName vendorName'.format(device[0], device[1]))
             except UnrecognizedService:
+                print(device[0])
+                print(device[1])
                 deviceName = self.read(
-                    '{} device {} objectName'.format((device[0], device[1])))
+                    '{} device {} objectName'.format(device[0], device[1]))
                 vendorName = self.read(
                     '{} device {} vendorName'.format(device[0], device[1]))
             except NoResponseFromController:
@@ -148,8 +150,8 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
         return lst
-    
-    def find_devices_on_network(self,net=None):
+
+    def find_devices_on_network(self, net=None):
         d = {}
         networks = set()
         all_devices = self.whois()
