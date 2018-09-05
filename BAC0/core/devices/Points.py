@@ -708,8 +708,8 @@ class OfflinePoint(Point):
 class NumericPointOffline(NumericPoint):
     @property
     def history(self):
-        his = sql.read_sql('select * from "{}"'.format(
-            'history', self.properties.device.db))
+        his = self.properties.device._read_from_sql('select * from "{}"'.format(
+            'history'),self.properties.device.properties.db_name)
         his.index = his['index'].apply(Timestamp)
         return his.set_index('index')[self.properties.name]
 
@@ -747,8 +747,8 @@ class NumericPointOffline(NumericPoint):
 class BooleanPointOffline(BooleanPoint):
     @property
     def history(self):
-        his = sql.read_sql('select * from "{}"'.format(
-            'history', self.properties.device.db))
+        his = self.properties.device._read_from_sql('select * from "{}"'.format(
+            'history'),self.properties.device.properties.db_name)
         his.index = his['index'].apply(Timestamp)
         return his.set_index('index')[self.properties.name]
 
@@ -776,8 +776,8 @@ class BooleanPointOffline(BooleanPoint):
 class EnumPointOffline(EnumPoint):
     @property
     def history(self):
-        his = sql.read_sql('select * from "{}"'.format(
-            'history', self.properties.device.db))
+        his = self.properties.device._read_from_sql('select * from "{}"'.format(
+            'history'),self.properties.device.properties.db_name)
         his.index = his['index'].apply(Timestamp)
         return his.set_index('index')[self.properties.name]
 

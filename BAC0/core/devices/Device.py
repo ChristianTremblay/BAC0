@@ -133,7 +133,7 @@ class Device(SQLMixin):
         self.segmentation_supported = segmentation_supported
         self.custom_object_list = object_list
 
-        self.db = None
+        #self.db = None
         # Todo : find a way to normalize the name of the db
         self.properties.db_name = ''
 
@@ -612,8 +612,8 @@ class DeviceDisconnected(Device):
         Attempt to connect to device.  If unable, attempt to connect to a controller database  
         (so the user can use previously saved data).
         """
-        if db:
-            self.properties.db_name = db
+#        if db:
+#            self.properties.db_name = db
         try:
             name = self.properties.network.read('{} device {} objectName'.format(
                 self.properties.address, self.properties.device_id))
@@ -765,7 +765,7 @@ class DeviceFromDB(DeviceConnected):
                         self.new_state(RPMDeviceConnected)
                     else:
                         self.new_state(RPDeviceConnected)
-                    self.db.close()
+                    #self.db.close()
 
             except NoResponseFromController:
                 self._log.error('Unable to connect, keeping DB mode active')
@@ -786,10 +786,9 @@ class DeviceFromDB(DeviceConnected):
         network = self.properties.network
         pss = self.properties.pss
 
-        self.db = sqlite3.connect('%s.db' % (self.properties.db_name))
         self._props = self.read_dev_prop(self.properties.db_name)
         self.points = []
-        for point in self.points_from_sql(self.db):
+        for point in self.points_from_sql(self.properties.db_name):
             self.points.append(OfflinePoint(self, point))
 
         self.properties = DeviceProperties()
@@ -805,6 +804,7 @@ class DeviceFromDB(DeviceConnected):
         self.properties.charts = []
         self.properties.multistates = self._props['multistates']
         self._log.info('Device restored from db')
+        self._log.info('You can reconnect to network using : "device.connect(network=bacnet"')
 
     @property
     def simulated_points(self):

@@ -14,6 +14,7 @@ import os.path
 
 #--- 3rd party modules ---
 import sqlite3
+import contextlib
 
 try:
     import pandas as pd
@@ -35,13 +36,20 @@ class SQLMixin(object):
     database, you can work with the device's data while offline, or while the device 
     is not available. 
     """
+    
+    def _read_from_sql(self,request,db_name):
+        """
+        Using the contextlib, I hope to close the connection to database when
+        not in use
+        """
+        with contextlib.closing(sqlite3.connect('{}.db'.format(db_name))) as con:
+            return sql.read_sql(sql=request, con=con) 
+                
 
     def dev_properties_df(self):
         dic = self.properties.asdict.copy()
-        #dic.pop('charts', None)
         dic.pop('network', None)
         dic.pop('pss', None)
-        #dic.pop('serving_chart', None)
         return dic
         
     
@@ -52,7 +60,6 @@ class SQLMixin(object):
         pprops = {}
         for each in self.points:
             p = each.properties.asdict.copy()
-            #p.pop('charts', None)
             p.pop('device', None)
             p.pop('network', None)
             p.pop('simulated', None)
@@ -87,14 +94,12 @@ class SQLMixin(object):
         if filename:
             self.properties.db_name = filename
         else:
-            self.properties.db_name = self.properties.name
+            self.properties.db_name = '{}'.format(self.properties.name)
             
         # Does file exist? If so, append data
-        if os.path.isfile('%s.db' % (self.properties.db_name)):
-            #print('File exists, appending data...')
-
-            db = sqlite3.connect('%s.db' % (self.properties.db_name))
-            his = sql.read_sql('select * from "%s"' % 'history', db)  
+        if os.path.isfile('{}.db'.format(self.properties.db_name)):
+            db = sqlite3.connect('{}.db'.format(self.properties.db_name))
+            his = sql.read_sql('select * from "{}"'.format('history'), db)  
             his.index = his['index'].apply(Timestamp)
             last = his.index[-1]
             df_to_backup = self.backup_histories_df()[last:]
@@ -104,7 +109,7 @@ class SQLMixin(object):
             self._log.debug('Creating a new backup database')
             df_to_backup = self.backup_histories_df()
         
-        cnx = sqlite3.connect('%s.db' % (self.properties.db_name))
+        cnx = sqlite3.connect('{}.db'.format(self.properties.db_name))
     
         # DataFrames that will be saved to SQL
         sql.to_sql(df_to_backup, name='history', con=cnx, index_label = 'index', index = True, if_exists = 'append')
@@ -112,34 +117,34 @@ class SQLMixin(object):
         prop_backup = {}
         prop_backup['device'] = self.dev_properties_df()
         prop_backup['points'] = self.points_properties_df()
-        with open( "%s.bin"  % self.properties.db_name, "wb" ) as file:
+        with open( "{}.bin".format(self.properties.db_name), "wb" ) as file:
             pickle.dump(prop_backup, file)
                 
-        #print('%s saved to disk' % self.properties.db_name)
+        self._log.info('Device saved to {}.db'.format(self.properties.db_name))
         
 
-    def points_from_sql(self, db):
+    def points_from_sql(self, db_name):
         """
         Retrieve point list from SQL database
         """
-        points = sql.read_sql("SELECT * FROM history;", db) 
+        points = self._read_from_sql("SELECT * FROM history;", db_name) 
         return list(points.columns.values)[1:]
         
 
-    def his_from_sql(self, db, point):
+    def his_from_sql(self, db_name, point):
         """
         Retrive point histories from SQL database
         """
-        his = sql.read_sql('select * from "%s"' % 'history', db)  
+        his = self._read_from_sql('select * from "%s"' % 'history', db_name)  
         his.index = his['index'].apply(Timestamp)
         return his.set_index('index')[point]
         
 
-    def value_from_sql(self, db, point):
+    def value_from_sql(self, db_name, point):
         """
         Take last known value as the value
         """
-        return self.his_from_sql(db, point).last_valid_index()          
+        return self.his_from_sql(db_name, point).last_valid_index()          
         
 
     def read_point_prop(self, device_name, point):
@@ -154,6 +159,6 @@ class SQLMixin(object):
         """
         Device properties retrieved from pickle
         """
-        with open( "%s.bin" % device_name, "rb" ) as file:
+        with open( "{}.bin".format(device_name), "rb" ) as file:
             return pickle.load(file)['device']            
     
