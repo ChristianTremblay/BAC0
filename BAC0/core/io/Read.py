@@ -145,6 +145,10 @@ class ReadProperty():
                         self._log.warning('Unknown property {}'.format(args))
                     if 'description' in args:
                         return ''
+                    elif 'inactiveText' in args:
+                        return 'Off'
+                    elif 'activeText' in args:
+                        return 'On'
                     else:
                         raise UnknownPropertyError(
                             'Unknown property {}'.format(args))

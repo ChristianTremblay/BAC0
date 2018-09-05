@@ -34,9 +34,20 @@ Example ::
     cheat sheet [https://github.com/pandas-dev/pandas/blob/master/doc/cheatsheet/Pandas_Cheat_Sheet.pdf] and 
     the pandas website [http://pandas.pydata.org/].
 
+History Size
+--------------
+By default, BAC0 doesn't provide a history_size per points (number of receords). But it could be 
+useful in certain cases when the script will run for a long period of time and you want to keep
+control over memory ::
+
+    dev = BAC0.device('2:4',4,bacnet,history_size=2)
+    # or after...
+    dev.update_history_size(100)
+    # or just on one point : 
+    dev['point'].properties.history_size = 30
 
 Resampling data
----------------
+--------------- 
 One common task associated with point histories is preparing it for use with other tools.
 This usually involves (as a first step) changing the frequency of the data samples - called 
 **resampling** in pandas terminology.

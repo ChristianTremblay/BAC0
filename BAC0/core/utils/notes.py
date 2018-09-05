@@ -38,7 +38,7 @@ def convert_level(level):
         level = logging.CRITICAL
     return level
 
-def update_log_level(file, stderr = None, stdout = None):
+def update_log_level(level=None,*,file=None, stderr = None, stdout = None):
     """
     Typical usage : 
         Normal
@@ -48,6 +48,10 @@ def update_log_level(file, stderr = None, stdout = None):
         Debug
         BAC0.log_level(file='debug', stdout='info', stderr='error')
     """
+    if level:
+        file = level
+        stderr = level
+        stdout = level
     file = convert_level(file)
     stderr = convert_level(stderr)
     stdout = convert_level(stdout)       
