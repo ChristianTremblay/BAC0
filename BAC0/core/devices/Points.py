@@ -28,7 +28,9 @@ except ImportError:
 #--- this application's modules ---
 from ...tasks.Poll import SimplePoll as Poll
 from ...tasks.Match import Match, Match_Value
-from ..io.IOExceptions import NoResponseFromController
+from ..io.IOExceptions import NoResponseFromController, UnknownPropertyError
+from ..utils.notes import note_and_log
+
 
 #------------------------------------------------------------------------------
 
@@ -47,6 +49,8 @@ class PointProperties(object):
         self.units_state = None
         self.simulated = (False, None)
         self.overridden = (False, None)
+        self.priority_array = None
+        self.history_size = None
 
     def __repr__(self):
         return '%s' % self.asdict
@@ -57,7 +61,7 @@ class PointProperties(object):
 
 #------------------------------------------------------------------------------
 
-
+@note_and_log
 class Point():
     """
     Represents a device BACnet point.  Used to NumericPoint, BooleanPoint and EnumPoints.
@@ -68,7 +72,8 @@ class Point():
 
     def __init__(self, device=None,
                  pointType=None,    pointAddress=None,  pointName=None,
-                 description=None,  presentValue=None,  units_state=None):
+                 description=None,  presentValue=None,  units_state=None,
+                 history_size=None):
 
         self._history = namedtuple('_history', ['timestamp', 'value'])
         self.properties = PointProperties()
@@ -85,6 +90,7 @@ class Point():
         self._history.value = []
         self._history.value.append(presentValue)
         self._history.timestamp.append(datetime.now())
+        self.history_size = history_size
 
         self.properties.device = device
         self.properties.name = pointName
@@ -110,10 +116,70 @@ class Point():
                 'Problem reading : {}'.format(self.properties.name))
 
         return res
+    
+    def read_priority_array(self):
+        """
+        Retrieve priority array of the point
+        """
+        if self.properties.priority_array != False:
+            try:
+                res = self.properties.device.properties.network.read('{} {} {} priorityArray'.format(
+                    self.properties.device.properties.address, self.properties.type, str(self.properties.address)))
+                self.properties.priority_array = res
+            except (ValueError, UnknownPropertyError):
+                self.properties.priority_array = False
+            except Exception:
+                raise Exception(
+                    'Problem reading : {}'.format(self.properties.name))
+   
+    
+    @property
+    def is_overridden(self):
+        self.read_priority_array()  
+        if self.properties.priority_array == False:
+            return False      
+        if self.priority(8) or self.priority(1):
+            self.properties.overridden = (True, self.value)
+            return True
+        else:
+            return False
+   
+    def priority(self, priority=None):
+        if self.properties.priority_array == False:
+            return None
+
+        self.read_priority_array()
+        if not priority:
+            return self.properties.priority_array.debug_contents()
+        if priority < 1 or priority > 16:
+            raise IndexError('Please provide priority to read (1-16)')
+
+        else:
+            pa = self.properties.priority_array.value[priority]
+            try:
+                key, value = zip(*pa.dict_contents().items())
+                if key[0] == 'null':
+                    return None
+                else:
+                    return (key[0], value[0])
+            except ValueError:
+                return None
 
     def _trend(self, res):
         self._history.timestamp.append(datetime.now())
         self._history.value.append(res)
+        if self.properties.history_size == None:
+            return
+        else:
+            if self.properties.history_size < 1:
+                self.properties.history_size = 1
+            if len(self._history.timestamp) >= self.properties.history_size:
+                try:
+                    self._history.timestamp = self._history.timestamp[-self.properties.history_size:]
+                    self._history.value = self._history.value[-self.properties.history_size:]
+                    assert len(self._history.timestamp) == len(self._history.value)
+                except Exception as e:
+                    self._log.exception("Can't append to history")
 
     @property
     def units(self):
@@ -258,6 +324,11 @@ class Point():
         self.write('null', priority=8)
         self.properties.overridden = (False, 0)
 
+    def release_ovr(self):
+        self.write('null', priority=1)
+        self.write('null', priority=8)
+        self.properties.overridden = (False, None)
+
     def _setitem(self, value):
         """
         Called by _set, will trigger right function depending on
@@ -400,11 +471,13 @@ class NumericPoint(Point):
 
     def __init__(self, device=None,
                  pointType=None,    pointAddress=None,  pointName=None,
-                 description=None,  presentValue=None,  units_state=None):
+                 description=None,  presentValue=None,  units_state=None,
+                 history_size=None):
 
         Point.__init__(self, device=device,
                        pointType=pointType,     pointAddress=pointAddress,  pointName=pointName,
-                       description=description, presentValue=presentValue,  units_state=units_state)
+                       description=description, presentValue=presentValue,  units_state=units_state,
+                       history_size=history_size)
 
     @property
     def units(self):
@@ -463,11 +536,13 @@ class BooleanPoint(Point):
 
     def __init__(self, device=None,
                  pointType=None,    pointAddress=None,  pointName=None,
-                 description=None,  presentValue=None,  units_state=None):
+                 description=None,  presentValue=None,  units_state=None,
+                 history_size=None):
 
         Point.__init__(self, device=device,
                        pointType=pointType,     pointAddress=pointAddress,  pointName=pointName,
-                       description=description, presentValue=presentValue,  units_state=units_state)
+                       description=description, presentValue=presentValue,  units_state=units_state,
+                       history_size=history_size)
 
     @property
     def value(self):
@@ -547,11 +622,13 @@ class EnumPoint(Point):
 
     def __init__(self, device=None,
                  pointType=None,    pointAddress=None,  pointName=None,
-                 description=None,  presentValue=None,  units_state=None):
+                 description=None,  presentValue=None,  units_state=None,
+                 history_size=None):
 
         Point.__init__(self, device=device,
                        pointType=pointType,     pointAddress=pointAddress,  pointName=pointName,
-                       description=description, presentValue=presentValue,  units_state=units_state)
+                       description=description, presentValue=presentValue,  units_state=units_state,
+                       history_size=history_size)
 
     @property
     def enumValue(self):
@@ -631,8 +708,8 @@ class OfflinePoint(Point):
 class NumericPointOffline(NumericPoint):
     @property
     def history(self):
-        his = sql.read_sql('select * from "{}"'.format(
-            'history', self.properties.device.db))
+        his = self.properties.device._read_from_sql('select * from "{}"'.format(
+            'history'),self.properties.device.properties.db_name)
         his.index = his['index'].apply(Timestamp)
         return his.set_index('index')[self.properties.name]
 
@@ -670,8 +747,8 @@ class NumericPointOffline(NumericPoint):
 class BooleanPointOffline(BooleanPoint):
     @property
     def history(self):
-        his = sql.read_sql('select * from "{}"'.format(
-            'history', self.properties.device.db))
+        his = self.properties.device._read_from_sql('select * from "{}"'.format(
+            'history'),self.properties.device.properties.db_name)
         his.index = his['index'].apply(Timestamp)
         return his.set_index('index')[self.properties.name]
 
@@ -699,8 +776,8 @@ class BooleanPointOffline(BooleanPoint):
 class EnumPointOffline(EnumPoint):
     @property
     def history(self):
-        his = sql.read_sql('select * from "{}"'.format(
-            'history', self.properties.device.db))
+        his = self.properties.device._read_from_sql('select * from "{}"'.format(
+            'history'),self.properties.device.properties.db_name)
         his.index = his['index'].apply(Timestamp)
         return his.set_index('index')[self.properties.name]
 

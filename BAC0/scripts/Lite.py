@@ -62,22 +62,24 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
     """
 
     def __init__(self, ip=None, bbmdAddress=None, bbmdTTL=0):
-        print("Starting BAC0 version {} ({})".format(
-              version, self.__module__.split('.')[-1]))
-        self.log("Configurating app")
+        self._log.info("Starting BAC0 version {} ({})".format(
+            version, self.__module__.split('.')[-1]))
+        self._log.debug("Configurating app")
         self._registered_devices = weakref.WeakValueDictionary()
         if ip is None:
             host = HostIP()
             ip_addr = host.address
         else:
             ip_addr = ip
-
+        self._log.info('Using ip : {ip_addr}'.format(ip_addr=ip_addr))
         Base.__init__(self, localIPAddr=ip_addr,
                       bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL)
 
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
         # Force a global whois to find all devices on the network
+        # This also allow to see devices quickly after creation of network
+        # as a first read has already been done.
         self.whois_answer = self.update_whois()
         time.sleep(2)
 
@@ -137,15 +139,42 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
                 deviceName, vendorName = self.readMultiple(
                     '{} device {} objectName vendorName'.format(device[0], device[1]))
             except UnrecognizedService:
+                print(device[0])
+                print(device[1])
                 deviceName = self.read(
-                    '{} device {} objectName'.format((device[0], device[1])))
+                    '{} device {} objectName'.format(device[0], device[1]))
                 vendorName = self.read(
                     '{} device {} vendorName'.format(device[0], device[1]))
             except NoResponseFromController:
-                self._log.info('No response from {}'.format(device))
+                self._log.warning('No response from {}'.format(device))
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
         return lst
+
+    def find_devices_on_network(self, net=None):
+        d = {}
+        networks = set()
+        all_devices = self.whois()
+        for each in all_devices:
+            address, devID = each
+            try:
+                network = address.split(':')[0]
+                mac = int(address.split(':')[1])
+            except (ValueError, IndexError):
+                network = 'ip'
+                mac = address
+            networks.add(network)
+            if not network in d.keys():
+                d[network] = []
+            d[network].append((mac, devID))
+        if net:
+            net = str(net)
+            try:
+                return d[net]
+            except (ValueError, KeyError):
+                self._log.warning('Nothing there...')
+                return
+        return (networks, d)
 
     @property
     def trends(self):

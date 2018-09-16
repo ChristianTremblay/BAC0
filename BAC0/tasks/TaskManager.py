@@ -26,7 +26,7 @@ class Manager():
 def stopAllTasks():
     for each in Manager.taskList:
         each.exitFlag = True
-    print('Stopping all threads')
+    #print('Stopping all threads')
 
 
 class Task(Thread):

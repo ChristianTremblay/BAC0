@@ -118,11 +118,11 @@ class ReadProperty():
             else:
                 value = apdu.propertyValue.cast_out(datatype)
 
-            self._log.info(
+            self._log.debug(
                 "{:<20} {:<20}".format(
                 'value',
                 'datatype'))
-            self._log.info(
+            self._log.debug(
                 "{!r:<20} {!r:<20}".format(
                 value,
                 datatype))
@@ -139,9 +139,16 @@ class ReadProperty():
                 return value
             else:
                 if reason == 'unknownProperty':
-                    self._log.warning('Unknown property {}'.format(args))
+                    if 'priorityArray' in args:
+                        self._log.debug('Unknown property {}'.format(args))
+                    else:
+                        self._log.warning('Unknown property {}'.format(args))
                     if 'description' in args:
                         return ''
+                    elif 'inactiveText' in args:
+                        return 'Off'
+                    elif 'activeText' in args:
+                        return 'On'
                     else:
                         raise UnknownPropertyError(
                             'Unknown property {}'.format(args))
@@ -225,13 +232,13 @@ class ReadProperty():
                 objectIdentifier = result.objectIdentifier
                                
                 self.log_subtitle('{!r} : {!r}'.format(objectIdentifier[0],objectIdentifier[1]), width=114)
-                self._log.info(
+                self._log.debug(
                     "{:<20} {:<20} {:<30} {:<20}".format(
                     'propertyIdentifier',
                     'propertyArrayIndex',
                     'value',
                     'datatype'))
-                self._log.info(
+                self._log.debug(
                     "-"*114)
 
                 # now come the property values per object
@@ -268,7 +275,7 @@ class ReadProperty():
                             value = propertyValue.cast_out(datatype)
                             
 
-                        self._log.info(
+                        self._log.debug(
                             "{!r:<20} {!r:<20} {!r:<30} {!r:<20}".format(
                             propertyIdentifier,
                             propertyArrayIndex,

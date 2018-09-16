@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Notes and logger decorator to be used on class
-
 This will add a "notes" object to the class and will allow
 logging feature at the same time.
 Goal is to be able to access quickly to important informations for
 the web interface.
-
 """
 #--- standard Python modules ---
 from collections import namedtuple
@@ -40,7 +38,7 @@ def convert_level(level):
         level = logging.CRITICAL
     return level
 
-def update_log_level(file, stderr = None, stdout = None):
+def update_log_level(level=None,*,file=None, stderr = None, stdout = None):
     """
     Typical usage : 
         Normal
@@ -50,6 +48,10 @@ def update_log_level(file, stderr = None, stdout = None):
         Debug
         BAC0.log_level(file='debug', stdout='info', stderr='error')
     """
+    if level:
+        file = level
+        stderr = level
+        stdout = level
     file = convert_level(file)
     stderr = convert_level(stderr)
     stdout = convert_level(stdout)       
@@ -75,7 +77,6 @@ def note_and_log(cls):
     This will be used as a decorator on class to activate
     logging and store messages in the variable cls._notes
     This will allow quick access to events in the web app.
-
     A note can be added to cls._notes without logging if passing
     the argument log=false to function note()
     Something can be logged without addind a note using function log()
@@ -88,8 +89,8 @@ def note_and_log(cls):
             file_level = logging.INFO
             console_level = logging.INFO
     else:
-        file_level = logging.INFO
-        console_level = logging.WARNING
+        file_level = logging.WARNING
+        console_level = logging.INFO
     # Notes object
     cls._notes = namedtuple('_notes', ['timestamp', 'notes'])
     cls._notes.timestamp = []
@@ -142,19 +143,19 @@ def note_and_log(cls):
 #    cls._log.setLevel(logging.CRITICAL)
         
     def log_title(self, title, args=None, width=35):
-        cls._log.info("")
-        cls._log.info("#"*width)
-        cls._log.info("# {}".format(title))
-        cls._log.info("#"*width)
+        cls._log.debug("")
+        cls._log.debug("#"*width)
+        cls._log.debug("# {}".format(title))
+        cls._log.debug("#"*width)
         if args:
             cls._log.debug("{!r}".format(args))
             cls._log.debug("#"*35)
 
     def log_subtitle(self, subtitle, args=None, width=35):
-        cls._log.info("")
-        cls._log.info("="*width)
-        cls._log.info("{}".format(subtitle))
-        cls._log.info("="*width)
+        cls._log.debug("")
+        cls._log.debug("="*width)
+        cls._log.debug("{}".format(subtitle))
+        cls._log.debug("="*width)
         if args:
             cls._log.debug("{!r}".format(args))
             cls._log.debug("="*width)
@@ -172,7 +173,6 @@ def note_and_log(cls):
         """
         Add note to the object. By default, the note will also
         be logged
-
         :param note: (str) The note itself
         :param level: (logging.level)
         :param log: (boolean) Enable or disable logging of note

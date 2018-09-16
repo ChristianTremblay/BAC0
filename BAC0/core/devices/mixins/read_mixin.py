@@ -211,7 +211,7 @@ class ReadPropertyMultiple():
 
         try:
             analog_points_info = self.read_multiple('', discover_request=(analog_request, 4), points_per_request=5)
-            self._log.info(analog_points_info)
+            self._log.debug(analog_points_info)
         except SegmentationNotSupported:
             raise
 
@@ -241,11 +241,15 @@ class ReadPropertyMultiple():
                 continue
             
             i += 1
-            points.append(
-                NumericPoint(
-                    pointType=point_type,   pointAddress=point_address, pointName=point_infos[0],
-                    description=point_description,  presentValue=float(point_infos[1]), units_state=point_units_state,
-                    device=self))
+            try:
+                points.append(
+                    NumericPoint(
+                        pointType=point_type,   pointAddress=point_address, pointName=point_infos[0],
+                        description=point_description,  presentValue=float(point_infos[1]), units_state=point_units_state,
+                        device=self, history_size=self.properties.history_size))
+            except IndexError:
+                self._log.warning('There has been a problem defining analog points. It is sometimes due to busy network. Please retry the device creation')
+                raise
 
         multistate_request = []
         list_of_multistate = retrieve_type(objList, 'multi')
@@ -264,11 +268,15 @@ class ReadPropertyMultiple():
             point_infos = multistate_points_info[i]
             i += 1
 
-            points.append(
-                EnumPoint(
-                    pointType=point_type,       pointAddress=point_address,     pointName=point_infos[0],
-                    description=point_infos[3], presentValue=point_infos[1],    units_state=point_infos[2],
-                    device=self))
+            try:
+                points.append(
+                    EnumPoint(
+                        pointType=point_type,       pointAddress=point_address,     pointName=point_infos[0],
+                        description=point_infos[3], presentValue=point_infos[1],    units_state=point_infos[2],
+                        device=self, history_size=self.properties.history_size))
+            except IndexError:
+                self._log.warning('There has been a problem defining multistate points. It is sometimes due to busy network. Please retry the device creation')
+                raise
 
         binary_request = []
         list_of_binary = retrieve_type(objList, 'binary')
@@ -309,12 +317,16 @@ class ReadPropertyMultiple():
                 continue
 
             i += 1
-            points.append(
-                BooleanPoint(
-                    pointType=point_type,           pointAddress=point_address,     pointName=point_infos[0],
-                    description=point_description,  presentValue=point_infos[1],    units_state=point_units_state,
-                    device=self))
-            
+            try:
+                points.append(
+                    BooleanPoint(
+                        pointType=point_type,           pointAddress=point_address,     pointName=point_infos[0],
+                        description=point_description,  presentValue=point_infos[1],    units_state=point_units_state,
+                        device=self, history_size=self.properties.history_size))
+            except IndexError:
+                self._log.warning('There has been a problem defining binary points. It is sometimes due to busy network. Please retry the device creation')
+                raise
+                
         self._log.info('Ready!')
         return (objList, points)
 

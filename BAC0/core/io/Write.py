@@ -122,13 +122,13 @@ class WriteProperty():
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
 
         self.log_subtitle("Creating Request")
-        self._log.info(
+        self._log.debug(
                 "{:<20} {:<20} {:<20} {:<20}".format(
                 'indx',
                 'priority',
                 'datatype',
                 'value'))
-        self._log.info(
+        self._log.debug(
                 "{!r:<20} {!r:<20} {!r:<20} {!r:<20}".format(
                 indx,
                 priority,
@@ -164,7 +164,7 @@ class WriteProperty():
             raise TypeError(
                 "invalid result datatype, expecting {}".format(
                     (datatype.__name__,)))
-        self._log.info("{:<20} {!r} {}".format(
+        self._log.debug("{:<20} {!r} {}".format(
             "Encodeable value", value, type(value)))
 
         # build a request
