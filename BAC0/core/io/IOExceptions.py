@@ -109,3 +109,6 @@ class BokehServerCantStart(Exception):
 
 class SegmentationNotSupported(Exception):
     pass
+
+class BadDeviceDefinition(Exception):
+    pass

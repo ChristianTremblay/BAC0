@@ -35,7 +35,7 @@ except ImportError:
 from bacpypes.basetypes import ServicesSupported
 
 from .Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
-from ..io.IOExceptions import NoResponseFromController, SegmentationNotSupported
+from ..io.IOExceptions import NoResponseFromController, SegmentationNotSupported,BadDeviceDefinition
 #from ...bokeh.BokehRenderer import BokehPlot
 from ...sql.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
@@ -111,7 +111,7 @@ class Device(SQLMixin):
     :type network: BAC0.scripts.ReadWriteScript.ReadWriteScript
     """
 
-    def __init__(self, address, device_id, network, *, poll=10,
+    def __init__(self, address=None, device_id=None, network=None, *, poll=10,
                  from_backup=None, segmentation_supported=True,
                  object_list=None, auto_save=False,
                  clear_history_on_save=False, history_size=None):
@@ -152,6 +152,7 @@ class Device(SQLMixin):
         if from_backup:
             filename = from_backup
             db_name = filename.split('.')[0]
+            self.properties.network = None
             if os.path.isfile(filename):
                 self.properties.db_name = db_name
                 self.new_state(DeviceDisconnected)
@@ -159,7 +160,10 @@ class Device(SQLMixin):
                 raise FileNotFoundError(
                     "Can't find {} on drive".format(filename))
         else:
-            self.new_state(DeviceDisconnected)
+            if self.properties.network and self.properties.address and self.properties.device_id:
+                self.new_state(DeviceDisconnected)
+            else:
+                raise BadDeviceDefinition('Please provide address, device id and network or specify from_backup argument')
 
     def new_state(self, newstate):
         """
@@ -612,41 +616,42 @@ class DeviceDisconnected(Device):
         Attempt to connect to device.  If unable, attempt to connect to a controller database  
         (so the user can use previously saved data).
         """
-#        if db:
-#            self.properties.db_name = db
-        try:
-            name = self.properties.network.read('{} device {} objectName'.format(
-                self.properties.address, self.properties.device_id))
-
-            segmentation = self.properties.network.read('{} device {} segmentationSupported'.format(
-                self.properties.address, self.properties.device_id))
-
-            if not self.segmentation_supported or \
-                    segmentation not in ('segmentedTransmit', 'segmentedBoth'):
-                segmentation_supported = False
-                self._log.debug('Segmentation not supported')
-            else:
-                segmentation_supported = True
-
-            if name:
-                if segmentation_supported:
-                    self.new_state(RPMDeviceConnected)
+        if not self.properties.network:
+            self.new_state(DeviceFromDB)
+        else:
+            try:
+                name = self.properties.network.read('{} device {} objectName'.format(
+                    self.properties.address, self.properties.device_id))
+    
+                segmentation = self.properties.network.read('{} device {} segmentationSupported'.format(
+                    self.properties.address, self.properties.device_id))
+    
+                if not self.segmentation_supported or \
+                        segmentation not in ('segmentedTransmit', 'segmentedBoth'):
+                    segmentation_supported = False
+                    self._log.debug('Segmentation not supported')
                 else:
-                    self.new_state(RPDeviceConnected)
-
-        except SegmentationNotSupported:
-            self.segmentation_supported = False
-            self._log.warning(
-                'Segmentation not supported.... expect slow responses.')
-            self.new_state(RPDeviceConnected)
-
-        except (NoResponseFromController, AttributeError) as error:
-            if self.properties.db_name:
-                self.new_state(DeviceFromDB)
-            else:
+                    segmentation_supported = True
+    
+                if name:
+                    if segmentation_supported:
+                        self.new_state(RPMDeviceConnected)
+                    else:
+                        self.new_state(RPDeviceConnected)
+    
+            except SegmentationNotSupported:
+                self.segmentation_supported = False
                 self._log.warning(
-                    'Offline: provide database name to load stored data.')
-                self._log.warning("Ex. controller.connect(db = 'backup')")
+                    'Segmentation not supported.... expect slow responses.')
+                self.new_state(RPDeviceConnected)
+    
+            except (NoResponseFromController, AttributeError) as error:
+                if self.properties.db_name:
+                    self.new_state(DeviceFromDB)
+                else:
+                    self._log.warning(
+                        'Offline: provide database name to load stored data.')
+                    self._log.warning("Ex. controller.connect(db = 'backup')")
 
     def df(self, list_of_points, force_read=True):
         raise DeviceNotConnected('Must connect to BACnet or database')
