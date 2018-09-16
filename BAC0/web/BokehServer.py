@@ -8,12 +8,12 @@
 This will start the Bokeh Server
 """
 from threading import Thread
-
+import weakref
 from bokeh.server.server import Server
 
-import weakref
+from ..core.utils.notes import note_and_log
 
-
+@note_and_log
 class Bokeh_Worker(Thread):
 
     # Init thread running server
@@ -46,7 +46,7 @@ class Bokeh_Worker(Thread):
         try:
             self.startServer()
         except Exception as err:
-            self._log.warning('Bokeh server already running', err)
+            self._log.warning('Bokeh server already running')
             self.exitFlag = True
 
     def stop(self):

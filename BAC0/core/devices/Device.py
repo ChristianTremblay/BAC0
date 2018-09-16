@@ -804,7 +804,7 @@ class DeviceFromDB(DeviceConnected):
         self.properties.charts = []
         self.properties.multistates = self._props['multistates']
         self._log.info('Device restored from db')
-        self._log.info('You can reconnect to network using : "device.connect(network=bacnet"')
+        self._log.info('You can reconnect to network using : "device.connect(network=bacnet)"')
 
     @property
     def simulated_points(self):
