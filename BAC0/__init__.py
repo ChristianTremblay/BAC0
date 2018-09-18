@@ -2,6 +2,15 @@
 # -*- coding: utf-8 -*-
 
 try:
+    import bacpypes
+except ImportError:
+    # Using print here or setup.py will fail
+    print('='*80)
+    print('bacpypes module missing, please install latest version using \n    $ "pip install bacpypes"')
+    print('\nDiscard this message if you are actually installing BAC0.')
+    print('='*80)
+
+try:
     from . import core
     from . import tasks
     from .scripts.Base import Base
@@ -26,6 +35,11 @@ try:
         from .scripts.Lite import Lite as lite
     else:
         from .scripts.Lite import Lite as connect
+        lite = connect
 
-except ImportError:
-    pass # Probably installing the app...
+except ImportError as err:
+    print('='*80)
+    print('Import Error, refer to documentation or reinstall using \n    $ "pip install BAC0"')
+    print('\nDiscard this message if you are actually installing BAC0.')
+    print('='*80)
+    # Probably installing the app...
