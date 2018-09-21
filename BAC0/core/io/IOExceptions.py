@@ -44,6 +44,12 @@ class ReadPropertyMultipleException(ValueError):
     """
     pass
 
+class ReadRangeException(ValueError):
+    """
+    This exception is used when trying to read a property.
+    """
+    pass
+
 
 class NoResponseFromController(Exception):
     """
