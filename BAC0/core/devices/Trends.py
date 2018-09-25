@@ -63,11 +63,10 @@ class TrendLog(TrendLogProperties):
     """
     BAC0 simplification of TrendLog Object
     """
-    def __init__(self, OID, device=None):
+    def __init__(self, OID, device=None, read_log_on_creation = True):
         self.properties = TrendLogProperties()
         self.properties.device = device
         self.properties.oid = OID
-        self.history = None
         try:
             self.properties.object_name,\
             self.properties.description,\
@@ -78,7 +77,9 @@ class TrendLog(TrendLogProperties):
             self.properties.statusFlags = self.properties.device.properties.network.readMultiple('{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount logDeviceObjectProperty statusFlags'.format(
                 addr=self.properties.device.properties.address,
                 oid=str(self.properties.oid)))
-            
+
+            if read_log_on_creation:
+                self.read_log_buffer()
         except Exception:
             raise Exception('Problem reading trendLog informations')
         
@@ -106,9 +107,12 @@ class TrendLog(TrendLogProperties):
         df = pd.DataFrame({'index_ts':index,'logdatum':logdatum,'status':status})
         df = df.set_index('index_ts')
         df['choice'] = df['logdatum'].apply(lambda x: list(x.keys())[0])
-        df['value'] = df['logdatum'].apply(lambda x: list(x.values())[0])
+        df[self.properties.object_name] = df['logdatum'].apply(lambda x: list(x.values())[0])
 
         self.properties._df = df
-        self.history = df['value'].copy()
+
+    @property
+    def history(self):
+        return self.properties._df[self.properties.object_name].copy()
         
     
