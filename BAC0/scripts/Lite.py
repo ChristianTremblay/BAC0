@@ -36,6 +36,7 @@ from ..core.functions.GetIPAddr import HostIP
 from ..core.functions.WhoisIAm import WhoisIAm
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
+from ..core.devices.Trends import TrendLog
 from ..core.utils.notes import note_and_log
 from ..core.io.IOExceptions import NoResponseFromController, UnrecognizedService
 
@@ -108,12 +109,15 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         """
         Add point to the list of histories that will be handled by Bokeh
 
-        Argument provided must be of type Point
+        Argument provided must be of type Point or TrendLog
         ex. bacnet.add_trend(controller['point_name'])
         """
         if isinstance(point_to_trend, Point):
             oid = id(point_to_trend)
             self._points_to_trend[oid] = point_to_trend
+        elif isinstance(point_to_trend, TrendLog):
+            oid = id(point_to_trend)
+            self._points_to_trend[oid] = point_to_trend        
         else:
             raise TypeError('Please provide point containing history')
 
@@ -121,13 +125,15 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         """
         Remove point from the list of histories that will be handled by Bokeh
 
-        Argument provided must be of type Point
+        Argument provided must be of type Point or TrendLog
         ex. bacnet.remove_trend(controller['point_name'])
         """
         if isinstance(point_to_remove, Point):
             oid = id(point_to_remove)
+        elif isinstance(point_to_remove, TrendLog):
+            oid = id(point_to_remove)
         else:
-            raise TypeError('Please provide point containing history')
+            raise TypeError('Please provide point or trendLog containing history')
         if oid in self._points_to_trend.keys():
             del self._points_to_trend[oid]
 

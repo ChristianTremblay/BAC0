@@ -103,16 +103,34 @@ class TrendLog(TrendLogProperties):
             index.append(pd.to_datetime('{}-{}-{} {}:{}:{}.{}'.format(year,month,day,hours,minutes,seconds,ms),format='%Y-%m-%d %H:%M:%S.%f'))
             logdatum.append(each.logDatum.dict_contents())
             status.append(each.statusFlags)
-
-        df = pd.DataFrame({'index_ts':index,'logdatum':logdatum,'status':status})
-        df = df.set_index('index_ts')
-        df['choice'] = df['logdatum'].apply(lambda x: list(x.keys())[0])
-        df[self.properties.object_name] = df['logdatum'].apply(lambda x: list(x.values())[0])
-
-        self.properties._df = df
+            
+        if _PANDAS:    
+            df = pd.DataFrame({'index_ts':index,'logdatum':logdatum,'status':status})
+            df = df.set_index('index_ts')
+            df['choice'] = df['logdatum'].apply(lambda x: list(x.keys())[0])
+            df[self.properties.object_name] = df['logdatum'].apply(lambda x: list(x.values())[0])
+    
+            self.properties._df = df
+        else:
+            self.properties._history_components= (index,logdatum,status)
+            
 
     @property
     def history(self):
-        return self.properties._df[self.properties.object_name].copy()
-        
+        if _PANDAS:
+            serie = self.properties._df[self.properties.object_name].copy()
+            serie.units = '' # not implemented
+            serie.name = (
+            '{}/{}').format(self.properties.device.properties.name, self.properties.object_name)
+            return serie
+        else:
+            return dict(zip(self.properties._history_components[0], self.properties._history_components[1]))
     
+    def chart(self, remove=False):
+        """
+        Add point to the bacnet trending list
+        """
+        if remove:
+            self.properties.device.properties.network.remove_trend(self)
+        else:
+            self.properties.device.properties.network.add_trend(self)
