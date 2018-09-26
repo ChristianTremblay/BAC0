@@ -321,7 +321,17 @@ class Device(SQLMixin):
         :rtype: BAC0.core.devices.Point.Point (NumericPoint, EnumPoint or BooleanPoint)
         """
         raise NotImplementedError()
-        
+
+    def find_point(self, objectType, objectAddress):
+        """
+        Find point based on type and address
+        """
+        for point in self.points:
+            if point.properties.type == objectType:
+                if float(point.properties.address) == objectAddress:
+                    return point
+        raise ValueError("{} {} doesn't exist in controller".format(objectType, objectAddress))
+    
     def find_overrides(self, force=False):
         if self._find_overrides_running and not force:
             self._log.warning('Already running ({:.1%})... please wait.'.format(self._find_overrides_progress))

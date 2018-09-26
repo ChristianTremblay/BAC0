@@ -105,8 +105,8 @@ class TrendLog(TrendLogProperties):
             status.append(each.statusFlags)
             
         if _PANDAS:    
-            df = pd.DataFrame({'index_ts':index,'logdatum':logdatum,'status':status})
-            df = df.set_index('index_ts')
+            df = pd.DataFrame({'index':index,'logdatum':logdatum,'status':status})
+            df = df.set_index('index')
             df['choice'] = df['logdatum'].apply(lambda x: list(x.keys())[0])
             df[self.properties.object_name] = df['logdatum'].apply(lambda x: list(x.values())[0])
     
@@ -118,10 +118,20 @@ class TrendLog(TrendLogProperties):
     @property
     def history(self):
         if _PANDAS:
+            objectType, objectAddress = self.properties.log_device_object_property.objectIdentifier
+            logged_point = self.properties.device.find_point(objectType,objectAddress) 
             serie = self.properties._df[self.properties.object_name].copy()
-            serie.units = '' # not implemented
+            serie.units = logged_point.properties.units_state
             serie.name = (
             '{}/{}').format(self.properties.device.properties.name, self.properties.object_name)
+            if logged_point.properties.name in self.properties.device.binary_states:
+                serie.states = 'binary'
+            elif logged_point.properties.name in self.properties.device.multi_states:
+                serie.states = 'multistates'
+            else:
+                serie.states = 'analog'
+            serie.description = self.properties.description
+            serie.datatype = objectType
             return serie
         else:
             return dict(zip(self.properties._history_components[0], self.properties._history_components[1]))
