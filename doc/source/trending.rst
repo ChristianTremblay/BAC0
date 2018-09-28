@@ -1,8 +1,8 @@
 Trends
 ======
 Trending is a nice feature when you want to see how a points value changed over time.
-Until now, this was only possible using matplotlib directly in Jupyter_.
-But I recently became aware of Bokeh_ [http://bokeh.pydata.org/en/latest/] which brings 
+This is only possible using matplotlib directly in Jupyter_.
+And also in the Web Interface using Bokeh_ [http://bokeh.pydata.org/en/latest/] which brings 
 a complete set of wonderful features for visualizing point histories (a.k.a. trends). 
 The best feature of all - the ability to see Live Trends of your data as it occurs.
 
@@ -18,6 +18,10 @@ i.e. Showing a chart using matplotlib::
 
 |matplotlib|
 
+Seaborn
+-------
+Seaborn_ is a library built over Matplotlib_ that extends the possibilities of creating statistical
+trends of your data. I strongly suggest you have a look to this library.
 
 Bokeh
 -----
@@ -26,20 +30,37 @@ Its goal is to provide elegant, concise graphics, with high-performance interact
 or streaming datasets. Bokeh can help anyone who would like to quickly create interactive plots, dashboards, 
 and data applications.
 
-BAC0 trending features use Bokeh by default.
+
+.. note::
+    BAC0 trending features use Bokeh when running in "complete" mode. This requires the user to have some
+    libraries installed :
+
+      * bokeh
+      * flask
+      * flask-bootstrap
+      * pandas
+      * numpy
 
 
-Bokeh serve
------------
-To use the live trending features, a bokeh server needs to be running locally on your computer.
-When the BAC0 starts, it starts a bokeh server for you, running locally.  This server is available 
-at localhost:5006, on your machine.
+.. note::
+   Running in "complete" mode may be hard to accomplish if you are running BAC0 on a Raspberry Pi.
+   If doing so, I strongly recommend using the package berryconda_ which will install everything
+   you need on the RPi to use Pandas, numpy... already compiled for the RPi.
 
-The server will then be included inside the Flask app
+   A simple call for "conda install bokeh" will install the package.
+
+A web interface
+---------------
+To simplify the usage of the live trending feature, BAC0 implements a Web Server (running with Flask).
+Connect to http://localhost:8111 and you will get access to a Dashboard and the Trends page.
+
+Internally, BAC0 will run two servers (flask and a bokeh server) that will handle the connection to the
+web interface and provide the web page with a live trend of the charts that have been sent to the interface.
 
 Add/Remove plots to Bokeh
 ---------------------------
-Points to trends are added to a list monitored by the "network" object. This will allow 
+At first, the web page will be empty and no trend will appear. The user needs to specify which points must
+be trended. Points to trend are added to a list monitored by the "network" object. This will allow 
 to add trends coming from multiple controllers easily ::
 
     #each point can be added 
@@ -47,6 +68,9 @@ to add trends coming from multiple controllers easily ::
     
     #or we can add them using the "network" object
     bacnet.add_chart(controller['nvoAI1'])
+
+    # TrendLog object can also be added
+    trendlog_object.chart()
     
 The list of trended points can be retrieve ::
 
@@ -95,3 +119,5 @@ Please note that the hover suffers from a little bug in this "saved" version of 
 .. _Bokeh : http://www.bokehplots.com
 .. _Jupyter : http://jupyter.org
 .. _Matplotlib : http://matplotlib.org
+.. _Seaborn : http://seaborn.pydata.org
+.. _berryconda : https://github.com/jjhelmus/berryconda

@@ -34,6 +34,8 @@ class DynamicPlotHandler(Handler):
         self._last_time_list = None
         self._update_complete = False
         self._recurring_update = RecurringTask(self.plan_update_data, delay=5)
+        self._pcb = None #Periodic callback
+        self._ntcb = None #Next Tick callback
         super().__init__()
 
     @property
@@ -49,15 +51,12 @@ class DynamicPlotHandler(Handler):
             self.s[point.history.name] = (point.history, point.history.units)
         self.lst_of_trends = [his[0] for name, his in self.s.items()]
 
-    def build_plot(self):
-        self._log.debug('Build Plot')
-
-        self.stop_update_data()
+    def build_data_sources(self):
+        sources = {}
         self.organize_data()
         for each in self.lst_of_trends:
             df = pd.DataFrame(each)
             df = df.reset_index()
-            # print(df)
             df['name'] = each.name
             df['units'] = str(each.units)
             df['time_s'] = df['index'].apply(str)
@@ -68,7 +67,7 @@ class DynamicPlotHandler(Handler):
             except TypeError:
                 df = df.fillna(method='ffill').fillna(method='bfill')
 
-            self.sources[each.name] = ColumnDataSource(
+            sources[each.name] = ColumnDataSource(
                 data=dict(
                     x=df['index'],
                     y=df[each.name],
@@ -77,11 +76,19 @@ class DynamicPlotHandler(Handler):
                     units=df['units']
                 )
             )
+        return sources
+
+    def build_plot(self):
+        self._log.debug('Build Plot')
+
+        self.stop_update_data()
+        self.sources = self.build_data_sources()
+
 
         TOOLS = "pan,box_zoom,wheel_zoom,save,reset"
         self.p = Figure(x_axis_type="datetime", x_axis_label="Time",
                         y_axis_label="Numeric Value", title='BAC0 Trends',
-                        tools=TOOLS, plot_width=1300, plot_height=600,
+                        tools=TOOLS, plot_width=800, plot_height=600,
                         toolbar_location='above')
 
         self.p.background_fill_color = "#f4f3ef"
@@ -146,15 +153,15 @@ class DynamicPlotHandler(Handler):
 
             self.plots = [self.p, ]
 
-    #@gen.coroutine
     def update_data(self):
         self._log.debug('Update Data')
         doc = curdoc()
-        self.organize_data()
+        #self.organize_data()
         if self._last_time_list:
             if self._last_time_list != self.s.keys():
                 self._list_have_changed = True
                 self.stop_update_data()
+                #doc.add_next_tick_callback(self.modify_document)
                 self.modify_document(doc)
             else:
                 self._list_have_changed = False
@@ -163,60 +170,68 @@ class DynamicPlotHandler(Handler):
         for each in self.p.renderers:
             l.append(each.name)
 
-        for each in self.lst_of_trends:
-            df = pd.DataFrame(each)
-            df = df.reset_index()
-            df['name'] = each.name
-            df['units'] = str(each.units)
-            df['time_s'] = df['index'].apply(str)
+        #for each in self.lst_of_trends:
+        #    df = pd.DataFrame(each)
+        #    df = df.reset_index()
+        #    df['name'] = each.name
+        #    df['units'] = str(each.units)
+        #    df['time_s'] = df['index'].apply(str)
 
-            try:
-                df = df.fillna(method='ffill').fillna(
-                    method='bfill').replace(['inactive', 'active'], [0, 1])
-            except TypeError:
-                df = df.fillna(method='ffill').fillna(method='bfill')
+        #    try:
+        #        df = df.fillna(method='ffill').fillna(
+        #            method='bfill').replace(['inactive', 'active'], [0, 1])
+        #    except TypeError:
+        #        df = df.fillna(method='ffill').fillna(method='bfill')
 
             index = l.index(each.name)
-            renderer = self.p.renderers[index]
-            new_data = {}
-            new_data['name'] = df['name']
-            new_data['x'] = df['index']
-            new_data['y'] = df[each.name]
-            if each.states == 'binary':
-                new_data['units'] = [each.units[int(x)] for x in df[each.name]]
-            elif each.states == 'multistates':
-                new_data['units'] = [
-                    each.units[int(math.fabs(x-1))] for x in df[each.name]]
-            else:
-                new_data['units'] = df['units']
-            new_data['time'] = df['time_s']
-            renderer.data_source.data = new_data
-        self._last_time_list = self.s.keys()
-        # self.start_update_data()
-        self._update_complete = True
+        #    renderer = self.p.renderers[index]
+        #    new_data = {}
+        #    new_data['name'] = df['name']
+        #    new_data['x'] = df['index']
+        #    new_data['y'] = df[each.name]
+        #    if each.states == 'binary':
+        #        new_data['units'] = [each.units[int(x)] for x in df[each.name]]
+        #    elif each.states == 'multistates':
+        #        new_data['units'] = [
+        #            each.units[int(math.fabs(x-1))] for x in df[each.name]]
+        #    else:
+        #        new_data['units'] = df['units']
+        #    new_data['time'] = df['time_s']
+        #    renderer.data_source.data = new_data
+        try:
+            new_data = self.build_data_sources()
+            for each in self.lst_of_trends:
+                self.sources[each.name].data = new_data[each.name].data
+        
+        except KeyError:
+            self._log.warning('Problem updating {} on chart, will try again next time.'.format(each.name))
+
+        else:
+            self._last_time_list = self.s.keys()
+            # self.start_update_data()
+            self._update_complete = True
+
 
     def modify_document(self, doc):
         curdoc().clear()
+        #doc = curdoc()
         try:
-            curdoc().remove_periodic_callback(self.update_data)
+            curdoc().remove_periodic_callback(self._pcb)
         except:
             pass
         doc.clear()
         self.build_plot()
-        # column(widgetbox(self.div_header_doc),
         layout = gridplot(self.plots, ncols=2)
-        # widgetbox(self.div_header_notes),
-        # widgetbox(self.div_footer)
 
         doc.add_root(layout)
-        doc.add_periodic_callback(self.update_data, 10000)
+        self._pcb = doc.add_periodic_callback(self.update_data, 10000)
         return doc
 
     def plan_update_data(self):
         doc = curdoc()
         if self._update_complete == True:
             self._update_complete = False
-            doc.add_next_tick_callback(self.update_data)
+            self._ntcb = doc.add_next_tick_callback(self.update_data)
 
     def stop_update_data(self):
         doc = curdoc()
@@ -225,7 +240,7 @@ class DynamicPlotHandler(Handler):
             while self._recurring_update.is_running:
                 pass
             try:
-                doc.remove_next_tick_callback(self.update_data)
+                doc.remove_next_tick_callback(self._ntcb)
             except (ValueError, RuntimeError):
                 pass  # Already gone
 

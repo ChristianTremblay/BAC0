@@ -32,14 +32,14 @@ from bacpypes.apdu import PropertyReference, ReadAccessSpecification, \
     ReadPropertyRequest, ReadPropertyMultipleRequest, RejectReason, AbortReason, RejectPDU, AbortPDU
 
 from bacpypes.basetypes import PropertyIdentifier
-from bacpypes.apdu import ReadPropertyMultipleACK, ReadPropertyACK
+from bacpypes.apdu import ReadPropertyMultipleACK, ReadPropertyACK, ReadRangeRequest, ReadRangeACK
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
 
 #--- this application's modules ---
-from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted, UnrecognizedService, SegmentationNotSupported, UnknownPropertyError, UnknownObjectError
+from .IOExceptions import ReadPropertyException, ReadPropertyMultipleException, ReadRangeException, NoResponseFromController, ApplicationNotStarted, UnrecognizedService, SegmentationNotSupported, UnknownPropertyError, UnknownObjectError
 
 from ..utils.notes import note_and_log
 #------------------------------------------------------------------------------
@@ -406,6 +406,149 @@ class ReadProperty():
         self._log.debug("{:<20} {!r}".format(
             'REQUEST', request))
         return request
+    
+    def build_rrange_request(self, args, arr_index=None, vendor_id=0, bacoid=None):
+        addr, obj_type, obj_inst, prop_id = args[:4]
+        vendor_id = vendor_id
+        bacoid = bacoid
+
+        if obj_type.isdigit():
+            obj_type = int(obj_type)
+        elif not get_object_class(obj_type):
+            raise ValueError("unknown object type")
+
+        obj_inst = int(obj_inst)
+
+        if prop_id.isdigit():
+            prop_id = int(prop_id)
+        datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
+        if not datatype:
+            raise ValueError("invalid property for object type")
+
+        # build a request
+        request = ReadRangeRequest(
+            objectIdentifier=(obj_type, obj_inst),
+            propertyIdentifier=prop_id,
+            )
+        request.pduDestination = Address(addr)
+
+        if len(args) == 5:
+            request.propertyArrayIndex = int(args[4])
+        self._log.debug("{:<20} {!r}".format(
+            'REQUEST', request))
+        return request
+    
+    def readRange(self,args, arr_index=None, vendor_id=0, bacoid=None):
+        """
+        Build a ReadProperty request, wait for the answer and return the value
+
+        :param args: String with <addr> <type> <inst> <prop> [ <indx> ]
+        :returns: data read from device (str representing data like 10 or True)
+
+        *Example*::
+
+            import BAC0
+            myIPAddr = '192.168.1.10/24'
+            bacnet = BAC0.connect(ip = myIPAddr)
+            bacnet.read('2:5 analogInput 1 presentValue')
+
+        Requests the controller at (Network 2, address 5) for the presentValue of
+        its analog input 1 (AI:1).
+        """
+        if not self._started:
+            raise ApplicationNotStarted(
+                'BACnet stack not running - use startApp()')
+
+        args_split = args.split()
+        
+        self.log_title("Read range",args_split)
+                       
+        vendor_id = vendor_id
+        bacoid = bacoid
+
+        try:
+            # build ReadProperty request
+            iocb = IOCB(self.build_rrange_request(
+                args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid))
+            # pass to the BACnet stack
+            deferred(self.this_application.request_io, iocb)
+            self._log.debug("{:<20} {!r}".format('iocb', iocb))
+
+        except ReadRangeException as error:
+            # construction error
+            self._log.exception("exception: {!r}".format(error))
+
+        iocb.wait()             # Wait for BACnet response
+
+        if iocb.ioResponse:     # successful response
+            apdu = iocb.ioResponse
+
+            if not isinstance(apdu, ReadRangeACK):               # expecting an ACK
+                self._log.warning("Not an ack, see debug for more infos.")
+                self._log.debug("Not an ack. | APDU : {} / {}".format((apdu, type(apdu))))
+                return
+
+            # find the datatype
+            datatype = get_datatype(
+                apdu.objectIdentifier[0], apdu.propertyIdentifier, vendor_id=vendor_id)
+            if not datatype:
+                raise TypeError("unknown datatype")
+
+
+            # special case for array parts, others are managed by cast_out
+#            if issubclass(datatype, Array) and (apdu.propertyArrayIndex is not None):
+#                if apdu.propertyArrayIndex == 0:
+#                    value = apdu.propertyValue.cast_out(Unsigned)
+#                else:
+#                    value = apdu.propertyValue.cast_out(datatype.subtype)
+#            else:
+#                value = apdu.propertyValue.cast_out(datatype)
+                
+            value = apdu.itemData[0].cast_out(datatype)
+
+            self._log.debug(
+                "{:<20} {:<20}".format(
+                'value',
+                'datatype'))
+            self._log.debug(
+                "{!r:<20} {!r:<20}".format(
+                value,
+                datatype))
+            return value
+
+        if iocb.ioError:        # unsuccessful: error/reject/abort
+            apdu = iocb.ioError
+            reason = find_reason(apdu)
+            if reason == 'segmentationNotSupported':
+                self._log.warning(
+                    "Segmentation not supported... will read properties one by one...")
+                self._log.debug("The Request was : {}".format(args_split))
+                value = self._split_the_read_request(args, arr_index)
+                return value
+            else:
+                if reason == 'unknownProperty':
+                    if 'priorityArray' in args:
+                        self._log.debug('Unknown property {}'.format(args))
+                    else:
+                        self._log.warning('Unknown property {}'.format(args))
+                    if 'description' in args:
+                        return ''
+                    elif 'inactiveText' in args:
+                        return 'Off'
+                    elif 'activeText' in args:
+                        return 'On'
+                    else:
+                        raise UnknownPropertyError(
+                            'Unknown property {}'.format(args))
+                elif reason == 'unknownObject':
+                    self._log.warning('Unknown object {}'.format(args))
+                    raise UnknownObjectError(
+                        'Unknown object {}'.format(args))
+                else:
+                    # Other error... consider NoResponseFromController (65)
+                    # even if the realy reason is another one
+                    raise NoResponseFromController(
+                        "APDU Abort Reason : {}".format(reason))
 
 
 def find_reason(apdu):

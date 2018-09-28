@@ -50,21 +50,39 @@ it will run without problem.
 To do so, use the syntax::
 
     bacnet = BAC0.lite(ip='xxx.xxx.xxx.xxx/mask')
+
+On a device without all the module sufficient to run the "complete" mode, using
+this syntax will also run BAC0 in "Lite" mode::
+
+    bacnet = BAC0.connect()
     
 Complete
 ............
 
-Complete will laucnh a web server with bokeh trending features. You will be able to 
+Complete will launch a web server with bokeh trending features. You will be able to 
 access the server from another computer if you want.
-
-Please note that this feature is still experimental and there is a lot of work 
-to do before I consider it stable.
-   
 
 To do so, use the syntax::
 
     bacnet = BAC0.connect(ip='xxx.xxx.xxx.xxx/mask')
 
+And log to the web server pointing your browser to http://localhost:8111
+
+.. note::
+   To run BAC0 in "complete" mode, you need to install supplemental packages :
+       * flask
+       * flask-bootstrap
+       * bokeh
+       * pandas (numpy)
+   To install bokeh, using "conda install bokeh" works really well. User will also needs to "pip install" everything else.
+
+.. note::
+   To run BAC0 in "complete" mode using a RaspberryPi_, I strongly recommend using the package
+   berryconda_. This will install Pandas, numpy, already compiled for the Pi and give you access
+   to the "conda" tool. You'll then be able to "conda install bokeh" and everythin will be working fine. If you try
+   to "pip install pandas" you will face issues as the RPi will have to compile the source and it is
+   a hard taks for a so small device. berryconda_ gives access to a great amount of packages already
+   compiled for the Raspberry Pi.
 
 
 Use BAC0 on a different subnect (Foreign Device)
@@ -90,5 +108,12 @@ Once your bacnet network is connected, you can use ::
 
     bacnet.whois()
     
-and get a simple list of networ:mac/device_instances on your network. 
+and get a simple list of network:mac/device_instances on your network. 
 Perfect for quick checkup.
+
+Or you can get a more detailed view using ::
+
+    bacnet.devices
+
+.. _berryconda : https://github.com/jjhelmus/berryconda  
+.. _RaspberryPi : http://www.raspberrypi.org

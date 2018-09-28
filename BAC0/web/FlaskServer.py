@@ -24,7 +24,7 @@ class FlaskServer(Thread):
     def __init__(self, network, port=8111, ip='0.0.0.0', *, daemon=True):
         Thread.__init__(self, daemon=daemon)
         self.flask_app = Flask(__name__)
-        #Bootstrap(self.flask_app)
+        Bootstrap(self.flask_app)
         self._network_ref = weakref.ref(network)
         self.port = port
         self.ip = ip
