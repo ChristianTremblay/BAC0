@@ -27,7 +27,7 @@ try:
         import pandas
         import bokeh
         import flask
-        import flask-bootstrap
+        import flask_bootstrap
         _COMPLETE = True
     except ImportError:
         _COMPLETE = False
