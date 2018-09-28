@@ -115,5 +115,5 @@ Or you can get a more detailed view using ::
 
     bacnet.devices
 
-.. _berryconda : https://github.com/jjhlemus/berryconda  
+.. _berryconda : https://github.com/jjhelmus/berryconda  
 .. _RaspberryPi : http://www.raspberrypi.org

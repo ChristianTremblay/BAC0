@@ -120,3 +120,4 @@ Please note that the hover suffers from a little bug in this "saved" version of 
 .. _Jupyter : http://jupyter.org
 .. _Matplotlib : http://matplotlib.org
 .. _Seaborn : http://seaborn.pydata.org
+.. _berryconda : https://github.com/jjhelmus/berryconda
