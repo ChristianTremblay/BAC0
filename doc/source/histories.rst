@@ -110,9 +110,8 @@ BAC0 supports the reading of TrendLog objects and will convert the records to pa
 This will allow to use **pandas** syntax over histories and make analysis easier for the user.
 
 TrendLog objects have also been made compatible with the format required to be added as Bokeh Chart
-in the web interface.
+in the web interface.::
 
-::
    # Manually create a TrendLog
    import BAC0
    bacnet = BAC0.connect()
