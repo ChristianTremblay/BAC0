@@ -59,6 +59,7 @@ class TrendLogProperties(object):
 
         self._df = None
 
+@note_and_log
 class TrendLog(TrendLogProperties):
     """
     BAC0 simplification of TrendLog Object
@@ -113,6 +114,7 @@ class TrendLog(TrendLogProperties):
             self.properties._df = df
         else:
             self.properties._history_components= (index,logdatum,status)
+            self._log.warning('Pandas not installed. Treating histories as simple list.')
             
 
     @property
@@ -140,7 +142,10 @@ class TrendLog(TrendLogProperties):
         """
         Add point to the bacnet trending list
         """
-        if remove:
-            self.properties.device.properties.network.remove_trend(self)
-        else:
-            self.properties.device.properties.network.add_trend(self)
+        if not _PANDAS:
+            self._log.error('Pandas must be installed to use live chart feature. See documentation how how to run BAC0 in complete mode')
+        else:          
+            if remove:
+                self.properties.device.properties.network.remove_trend(self)
+            else:
+                self.properties.device.properties.network.add_trend(self)

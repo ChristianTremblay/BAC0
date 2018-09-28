@@ -16,6 +16,7 @@ try:
     from .scripts.Base import Base
     from .core.devices.Device import Device as device
     from .core.devices.Device import DeviceLoad as load
+    from .core.devices.Trends import TrendLog as TrendLog
     from .tasks.Poll import SimplePoll as poll
     from .tasks.Match import Match as match
     from .core.utils.notes import update_log_level as log_level
@@ -26,6 +27,7 @@ try:
         import pandas
         import bokeh
         import flask
+        import flask-bootstrap
         _COMPLETE = True
     except ImportError:
         _COMPLETE = False
@@ -36,6 +38,7 @@ try:
     else:
         from .scripts.Lite import Lite as connect
         lite = connect
+        #print('All features not available as some modules are missing (flask, flask-bootstrap, bokeh, pandas). See docs for details')
 
 except ImportError as err:
     print('='*80)
