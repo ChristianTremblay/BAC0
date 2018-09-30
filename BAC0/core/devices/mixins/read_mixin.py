@@ -531,7 +531,7 @@ class ReadProperty():
         return (objList, points)
 
             
-    def poll(self, command='start', *, delay=60):
+    def poll(self, command='start', *, delay=120):
         """
         Poll a point every x seconds (delay=x sec)
         Can be stopped by using point.poll('stop') or .poll(0) or .poll(False)
@@ -548,8 +548,43 @@ class ReadProperty():
         device.poll('stop')
         device.poll(delay = 5)
         """
-        self._log.warning('Device too slow, use single points polling if needed')
-        self._log.warning('Points will be read once...')
-        for each in self.points:
-            each.value
-        self._log.info('Complete')
+        if delay > 120:
+            self._log.warning('Segmentation not supported, forcing delay to 120 seconds (or higher)')
+            delay = 120
+        #for each in self.points:
+        #    each.value
+        #self._log.info('Complete')
+        if str(command).lower() == 'stop' \
+                or command == False \
+                or command == 0 \
+                or delay == 0:
+
+            if isinstance(self._polling_task.task, DevicePoll):
+                self._polling_task.task.stop()
+                while self._polling_task.task.is_alive():
+                    pass
+
+                self._polling_task.task = None
+                self._polling_task.running = False
+                self._log.info('Polling stopped')
+                
+        elif self._polling_task.task is None:
+            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task.start()
+            self._polling_task.running = True
+            self._log.info('Polling started, values read every {} seconds'.format(delay))
+            
+        elif self._polling_task.running:
+            self._polling_task.task.stop()
+            while self._polling_task.task.is_alive():
+                pass
+            
+            self._polling_task.running = False
+            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task.start()
+            self._polling_task.running = True
+            self._log.info('Polling started, every values read each %s seconds' % delay)
+            
+        else:
+            raise RuntimeError('Stop polling before redefining it')
+        

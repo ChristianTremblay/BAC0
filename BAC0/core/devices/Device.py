@@ -465,7 +465,7 @@ class DeviceConnected(Device):
             self.properties.objects_list, self.points = self._discoverPoints(
                 self.custom_object_list)
             if self.properties.pollDelay > 0:
-                self.poll()
+                self.poll(delay=self.properties.pollDelay)
         except NoResponseFromController as error:
             self._log.error('Cannot retrieve object list, disconnecting...')
             self.segmentation_supported = False

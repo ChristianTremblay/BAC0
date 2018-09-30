@@ -83,7 +83,7 @@ class SQLMixin(object):
 
         # in some circumstances, correct : pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in backup.items() ]))
         backup = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in backup.items() ]))
-        return pd.DataFrame(backup)
+        return pd.DataFrame(backup).fillna(method='ffill')
 
 
     def save(self, filename = None):
@@ -92,6 +92,8 @@ class SQLMixin(object):
         Save the device object properties to a pickle file so the device can be reloaded.
         """
         if filename:
+            if '.db' in filename:
+                filename = filename.split('.')[0]
             self.properties.db_name = filename
         else:
             self.properties.db_name = '{}'.format(self.properties.name)
