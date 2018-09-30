@@ -40,8 +40,10 @@ from ..core.devices.Trends import TrendLog
 from ..core.utils.notes import note_and_log
 from ..core.io.IOExceptions import NoResponseFromController, UnrecognizedService
 
+
 from ..infos import __version__ as version
 
+from bacpypes.pdu import Address
 
 #------------------------------------------------------------------------------
 
@@ -62,16 +64,21 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         set to True.
     """
 
-    def __init__(self, ip=None, bbmdAddress=None, bbmdTTL=0):
+    def __init__(self, ip=None, port=None, mask = None, bbmdAddress=None, bbmdTTL=0):
         self._log.info("Starting BAC0 version {} ({})".format(
             version, self.__module__.split('.')[-1]))
         self._log.debug("Configurating app")
         self._registered_devices = weakref.WeakValueDictionary()
         if ip is None:
-            host = HostIP()
+            host = HostIP(port)
             ip_addr = host.address
         else:
-            ip_addr = ip
+            ip, subnet_mask_and_port = ip.split('/')
+            if subnet_mask_and_port:
+                mask, ip_port = subnet_mask_and_port.split(':')
+                if not ip_port:
+                    port = port
+            ip_addr = Address('{}/{}:{}'.format(ip,mask, port))
         self._log.info('Using ip : {ip_addr}'.format(ip_addr=ip_addr))
         Base.__init__(self, localIPAddr=ip_addr,
                       bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL)

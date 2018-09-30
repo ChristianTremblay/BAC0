@@ -56,7 +56,8 @@ class Base():
     :param segmentationSupported='segmentedBoth':
     """
 
-    def __init__(self, localIPAddr='127.0.0.1', localObjName='BAC0', DeviceId=None,
+    def __init__(self, localIPAddr='127.0.0.1',
+                 localObjName='BAC0', DeviceId=None,
                  maxAPDULengthAccepted='1024', maxSegmentsAccepted='1024',
                  segmentationSupported='segmentedBoth',
                  bbmdAddress=None, bbmdTTL=0):
@@ -69,6 +70,7 @@ class Base():
         self._stopped = False
 
         self.localIPAddr = localIPAddr
+        
         self.Boid = int(DeviceId) if DeviceId else (
             3056177 + int(random.uniform(0, 1000)))
 

@@ -26,26 +26,53 @@ class HostIP():
     Special class to identify host IP informations
     """
 
-    def __init__(self):
+    def __init__(self, port=47808):
         ip = self._findIPAddr()
         mask = self._findSubnetMask(ip)
-        self.interface = ipaddress.IPv4Interface("%s/%s" % (ip, mask))
+        self._port = port
+        self.interface = ipaddress.IPv4Interface("{}/{}".format(ip, mask))
     
+    @property    
+    def ip_address_subnet(self):
+        """
+        IP Address/subnet
+        """
+        return ('{}/{}'.format(self.interface.ip.compressed,
+                           self.interface.exploded.split('/')[-1]))
     @property    
     def ip_address(self):
         """
         IP Address/subnet
         """
-        return ('%s/%s' % (self.interface.ip.compressed,
-                           self.interface.exploded.split('/')[-1]))
+        return '{}'.format(self.interface.ip.compressed)
+
 
     @property
     def address(self):
         """
         IP Address using bacpypes Address format
         """
-        return (Address('%s/%s' % (self.interface.ip.compressed,
-                                   self.interface.exploded.split('/')[-1])))
+        port = ''
+        if self._port:
+            port = ':{}'.format(self._port)
+        return (Address('{}/{}{}'.format(self.interface.ip.compressed,
+                                   self.interface.exploded.split('/')[-1],
+                                   port)))
+
+    @property
+    def mask(self):
+        """
+        Subnet mask
+        """
+        return self.interface.exploded.split('/')[-1]
+
+    @property
+    def port(self):
+        """
+        IP Port used
+        """
+        return self._port
+
 
     def _findIPAddr(self):
         """
