@@ -12,7 +12,7 @@ from BAC0.core.devices.create_objects import create_AV, create_MV, create_BV
 
 @pytest.fixture(scope='session')
 def network_and_devices():
-    bacnet = BAC0.connect()
+    bacnet = BAC0.lite()
 
     device_app = BAC0.lite(port=47809)
     mv = create_MV(oid=1, name='mv', pv=1)
