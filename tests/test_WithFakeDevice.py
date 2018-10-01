@@ -32,8 +32,10 @@ def network_and_devices():
 
     yield (bacnet, device_app, test_device)
     # Close when done
+    test_device.disconnect()
     bacnet.disconnect()
     device_app.disconnect()
+
 
 def test_ReadAV(network_and_devices):
     bacnet, device_app, test_device = network_and_devices
