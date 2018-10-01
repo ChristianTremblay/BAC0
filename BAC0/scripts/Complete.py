@@ -145,10 +145,10 @@ class Complete(Lite, Stats_Mixin):
         set to True.
     """
 
-    def __init__(self, ip=None,
+    def __init__(self, ip=None, mask=None, port=None,
                  bbmdAddress=None, bbmdTTL=0,
                  bokeh_server=True, flask_port=8111):
-        Lite.__init__(self, ip=ip, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL)
+        Lite.__init__(self, ip=ip, mask=mask, port=port, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL)
         self.flask_port = flask_port
         if bokeh_server:
             self.start_bokeh()
@@ -191,12 +191,12 @@ class Complete(Lite, Stats_Mixin):
             self.trend_app = Application(trendHandler)
             self.notes_app = Application(notesHandler)
             self.bk_worker = Bokeh_Worker(
-                dev_app, self.trend_app, self.notes_app, self.localIPAddr)
+                dev_app, self.trend_app, self.notes_app, self.localIPAddr.addrTuple[0])
             self.FlaskServer = FlaskServer(
-                network=self, port=self.flask_port, ip=self.localIPAddr)
+                network=self, port=self.flask_port, ip=self.localIPAddr.addrTuple[0])
             self.bk_worker.start()
             self.bokehserver = True
-            self._log.info('Server started : http://{}:{}'.format(self.localIPAddr,self.flask_port))
+            self._log.info('Server started : http://{}:{}'.format(self.localIPAddr.addrTuple[0],self.flask_port))
 
         except OSError as error:
             self.bokehserver = False

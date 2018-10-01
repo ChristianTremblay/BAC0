@@ -81,9 +81,8 @@ class SQLMixin(object):
             else:
                 backup[point.properties.name] = point.history.resample('1s').mean()
 
-        # in some circumstances, correct : pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in backup.items() ]))
-        backup = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in backup.items() ]))
-        return pd.DataFrame(backup)
+        df = pd.DataFrame(dict([ (k,pd.Series(v)) for k,v in backup.items() ]))
+        return df.fillna(method='ffill')
 
 
     def save(self, filename = None):
@@ -92,6 +91,8 @@ class SQLMixin(object):
         Save the device object properties to a pickle file so the device can be reloaded.
         """
         if filename:
+            if '.db' in filename:
+                filename = filename.split('.')[0]
             self.properties.db_name = filename
         else:
             self.properties.db_name = '{}'.format(self.properties.name)
@@ -108,12 +109,13 @@ class SQLMixin(object):
         else:
             self._log.debug('Creating a new backup database')
             df_to_backup = self.backup_histories_df()
-        
-        cnx = sqlite3.connect('{}.db'.format(self.properties.db_name))
-    
-        # DataFrames that will be saved to SQL
-        sql.to_sql(df_to_backup, name='history', con=cnx, index_label = 'index', index = True, if_exists = 'append')
 
+        # DataFrames that will be saved to SQL
+        with contextlib.closing(sqlite3.connect('{}.db'.format(db_name))) as con:
+            return sql.to_sql(df_to_backup, name='history', con=con,
+                              index_label = 'index', index = True, if_exists = 'append')
+
+        # Saving other properties to a pickle file...        
         prop_backup = {}
         prop_backup['device'] = self.dev_properties_df()
         prop_backup['points'] = self.points_properties_df()

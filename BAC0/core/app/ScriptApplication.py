@@ -22,6 +22,7 @@ from collections import defaultdict
 #--- 3rd party modules ---
 from bacpypes.app import BIPSimpleApplication, BIPForeignApplication
 from bacpypes.pdu import Address
+from bacpypes.service.object import ReadWritePropertyMultipleServices
 
 #--- this application's modules ---
 from ..utils.notes import note_and_log
@@ -30,7 +31,7 @@ from ..utils.notes import note_and_log
 
 
 @note_and_log
-class SimpleApplication(BIPSimpleApplication):
+class SimpleApplication(BIPSimpleApplication, ReadWritePropertyMultipleServices):
     """
     Defines a basic BACnet/IP application to process BACnet requests.
 
@@ -84,7 +85,7 @@ class SimpleApplication(BIPSimpleApplication):
 
 
 @note_and_log
-class ForeignDeviceApplication(BIPForeignApplication):
+class ForeignDeviceApplication(BIPForeignApplication, ReadWritePropertyMultipleServices):
     """
     Defines a basic BACnet/IP application to process BACnet requests.
 
