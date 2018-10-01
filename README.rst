@@ -55,7 +55,7 @@ even be able to create nice looking report right from your code.
    :target: http://bac0.readthedocs.org/
    :alt: Documentation
    
-.. |coverage| image:: https://coveralls.io/repos/ChristianTremblay/BAC0/badge.svg?branch=master&service=github 
+.. |coverage| image:: https://coveralls.io/repos/github/ChristianTremblay/BAC0/badge.svg?branch=master
    :target: https://coveralls.io/github/ChristianTremblay/BAC0?branch=master
    :alt: Coverage
 
