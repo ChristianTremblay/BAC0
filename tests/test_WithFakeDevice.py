@@ -12,7 +12,7 @@ from BAC0.core.devices.create_objects import create_AV, create_MV, create_BV
 
 @pytest.fixture(scope='session')
 def network_and_devices():
-    bacnet = BAC0.connect()
+    bacnet = BAC0.lite()
 
     device_app = BAC0.lite(port=47809)
     mv = create_MV(oid=1, name='mv', pv=1)
@@ -32,8 +32,10 @@ def network_and_devices():
 
     yield (bacnet, device_app, test_device)
     # Close when done
+    test_device.disconnect()
     bacnet.disconnect()
     device_app.disconnect()
+
 
 def test_ReadAV(network_and_devices):
     bacnet, device_app, test_device = network_and_devices

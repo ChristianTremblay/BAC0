@@ -486,7 +486,7 @@ class DeviceConnected(Device):
             if isinstance(point_name, list):
                 return self.df(point_name, force_read=False)
             else:
-                return self._findPoint(point_name)
+                return self._findPoint(point_name, force_read=False)
         except ValueError as ve:
             self._log.error('{}'.format(ve))
 
