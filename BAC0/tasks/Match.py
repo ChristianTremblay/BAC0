@@ -62,10 +62,10 @@ class Match_Value(Task):
             value = self.value()
         else:
             value = self.value
-        if  value != self.point:
+        if  value != self.point.value:
             self.point._setitem(value)        
 
 
     def stop(self):
-        self.status._setitem('auto')
+        self.point._setitem('auto')
         self.exitFlag = True
