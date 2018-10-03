@@ -11,4 +11,4 @@ def test_BacpypesVersion():
     maj, minor, patch = bacpypes.__version__.split('.')
     assert float(maj) == 0
     assert float(minor) == 17
-    assert float(patch) == 6
+    assert float(patch) >= 5
