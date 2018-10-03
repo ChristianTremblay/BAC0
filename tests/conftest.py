@@ -14,7 +14,7 @@ from collections import namedtuple
 
 @pytest.fixture(scope='session')
 def network_and_devices():
-    bacnet = BAC0.connect()
+    bacnet = BAC0.lite()
 
     def _add_points(qty, device):
         # Add a lot of points for tests (segmentation required)
@@ -80,9 +80,9 @@ def network_and_devices():
     test_device_30.disconnect()
     test_device_300.disconnect()
 
-    device_app.disconnect()
-    device30_app.disconnect()
-    device300_app.disconnect()
+    #device_app.disconnect()
+    #device30_app.disconnect()
+    #device300_app.disconnect()
     
     bacnet.disconnect()
 
