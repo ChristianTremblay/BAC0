@@ -86,10 +86,13 @@ def network_and_devices():
 
     yield params
 
+    del params
     # Close when done
     test_device.disconnect()
     test_device_30.disconnect()
-    test_device_300.disconnect()
+    # test_device_300.disconnect()
+
+    del test_device_300
 
     # device_app.disconnect()
     # device30_app.disconnect()
