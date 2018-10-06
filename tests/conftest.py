@@ -28,18 +28,26 @@ def network_and_devices():
         bos = []
 
         for i in range(qty):
-            mvs.append(create_MV(oid=i, name='mv{}'.format(i), pv=1))
-            avs.append(create_AV(oid=i, name='av{}'.format(i), pv=99.9))
+            mvs.append(
+                create_MV(oid=i, name='mv{}'.format(i), pv=1))
+            avs.append(
+                create_AV(oid=i, name='av{}'.format(i), pv=99.9))
             bvs.append(create_BV(oid=i, name='bv{}'.format(i), pv=1))
             ais.append(create_AI(oid=i, name='ai{}'.format(i), pv=99.9))
             aos.append(create_AO(oid=i, name='ao{}'.format(i), pv=99.9))
             bis.append(create_BI(oid=i, name='bi{}'.format(i), pv=1))
             bos.append(create_BO(oid=i, name='bo{}'.format(i), pv=1))
 
+        def _make_mutable(obj, identifier='presentValue', mutable=True):
+            for prop in obj.properties:
+                if prop.identifier == identifier:
+                    prop.mutable = mutable
+            return obj
+
         for mv in mvs:
-            device.this_application.add_object(mv)
+            device.this_application.add_object(_make_mutable(mv))
         for av in avs:
-            device.this_application.add_object(av)
+            device.this_application.add_object(_make_mutable(av))
         for bv in bvs:
             device.this_application.add_object(bv)
         for ai in ais:
