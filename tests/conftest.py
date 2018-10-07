@@ -39,6 +39,10 @@ def network_and_devices():
             bos.append(create_BO(oid=i, name='bo{}'.format(i), pv=1))
 
         def _make_mutable(obj, identifier='presentValue', mutable=True):
+            """ 
+            This function is not the way to go as it changes the class
+            property...As bacpypes issue #224, it will need a lot of work
+            """
             for prop in obj.properties:
                 if prop.identifier == identifier:
                     prop.mutable = mutable
