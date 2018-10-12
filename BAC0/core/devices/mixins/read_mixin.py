@@ -15,6 +15,7 @@ read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device
 from ....tasks.Poll import DevicePoll
 from ...io.IOExceptions import ReadPropertyMultipleException, NoResponseFromController, SegmentationNotSupported
 from ..Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
+from ..Trends import TrendLog
 
 #------------------------------------------------------------------------------
 
@@ -70,8 +71,8 @@ class ReadPropertyMultiple():
         :param points_list: (list) a list of all point_name as str
         :param points_per_request: (int) number of points in the request
 
-        Requesting many points results big requests that need segmentation.  Aim to request 
-        just the 'right amount' so segmentation can be avoided.  Determining the 'right amount' 
+        Requesting many points results big requests that need segmentation.  Aim to request
+        just the 'right amount' so segmentation can be avoided.  Determining the 'right amount'
         is often trial-&-error.
 
         :Example:
@@ -91,7 +92,6 @@ class ReadPropertyMultiple():
                 big_request = discover_request[0]
 
                 for request in self._batches(big_request, points_per_request):
-                    
                     try:
                         request = ('{} {}'.format(self.properties.address, ''.join(request)))
                         self._log.debug('RPM_Request: %s ' % request)
@@ -104,17 +104,16 @@ class ReadPropertyMultiple():
 
                     except KeyError as error:
                         raise Exception('Unknown point name : %s' % error)
-                        
+
                     except SegmentationNotSupported as error:
                         self.properties.segmentation_supported = False
                         #self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
                         self._log.warning('Segmentation not supported')
-                
                         self._log.warning('Request too big...will reduce it')
                         if points_per_request == 1:
                             raise
                         self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
-                        
+
                     else:
                         for points_info in self._batches(val, info_length):
                             values.append(points_info)
@@ -152,16 +151,16 @@ class ReadPropertyMultiple():
                 try:
                     request = ('{} {}'.format(self.properties.address, ''.join(request)))
                     val = self.properties.network.read(request)
-    
+
                 except KeyError as error:
                     raise Exception('Unknown point name : %s' % error)
-                
+
                 # Save each value to history of each point
                 for points_info in self._batches(val, info_length):
                     values.append(points_info)
-                    
+
             return values
-        
+
         else:
             big_request = self._rpm_request_by_name(points_list)
             i = 0
@@ -170,7 +169,6 @@ class ReadPropertyMultiple():
                     request = ('{} {}'.format(self.properties.address, ''.join(request)))
                     val = self.properties.network.read(request)
                     points_values = zip(big_request[1][i:i + len(val)], val)
-                    
                     i += len(val)
                     for each in points_values:
                         each[0]._trend(each[1])
@@ -183,10 +181,10 @@ class ReadPropertyMultiple():
         if custom_object_list:
             objList = custom_object_list
         else:
-            try : 
+            try :
                     objList = self.properties.network.read(
                     '{} device {} objectList'.format(self.properties.address, self.properties.device_id))
-            
+
             except NoResponseFromController:
                 self.log.error('No object list available. Please provide a custom list using the object_list parameter')
                 objList = []
@@ -195,12 +193,13 @@ class ReadPropertyMultiple():
                 objList = []
                 number_of_objects = self.properties.network.read(
                     '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = 0)
-    
+
                 for i in range(1,number_of_objects+1):
                     objList.append(self.properties.network.read(
                         '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = i))
 
         points = []
+        trendlogs = {}
 
 
         # Numeric
@@ -231,7 +230,7 @@ class ReadPropertyMultiple():
                 point_description = ""
 
             elif len(point_infos) == 2:
-                point_units_state = ""          
+                point_units_state = ""
                 point_description = ""
 
             else:
@@ -239,7 +238,7 @@ class ReadPropertyMultiple():
                 # SHOULD SWITCH TO SEGMENTATION_SUPPORTED = FALSE HERE
                 self._log.warning('Cannot add {} / {} | {}'.format(point_type, point_address, len(point_infos)))
                 continue
-            
+
             i += 1
             try:
                 points.append(
@@ -260,7 +259,7 @@ class ReadPropertyMultiple():
             multistate_points_info= self.read_multiple('', discover_request=(multistate_request, 4), points_per_request=5)
         except SegmentationNotSupported:
             raise
-            
+
         i = 0
         for each in retrieve_type(objList, 'multi'):
             point_type = str(each[0])
@@ -287,13 +286,13 @@ class ReadPropertyMultiple():
             binary_points_info= self.read_multiple('', discover_request=(binary_request, 5), points_per_request=5)
         except SegmentationNotSupported:
             raise
-            
+
         i = 0
         for each in retrieve_type(objList, 'binary'):
             point_type = str(each[0])
             point_address = str(each[1])
             point_infos = binary_points_info[i]
-            
+
             if len(point_infos) == 3:
                 #we probably get only objectName, presentValue and description
                 point_units_state = ('OFF', 'ON')
@@ -307,7 +306,7 @@ class ReadPropertyMultiple():
                     point_description = ""
 
             elif len(point_infos) == 2:
-                point_units_state = ('OFF', 'ON')          
+                point_units_state = ('OFF', 'ON')
                 point_description = ""
 
             else:
@@ -326,11 +325,22 @@ class ReadPropertyMultiple():
             except IndexError:
                 self._log.warning('There has been a problem defining binary points. It is sometimes due to busy network. Please retry the device creation')
                 raise
-                
-        self._log.info('Ready!')
-        return (objList, points)
+
+        #trenLogs_request = []
+        #list_of_trendLogs = retrieve_type(objList, 'trendLog')
+        #for binary_points, address in list_of_trendLogs:
+        #    trendLogs_request.append('{} {}')
+        for each in retrieve_type(objecList, 'trendLogs'):
+            point_address = str(each[1])
+            tl = TrendLog(point_address, self, read_log_on_creation=False)
+            ldop_type, ldop_addr = tl.properties.log_device_object_property
+            trendlogs['{}_{}'.format(ldop_type, ldop_addr)]
 
             
+        self._log.info('Ready!')
+        return (objList, points, trendlogs)
+
+
     def poll(self, command='start', *, delay=10):
         """
         Poll a point every x seconds (delay=x sec)
@@ -361,24 +371,23 @@ class ReadPropertyMultiple():
                 self._polling_task.task = None
                 self._polling_task.running = False
                 self._log.info('Polling stopped')
-                
+
         elif self._polling_task.task is None:
             self._polling_task.task = DevicePoll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info('Polling started, values read every {} seconds'.format(delay))
-            
+
         elif self._polling_task.running:
             self._polling_task.task.stop()
             while self._polling_task.task.is_alive():
                 pass
-            
             self._polling_task.running = False
             self._polling_task.task = DevicePoll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info('Polling started, every values read each %s seconds' % delay)
-            
+
         else:
             raise RuntimeError('Stop polling before redefining it')
 
@@ -387,10 +396,9 @@ class ReadProperty():
     """
     Handle ReadProperty for a device
     """
-    
     def _batches(self, request, points_per_request):
         """
-        Generator for creating 'request batches'.  Each batch contains a maximum of "points_per_request" 
+        Generator for creating 'request batches'.  Each batch contains a maximum of "points_per_request"
         points to read.
         :params: request a list of point_name as a list
         :params: (int) points_per_request
@@ -443,19 +451,17 @@ class ReadProperty():
                 self.read_single(each,points_per_request=1, discover_request=discover_request)
         else:
             self.read_single(points_list,points_per_request=1, discover_request=discover_request)
-                        
 
     def read_single(self, request, *, points_per_request=1, discover_request=(None, 4)):
         try:
             request = ('{} {}'.format(self.properties.address, ''.join(request)))
             return self.properties.network.read(request)
-        
         except KeyError as error:
             raise Exception('Unknown point name: %s' % error)
-        
+
         except NoResponseFromController as error:
             return ''
-            
+
 
     def _discoverPoints(self, custom_object_list = None):
         if custom_object_list:
@@ -464,17 +470,18 @@ class ReadProperty():
             try : 
                 objList = self.properties.network.read('{} device {} objectList'.format(
                               self.properties.address, self.properties.device_id))
-                
+
             except SegmentationNotSupported:
                 objList = []
                 number_of_objects = self.properties.network.read(
                     '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = 0)
-                
+
                 for i in range(1,number_of_objects+1):
                     objList.append(self.properties.network.read(
                     '{} device {} objectList'.format(self.properties.address, self.properties.device_id), arr_index = i))
 
         points = []
+        trendlogs = {}
 
 
         # Numeric
@@ -488,7 +495,6 @@ class ReadProperty():
                     pointAddress=point_address,
                     pointName=self.read_single('{} {} objectName '.format(point_type, point_address)),
                     description=self.read_single('{} {} description '.format(point_type, point_address)),
-                    
                     presentValue=float(
                         self.read_single('{} {} presentValue '.format(point_type, point_address))),
                     units_state=self.read_single('{} {} units '.format(point_type, point_address)),
@@ -527,10 +533,16 @@ class ReadProperty():
                                  ), 
                     device=self))
 
-        self._log.info('Ready!')
-        return (objList, points)
-
+        for each in retrieve_type(objList, 'trendLog'):
+            point_address = str(each[1])
+            tl = trendLogs(point_address, self)
+            ldop_type, ldop_addr = tl.properties.log_device_object_property
+            trendlogs['{}_{}'.format(ldop_type, ldop_addr)] = tl
             
+        self._log.info('Ready!')
+        return (objList, points, trendlogs)
+
+
     def poll(self, command='start', *, delay=120):
         """
         Poll a point every x seconds (delay=x sec)
@@ -567,24 +579,22 @@ class ReadProperty():
                 self._polling_task.task = None
                 self._polling_task.running = False
                 self._log.info('Polling stopped')
-                
+
         elif self._polling_task.task is None:
             self._polling_task.task = DevicePoll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info('Polling started, values read every {} seconds'.format(delay))
-            
+
         elif self._polling_task.running:
             self._polling_task.task.stop()
             while self._polling_task.task.is_alive():
                 pass
-            
             self._polling_task.running = False
             self._polling_task.task = DevicePoll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info('Polling started, every values read each %s seconds' % delay)
-            
+
         else:
             raise RuntimeError('Stop polling before redefining it')
-        

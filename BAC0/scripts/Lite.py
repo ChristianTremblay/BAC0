@@ -73,11 +73,15 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
             host = HostIP(port)
             ip_addr = host.address
         else:
-            ip, subnet_mask_and_port = ip.split('/')
-            if subnet_mask_and_port:
-                mask, ip_port = subnet_mask_and_port.split(':')
-                if not ip_port:
-                    port = port
+            if not mask:
+                ip, subnet_mask_and_port = ip.split('/')
+                if subnet_mask_and_port:
+                    try:
+                        mask, ip_port = subnet_mask_and_port.split(':')
+                        port = ip_port
+                    except Exception:
+                        mask = subnet_mask_and_port
+            print('{}/{}:{}'.format(ip,mask,port))
             ip_addr = Address('{}/{}:{}'.format(ip,mask, port))
         self._log.info('Using ip : {ip_addr}'.format(ip_addr=ip_addr))
         Base.__init__(self, localIPAddr=ip_addr,

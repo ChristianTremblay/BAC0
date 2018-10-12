@@ -115,7 +115,7 @@ class Device(SQLMixin):
                  from_backup=None, segmentation_supported=True,
                  object_list=None, auto_save=False,
                  clear_history_on_save=False, history_size=None):
-        
+
         self.properties = DeviceProperties()
 
         self.properties.address = address
@@ -138,6 +138,7 @@ class Device(SQLMixin):
         self.properties.db_name = ''
 
         self.points = []
+        self.trendlogs = {}
 
         self._polling_task = namedtuple('_polling_task', ['task', 'running'])
         self._polling_task.task = None
@@ -462,7 +463,7 @@ class DeviceConnected(Device):
         self._log.info('Device {}:[{}] found... building points list'.format(
             self.properties.device_id, self.properties.name))
         try:
-            self.properties.objects_list, self.points = self._discoverPoints(
+            self.properties.objects_list, self.points, self.trendlogs = self._discoverPoints(
                 self.custom_object_list)
             if self.properties.pollDelay > 0:
                 self.poll(delay=self.properties.pollDelay)
