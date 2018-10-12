@@ -330,11 +330,12 @@ class ReadPropertyMultiple():
         #list_of_trendLogs = retrieve_type(objList, 'trendLog')
         #for binary_points, address in list_of_trendLogs:
         #    trendLogs_request.append('{} {}')
-        for each in retrieve_type(objecList, 'trendLogs'):
+        for each in retrieve_type(objList, 'trendLog'):
             point_address = str(each[1])
             tl = TrendLog(point_address, self, read_log_on_creation=False)
-            ldop_type, ldop_addr = tl.properties.log_device_object_property
-            trendlogs['{}_{}'.format(ldop_type, ldop_addr)]
+            ldop_type,ldop_addr = tl.properties.log_device_object_property.objectIdentifier
+            ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
+            trendlogs['{}_{}_{}'.format(ldop_type, ldop_addr, ldop_prop)]=(tl.properties.object_name, tl)
 
             
         self._log.info('Ready!')
@@ -536,8 +537,9 @@ class ReadProperty():
         for each in retrieve_type(objList, 'trendLog'):
             point_address = str(each[1])
             tl = trendLogs(point_address, self)
-            ldop_type, ldop_addr = tl.properties.log_device_object_property
-            trendlogs['{}_{}'.format(ldop_type, ldop_addr)] = tl
+            ldop_type, ldop_addr = tl.properties.log_device_object_property.objectIdentifier
+            ldop_prop = tl.propertires.log_device_object_property.propertyIdentifier
+            trendlogs['{}_{}_{}'.format(ldop_type, ldop_addr, ldop_prop)] = (tl.properties.object_name,tl)
             
         self._log.info('Ready!')
         return (objList, points, trendlogs)
