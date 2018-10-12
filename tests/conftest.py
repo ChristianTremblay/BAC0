@@ -70,7 +70,7 @@ def network_and_devices():
 
     _add_points(1, device_app)
     _add_points(10, device30_app)
-    _add_points(100, device300_app)
+    _add_points(30, device300_app)
 
     ip = device_app.localIPAddr.addrTuple[0]
     boid = device_app.Boid
@@ -98,7 +98,6 @@ def network_and_devices():
 
     yield params
 
-    del params
     # Close when done
     test_device.disconnect()
     test_device_30.disconnect()
@@ -107,6 +106,8 @@ def network_and_devices():
     del test_device
     del test_device_30
     del test_device_300
+
+    del params
 
     del device_app
     del device30_app

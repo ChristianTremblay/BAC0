@@ -115,7 +115,10 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         Remove from the registered list
         """
         oid = id(device)
-        del self._registered_devices[oid]
+        try:
+            del self._registered_devices[oid]
+        except KeyError:
+            pass
 
     def add_trend(self, point_to_trend):
         """
