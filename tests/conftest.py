@@ -20,7 +20,7 @@ def network_and_devices():
     def _add_points(qty, device):
         # Add a lot of points for tests (segmentation required)
         mvs = []
-        avs = []
+        avs = []    
         bvs = []
         ais = []
         bis = []
@@ -84,9 +84,9 @@ def network_and_devices():
     # Connect to test device using main network
     test_device = BAC0.device('{}:47809'.format(ip), boid, bacnet, poll=10)
     test_device_30 = BAC0.device(
-        '{}:47810'.format(ip_30), boid_30, bacnet, poll=120)
+        '{}:47810'.format(ip_30), boid_30, bacnet, poll=0)
     test_device_300 = BAC0.device(
-        '{}:47811'.format(ip_300), boid_300, bacnet, poll=120)
+        '{}:47811'.format(ip_300), boid_300, bacnet, poll=0)
 
     params = namedtuple('devices', [
                         'bacnet', 'device_app', 'test_device', 'test_device_30', 'test_device_300'])
@@ -102,12 +102,15 @@ def network_and_devices():
     # Close when done
     test_device.disconnect()
     test_device_30.disconnect()
-    # test_device_300.disconnect()
+    test_device_300.disconnect()
 
+    del test_device
+    del test_device_30
     del test_device_300
 
-    # device_app.disconnect()
-    # device30_app.disconnect()
-    # device300_app.disconnect()
+    del device_app
+    del device30_app
+    del device300_app
 
     bacnet.disconnect()
+    del bacnet

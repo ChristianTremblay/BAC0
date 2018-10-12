@@ -148,7 +148,7 @@ class DynamicPlotHandler(Handler):
                                     (each.name, each.description, each.units)),
                             line_width=2)
 
-            self.p.legend.location = 'bottom_left'
+            self.p.legend.location = 'right'
             self.p.legend.click_policy = "hide"
 
             self.plots = [self.p, ]
