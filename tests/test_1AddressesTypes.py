@@ -13,6 +13,9 @@ import pytest
 def host_ip():
     hip = HostIP()
     ip, subnet = hip.ip_address_subnet.split('/')
+    if subnet == '32':
+        # invalid mask given by Travis
+        subnet = '24'
     return (ip,subnet)
 
 
