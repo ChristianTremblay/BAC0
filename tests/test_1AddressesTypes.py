@@ -9,7 +9,7 @@ from BAC0.core.functions.GetIPAddr import HostIP
 import BAC0
 import pytest
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def host_ip():
     hip = HostIP()
     ip, subnet = hip.ip_address_subnet.split('/')
