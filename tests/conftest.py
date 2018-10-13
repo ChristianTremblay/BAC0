@@ -11,7 +11,7 @@ import BAC0
 from BAC0.core.devices.create_objects import create_AV, create_MV, create_BV, create_AI, create_BI, create_AO, create_BO
 
 from collections import namedtuple
-
+import time
 
 @pytest.fixture(scope='session')
 def network_and_devices():
@@ -99,19 +99,21 @@ def network_and_devices():
     yield params
 
     # Close when done
-    test_device.disconnect()
-    test_device_30.disconnect()
-    test_device_300.disconnect()
+    params.test_device.disconnect()
+    params.test_device_30.disconnect()
+    params.test_device_300.disconnect()
 
     del test_device
     del test_device_30
     del test_device_300
 
-    del params
-
     del device_app
     del device30_app
     del device300_app
 
-    bacnet.disconnect()
+    params.bacnet.disconnect()
     del bacnet
+    del params
+
+    # If too quick, we may encounter socket issues...
+    time.sleep(2)
