@@ -73,11 +73,16 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
             host = HostIP(port)
             ip_addr = host.address
         else:
-            ip, subnet_mask_and_port = ip.split('/')
-            if subnet_mask_and_port:
-                mask, ip_port = subnet_mask_and_port.split(':')
-                if not ip_port:
-                    port = port
+            try:
+                ip, subnet_mask_and_port = ip.split('/')
+            except ValueError:
+                ip = ip
+
+            if not mask:
+                mask = 24
+            if not port:
+                port = 47808
+            
             ip_addr = Address('{}/{}:{}'.format(ip,mask, port))
         self._log.info('Using ip : {ip_addr}'.format(ip_addr=ip_addr))
         Base.__init__(self, localIPAddr=ip_addr,
@@ -110,7 +115,10 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         Remove from the registered list
         """
         oid = id(device)
-        del self._registered_devices[oid]
+        try:
+            del self._registered_devices[oid]
+        except KeyError:
+            pass
 
     def add_trend(self, point_to_trend):
         """

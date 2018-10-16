@@ -64,7 +64,7 @@ class TrendLog(TrendLogProperties):
     """
     BAC0 simplification of TrendLog Object
     """
-    def __init__(self, OID, device=None, read_log_on_creation = True):
+    def __init__(self, OID, device=None, read_log_on_creation = True, multiple_request = None):
         self.properties = TrendLogProperties()
         self.properties.device = device
         self.properties.oid = OID

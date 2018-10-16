@@ -102,7 +102,7 @@ def note_and_log(cls):
     cls._log = logging.getLogger('BAC0')
     if not len(root_logger.handlers):
         root_logger.addHandler(cls._log)
-    
+
     # Console Handler
     ch = logging.StreamHandler()
     ch.set_name('stderr')
@@ -139,9 +139,9 @@ def note_and_log(cls):
             cls._log.addHandler(fh)
         cls._log.addHandler(ch)
         cls._log.addHandler(ch2)
-    
+
 #    cls._log.setLevel(logging.CRITICAL)
-        
+
     def log_title(self, title, args=None, width=35):
         cls._log.debug("")
         cls._log.debug("#"*width)

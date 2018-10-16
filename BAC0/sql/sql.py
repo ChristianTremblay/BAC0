@@ -101,8 +101,11 @@ class SQLMixin(object):
             his = self._read_from_sql(
                 'select * from "{}"'.format('history'), self.properties.db_name)
             his.index = his['index'].apply(Timestamp)
-            last = his.index[-1]
-            df_to_backup = self.backup_histories_df()[last:]
+            try:
+                last = his.index[-1]
+                df_to_backup = self.backup_histories_df()[last:]
+            except IndexError:
+                df_to_backup = self.backup_histories_df()
 
         else:
             self._log.debug('Creating a new backup database')
