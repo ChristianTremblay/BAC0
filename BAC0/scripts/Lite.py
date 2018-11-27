@@ -69,6 +69,7 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
             version, self.__module__.split('.')[-1]))
         self._log.debug("Configurating app")
         self._registered_devices = weakref.WeakValueDictionary()
+
         if ip is None:
             host = HostIP(port)
             ip_addr = host.address
@@ -79,7 +80,6 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
                     mask, port = subnet_mask_and_port.split(':')
                 except ValueError:
                     mask = subnet_mask_and_port
-                print(ip,mask,port)
             except ValueError:
                 ip = ip
 
@@ -87,7 +87,6 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
                 mask = 24
             if not port:
                 port = 47808
-            
             ip_addr = Address('{}/{}:{}'.format(ip,mask, port))
         self._log.info('Using ip : {ip_addr}'.format(ip_addr=ip_addr))
         Base.__init__(self, localIPAddr=ip_addr,
@@ -137,7 +136,7 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
             self._points_to_trend[oid] = point_to_trend
         elif isinstance(point_to_trend, TrendLog):
             oid = id(point_to_trend)
-            self._points_to_trend[oid] = point_to_trend        
+            self._points_to_trend[oid] = point_to_trend
         else:
             raise TypeError('Please provide point containing history')
 
