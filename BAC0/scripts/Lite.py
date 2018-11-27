@@ -75,6 +75,11 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         else:
             try:
                 ip, subnet_mask_and_port = ip.split('/')
+                try:
+                    mask, port = subnet_mask_and_port.split(':')
+                except ValueError:
+                    mask = subnet_mask_and_port
+                print(ip,mask,port)
             except ValueError:
                 ip = ip
 
