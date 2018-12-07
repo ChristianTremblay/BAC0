@@ -28,3 +28,4 @@ __pycache__
 /.pytest_cache
 /tests/archive
 /BAC0/web/test
+/venv/
