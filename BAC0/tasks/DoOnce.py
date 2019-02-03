@@ -10,6 +10,7 @@ DoOnce.py - execute a task once
 
 from .TaskManager import OneShotTask
 
+
 class DoOnce(OneShotTask):
     """
     Start a polling task which is in fact a recurring read of the point.
@@ -26,11 +27,11 @@ class DoOnce(OneShotTask):
 
         :returns: Nothing
         """
-        if hasattr(fnc, '__call__'):
+        if hasattr(fnc, "__call__"):
             self.func = fnc
             OneShotTask.__init__(self)
         else:
-            raise ValueError('You must pass a function to this...')
+            raise ValueError("You must pass a function to this...")
 
     def task(self):
         self.func()

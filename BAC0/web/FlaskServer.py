@@ -21,7 +21,7 @@ from .templates import create_sidebar, create_card, update_notifications
 class FlaskServer(Thread):
 
     # Init thread running server
-    def __init__(self, network, port=8111, ip='0.0.0.0', *, daemon=True):
+    def __init__(self, network, port=8111, ip="0.0.0.0", *, daemon=True):
         Thread.__init__(self, daemon=daemon)
         self.flask_app = Flask(__name__)
         Bootstrap(self.flask_app)
@@ -45,101 +45,111 @@ class FlaskServer(Thread):
             self.task()
 
     def startServer(self):
-        self.flask_app.run(port=self.port, host='0.0.0.0')
+        self.flask_app.run(port=self.port, host="0.0.0.0")
 
     def config_flask_app(self):
-        @self.flask_app.route('/trends', methods=['GET'])
+        @self.flask_app.route("/trends", methods=["GET"])
         def bkapp_trends_page():
             if self.network.number_of_registered_trends > 0:
-                script = server_document('http://%s:5006/trends' % self.ip)
+                script = server_document("http://%s:5006/trends" % self.ip)
             else:
                 script = "<div>No trend registered yet...</div>"
-            return render_template("trends.html",
-                                   sidebar=create_sidebar(
-                                       trends_class='class="active"'),
-                                   bokeh_script=script,
-                                   template="Flask")
+            return render_template(
+                "trends.html",
+                sidebar=create_sidebar(trends_class='class="active"'),
+                bokeh_script=script,
+                template="Flask",
+            )
 
-#        @self.flask_app.route('/devices', methods=['GET'])
-#        def bkapp_devices_page():
-#            script = server_document('http://localhost:5006/devices')
-#            return render_template("embed.html", script=script, template="Flask")
+        #        @self.flask_app.route('/devices', methods=['GET'])
+        #        def bkapp_devices_page():
+        #            script = server_document('http://localhost:5006/devices')
+        #            return render_template("embed.html", script=script, template="Flask")
 
-        @self.flask_app.route('/notes', methods=['GET'])
+        @self.flask_app.route("/notes", methods=["GET"])
         def bkapp_notes_page():
-            script = server_document('http://%s:5006/notes' % self.ip)
+            script = server_document("http://%s:5006/notes" % self.ip)
             return render_template("embed.html", script=script, template="Flask")
 
-        @self.flask_app.route('/', methods=['GET'])
+        @self.flask_app.route("/", methods=["GET"])
         def home_page():
             # Stat number of devices
-            cnod = create_card(icon='ti-server',
-                               title='Number of devices',
-                               data=self.network.number_of_devices,
-                               id_data='devices',
-                               foot_icon='ti-reload',
-                               foot_data='Refresh to update')
-            cnot = create_card(icon='ti-bar-chart',
-                               title='Number of trends',
-                               data=self.network.number_of_registered_trends,
-                               id_data='trends',
-                               foot_icon='ti-timer',
-                               foot_data='Add trends !')
+            cnod = create_card(
+                icon="ti-server",
+                title="Number of devices",
+                data=self.network.number_of_devices,
+                id_data="devices",
+                foot_icon="ti-reload",
+                foot_data="Refresh to update",
+            )
+            cnot = create_card(
+                icon="ti-bar-chart",
+                title="Number of trends",
+                data=self.network.number_of_registered_trends,
+                id_data="trends",
+                foot_icon="ti-timer",
+                foot_data="Add trends !",
+            )
 
-            cnmn = create_card(icon='ti-plug',
-                               title='%s MSTP Networks' % len(
-                                   self.network.network_stats['mstp_networks']),
-                               data='# %s' % (
-                                   self.network.network_stats['print_mstpnetworks']),
-                               id_data='mstpnetworks',
-                               foot_icon='ti-timer',
-                               foot_data='Last update : %s' % self.network.network_stats['timestamp'],
-                               id_foot_data='lastwhoisupdate')
+            cnmn = create_card(
+                icon="ti-plug",
+                title="%s MSTP Networks"
+                % len(self.network.network_stats["mstp_networks"]),
+                data="# %s" % (self.network.network_stats["print_mstpnetworks"]),
+                id_data="mstpnetworks",
+                foot_icon="ti-timer",
+                foot_data="Last update : %s" % self.network.network_stats["timestamp"],
+                id_foot_data="lastwhoisupdate",
+            )
 
-            notif = update_notifications(
-                self.notifications_log, None)
-            return render_template("dashboard.html",
-                                   sidebar=create_sidebar(
-                                       dash_class='class="active"'),
-                                   card_number_of_devices=cnod,
-                                   card_number_of_mstp_networks=cnmn,
-                                   card_number_of_trends=cnot,
-                                   notifications=notif,
-                                   template="Flask")
+            notif = update_notifications(self.notifications_log, None)
+            return render_template(
+                "dashboard.html",
+                sidebar=create_sidebar(dash_class='class="active"'),
+                card_number_of_devices=cnod,
+                card_number_of_mstp_networks=cnmn,
+                card_number_of_trends=cnot,
+                notifications=notif,
+                template="Flask",
+            )
 
-        @self.flask_app.route('/dash_devices', methods=['GET'])
+        @self.flask_app.route("/dash_devices", methods=["GET"])
         def dashboard_devices_page():
-            script = server_document('http://%s:5006/devices' % self.ip)
-            return render_template("device_table.html",
-                                   sidebar=create_sidebar(
-                                       devices_class='class="active"'),
-                                   bokeh_script=script,
-                                   template="Flask")
+            script = server_document("http://%s:5006/devices" % self.ip)
+            return render_template(
+                "device_table.html",
+                sidebar=create_sidebar(devices_class='class="active"'),
+                bokeh_script=script,
+                template="Flask",
+            )
 
-        @self.flask_app.route('/_dash_live_data', methods=['GET'])
+        @self.flask_app.route("/_dash_live_data", methods=["GET"])
         def dash_live_data():
             devices = self.network.number_of_devices
             trends = self.network.number_of_registered_trends
-            return jsonify(number_of_devices=devices, number_of_registered_trends=trends)
+            return jsonify(
+                number_of_devices=devices, number_of_registered_trends=trends
+            )
 
-        @self.flask_app.route('/_whois', methods=['GET'])
+        @self.flask_app.route("/_whois", methods=["GET"])
         def whois():
             self.notifications_list = update_notifications(
-                self.notifications_log, 'Sent a WhoIs Request')
+                self.notifications_log, "Sent a WhoIs Request"
+            )
             self.network.whois_answer = self.network.update_whois()
-            return jsonify(done='done')
+            return jsonify(done="done")
 
-        @self.flask_app.route('/_dash_live_stats', methods=['GET'])
+        @self.flask_app.route("/_dash_live_stats", methods=["GET"])
         def dash_live_stats():
             stats = self.network.network_stats
             return jsonify(stats=stats)
 
-        @self.flask_app.route('/_network_pie_chart', methods=['GET'])
+        @self.flask_app.route("/_network_pie_chart", methods=["GET"])
         def net_pie_chart():
             stats = self.network.number_of_devices_per_network()
             return jsonify(stats=stats)
 
-        @self.flask_app.route('/log', methods=['POST', 'GET'])
+        @self.flask_app.route("/log", methods=["POST", "GET"])
         def log_page():
             return json.dumps(request.form)
 
@@ -147,11 +157,11 @@ class FlaskServer(Thread):
         try:
             self.startServer()
         except Exception as err:
-            self._log.warning('Flask server already running', err)
+            self._log.warning("Flask server already running", err)
             self.exitFlag = True
 
     def stop(self):
-        self._log.debug('Trying to stop Bokeh Server')
+        self._log.debug("Trying to stop Bokeh Server")
         # self.bokeh_server.stop()
         self.p.terminate()
         self.exitFlag = True

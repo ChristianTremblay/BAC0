@@ -4,7 +4,7 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-'''
+"""
 Write.py - creation of WriteProperty requests
 
     Used while defining an app
@@ -21,8 +21,8 @@ Write.py - creation of WriteProperty requests
 
         print_debug()
 
-'''
-#--- 3rd party modules ---
+"""
+# --- 3rd party modules ---
 from bacpypes.debugging import bacpypes_debugging, ModuleLogger
 
 from bacpypes.pdu import Address
@@ -35,11 +35,17 @@ from bacpypes.constructeddata import Array, Any
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
 
-#--- this application's modules ---
-from .IOExceptions import WritePropertyCastError, NoResponseFromController, WritePropertyException, WriteAccessDenied, ApplicationNotStarted
+# --- this application's modules ---
+from .IOExceptions import (
+    WritePropertyCastError,
+    NoResponseFromController,
+    WritePropertyException,
+    WriteAccessDenied,
+    ApplicationNotStarted,
+)
 from ...core.utils.notes import note_and_log
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # some debugging
 _debug = 0
@@ -47,7 +53,7 @@ _LOG = ModuleLogger(globals())
 
 
 @note_and_log
-class WriteProperty():
+class WriteProperty:
     """
     Defines BACnet Write functions: WriteProperty [WritePropertyMultiple not supported]
 
@@ -70,33 +76,34 @@ class WriteProperty():
         its analogValue 1 (AV:1)
         """
         if not self._started:
-            raise ApplicationNotStarted(
-                'BACnet stack not running - use startApp()')
+            raise ApplicationNotStarted("BACnet stack not running - use startApp()")
         args = args.split()
-        self.log_title("Write property",args)
+        self.log_title("Write property", args)
 
         try:
             # build a WriteProperty request
             iocb = IOCB(self.build_wp_request(args, vendor_id=vendor_id))
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
-            self._log.debug("{:<20} {!r}".format('iocb', iocb))
+            self._log.debug("{:<20} {!r}".format("iocb", iocb))
 
         except WritePropertyException as error:
             # construction error
             self._log.exception("exception: {!r}".format(error))
 
-        iocb.wait()             # Wait for BACnet response
+        iocb.wait()  # Wait for BACnet response
 
-        if iocb.ioResponse:     # successful response
+        if iocb.ioResponse:  # successful response
             apdu = iocb.ioResponse
-            
-            if not isinstance(iocb.ioResponse, SimpleAckPDU):   # expect an ACK
+
+            if not isinstance(iocb.ioResponse, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug("Not an ack. | APDU : {} / {}".format((apdu, type(apdu))))
+                self._log.debug(
+                    "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))
+                )
                 return
 
-        if iocb.ioError:        # unsuccessful: error/reject/abort
+        if iocb.ioError:  # unsuccessful: error/reject/abort
             raise NoResponseFromController()
 
     def build_wp_request(self, args, vendor_id=0):
@@ -123,22 +130,19 @@ class WriteProperty():
 
         self.log_subtitle("Creating Request")
         self._log.debug(
-                "{:<20} {:<20} {:<20} {:<20}".format(
-                'indx',
-                'priority',
-                'datatype',
-                'value'))
+            "{:<20} {:<20} {:<20} {:<20}".format(
+                "indx", "priority", "datatype", "value"
+            )
+        )
         self._log.debug(
-                "{!r:<20} {!r:<20} {!r:<20} {!r:<20}".format(
-                indx,
-                priority,
-                datatype,
-                value
-                ))
-        
+            "{!r:<20} {!r:<20} {!r:<20} {!r:<20}".format(
+                indx, priority, datatype, value
+            )
+        )
+
         # change atomic values into something encodeable, null is a special
         # case
-        if value == 'null':
+        if value == "null":
             value = Null()
 
         elif issubclass(datatype, Atomic):
@@ -158,18 +162,20 @@ class WriteProperty():
             elif not isinstance(value, datatype.subtype):
                 raise TypeError(
                     "invalid result datatype, expecting {}".format(
-                        (datatype.subtype.__name__,)))
+                        (datatype.subtype.__name__,)
+                    )
+                )
 
         elif not isinstance(value, datatype):
             raise TypeError(
-                "invalid result datatype, expecting {}".format(
-                    (datatype.__name__,)))
-        self._log.debug("{:<20} {!r} {}".format(
-            "Encodeable value", value, type(value)))
+                "invalid result datatype, expecting {}".format((datatype.__name__,))
+            )
+        self._log.debug("{:<20} {!r} {}".format("Encodeable value", value, type(value)))
 
         # build a request
-        request = WritePropertyRequest(objectIdentifier=(obj_type, obj_inst),
-                                       propertyIdentifier=prop_id)
+        request = WritePropertyRequest(
+            objectIdentifier=(obj_type, obj_inst), propertyIdentifier=prop_id
+        )
         request.pduDestination = Address(addr)
 
         # save the value

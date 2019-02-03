@@ -14,6 +14,7 @@ from tornado.ioloop import IOLoop
 
 from ..core.utils.notes import note_and_log
 
+
 @note_and_log
 class Bokeh_Worker(Thread):
 
@@ -34,13 +35,20 @@ class Bokeh_Worker(Thread):
             self.task()
 
     def startServer(self):
-        self.server = Server({'/devices': self._dev_app_ref(),
-                              '/trends': self._trends_app_ref(),
-                              '/notes': self._notes_app_ref()},
-                             io_loop=IOLoop(),
-                             allow_websocket_origin=[
-                                 "{}:8111".format(self.IP), "{}:5006".format(self.IP),
-                                 "{}:8111".format('localhost'), "{}:5006".format('localhost')])
+        self.server = Server(
+            {
+                "/devices": self._dev_app_ref(),
+                "/trends": self._trends_app_ref(),
+                "/notes": self._notes_app_ref(),
+            },
+            io_loop=IOLoop(),
+            allow_websocket_origin=[
+                "{}:8111".format(self.IP),
+                "{}:5006".format(self.IP),
+                "{}:8111".format("localhost"),
+                "{}:5006".format("localhost"),
+            ],
+        )
         self.server.start()
         self.server.io_loop.start()
 
@@ -48,7 +56,7 @@ class Bokeh_Worker(Thread):
         try:
             self.startServer()
         except Exception as err:
-            self._log.warning('Bokeh server already running', err)
+            self._log.warning("Bokeh server already running", err)
             self.exitFlag = True
 
     def stop(self):

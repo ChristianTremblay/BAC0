@@ -4,7 +4,7 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-'''
+"""
 ReadWriteScript - extended version of BasicScript.py
 
 As everything is handled by the BasicScript, select the additional features you want::
@@ -20,14 +20,14 @@ Once the class is created, create the local object and use it::
     bacnet = ReadWriteScript(localIPAddr = '192.168.1.10')
     bacnet.read('2:5 analogInput 1 presentValue)
 
-'''
-#--- standard Python modules ---
+"""
+# --- standard Python modules ---
 import time
 from datetime import datetime
 import weakref
 
 
-#--- this application's modules ---
+# --- this application's modules ---
 from ..scripts.Base import Base
 
 from ..core.io.Read import ReadProperty
@@ -45,7 +45,7 @@ from ..infos import __version__ as version
 
 from bacpypes.pdu import Address
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 @note_and_log
@@ -64,9 +64,12 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         set to True.
     """
 
-    def __init__(self, ip=None, port=None, mask = None, bbmdAddress=None, bbmdTTL=0):
-        self._log.info("Starting BAC0 version {} ({})".format(
-            version, self.__module__.split('.')[-1]))
+    def __init__(self, ip=None, port=None, mask=None, bbmdAddress=None, bbmdTTL=0):
+        self._log.info(
+            "Starting BAC0 version {} ({})".format(
+                version, self.__module__.split(".")[-1]
+            )
+        )
         self._log.debug("Configurating app")
         self._registered_devices = weakref.WeakValueDictionary()
 
@@ -75,9 +78,9 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
             ip_addr = host.address
         else:
             try:
-                ip, subnet_mask_and_port = ip.split('/')
+                ip, subnet_mask_and_port = ip.split("/")
                 try:
-                    mask, port = subnet_mask_and_port.split(':')
+                    mask, port = subnet_mask_and_port.split(":")
                 except ValueError:
                     mask = subnet_mask_and_port
             except ValueError:
@@ -87,10 +90,11 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
                 mask = 24
             if not port:
                 port = 47808
-            ip_addr = Address('{}/{}:{}'.format(ip,mask, port))
-        self._log.info('Using ip : {ip_addr}'.format(ip_addr=ip_addr))
-        Base.__init__(self, localIPAddr=ip_addr,
-                      bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL)
+            ip_addr = Address("{}/{}:{}".format(ip, mask, port))
+        self._log.info("Using ip : {ip_addr}".format(ip_addr=ip_addr))
+        Base.__init__(
+            self, localIPAddr=ip_addr, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL
+        )
 
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
@@ -138,7 +142,7 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
             oid = id(point_to_trend)
             self._points_to_trend[oid] = point_to_trend
         else:
-            raise TypeError('Please provide point containing history')
+            raise TypeError("Please provide point containing history")
 
     def remove_trend(self, point_to_remove):
         """
@@ -152,7 +156,7 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         elif isinstance(point_to_remove, TrendLog):
             oid = id(point_to_remove)
         else:
-            raise TypeError('Please provide point or trendLog containing history')
+            raise TypeError("Please provide point or trendLog containing history")
         if oid in self._points_to_trend.keys():
             del self._points_to_trend[oid]
 
@@ -162,16 +166,19 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         for device in list(self.discoveredDevices):
             try:
                 deviceName, vendorName = self.readMultiple(
-                    '{} device {} objectName vendorName'.format(device[0], device[1]))
+                    "{} device {} objectName vendorName".format(device[0], device[1])
+                )
             except UnrecognizedService:
                 print(device[0])
                 print(device[1])
                 deviceName = self.read(
-                    '{} device {} objectName'.format(device[0], device[1]))
+                    "{} device {} objectName".format(device[0], device[1])
+                )
                 vendorName = self.read(
-                    '{} device {} vendorName'.format(device[0], device[1]))
+                    "{} device {} vendorName".format(device[0], device[1])
+                )
             except NoResponseFromController:
-                self._log.warning('No response from {}'.format(device))
+                self._log.warning("No response from {}".format(device))
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
         return lst
@@ -183,10 +190,10 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         for each in all_devices:
             address, devID = each
             try:
-                network = address.split(':')[0]
-                mac = int(address.split(':')[1])
+                network = address.split(":")[0]
+                mac = int(address.split(":")[1])
             except (ValueError, IndexError):
-                network = 'ip'
+                network = "ip"
                 mac = address
             networks.add(network)
             if not network in d.keys():
@@ -197,7 +204,7 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
             try:
                 return d[net]
             except (ValueError, KeyError):
-                self._log.warning('Nothing there...')
+                self._log.warning("Nothing there...")
                 return
         return (networks, d)
 
@@ -212,4 +219,7 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         super().disconnect()
 
     def __repr__(self):
-        return 'Bacnet Network using ip %s with device id %s' % (self.localIPAddr, self.Boid)
+        return "Bacnet Network using ip %s with device id %s" % (
+            self.localIPAddr,
+            self.Boid,
+        )

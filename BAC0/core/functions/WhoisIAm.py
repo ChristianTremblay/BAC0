@@ -4,7 +4,7 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-'''
+"""
 WhoisIAm.py - creation of Whois and IAm requests
 
 Used while defining an app
@@ -12,10 +12,10 @@ ex.: class BasicScript(WhoisIAm):
 
 Class : WhoisIAm
 
-'''
-#--- standard Python modules ---
+"""
+# --- standard Python modules ---
 
-#--- 3rd party modules ---
+# --- 3rd party modules ---
 from bacpypes.debugging import bacpypes_debugging
 from bacpypes.apdu import WhoIsRequest, IAmRequest
 
@@ -25,15 +25,21 @@ from bacpypes.constructeddata import Array
 from bacpypes.object import get_object_class, get_datatype
 from bacpypes.iocb import IOCB
 
-#--- this application's modules ---
-from ..io.IOExceptions import SegmentationNotSupported, ReadPropertyException, ReadPropertyMultipleException, NoResponseFromController, ApplicationNotStarted
+# --- this application's modules ---
+from ..io.IOExceptions import (
+    SegmentationNotSupported,
+    ReadPropertyException,
+    ReadPropertyMultipleException,
+    NoResponseFromController,
+    ApplicationNotStarted,
+)
 from ...core.utils.notes import note_and_log
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
 @note_and_log
-class WhoisIAm():
+class WhoisIAm:
     """
     Define BACnet WhoIs and IAm functions.
     """
@@ -53,12 +59,11 @@ class WhoisIAm():
 
         """
         if not self._started:
-            raise ApplicationNotStarted(
-                'BACnet stack not running - use startApp()')
+            raise ApplicationNotStarted("BACnet stack not running - use startApp()")
 
         if args:
             args = args[0].split()
-        msg = args if args else 'any'
+        msg = args if args else "any"
 
         self._log.debug("do_whois {!r}".format(msg))
 
@@ -75,17 +80,17 @@ class WhoisIAm():
             request.deviceInstanceRangeHighLimit = int(args[1])
         self._log.debug("{:>12} {}".format("- request:", request))
 
-        iocb = IOCB(request)                            # make an IOCB
+        iocb = IOCB(request)  # make an IOCB
 
         # pass to the BACnet stack
         self.this_application.request_io(iocb)
 
-        iocb.wait()             # Wait for BACnet response
+        iocb.wait()  # Wait for BACnet response
 
-        if iocb.ioResponse:     # successful response
+        if iocb.ioResponse:  # successful response
             apdu = iocb.ioResponse
 
-        if iocb.ioError:        # unsuccessful: error/reject/abort
+        if iocb.ioError:  # unsuccessful: error/reject/abort
             pass
 
         self.discoveredDevices = self.this_application.i_am_counter
@@ -118,8 +123,7 @@ class WhoisIAm():
             request.vendorID = self.this_device.vendorIdentifier
             self._log.debug("{:>12} {}".format("- request:", request))
 
-            iocb = self.this_application.request(
-                request)       # pass to the BACnet stack
+            iocb = self.this_application.request(request)  # pass to the BACnet stack
             iocb.wait()
             return True
 
