@@ -44,7 +44,7 @@ class ReadPropertyMultiple:
         :returns: (iter) list of point_name of size <= points_per_request
         """
         for i in range(0, len(request), points_per_request):
-            yield request[i: i + points_per_request]
+            yield request[i : i + points_per_request]
 
     def _rpm_request_by_name(self, point_list):
         """
@@ -159,8 +159,7 @@ class ReadPropertyMultiple:
                         raise Exception("Unknown point name : %s" % error)
 
                     else:
-                        points_values = zip(
-                            big_request[1][i: i + len(val)], val)
+                        points_values = zip(big_request[1][i : i + len(val)], val)
                         i += len(val)
                         for each in points_values:
                             each[0]._trend(each[1])
@@ -175,8 +174,7 @@ class ReadPropertyMultiple:
 
             for request in self._batches(big_request, points_per_request):
                 try:
-                    request = "{} {}".format(
-                        self.properties.address, "".join(request))
+                    request = "{} {}".format(self.properties.address, "".join(request))
                     val = self.properties.network.read(request)
 
                 except KeyError as error:
@@ -193,10 +191,9 @@ class ReadPropertyMultiple:
             i = 0
             for request in self._batches(big_request[0], points_per_request):
                 try:
-                    request = "{} {}".format(
-                        self.properties.address, "".join(request))
+                    request = "{} {}".format(self.properties.address, "".join(request))
                     val = self.properties.network.read(request)
-                    points_values = zip(big_request[1][i: i + len(val)], val)
+                    points_values = zip(big_request[1][i : i + len(val)], val)
                     i += len(val)
                     for each in points_values:
                         each[0]._trend(each[1])
@@ -486,8 +483,7 @@ class ReadPropertyMultiple:
             self._polling_task.task = DevicePoll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(
-                "Polling started, every values read each %s seconds" % delay)
+            self._log.info("Polling started, every values read each %s seconds" % delay)
 
         else:
             raise RuntimeError("Stop polling before redefining it")
@@ -507,7 +503,7 @@ class ReadProperty:
         :returns: (iter) list of point_name of size <= points_per_request
         """
         for i in range(0, len(request), points_per_request):
-            yield request[i: i + points_per_request]
+            yield request[i : i + points_per_request]
 
     def _rpm_request_by_name(self, point_list):
         """
@@ -618,8 +614,7 @@ class ReadProperty:
                     ),
                     presentValue=float(
                         self.read_single(
-                            "{} {} presentValue ".format(
-                                point_type, point_address)
+                            "{} {} presentValue ".format(point_type, point_address)
                         )
                     ),
                     units_state=self.read_single(
@@ -645,8 +640,7 @@ class ReadProperty:
                     ),
                     presentValue=(
                         self.read_single(
-                            "{} {} presentValue ".format(
-                                point_type, point_address)
+                            "{} {} presentValue ".format(point_type, point_address)
                         ),
                     ),
                     units_state=self.read_single(
@@ -672,21 +666,18 @@ class ReadProperty:
                     ),
                     presentValue=(
                         self.read_single(
-                            "{} {} presentValue ".format(
-                                point_type, point_address)
+                            "{} {} presentValue ".format(point_type, point_address)
                         ),
                     ),
                     units_state=(
                         (
                             self.read_single(
-                                "{} {} inactiveText ".format(
-                                    point_type, point_address)
+                                "{} {} inactiveText ".format(point_type, point_address)
                             )
                         ),
                         (
                             self.read_single(
-                                "{} {} activeText ".format(
-                                    point_type, point_address)
+                                "{} {} activeText ".format(point_type, point_address)
                             )
                         ),
                     ),
@@ -766,8 +757,7 @@ class ReadProperty:
             self._polling_task.task = DevicePoll(self, delay=delay)
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(
-                "Polling started, every values read each %s seconds" % delay)
+            self._log.info("Polling started, every values read each %s seconds" % delay)
 
         else:
             raise RuntimeError("Stop polling before redefining it")
