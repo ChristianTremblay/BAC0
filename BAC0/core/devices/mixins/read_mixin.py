@@ -426,7 +426,7 @@ class ReadPropertyMultiple:
                 tl.properties.log_device_object_property.objectIdentifier
             )
             ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
-            trendlogs["{}_{}_{}".format(ldop_type, ldop_addr, ldop_prop)] = (
+            self.trendlogs["{}_{}_{}".format(ldop_type, ldop_addr, ldop_prop)] = (
                 tl.properties.object_name,
                 tl,
             )
