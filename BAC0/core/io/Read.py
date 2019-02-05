@@ -162,12 +162,12 @@ class ReadProperty:
                 return value
             else:
                 if reason == "unknownProperty":
-                    if "priorityArray" in args:
-                        self._log.debug("Unknown property {}".format(args))
-                    else:
-                        self._log.warning("Unknown property {}".format(args))
+                    # if "priorityArray" in args:
+                    #    self._log.debug("Unknown property {}".format(args))
+                    # else:
+                    #    self._log.warning("Unknown property {}".format(args))
                     if "description" in args:
-                        return ""
+                        return "Not Implemented"
                     elif "inactiveText" in args:
                         return "Off"
                     elif "activeText" in args:
@@ -322,7 +322,8 @@ class ReadProperty:
                 self._log.warning("Unknown object {}".format(args))
                 raise UnknownObjectError("Unknown object {}".format(args))
             elif reason == "unknownProperty":
-                self._log.warning("Unknown property {}".format(args))
+                self._log.warning("325 Unknown property {}".format(args))
+
                 values.append("")
                 return values
             else:
