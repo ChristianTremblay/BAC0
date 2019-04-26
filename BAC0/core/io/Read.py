@@ -574,17 +574,20 @@ class ReadProperty:
 
 
 def find_reason(apdu):
-    if apdu.pduType == RejectPDU.pduType:
-        reasons = RejectReason.enumerations
-    elif apdu.pduType == AbortPDU.pduType:
-        reasons = AbortReason.enumerations
-    else:
-        if apdu.errorCode and apdu.errorClass:
-            return "{}".format(apdu.errorCode)
-        else:
-            raise ValueError("Cannot find reason...")
-    code = apdu.apduAbortRejectReason
     try:
-        return [k for k, v in reasons.items() if v == code][0]
-    except IndexError:
-        return code
+        if apdu.pduType == RejectPDU.pduType:
+            reasons = RejectReason.enumerations
+        elif apdu.pduType == AbortPDU.pduType:
+            reasons = AbortReason.enumerations
+        else:
+            if apdu.errorCode and apdu.errorClass:
+                return '{}'.format(apdu.errorCode)
+            else:
+                raise ValueError('Cannot find reason...')
+        code = apdu.apduAbortRejectReason
+        try:
+            return [k for k, v in reasons.items() if v == code][0]
+        except IndexError:
+            return code
+    except KeyError:
+        return type(apdu)
