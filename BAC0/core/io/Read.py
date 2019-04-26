@@ -581,13 +581,14 @@ def find_reason(apdu):
             reasons = AbortReason.enumerations
         else:
             if apdu.errorCode and apdu.errorClass:
-                return '{}'.format(apdu.errorCode)
+                return "{}".format(apdu.errorCode)
             else:
-                raise ValueError('Cannot find reason...')
+                raise ValueError("Cannot find reason...")
         code = apdu.apduAbortRejectReason
         try:
             return [k for k, v in reasons.items() if v == code][0]
         except IndexError:
             return code
-    except KeyError:
-        return type(apdu)
+    except KeyError as err:
+        return "KeyError: %s has no key %r" % (type(apdu), err.args[0])
+
