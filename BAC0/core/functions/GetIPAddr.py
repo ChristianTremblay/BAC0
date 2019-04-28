@@ -155,9 +155,9 @@ def validate_ip_address(ip):
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         if not isinstance(ip, Address):
-            raise ValueError('Provide Address as bacpypes.Address object')
-        s.bind((ip.addrTuple[0], 80))
-    except OSError:
+            raise ValueError("Provide Address as bacpypes.Address object")
+        s.bind(ip.addrTuple)
+    except OSError as error:
         result = False
     finally:
         s.close()
