@@ -43,6 +43,7 @@ from ..core.utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
 
+
 @note_and_log
 class Base:
     """
@@ -56,7 +57,7 @@ class Base:
     :param maxSegmentsAccepted='1024':
     :param segmentationSupported='segmentedBoth':
     """
-    
+
     _used_ips = set()
 
     def __init__(
@@ -79,12 +80,16 @@ class Base:
         self._stopped = False
 
         if localIPAddr in Base._used_ips:
-            raise InitializationError('IP Address provided ({}) already used.'.format(localIPAddr))
+            raise InitializationError(
+                "IP Address provided ({}) already used.".format(localIPAddr)
+            )
 
         if validate_ip_address(localIPAddr):
             self.localIPAddr = localIPAddr
         else:
-            raise InitializationError('IP Address provided ({}) invalid.'.format(localIPAddr))
+            raise InitializationError(
+                "IP Address provided ({}) invalid.".format(localIPAddr)
+            )
 
         self.Boid = (
             int(DeviceId) if DeviceId else (3056177 + int(random.uniform(0, 1000)))
@@ -108,7 +113,7 @@ class Base:
         try:
             self.startApp()
         except InitializationError as error:
-            raise InitializationError('Gros probleme : {}'.format(error))
+            raise InitializationError("Gros probleme : {}".format(error))
 
     def startApp(self):
         """
@@ -170,6 +175,7 @@ class Base:
                 self._log.warning("Error opening socket: {}".format(error))
                 raise InitializationError("Error opening socket: {}".format(error))
             self._log.debug("Running")
+        except OSError:
             self._log.error("an error has occurred: {}".format(error))
             raise InitializationError("Error starting app: {}".format(error))
         finally:

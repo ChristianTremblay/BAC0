@@ -47,7 +47,9 @@ try:
 except ImportError as error:
     print("=" * 80)
     print(
-        'Import Error, refer to documentation or reinstall using \n    $ "pip install BAC0"\n {}'.format(error)
+        'Import Error, refer to documentation or reinstall using \n    $ "pip install BAC0"\n {}'.format(
+            error
+        )
     )
     print("\nDiscard this message if you are actually installing BAC0.")
     print("=" * 80)

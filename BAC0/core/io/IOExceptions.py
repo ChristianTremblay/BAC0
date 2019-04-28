@@ -134,5 +134,6 @@ class SegmentationNotSupported(Exception):
 class BadDeviceDefinition(Exception):
     pass
 
+
 class InitializationError(Exception):
     pass
