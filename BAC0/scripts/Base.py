@@ -36,11 +36,12 @@ from bacpypes.primitivedata import CharacterString
 # --- this application's modules ---
 from ..core.app.ScriptApplication import SimpleApplication, ForeignDeviceApplication
 from .. import infos
+from ..core.io.IOExceptions import InitializationError
+from ..core.functions.GetIPAddr import validate_ip_address
 
 from ..core.utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
-
 
 @note_and_log
 class Base:
@@ -55,6 +56,8 @@ class Base:
     :param maxSegmentsAccepted='1024':
     :param segmentationSupported='segmentedBoth':
     """
+    
+    _used_ips = set()
 
     def __init__(
         self,
@@ -75,7 +78,13 @@ class Base:
         self._started = False
         self._stopped = False
 
-        self.localIPAddr = localIPAddr
+        if localIPAddr in Base._used_ips:
+            raise InitializationError('IP Address provided ({}) already used.'.format(localIPAddr))
+
+        if validate_ip_address(localIPAddr):
+            self.localIPAddr = localIPAddr
+        else:
+            raise InitializationError('IP Address provided ({}) invalid.'.format(localIPAddr))
 
         self.Boid = (
             int(DeviceId) if DeviceId else (3056177 + int(random.uniform(0, 1000)))
@@ -96,7 +105,10 @@ class Base:
         self.bbmdAddress = bbmdAddress
         self.bbmdTTL = bbmdTTL
 
-        self.startApp()
+        try:
+            self.startApp()
+        except InitializationError as error:
+            raise InitializationError('Gros probleme : {}'.format(error))
 
     def startApp(self):
         """
@@ -152,14 +164,14 @@ class Base:
             self._initialized = True
             try:
                 self._startAppThread()
+                Base._used_ips.add(self.localIPAddr)
                 self._log.info("Registered as {}".format(app_type))
-            except:
-                self._log.warning("Error opening socket")
-                raise
+            except OSError as error:
+                self._log.warning("Error opening socket: {}".format(error))
+                raise InitializationError("Error opening socket: {}".format(error))
             self._log.debug("Running")
-
-        except Exception as error:
             self._log.error("an error has occurred: {}".format(error))
+            raise InitializationError("Error starting app: {}".format(error))
         finally:
             self._log.debug("finally")
 
@@ -184,6 +196,7 @@ class Base:
         self._stopped = True  # Stop stack thread
         self.t.join()
         self._started = False
+        Base._used_ips.remove(self.localIPAddr)
         self._log.info("BACnet stopped")
 
     def _startAppThread(self):
@@ -199,6 +212,11 @@ class Base:
             kwargs={"sigterm": None, "sigusr1": None},
             daemon=True,
         )
-        self.t.start()
-        self._started = True
-        self._log.info("BAC0 started")
+        try:
+            self.t.start()
+            self._started = True
+            self._log.info("BAC0 started")
+        except OSError:
+            stopBacnetIPApp()
+            self.t.join()
+            raise

@@ -43,7 +43,10 @@ class SimpleApplication(BIPSimpleApplication, ReadWritePropertyMultipleServices)
     def __init__(self, *args, bbmdAddress=None, bbmdTTL=0):
         self.localAddress = None
 
-        super().__init__(*args)
+        try:
+            super().__init__(*args)
+        except OSError:
+            raise
 
         self._request = None
 
@@ -101,7 +104,10 @@ class ForeignDeviceApplication(
     def __init__(self, *args, bbmdAddress=None, bbmdTTL=0):
         self.localAddress = None
 
-        super().__init__(*args, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL)
+        try:
+            super().__init__(*args, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL)
+        except OSError:
+            raise
 
         self._request = None
 

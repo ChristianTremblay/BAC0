@@ -591,4 +591,3 @@ def find_reason(apdu):
             return code
     except KeyError as err:
         return "KeyError: %s has no key %r" % (type(apdu), err.args[0])
-

@@ -148,3 +148,17 @@ class HostIP:
                 mask = "255.255.255.255"
         # self._log.debug('Mask found : %s' %  mask)
         return mask
+
+
+def validate_ip_address(ip):
+    result = True
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        if isinstance(ip,Address):
+            ip = str(ip)
+        s.bind((ip, 80))
+    except OSError:
+        result = False
+    finally:
+        s.close()
+    return result

@@ -44,10 +44,10 @@ try:
         lite = connect
         # print('All features not available as some modules are missing (flask, flask-bootstrap, bokeh, pandas). See docs for details')
 
-except ImportError as err:
+except ImportError as error:
     print("=" * 80)
     print(
-        'Import Error, refer to documentation or reinstall using \n    $ "pip install BAC0"'
+        'Import Error, refer to documentation or reinstall using \n    $ "pip install BAC0"\n {}'.format(error)
     )
     print("\nDiscard this message if you are actually installing BAC0.")
     print("=" * 80)
