@@ -4,20 +4,21 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-'''
+"""
 Poll.py - create a Polling task to repeatedly read a point.
-'''
+"""
 
-#--- standard Python modules ---
+# --- standard Python modules ---
 import weakref
 
-#--- 3rd party modules ---
+# --- 3rd party modules ---
 from bacpypes.core import deferred
 
-#--- this application's modules ---
+# --- this application's modules ---
 from .TaskManager import Task
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+
 
 class SimplePoll(Task):
     """
@@ -39,9 +40,9 @@ class SimplePoll(Task):
             delay = 5
         if point.properties:
             self._point = point
-            Task.__init__(self, name='rp_poll', delay=delay)
+            Task.__init__(self, name="rp_poll", delay=delay)
         else:
-            raise ValueError('Provide a point object')
+            raise ValueError("Provide a point object")
 
     def task(self):
         self._point.value
@@ -65,7 +66,7 @@ class DevicePoll(Task):
         if delay < 5:
             delay = 5
         self._device = weakref.ref(device)
-        Task.__init__(self, name='rpm_poll', delay=delay, daemon = True)
+        Task.__init__(self, name="rpm_poll", delay=delay, daemon=True)
         self._counter = 0
 
     @property
@@ -74,7 +75,9 @@ class DevicePoll(Task):
 
     def task(self):
         try:
-            self.device.read_multiple(list(self.device.points_name), points_per_request=25)
+            self.device.read_multiple(
+                list(self.device.points_name), points_per_request=25
+            )
             self._counter += 1
             if self._counter == self.device.properties.auto_save:
                 self.device.save()

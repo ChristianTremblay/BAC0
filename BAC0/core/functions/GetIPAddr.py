@@ -21,7 +21,8 @@ import ipaddress
 import sys
 import re
 
-class HostIP():
+
+class HostIP:
     """
     Special class to identify host IP informations
     """
@@ -31,40 +32,45 @@ class HostIP():
         mask = self._findSubnetMask(ip)
         self._port = port
         self.interface = ipaddress.IPv4Interface("{}/{}".format(ip, mask))
-    
-    @property    
+
+    @property
     def ip_address_subnet(self):
         """
         IP Address/subnet
         """
-        return ('{}/{}'.format(self.interface.ip.compressed,
-                           self.interface.exploded.split('/')[-1]))
-    @property    
+        return "{}/{}".format(
+            self.interface.ip.compressed, self.interface.exploded.split("/")[-1]
+        )
+
+    @property
     def ip_address(self):
         """
         IP Address/subnet
         """
-        return '{}'.format(self.interface.ip.compressed)
-
+        return "{}".format(self.interface.ip.compressed)
 
     @property
     def address(self):
         """
         IP Address using bacpypes Address format
         """
-        port = ''
+        port = ""
         if self._port:
-            port = ':{}'.format(self._port)
-        return (Address('{}/{}{}'.format(self.interface.ip.compressed,
-                                   self.interface.exploded.split('/')[-1],
-                                   port)))
+            port = ":{}".format(self._port)
+        return Address(
+            "{}/{}{}".format(
+                self.interface.ip.compressed,
+                self.interface.exploded.split("/")[-1],
+                port,
+            )
+        )
 
     @property
     def mask(self):
         """
         Subnet mask
         """
-        return self.interface.exploded.split('/')[-1]
+        return self.interface.exploded.split("/")[-1]
 
     @property
     def port(self):
@@ -72,7 +78,6 @@ class HostIP():
         IP Port used
         """
         return self._port
-
 
     def _findIPAddr(self):
         """
@@ -83,13 +88,14 @@ class HostIP():
         """
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
-            s.connect(('google.com', 0))
+            s.connect(("google.com", 0))
             addr = s.getsockname()[0]
-            #print('Using ip : {addr}'.format(addr=addr))
+            # print('Using ip : {addr}'.format(addr=addr))
             s.close()
         except socket.error:
             raise NetworkInterfaceException(
-                'Impossible to retrieve IP, please provide one manually')
+                "Impossible to retrieve IP, please provide one manually"
+            )
         return addr
 
     def _findSubnetMask(self, ip):
@@ -104,17 +110,22 @@ class HostIP():
         """
         ip = ip
 
-        if 'win32' in sys.platform:
+        if "win32" in sys.platform:
             try:
-                proc = subprocess.Popen('ipconfig', stdout=subprocess.PIPE)
+                proc = subprocess.Popen("ipconfig", stdout=subprocess.PIPE)
                 while True:
                     line = proc.stdout.readline()
                     if ip.encode() in line:
                         break
-                mask = proc.stdout.readline().rstrip().split(
-                    b':')[-1].replace(b' ', b'').decode()
+                mask = (
+                    proc.stdout.readline()
+                    .rstrip()
+                    .split(b":")[-1]
+                    .replace(b" ", b"")
+                    .decode()
+                )
             except:
-                raise NetworkInterfaceException('Cannot read IP parameters from OS')
+                raise NetworkInterfaceException("Cannot read IP parameters from OS")
         else:
             """
             This procedure could use more direct way of obtaining the broadcast IP
@@ -127,14 +138,27 @@ class HostIP():
             pattern = re.compile(r"(255.\d{1,3}.\d{1,3}.\d{1,3})")
 
             try:
-                proc = subprocess.Popen('ifconfig', stdout=subprocess.PIPE)
+                proc = subprocess.Popen("ifconfig", stdout=subprocess.PIPE)
                 while True:
                     line = proc.stdout.readline()
                     if ip.encode() in line:
                         break
-                mask = re.findall(pattern,line.decode())[0]
+                mask = re.findall(pattern, line.decode())[0]
             except:
-                mask = '255.255.255.255'
-        #self._log.debug('Mask found : %s' %  mask)
+                mask = "255.255.255.255"
+        # self._log.debug('Mask found : %s' %  mask)
         return mask
 
+
+def validate_ip_address(ip):
+    result = True
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        if not isinstance(ip, Address):
+            raise ValueError("Provide Address as bacpypes.Address object")
+        s.bind(ip.addrTuple)
+    except OSError as error:
+        result = False
+    finally:
+        s.close()
+    return result

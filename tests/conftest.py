@@ -8,19 +8,28 @@ Test Bacnet communication with another device
 import pytest
 import BAC0
 
-from BAC0.core.devices.create_objects import create_AV, create_MV, create_BV, create_AI, create_BI, create_AO, create_BO
+from BAC0.core.devices.create_objects import (
+    create_AV,
+    create_MV,
+    create_BV,
+    create_AI,
+    create_BI,
+    create_AO,
+    create_BO,
+)
 
 from collections import namedtuple
 import time
 
-@pytest.fixture(scope='session')
+
+@pytest.fixture(scope="session")
 def network_and_devices():
     bacnet = BAC0.lite()
 
     def _add_points(qty, device):
         # Add a lot of points for tests (segmentation required)
         mvs = []
-        avs = []    
+        avs = []
         bvs = []
         ais = []
         bis = []
@@ -28,17 +37,15 @@ def network_and_devices():
         bos = []
 
         for i in range(qty):
-            mvs.append(
-                create_MV(oid=i, name='mv{}'.format(i), pv=1))
-            avs.append(
-                create_AV(oid=i, name='av{}'.format(i), pv=99.9))
-            bvs.append(create_BV(oid=i, name='bv{}'.format(i), pv=1))
-            ais.append(create_AI(oid=i, name='ai{}'.format(i), pv=99.9))
-            aos.append(create_AO(oid=i, name='ao{}'.format(i), pv=99.9))
-            bis.append(create_BI(oid=i, name='bi{}'.format(i), pv=1))
-            bos.append(create_BO(oid=i, name='bo{}'.format(i), pv=1))
+            mvs.append(create_MV(oid=i, name="mv{}".format(i), pv=1))
+            avs.append(create_AV(oid=i, name="av{}".format(i), pv=99.9))
+            bvs.append(create_BV(oid=i, name="bv{}".format(i), pv=1))
+            ais.append(create_AI(oid=i, name="ai{}".format(i), pv=99.9))
+            aos.append(create_AO(oid=i, name="ao{}".format(i), pv=99.9))
+            bis.append(create_BI(oid=i, name="bi{}".format(i), pv=1))
+            bos.append(create_BO(oid=i, name="bo{}".format(i), pv=1))
 
-        def _make_mutable(obj, identifier='presentValue', mutable=True):
+        def _make_mutable(obj, identifier="presentValue", mutable=True):
             """ 
             This function is not the way to go as it changes the class
             property...As bacpypes issue #224, it will need a lot of work
@@ -82,14 +89,14 @@ def network_and_devices():
     boid_300 = device300_app.Boid
 
     # Connect to test device using main network
-    test_device = BAC0.device('{}:47809'.format(ip), boid, bacnet, poll=10)
-    test_device_30 = BAC0.device(
-        '{}:47810'.format(ip_30), boid_30, bacnet, poll=0)
-    test_device_300 = BAC0.device(
-        '{}:47811'.format(ip_300), boid_300, bacnet, poll=0)
+    test_device = BAC0.device("{}:47809".format(ip), boid, bacnet, poll=10)
+    test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
+    test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
 
-    params = namedtuple('devices', [
-                        'bacnet', 'device_app', 'test_device', 'test_device_30', 'test_device_300'])
+    params = namedtuple(
+        "devices",
+        ["bacnet", "device_app", "test_device", "test_device_30", "test_device_300"],
+    )
     params.bacnet = bacnet
     params.device_app = device_app
     params.test_device = test_device

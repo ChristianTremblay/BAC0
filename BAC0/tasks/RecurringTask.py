@@ -10,12 +10,13 @@ RecurringTask.py - execute a recurring task
 
 from .TaskManager import Task
 
+
 class RecurringTask(Task):
     """
     Start a recurring task (a function passed)
     """
 
-    def __init__(self, fnc, delay = 60):
+    def __init__(self, fnc, delay=60):
         """
         :param point: (BAC0.core.device.Points.Point) name of the point to read
         :param delay: (int) Delay between reads in seconds, defaults = 10sec
@@ -24,11 +25,11 @@ class RecurringTask(Task):
 
         :returns: Nothing
         """
-        if hasattr(fnc, '__call__'):
+        if hasattr(fnc, "__call__"):
             self.func = fnc
             Task.__init__(self)
         else:
-            raise ValueError('You must pass a function to this...')
+            raise ValueError("You must pass a function to this...")
 
     def task(self):
         self.func()

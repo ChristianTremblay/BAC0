@@ -37,7 +37,11 @@ def create_sidebar(dash_class="", devices_class="", trends_class=""):
       </ul>
       </div>
     </div>
-    """ % (dash_class, trends_class, devices_class)
+    """ % (
+        dash_class,
+        trends_class,
+        devices_class,
+    )
     return sb
 
 
@@ -54,14 +58,19 @@ def update_notifications(log, new_msg):
         notif_list += '<li><a href="#">' + notif + "</a></li>"
     if len(notif_log) == 0:
         notif_list += '<li><a href="#">Nothing yet</a></li>'
-    notif_list += '</ul>'
+    notif_list += "</ul>"
     return notif_list
 
 
-def create_card(icon='ti-server', title='title',
-                data='None', id_data='generic_data',
-                foot_icon='ti-reload', foot_data='None',
-                id_foot_data='generic_foot_data'):
+def create_card(
+    icon="ti-server",
+    title="title",
+    data="None",
+    id_data="generic_data",
+    foot_icon="ti-reload",
+    foot_data="None",
+    id_foot_data="generic_foot_data",
+):
     card = """
         <div class="col-lg-3 col-sm-6">
         <div class="card">
@@ -88,5 +97,13 @@ def create_card(icon='ti-server', title='title',
             </div>
         </div>
         </div>
-        """ % (icon, title, id_data, data, foot_icon, id_foot_data, foot_data)
+        """ % (
+        icon,
+        title,
+        id_data,
+        data,
+        foot_icon,
+        id_foot_data,
+        foot_data,
+    )
     return card

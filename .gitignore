@@ -25,3 +25,7 @@ __pycache__
 /tests/need_rebuild_Device.py
 /tests/.coverage
 /pylintrc
+/.pytest_cache
+/tests/archive
+/BAC0/web/test
+/venv/

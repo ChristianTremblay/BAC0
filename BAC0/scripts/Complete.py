@@ -4,7 +4,7 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-'''
+"""
 Complete Script - extended version of Lite Script
 
 As everything is handled by the BasicScript, select the additional features you want::
@@ -20,33 +20,42 @@ Once the class is created, create the local object and use it::
     bacnet = ReadWriteScript(localIPAddr = '192.168.1.10')
     bacnet.read('2:5 analogInput 1 presentValue)
 
-'''
-#--- standard Python modules ---
+"""
+# --- standard Python modules ---
 from datetime import datetime
 
 import pandas as pd
 
 
-#--- 3rd party modules ---
+# --- 3rd party modules ---
 from bokeh.application import Application
 
-#--- this application's modules ---
+# --- this application's modules ---
 from ..scripts.Lite import Lite
 
-from ..core.io.IOExceptions import BokehServerCantStart, NoResponseFromController, UnrecognizedService
+from ..core.io.IOExceptions import (
+    BokehServerCantStart,
+    NoResponseFromController,
+    UnrecognizedService,
+)
 from ..core.utils.notes import note_and_log
 
-from ..web.BokehRenderer import DevicesTableHandler, DynamicPlotHandler, NotesTableHandler
+from ..web.BokehRenderer import (
+    DevicesTableHandler,
+    DynamicPlotHandler,
+    NotesTableHandler,
+)
 from ..web.BokehServer import Bokeh_Worker
 from ..web.FlaskServer import FlaskServer
 
-#------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 
-class Stats_Mixin():
+class Stats_Mixin:
     """
     Statistics used by Flask App
     """
+
     @property
     def number_of_devices(self):
         s = []
@@ -63,31 +72,30 @@ class Stats_Mixin():
     def number_of_devices_per_network(self):
         total = float(self.number_of_devices)
         if total == 0:
-            return (['No Devices'], ['0'], ['0%%'])
-        labels = ['IP']
-        series_pct = ['%.2f %%' %
-                      (len(self.network_stats['ip_devices'])/total * 100)]
-        series = [len(self.network_stats['ip_devices'])/total * 100]
-        for each in (self.network_stats['mstp_map'].keys()):
-            labels.append('MSTP #%s' % each)
-            series_pct.append('%.2f %%' % (
-                len(self.network_stats['mstp_map'][each])/total * 100))
-            series.append(
-                len(self.network_stats['mstp_map'][each])/total * 100)
+            return (["No Devices"], ["0"], ["0%%"])
+        labels = ["IP"]
+        series_pct = ["%.2f %%" % (len(self.network_stats["ip_devices"]) / total * 100)]
+        series = [len(self.network_stats["ip_devices"]) / total * 100]
+        for each in self.network_stats["mstp_map"].keys():
+            labels.append("MSTP #%s" % each)
+            series_pct.append(
+                "%.2f %%" % (len(self.network_stats["mstp_map"][each]) / total * 100)
+            )
+            series.append(len(self.network_stats["mstp_map"][each]) / total * 100)
         return (labels, series, series_pct)
-    
-    def print_list(self,lst):
-            s = ''
-            try:
-                s = s + lst[0]
-            except IndexError:
-                return s
-            try:
-                for each in lst[1:]:
-                    s = s + ', ' + each
-            except IndexError:
-                pass
+
+    def print_list(self, lst):
+        s = ""
+        try:
+            s = s + lst[0]
+        except IndexError:
             return s
+        try:
+            for each in lst[1:]:
+                s = s + ", " + each
+        except IndexError:
+            pass
+        return s
 
     @property
     def network_stats(self):
@@ -101,8 +109,8 @@ class Stats_Mixin():
         bacoids = []
         mstp_devices = []
         for address, bacoid in self.whois_answer[0].keys():
-            if ':' in address:
-                net, mac = address.split(':')
+            if ":" in address:
+                net, mac = address.split(":")
                 mstp_networks.append(net)
                 mstp_devices.append(mac)
                 try:
@@ -111,22 +119,20 @@ class Stats_Mixin():
                     mstp_map[net] = []
                     mstp_map[net].append(mac)
             else:
-                net = 'ip'
+                net = "ip"
                 mac = address
                 ip_devices.append(address)
             bacoids.append((bacoid, address))
         mstpnetworks = sorted(set(mstp_networks))
-        statistics['mstp_networks'] = mstpnetworks
-        statistics['ip_devices'] = sorted(ip_devices)
-        statistics['bacoids'] = sorted(bacoids)
-        statistics['mstp_map'] = mstp_map
-        statistics['timestamp'] = str(datetime.now())
-        statistics['number_of_devices'] = self.number_of_devices
-        statistics['number_of_registered_devices'] = len(
-            self.registered_devices)
-        statistics['print_mstpnetworks'] = self.print_list(mstpnetworks)
+        statistics["mstp_networks"] = mstpnetworks
+        statistics["ip_devices"] = sorted(ip_devices)
+        statistics["bacoids"] = sorted(bacoids)
+        statistics["mstp_map"] = mstp_map
+        statistics["timestamp"] = str(datetime.now())
+        statistics["number_of_devices"] = self.number_of_devices
+        statistics["number_of_registered_devices"] = len(self.registered_devices)
+        statistics["print_mstpnetworks"] = self.print_list(mstpnetworks)
         return statistics
-
 
 
 @note_and_log
@@ -145,17 +151,25 @@ class Complete(Lite, Stats_Mixin):
         set to True.
     """
 
-    def __init__(self, ip=None, mask=None, port=None,
-                 bbmdAddress=None, bbmdTTL=0,
-                 bokeh_server=True, flask_port=8111):
-        Lite.__init__(self, ip=ip, mask=mask, port=port, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL)
+    def __init__(
+        self,
+        ip=None,
+        mask=None,
+        port=None,
+        bbmdAddress=None,
+        bbmdTTL=0,
+        bokeh_server=True,
+        flask_port=8111,
+    ):
+        Lite.__init__(
+            self, ip=ip, mask=mask, port=port, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL
+        )
         self.flask_port = flask_port
         if bokeh_server:
             self.start_bokeh()
             self.FlaskServer.start()
         else:
-            self._log.warning(
-                'Bokeh server not started. Trend feature will not work')
+            self._log.warning("Bokeh server not started. Trend feature will not work")
 
     @property
     def devices(self):
@@ -163,26 +177,30 @@ class Complete(Lite, Stats_Mixin):
         for device in list(self.discoveredDevices):
             try:
                 deviceName, vendorName = self.readMultiple(
-                    '{} device {} objectName vendorName'.format(device[0], device[1]))
+                    "{} device {} objectName vendorName".format(device[0], device[1])
+                )
             except UnrecognizedService:
                 deviceName = self.read(
-                    '{} device {} objectName'.format(device[0], device[1]))
+                    "{} device {} objectName".format(device[0], device[1])
+                )
                 vendorName = self.read(
-                    '{} device {} vendorName'.format(device[0], device[1]))
+                    "{} device {} vendorName".format(device[0], device[1])
+                )
             except NoResponseFromController:
-                self._log.info('No response from {}'.format(device))
+                self._log.info("No response from {}".format(device))
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
-        df = pd.DataFrame(lst, columns=[
-            'Name', 'Manufacturer', 'Address', ' Device ID']).set_index('Name')
+        df = pd.DataFrame(
+            lst, columns=["Name", "Manufacturer", "Address", " Device ID"]
+        ).set_index("Name")
         try:
-            return df.sort_values('Address')
+            return df.sort_values("Address")
         except AttributeError:
             return df
 
     def start_bokeh(self):
         try:
-            self.note('Starting Bokeh Serve')
+            self.note("Starting Bokeh Serve")
             # Need to create the device document here
             devHandler = DevicesTableHandler(self)
             dev_app = Application(devHandler)
@@ -191,26 +209,35 @@ class Complete(Lite, Stats_Mixin):
             self.trend_app = Application(trendHandler)
             self.notes_app = Application(notesHandler)
             self.bk_worker = Bokeh_Worker(
-                dev_app, self.trend_app, self.notes_app, self.localIPAddr.addrTuple[0])
+                dev_app, self.trend_app, self.notes_app, self.localIPAddr.addrTuple[0]
+            )
             self.FlaskServer = FlaskServer(
-                network=self, port=self.flask_port, ip=self.localIPAddr.addrTuple[0])
+                network=self, port=self.flask_port, ip=self.localIPAddr.addrTuple[0]
+            )
             self.bk_worker.start()
             self.bokehserver = True
-            self._log.info('Server started : http://{}:{}'.format(self.localIPAddr.addrTuple[0],self.flask_port))
+            self._log.info(
+                "Server started : http://{}:{}".format(
+                    self.localIPAddr.addrTuple[0], self.flask_port
+                )
+            )
 
         except OSError as error:
             self.bokehserver = False
             self._log.error(
-                '[bokeh serve] required for trending (controller.chart) features')
+                "[bokeh serve] required for trending (controller.chart) features"
+            )
             self._log.error(error)
 
         except RuntimeError as rterror:
             self.bokehserver = False
-            self._log.warning('Server already running')
+            self._log.warning("Server already running")
 
         except BokehServerCantStart:
             self.bokehserver = False
-            self._log.error('No Bokeh Server - controller.chart not available')
+            self._log.error("No Bokeh Server - controller.chart not available")
 
     def __repr__(self):
-        return 'Bacnet Network using ip {} with device id {} | Featuring Bokeh and Pandas'.format(self.localIPAddr, self.Boid)
+        return "Bacnet Network using ip {} with device id {} | Featuring Bokeh and Pandas".format(
+            self.localIPAddr, self.Boid
+        )
