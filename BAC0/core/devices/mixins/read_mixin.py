@@ -687,11 +687,11 @@ class ReadProperty:
 
         for each in retrieve_type(objList, "trendLog"):
             point_address = str(each[1])
-            tl = trendLogs(point_address, self)
+            tl = TrendLogs(point_address, self)
             ldop_type, ldop_addr = (
                 tl.properties.log_device_object_property.objectIdentifier
             )
-            ldop_prop = tl.propertires.log_device_object_property.propertyIdentifier
+            ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
             trendlogs["{}_{}_{}".format(ldop_type, ldop_addr, ldop_prop)] = (
                 tl.properties.object_name,
                 tl,
