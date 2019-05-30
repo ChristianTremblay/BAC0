@@ -64,7 +64,9 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         set to True.
     """
 
-    def __init__(self, ip=None, port=None, mask=None, bbmdAddress=None, bbmdTTL=0):
+    def __init__(
+        self, ip=None, port=None, mask=None, bbmdAddress=None, bbmdTTL=0, **params
+    ):
         self._log.info(
             "Starting BAC0 version {} ({})".format(
                 version, self.__module__.split(".")[-1]
@@ -93,7 +95,11 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
             ip_addr = Address("{}/{}:{}".format(ip, mask, port))
         self._log.info("Using ip : {ip_addr}".format(ip_addr=ip_addr))
         Base.__init__(
-            self, localIPAddr=ip_addr, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL
+            self,
+            localIPAddr=ip_addr,
+            bbmdAddress=bbmdAddress,
+            bbmdTTL=bbmdTTL,
+            **params
         )
 
         self.bokehserver = False

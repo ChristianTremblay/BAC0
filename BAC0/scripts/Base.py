@@ -7,10 +7,10 @@
 """
 BasicScript - implement the BAC0.core.app.ScriptApplication
 Its basic function is to start and stop the bacpypes stack.
-Stopping the stack, frees the IP socket used for BACnet communications. 
+Stopping the stack, frees the IP socket used for BACnet communications.
 No communications will occur if the stack is stopped.
 
-Bacpypes stack enables Whois and Iam functions, since this minimum is needed to be 
+Bacpypes stack enables Whois and Iam functions, since this minimum is needed to be
 a BACnet device.  Other stack services can be enabled later (via class inheritance).
 [see: see BAC0.scripts.ReadWriteScript]
 
@@ -65,11 +65,15 @@ class Base:
         localIPAddr="127.0.0.1",
         localObjName="BAC0",
         DeviceId=None,
+        firmwareRevision="".join(sys.version.split("|")[:2]),
         maxAPDULengthAccepted="1024",
         maxSegmentsAccepted="1024",
         segmentationSupported="segmentedBoth",
         bbmdAddress=None,
         bbmdTTL=0,
+        modelName=CharacterString("BAC0 Scripting Tool"),
+        vendorId=842,
+        vendorName=CharacterString("SERVISYS inc."),
     ):
 
         self._log.debug("Configurating app")
@@ -100,15 +104,17 @@ class Base:
         self.localObjName = localObjName
 
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
-        self.vendorId = 842
-        self.vendorName = CharacterString("SERVISYS inc.")
-        self.modelName = CharacterString("BAC0 Scripting Tool")
+        self.vendorId = vendorId
+        self.vendorName = vendorName
+        self.modelName = modelName
 
         self.discoveredDevices = None
         self.systemStatus = DeviceStatus(1)
 
         self.bbmdAddress = bbmdAddress
         self.bbmdTTL = bbmdTTL
+
+        self.firmwareRevision = firmwareRevision
 
         try:
             self.startApp()
@@ -133,7 +139,7 @@ class Base:
                 modelName=self.modelName,
                 systemStatus=self.systemStatus,
                 description="http://christiantremblay.github.io/BAC0/",
-                firmwareRevision="".join(sys.version.split("|")[:2]),
+                firmwareRevision=self.firmwareRevision,
                 applicationSoftwareVersion=infos.__version__,
                 protocolVersion=1,
                 protocolRevision=0,
