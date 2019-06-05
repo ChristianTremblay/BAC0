@@ -160,9 +160,16 @@ class Complete(Lite, Stats_Mixin):
         bbmdTTL=0,
         bokeh_server=True,
         flask_port=8111,
+        **params
     ):
         Lite.__init__(
-            self, ip=ip, mask=mask, port=port, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL
+            self,
+            ip=ip,
+            mask=mask,
+            port=port,
+            bbmdAddress=bbmdAddress,
+            bbmdTTL=bbmdTTL,
+            **params
         )
         self.flask_port = flask_port
         if bokeh_server:
