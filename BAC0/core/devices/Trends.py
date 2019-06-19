@@ -140,18 +140,28 @@ class TrendLog(TrendLogProperties):
             objectType, objectAddress = (
                 self.properties.log_device_object_property.objectIdentifier
             )
-            logged_point = self.properties.device.find_point(objectType, objectAddress)
+            try:
+                logged_point = self.properties.device.find_point(
+                    objectType, objectAddress
+                )
+            except ValueError:
+                logged_point = None
             serie = self.properties._df[self.properties.object_name].copy()
-            serie.units = logged_point.properties.units_state
+            serie.units = logged_point.properties.units_state if logged_point else "n/a"
             serie.name = ("{}/{}").format(
                 self.properties.device.properties.name, self.properties.object_name
             )
-            if logged_point.properties.name in self.properties.device.binary_states:
-                serie.states = "binary"
-            elif logged_point.properties.name in self.properties.device.multi_states:
-                serie.states = "multistates"
+            if not logged_point:
+                serie.states = "unknown"
             else:
-                serie.states = "analog"
+                if logged_point.properties.name in self.properties.device.binary_states:
+                    serie.states = "binary"
+                elif (
+                    logged_point.properties.name in self.properties.device.multi_states
+                ):
+                    serie.states = "multistates"
+                else:
+                    serie.states = "analog"
             serie.description = self.properties.description
             serie.datatype = objectType
             return serie
