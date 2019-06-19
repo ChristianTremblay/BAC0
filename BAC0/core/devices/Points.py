@@ -737,6 +737,10 @@ class EnumPoint(Point):
         """
         try:
             return self.properties.units_state[int(self.lastValue) - 1]
+        except TypeError:
+            # polling probably off, no last value
+            v = self.value
+            return self.properties.units_state[v - 1]
         except IndexError:
             value = "unknown"
         except ValueError:
