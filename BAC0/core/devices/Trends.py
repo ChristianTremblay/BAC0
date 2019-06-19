@@ -86,8 +86,8 @@ class TrendLog(TrendLogProperties):
 
             if read_log_on_creation:
                 self.read_log_buffer()
-        except Exception:
-            raise Exception("Problem reading trendLog informations")
+        except Exception as error:
+            raise Exception("Problem reading trendLog informations: {}".format(error))
 
     def read_log_buffer(self):
         try:
@@ -97,8 +97,8 @@ class TrendLog(TrendLogProperties):
                 )
             )
             self.create_dataframe(_log_buffer)
-        except Exception:
-            raise Exception("Problem reading TrendLog")
+        except Exception as error:
+            raise Exception("Problem reading buffer: {}".format(error))
 
     def create_dataframe(self, log_buffer):
         index = []

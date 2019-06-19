@@ -109,7 +109,10 @@ class ReadPropertyMultiple:
                             self.properties.address, "".join(request)
                         )
                         self._log.debug("RPM_Request: %s " % request)
-                        val = self.properties.network.readMultiple(request)
+                        try:
+                            val = self.properties.network.readMultiple(request)
+                        except SegmentationNotSupported:
+                            raise
 
                         # print('val : ', val, len(val), type(val))
                         if val == None:
@@ -687,11 +690,15 @@ class ReadProperty:
 
         for each in retrieve_type(objList, "trendLog"):
             point_address = str(each[1])
-            tl = trendLogs(point_address, self)
+            try:
+                tl = TrendLog(point_address, self)
+            except Exception:
+                self._log.error("Problem creating {}".format(each))
+                continue
             ldop_type, ldop_addr = (
                 tl.properties.log_device_object_property.objectIdentifier
             )
-            ldop_prop = tl.propertires.log_device_object_property.propertyIdentifier
+            ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
             trendlogs["{}_{}_{}".format(ldop_type, ldop_addr, ldop_prop)] = (
                 tl.properties.object_name,
                 tl,

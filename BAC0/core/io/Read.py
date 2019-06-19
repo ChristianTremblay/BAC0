@@ -154,10 +154,10 @@ class ReadProperty:
             apdu = iocb.ioError
             reason = find_reason(apdu)
             if reason == "segmentationNotSupported":
-                self._log.warning(
-                    "Segmentation not supported... will read properties one by one..."
-                )
-                self._log.debug("The Request was : {}".format(args_split))
+                # self._log.warning(
+                #    "Segmentation not supported... will read properties one by one..."
+                # )
+                # self._log.debug("The Request was : {}".format(args_split))
                 value = self._split_the_read_request(args, arr_index)
                 return value
             else:
@@ -317,6 +317,9 @@ class ReadProperty:
             if reason == "unrecognizedService":
                 raise UnrecognizedService()
             elif reason == "segmentationNotSupported":
+                # value = self._split_the_read_request(args, arr_index)
+                # return value
+                self.segmentation_supported = False
                 raise SegmentationNotSupported()
             elif reason == "unknownObject":
                 self._log.warning("Unknown object {}".format(args))

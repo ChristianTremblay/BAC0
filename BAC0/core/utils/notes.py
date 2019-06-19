@@ -113,8 +113,8 @@ def note_and_log(cls):
     cls.logname = "{} | {}".format(cls.__module__, cls.__name__)
     root_logger = logging.getLogger()
     cls._log = logging.getLogger("BAC0")
-    if not len(root_logger.handlers):
-        root_logger.addHandler(cls._log)
+    #    if not len(root_logger.handlers):
+    #        root_logger.addHandler(cls._log)
 
     # Console Handler
     ch = logging.StreamHandler()
