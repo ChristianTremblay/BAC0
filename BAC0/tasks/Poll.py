@@ -90,5 +90,7 @@ class DevicePoll(Task):
             # So kill the task
             self.stop()
         except ValueError:
-            self.device._log.error('Something is wrong with polling...stopping. Try setting off segmentation')
+            self.device._log.error(
+                "Something is wrong with polling...stopping. Try setting off segmentation"
+            )
             self.stop()
