@@ -157,7 +157,7 @@ class Device(SQLMixin):
         self.properties.db_name = ""
 
         self.points = []
-        self.trendlogs = {}
+        self._list_of_trendlogs = {}
 
         self._polling_task = namedtuple("_polling_task", ["task", "running"])
         self._polling_task.task = None
@@ -513,7 +513,7 @@ class DeviceConnected(Device):
             )
         )
         try:
-            self.properties.objects_list, self.points, self.trendlogs = self._discoverPoints(
+            self.properties.objects_list, self.points, self._list_of_trendlogs = self._discoverPoints(
                 self.custom_object_list
             )
             if self.properties.pollDelay > 0:
@@ -538,7 +538,10 @@ class DeviceConnected(Device):
             if isinstance(point_name, list):
                 return self.df(point_name, force_read=False)
             else:
-                return self._findPoint(point_name, force_read=False)
+                try:
+                    return self._findPoint(point_name, force_read=False)
+                except ValueError:
+                    return self._findTrend(point_name)
         except ValueError as ve:
             self._log.error("{}".format(ve))
 
@@ -635,6 +638,22 @@ class DeviceConnected(Device):
                 if force_read:
                     point.value
                 return point
+        raise ValueError("{} doesn't exist in controller".format(name))
+
+    def _trendlogs(self):
+        for k, v in self._list_of_trendlogs.items():
+            name, trendlog = v
+            yield trendlog
+
+    @property
+    def trendlogs(self):
+        for each in self._trendlogs():
+            yield each.properties.object_name
+
+    def _findTrend(self, name):
+        for trend in self._trendlogs():
+            if trend.properties.object_name == name:
+                return trend
         raise ValueError("{} doesn't exist in controller".format(name))
 
     def __repr__(self):

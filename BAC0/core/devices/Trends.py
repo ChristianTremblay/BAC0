@@ -63,6 +63,11 @@ class TrendLogProperties(object):
 
         self._df = None
 
+    def __repr__(self):
+        return "{} | Descr : {} | Record count : {}".format(
+            self.object_name, self.description, self.record_count
+        )
+
 
 @note_and_log
 class TrendLog(TrendLogProperties):
@@ -186,3 +191,6 @@ class TrendLog(TrendLogProperties):
                 self.properties.device.properties.network.remove_trend(self)
             else:
                 self.properties.device.properties.network.add_trend(self)
+
+    def __repr__(self):
+        return self.properties.__repr__()
