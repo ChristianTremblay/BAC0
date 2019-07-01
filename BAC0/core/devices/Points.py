@@ -226,10 +226,9 @@ class Point:
         """
         if not _PANDAS:
             return dict(zip(self._history.timestamp, self._history.value))
-        his_table = pd.Series(
-            self._history.value[: len(self._history.timestamp)],
-            index=self._history.timestamp,
-        )
+        idx = self._history.timestamp.copy()
+        his_table = pd.Series(index=idx, data=self._history.value[: len(idx)])
+        del idx
         his_table.name = ("{}/{}").format(
             self.properties.device.properties.name, self.properties.name
         )

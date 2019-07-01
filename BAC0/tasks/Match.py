@@ -31,8 +31,11 @@ class Match(Task):
         Task.__init__(self, delay=delay, daemon=True)
 
     def task(self):
-        if self.status.history[-1] != self.command.history[-1]:
-            self.status._setitem(self.command.history[-1])
+        try:
+            if self.status.history[-1] != self.command.history[-1]:
+                self.status._setitem(self.command.history[-1])
+        except Exception:
+            print("Something wrong... try again next time...")
 
     def stop(self):
         self.status._setitem("auto")
@@ -56,12 +59,15 @@ class Match_Value(Task):
         Task.__init__(self, delay=delay, daemon=True)
 
     def task(self):
-        if hasattr(self.value, "__call__"):
-            value = self.value()
-        else:
-            value = self.value
-        if value != self.point.value:
-            self.point._set(value)
+        try:
+            if hasattr(self.value, "__call__"):
+                value = self.value()
+            else:
+                value = self.value
+            if value != self.point.value:
+                self.point._set(value)
+        except Exception:
+            print("Something is wrong... try again next time")
 
     def stop(self):
         self.point._set("auto")

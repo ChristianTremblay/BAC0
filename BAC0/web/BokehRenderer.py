@@ -9,7 +9,7 @@ This module deals with Bokeh Session, Document and Plots
 A connection to the server is mandatory to use update_data
 """
 from bokeh.plotting import Figure
-from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis
+from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis, Legend
 from bokeh.models.widgets import DataTable, TableColumn, Div
 from bokeh.layouts import widgetbox, row, column, gridplot
 from bokeh.palettes import d3, Spectral6
@@ -120,6 +120,8 @@ class DynamicPlotHandler(Handler):
         )
         self.p.add_tools(hover)
 
+        self.legends_list = []
+
         length = len(self.s.keys())
         if length <= 10:
             if length < 3:
@@ -141,6 +143,9 @@ class DynamicPlotHandler(Handler):
                     y_range_name="bool",
                     size=10,
                 )
+                # self.legends_list.append(
+                #    (("{} | {} (OFF-ON)".format(each.name, each.description)), [c])
+                # )
             elif each.states == "multistates":
                 self.p.diamond(
                     "x",
@@ -152,6 +157,16 @@ class DynamicPlotHandler(Handler):
                     y_range_name="enum",
                     size=20,
                 )
+                # self.legends_list.append(
+                #    (
+                #        (
+                #            "{} | {} ({})".format(
+                #                each.name, each.description, each.units
+                #            )
+                #        ),
+                #        [c],
+                #    )
+                # )
             else:
                 self.p.line(
                     "x",
@@ -162,10 +177,21 @@ class DynamicPlotHandler(Handler):
                     legend=("%s | %s (%s)" % (each.name, each.description, each.units)),
                     line_width=2,
                 )
+                # self.legends_list.append(
+                #    (
+                #        (
+                #            "{} | {} ({})".format(
+                #                each.name, each.description, each.units
+                #            )
+                #        ),
+                #        [c],
+                #    )
+                # )
 
-            self.p.legend.location = "bottom_right"
+            self.p.legend.location = "top_left"
+            # legend = Legend(items=self.legends_list, location=(0, -60))
             self.p.legend.click_policy = "hide"
-
+            # self.p.add_layout(legend, "right")
             self.plots = [self.p]
 
     def update_data(self):
