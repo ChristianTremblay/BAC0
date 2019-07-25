@@ -26,6 +26,17 @@ do so, a special dictionary need to be declared in this form ::
         },
     }
 
+    # name : Name of the class to be created
+    # vendor_id : the manufacturer of the device
+    # objectType : see bacpypes.object for reference (ex. 'device')
+    # bacpypes_type : base class to instanciate (ex. BinaryValueObject)
+    # properties : list of proprietary properties to add 
+    #     name of the property (for reference)
+    #     obj_id : instance of the property, usually an integer
+    #     primitive : the kind of data for this property. Refer to `bacpypes.primitivedata`
+    #     mutable : true = writable, default to false
+
+
 Once the dictionary is completed, you need to call the spceial function `create_proprietaryobject`.
 This function will dynamically create the class and register it with bacpypes so you will be able 
 to read and write to the object.
@@ -49,8 +60,8 @@ Using the special `bacnet.read` argument "vendor_id" will then inform bacpypes t
 the special object definition for this particular vendor.
 
 .. note::
-Eventually, BAC0 could be "aware" of the vendor_id in the context of a `BAC0.device` and automatically
-use the vendor_id syntax in the read. This is a work in progress.
+    Eventually, BAC0 could be "aware" of the vendor_id in the context of a `BAC0.device` and automatically
+    use the vendor_id syntax in the read. This is a work in progress.
 
 Proprietary objects
 --------------------
@@ -70,6 +81,7 @@ the device object for JCI devices. Note that as there are multiple proprietary p
 them all in the same new class (the example presents 2 new properties). 
 
 ::
+
     #
     #   Proprietary Objects and their attributes
     #
