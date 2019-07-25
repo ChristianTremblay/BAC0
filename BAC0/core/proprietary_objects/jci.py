@@ -15,8 +15,8 @@ from bacpypes.object import (
 #   Proprietary Objects and their attributes
 #
 
-JCI_DeviceObject = {
-    "name": "JCI_DeviceObject",
+JCIDeviceObject = {
+    "name": "JCIDeviceObject",
     "vendor_id": 5,
     "objectType": "device",
     "bacpypes_type": DeviceObject,
