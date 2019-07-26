@@ -1,33 +1,34 @@
-from bacpypes.object import (
-    Object,
-    BinaryValueObject,
-    CharacterStringValueObject,
-    Property,
-    register_object_type,
-)
-from bacpypes.primitivedata import Boolean, Real, CharacterString, Atomic
+from bacpypes.object import Object, Property, register_object_type
+
+# Prochaine étape : créer une focntion qui va lire "all" et se redéfinir dynamiquement
+def create_proprietary_object(params):
+    props = []
+    try:
+        _validate_params(params)
+    except:
+        raise
+    for k, v in params["properties"].items():
+        props.append(Property(int(v["obj_id"]), v["primitive"], mutable=v["mutable"]))
+
+    new_class = type(
+        params["name"],
+        (params["bacpypes_type"],),
+        {"objectType": params["objectType"], "properties": props},
+    )
+    register_object_type(new_class, vendor_id=params["vendor_id"])
 
 
-class ProprietaryObject(Object):
-    def __new__(cls, **kwargs):
-        Object.__init__(cls)
-        props = []
-        for k, v in kwargs["properties"].items():
-            props.append(
-                Property(int(v["obj_id"]), v["primitive"], mutable=v["mutable"])
-            )
-        cls.properties = props
-        return super(ProprietaryObject, cls).__new__(cls)
-
-    def __init__(self, **kwargs):
-        self.bacpypes_type.__init__(self)
-
-
-def register(cls):
-    register_object_type(cls, vendor_id=cls.vendor_id)
-
-
-def create_proprietaryobject(**params):
-    new_class = type(params["name"], (ProprietaryObject,), params)
-    _nc = new_class(**params)
-    register(new_class)
+def _validate_params(params):
+    if not params["name"]:
+        raise ValueError(
+            "Proprietary definition dict must contains a name key with a custom class name"
+        )
+    if not params["vendor_id"]:
+        raise ValueError("Vendor ID is mandatory")
+    if not isinstance(params["properties"], dict):
+        raise TypeError(
+            "The definition must include a dict of properties. It can be empty."
+        )
+    if not issubclass(params["bacpypes_type"], Object):
+        raise TypeError("bacpypes_type must be a subclass of bacpypes.object.Object")
+    return True

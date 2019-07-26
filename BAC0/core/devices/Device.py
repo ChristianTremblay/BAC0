@@ -142,6 +142,7 @@ class Device(SQLMixin):
         self.properties.network = network
         self.properties.pollDelay = poll
         self.properties.name = ""
+        self.properties.vendor_id = 0
         self.properties.objects_list = []
         self.properties.pss = ServicesSupported()
         self.properties.multistates = {}
@@ -506,7 +507,11 @@ class DeviceConnected(Device):
                 self.properties.address, self.properties.device_id
             )
         )
-
+        self.properties.vendor_id = self.properties.network.read(
+            "{} device {} vendorIdentifier".format(
+                self.properties.address, self.properties.device_id
+            )
+        )
         self._log.info(
             "Device {}:[{}] found... building points list".format(
                 self.properties.device_id, self.properties.name
@@ -655,6 +660,25 @@ class DeviceConnected(Device):
             if trend.properties.object_name == name:
                 return trend
         raise ValueError("{} doesn't exist in controller".format(name))
+
+    def read_property(self, prop):
+        # if instance == -1:
+        #    pass
+        if isinstance(prop, tuple):
+            _obj, _instance, _prop = prop
+        else:
+            pass
+            # find prop & instance depending on vendor id and name of prop
+        try:
+            request = "{} {} {} {}".format(
+                self.properties.address, _obj, _instance, _prop
+            )
+            val = self.properties.network.read(
+                request, vendor_id=self.properties.vendor_id
+            )
+        except KeyError as error:
+            raise Exception("Unknown property : %s" % error)
+        return val
 
     def __repr__(self):
         return "%s / Connected" % self.properties.name

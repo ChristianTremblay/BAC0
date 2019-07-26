@@ -110,7 +110,9 @@ class ReadPropertyMultiple:
                         )
                         self._log.debug("RPM_Request: %s " % request)
                         try:
-                            val = self.properties.network.readMultiple(request)
+                            val = self.properties.network.readMultiple(
+                                request, vendor_id=self.properties.vendor_id
+                            )
                         except SegmentationNotSupported:
                             raise
 
@@ -148,7 +150,9 @@ class ReadPropertyMultiple:
                         request = "{} {}".format(
                             self.properties.address, "".join(request)
                         )
-                        val = self.properties.network.readMultiple(request)
+                        val = self.properties.network.readMultiple(
+                            request, vendor_id=self.properties.vendor_id
+                        )
 
                     except SegmentationNotSupported as error:
                         self.properties.segmentation_supported = False
@@ -178,7 +182,9 @@ class ReadPropertyMultiple:
             for request in self._batches(big_request, points_per_request):
                 try:
                     request = "{} {}".format(self.properties.address, "".join(request))
-                    val = self.properties.network.read(request)
+                    val = self.properties.network.read(
+                        request, vendor_id=self.properties.vendor_id
+                    )
 
                 except KeyError as error:
                     raise Exception("Unknown point name : %s" % error)
@@ -195,7 +201,9 @@ class ReadPropertyMultiple:
             for request in self._batches(big_request[0], points_per_request):
                 try:
                     request = "{} {}".format(self.properties.address, "".join(request))
-                    val = self.properties.network.read(request)
+                    val = self.properties.network.read(
+                        request, vendor_id=self.properties.vendor_id
+                    )
                     points_values = zip(big_request[1][i : i + len(val)], val)
                     i += len(val)
                     for each in points_values:
@@ -212,7 +220,8 @@ class ReadPropertyMultiple:
                 objList = self.properties.network.read(
                     "{} device {} objectList".format(
                         self.properties.address, self.properties.device_id
-                    )
+                    ),
+                    vendor_id=self.properties.vendor_id,
                 )
 
             except NoResponseFromController:
@@ -228,6 +237,7 @@ class ReadPropertyMultiple:
                         self.properties.address, self.properties.device_id
                     ),
                     arr_index=0,
+                    vendor_id=self.properties.vendor_id,
                 )
 
                 for i in range(1, number_of_objects + 1):
@@ -237,6 +247,7 @@ class ReadPropertyMultiple:
                                 self.properties.address, self.properties.device_id
                             ),
                             arr_index=i,
+                            vendor_id=self.properties.vendor_id,
                         )
                     )
 
@@ -560,7 +571,9 @@ class ReadProperty:
     def read_single(self, request, *, points_per_request=1, discover_request=(None, 4)):
         try:
             request = "{} {}".format(self.properties.address, "".join(request))
-            return self.properties.network.read(request)
+            return self.properties.network.read(
+                request, vendor_id=self.properties.vendor_id
+            )
         except KeyError as error:
             raise Exception("Unknown point name: %s" % error)
 
@@ -575,7 +588,8 @@ class ReadProperty:
                 objList = self.properties.network.read(
                     "{} device {} objectList".format(
                         self.properties.address, self.properties.device_id
-                    )
+                    ),
+                    vendor_id=self.properties.vendor_id,
                 )
 
             except SegmentationNotSupported:
@@ -585,6 +599,7 @@ class ReadProperty:
                         self.properties.address, self.properties.device_id
                     ),
                     arr_index=0,
+                    vendor_id=self.properties.vendor_id,
                 )
 
                 for i in range(1, number_of_objects + 1):
@@ -594,6 +609,7 @@ class ReadProperty:
                                 self.properties.address, self.properties.device_id
                             ),
                             arr_index=i,
+                            vendor_id=self.properties.vendor_id,
                         )
                     )
 

@@ -299,7 +299,8 @@ class Point:
                     prop,
                     value,
                     priority,
-                )
+                ),
+                vendor_id=self.properties.device.properties.vendor_id,
             )
         except Exception:
             raise NoResponseFromController()
@@ -556,10 +557,15 @@ class NumericPoint(Point):
                 raise ValueError("Value must be numeric")
 
     def __repr__(self):
+        polling = self.properties.device.properties.pollDelay
+        if polling < 60 and polling > 0:
+            val = self.lastValue
+        else:
+            val = self.value
         return "{}/{} : {:.2f} {}".format(
             self.properties.device.properties.name,
             self.properties.name,
-            self.value,
+            val,
             self.properties.units_state,
         )
 

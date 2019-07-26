@@ -45,7 +45,21 @@ from bacpypes.apdu import (
     ReadRangeRequest,
     ReadRangeACK,
 )
-from bacpypes.primitivedata import Unsigned
+from bacpypes.primitivedata import (
+    Atomic,
+    Boolean,
+    Unsigned,
+    Integer,
+    Real,
+    Double,
+    OctetString,
+    CharacterString,
+    BitString,
+    Enumerated,
+    Date,
+    Time,
+    ObjectIdentifier,
+)
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
@@ -135,19 +149,26 @@ class ReadProperty:
                 apdu.objectIdentifier[0], apdu.propertyIdentifier, vendor_id=vendor_id
             )
             if not datatype:
-                raise TypeError("unknown datatype")
-
-            # special case for array parts, others are managed by cast_out
-            if issubclass(datatype, Array) and (apdu.propertyArrayIndex is not None):
-                if apdu.propertyArrayIndex == 0:
-                    value = apdu.propertyValue.cast_out(Unsigned)
-                else:
-                    value = apdu.propertyValue.cast_out(datatype.subtype)
+                # raise TypeError("unknown datatype")
+                value = cast_datatype_with_brute_force(
+                    apdu.propertyValue,
+                    apdu.objectIdentifier[0],
+                    apdu.propertyIdentifier,
+                )
             else:
-                value = apdu.propertyValue.cast_out(datatype)
+                # special case for array parts, others are managed by cast_out
+                if issubclass(datatype, Array) and (
+                    apdu.propertyArrayIndex is not None
+                ):
+                    if apdu.propertyArrayIndex == 0:
+                        value = apdu.propertyValue.cast_out(Unsigned)
+                    else:
+                        value = apdu.propertyValue.cast_out(datatype.subtype)
+                else:
+                    value = apdu.propertyValue.cast_out(datatype)
 
-            self._log.debug("{:<20} {:<20}".format("value", "datatype"))
-            self._log.debug("{!r:<20} {!r:<20}".format(value, datatype))
+                self._log.debug("{:<20} {:<20}".format("value", "datatype"))
+                self._log.debug("{!r:<20} {!r:<20}".format(value, datatype))
             return value
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -201,7 +222,7 @@ class ReadProperty:
             objlist.append(self.read(args, arr_index=i))
         return objlist
 
-    def readMultiple(self, args):
+    def readMultiple(self, args, vendor_id=0):
         """ Build a ReadPropertyMultiple request, wait for the answer and return the values
 
         :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
@@ -221,13 +242,14 @@ class ReadProperty:
             raise ApplicationNotStarted("BACnet stack not running - use startApp()")
 
         args = args.split()
+        vendor_id = vendor_id
         values = []
 
         self.log_title("Read Multiple", args)
 
         try:
             # build an ReadPropertyMultiple request
-            iocb = IOCB(self.build_rpm_request(args))
+            iocb = IOCB(self.build_rpm_request(args, vendor_id=vendor_id))
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
             self._log.debug("{:<20} {!r}".format("iocb", iocb))
@@ -284,27 +306,35 @@ class ReadProperty:
                         propertyValue = readResult.propertyValue
 
                         # find the datatype
-                        datatype = get_datatype(objectIdentifier[0], propertyIdentifier)
+                        datatype = get_datatype(
+                            objectIdentifier[0], propertyIdentifier, vendor_id=vendor_id
+                        )
 
                         if not datatype:
-                            raise TypeError("unknown datatype")
-
-                        # special case for array parts, others are managed by cast_out
-                        if issubclass(datatype, Array) and (
-                            propertyArrayIndex is not None
-                        ):
-                            if propertyArrayIndex == 0:
-                                value = propertyValue.cast_out(Unsigned)
-                            else:
-                                value = propertyValue.cast_out(datatype.subtype)
-                        else:
-                            value = propertyValue.cast_out(datatype)
-
-                        self._log.debug(
-                            "{!r:<20} {!r:<20} {!r:<30} {!r:<20}".format(
-                                propertyIdentifier, propertyArrayIndex, value, datatype
+                            value = cast_datatype_with_brute_force(
+                                propertyValue, objectIdentifier[0], propertyIdentifier
                             )
-                        )
+                        else:
+
+                            # special case for array parts, others are managed by cast_out
+                            if issubclass(datatype, Array) and (
+                                propertyArrayIndex is not None
+                            ):
+                                if propertyArrayIndex == 0:
+                                    value = propertyValue.cast_out(Unsigned)
+                                else:
+                                    value = propertyValue.cast_out(datatype.subtype)
+                            else:
+                                value = propertyValue.cast_out(datatype)
+
+                            self._log.debug(
+                                "{!r:<20} {!r:<20} {!r:<30} {!r:<20}".format(
+                                    propertyIdentifier,
+                                    propertyArrayIndex,
+                                    value,
+                                    datatype,
+                                )
+                            )
                         values.append(value)
 
             return values
@@ -349,8 +379,10 @@ class ReadProperty:
         if prop_id.isdigit():
             prop_id = int(prop_id)
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
-        if not datatype:
-            raise ValueError("invalid property for object type")
+        # if not datatype:
+        #    To allow us to try any property
+        #    raise ValueError("invalid property for object type")
+        #    datatype = get_datatype_with_brute_force(apdu.propertyValue, apdu.objectIdentifier[0], apdu.propertyIdentifier)
 
         # build a request
         request = ReadPropertyRequest(
@@ -365,13 +397,14 @@ class ReadProperty:
         self._log.debug("{:<20} {!r}".format("REQUEST", request))
         return request
 
-    def build_rpm_request(self, args):
+    def build_rpm_request(self, args, vendor_id=0):
         """
         Build request from args
         """
         i = 0
         addr = args[i]
         i += 1
+        vendor_id = vendor_id
 
         read_access_spec_list = []
         while i < len(args):
@@ -396,12 +429,17 @@ class ReadProperty:
                 if prop_id in ("all", "required", "optional"):
                     pass
                 else:
-                    datatype = get_datatype(obj_type, prop_id)
+                    datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
                     if not datatype:
-                        raise ValueError(
-                            "invalid property for object type : {} | {}".format(
-                                (obj_type, prop_id)
-                            )
+                        # raise ValueError(
+                        #    "invalid property for object type : {} | {}".format(
+                        #        (obj_type, prop_id)
+                        #    )
+                        # )
+                        datatype = get_datatype_with_brute_force(
+                            apdu.propertyValue,
+                            apdu.objectIdentifier[0],
+                            apdu.propertyIdentifier,
                         )
 
                 # build a property reference
@@ -452,7 +490,10 @@ class ReadProperty:
             prop_id = int(prop_id)
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
         if not datatype:
-            raise ValueError("invalid property for object type")
+            # raise ValueError("invalid property for object type")
+            datatype = get_datatype_with_brute_force(
+                apdu.propertyValue, apdu.objectIdentifier[0], apdu.propertyIdentifier
+            )
 
         # build a request
         request = ReadRangeRequest(
@@ -524,7 +565,12 @@ class ReadProperty:
                 apdu.objectIdentifier[0], apdu.propertyIdentifier, vendor_id=vendor_id
             )
             if not datatype:
-                raise TypeError("unknown datatype")
+                # raise TypeError("unknown datatype")
+                datatype = get_datatype_with_brute_force(
+                    apdu.propertyValue,
+                    apdu.objectIdentifier[0],
+                    apdu.propertyIdentifier,
+                )
 
             # special case for array parts, others are managed by cast_out
             #            if issubclass(datatype, Array) and (apdu.propertyArrayIndex is not None):
@@ -594,3 +640,55 @@ def find_reason(apdu):
             return code
     except KeyError as err:
         return "KeyError: %s has no key %r" % (type(apdu), err.args[0])
+
+
+def cast_datatype_with_brute_force(propertyValue, obj_id, prop_id):
+    tag = propertyValue.tagList.tagList[0].tagNumber
+    try:
+        datatype = get_datatype_with_brute_force(propertyValue, obj_id, prop_id)
+        value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
+    except:
+        print(
+            "Error processing {} {}...probably an array not yet supported".format(
+                obj_id, prop_id
+            )
+        )
+        value = []
+    return value
+
+
+def get_datatype_with_brute_force(propertyValue, obj_id, prop_id):
+    tag = propertyValue.tagList.tagList[0].tagNumber
+    try:
+        if tag == 1:
+            return Boolean
+        elif tag == 2:
+            return Unsigned
+        elif tag == 3:
+            return Integer
+        elif tag == 4:
+            return Real
+        elif tag == 5:
+            return Double
+        elif tag == 6:
+            return OctetString
+        elif tag == 7:
+            return CharacterString
+        elif tag == 8:
+            return BitString
+        elif tag == 9:
+            return Enumerated
+        elif tag == 10:
+            return Date
+        elif tag == 11:
+            return Time
+        elif tag == 12:
+            return ObjectIdentifier
+    except:
+        print(
+            "Error processing {} {}...probably an array not yet supported".format(
+                obj_id, prop_id
+            )
+        )
+
+        return Atomic
