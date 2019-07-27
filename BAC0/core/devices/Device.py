@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+# Copyright (C) 2015-2017 by Christian Tremblay, P.Eng <christian.tremblay@servisysDeviceObject.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
@@ -86,7 +86,7 @@ class DeviceProperties(object):
 @note_and_log
 class Device(SQLMixin):
     """
-    Represent a BACnet device.  Once defined, it allows use of read, write, sim, release 
+    Represent a BACnet device.  Once defined, it allows use of read, write, sim, release
     functions to communicate with the device on the network.
 
     :param address: address of the device (ex. '2:5')
@@ -95,7 +95,7 @@ class Device(SQLMixin):
     :param poll: (int) if > 0, will poll every points each x seconds.
     :from_backup: sqlite backup file
     :segmentation_supported: (boolean) When segmentation is not supported, BAC0
-                             will not use read property multiple to poll the 
+                             will not use read property multiple to poll the
                              device.
     :object_list: (list) Use can provide a custom object_list to use for the
                   the creation of the device. the object list must be built
@@ -243,7 +243,7 @@ class Device(SQLMixin):
 
     def _buildPointList(self):
         """
-        Read all points from a device into a (Pandas) dataframe (Pandas).  Items are 
+        Read all points from a device into a (Pandas) dataframe (Pandas).  Items are
         accessible by point name.
         """
         raise NotImplementedError()
@@ -301,7 +301,7 @@ class Device(SQLMixin):
 
     def _parseArgs(self, arg):
         """
-        Given a string, interpret the last word as the value, everything else is 
+        Given a string, interpret the last word as the value, everything else is
         considered to be the point name.
         """
         args = arg.split()
@@ -453,8 +453,8 @@ class DeviceConnected(Device):
 
     def connect(self, *, db=None):
         """
-        A connected device can be switched to 'database mode' where the device will 
-        not use the BACnet network but instead obtain its contents from a previously 
+        A connected device can be switched to 'database mode' where the device will
+        not use the BACnet network but instead obtain its contents from a previously
         stored database.
         """
         if db:
@@ -557,7 +557,7 @@ class DeviceConnected(Device):
     def __contains__(self, value):
         """
         Allows the syntax:
-            if "point_name" in device: 
+            if "point_name" in device:
         """
         return value in self.points_name
 
@@ -568,7 +568,7 @@ class DeviceConnected(Device):
 
     def __setitem__(self, point_name, value):
         """
-        Allows the syntax: 
+        Allows the syntax:
             device['point_name'] = value
         """
         try:
@@ -667,8 +667,7 @@ class DeviceConnected(Device):
         if isinstance(prop, tuple):
             _obj, _instance, _prop = prop
         else:
-            pass
-            # find prop & instance depending on vendor id and name of prop
+            raise ValueError('Please provide property using tuple with object, instance and property')
         try:
             request = "{} {} {} {}".format(
                 self.properties.address, _obj, _instance, _prop
@@ -719,7 +718,7 @@ class DeviceDisconnected(Device):
 
     def connect(self, *, db=None):
         """
-        Attempt to connect to device.  If unable, attempt to connect to a controller database  
+        Attempt to connect to device.  If unable, attempt to connect to a controller database
         (so the user can use previously saved data).
         """
         if not self.properties.network:
@@ -849,7 +848,7 @@ class DeviceDisconnected(Device):
 
 class DeviceFromDB(DeviceConnected):
     """
-    [Device state] Where requests for a point's present value returns the last 
+    [Device state] Where requests for a point's present value returns the last
     valid value from the point's history.
     """
 
