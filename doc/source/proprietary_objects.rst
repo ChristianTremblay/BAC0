@@ -60,12 +60,30 @@ Using the special `bacnet.read` argument "vendor_id" will then inform bacpypes t
 the special object definition for this particular vendor.
 
 .. note::
-    Eventually, BAC0 could be "aware" of the vendor_id in the context of a `BAC0.device` and automatically
-    use the vendor_id syntax in the read. This is a work in progress.
+    BAC0 will automatically register known proprietary classes at startup. See BAC0.core.proprietary_objects
+    for details.
 
 Proprietary objects
 --------------------
-WIP
+Proprietary object can be accessed using ::
+
+    # Let say device '2:5' have object (140,1)
+    bacnet.read('2:5 140 1 objectName')
+
+As they are proprietary objects, you will have to know what you are looking for. Typically, the properties
+`objectName`, `objectIdentifier`, will be available. But you will often see proprietary properties 
+attached to those objects. See next section.
+
+To read all properties from an object, if implemented, one can use ::
+
+    bacnet.readMultiple('2:5 140 1 all')
+
+BAC0 will do its best to give you a complete list.
+
+..note::
+    Please note that arrays under proprietary objects are not implemented yet. Also, context tags 
+    objects are not detected automatically. You will need to build the object class to interact 
+    with those objects. See next section.
 
 Proprietary Property 
 ---------------------
@@ -112,3 +130,19 @@ This will allow us to interact with them after registration ::
 .. note:: 
     In future version it will be able to define special device and attach some
     proprietary objects to them so tec['SupOnline'] would work...
+
+Vendor Context for Read and Write
+==================================
+In `BAC0.device`, the vendor_id context will be provided to the stack automatically. This mean that 
+if a device is created and there is a extended implementation of an object (JCIDeviceObject for example)
+BAC0 will recognize the proprietary object by default, without having the need to explicitly define the
+vendor_id in the request ::
+
+    instance_number = 1000
+    prop_id = 1320
+    device.read_property(('device',instance_number, prop_id))
+
+will work.
+
+Also, proprietary objects and properties classes are defined at startup so it is not necessary to explicitly 
+register them.

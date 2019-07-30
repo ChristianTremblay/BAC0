@@ -34,6 +34,7 @@ from ..core.io.Read import ReadProperty
 from ..core.io.Write import WriteProperty
 from ..core.functions.GetIPAddr import HostIP
 from ..core.functions.WhoisIAm import WhoisIAm
+from ..core.functions.TimeSync import TimeSync
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
 from ..core.devices.Trends import TrendLog
@@ -49,7 +50,7 @@ from bacpypes.pdu import Address
 
 
 @note_and_log
-class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
+class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation, TimeSync):
     """
     Build a BACnet application to accept read and write requests.
     [Basic Whois/IAm functions are implemented in parent BasicScript class.]

@@ -115,5 +115,20 @@ Or you can get a more detailed view using ::
 
     bacnet.devices
 
+..note::
+    WARNING. `bacnet.devices` may in some circumstances, be a bad choice when you want to discover
+    devices on a network. A lot of read requests are made to look for manufacturer, object name, etc
+    and if a lot of devices are on the network, it is recommended to use whois() and start from there.
+
+Time Sync
+****************
+You can use BAC0 to send time synchronisation requests to the network ::
+
+    bacnet.time_sync()
+    # or
+    bacnet.time_sync('2:5') # <- Providing an address
+    
+BAC0 will not accept requests from other devices.
+
 .. _berryconda : https://github.com/jjhelmus/berryconda  
 .. _RaspberryPi : http://www.raspberrypi.org
