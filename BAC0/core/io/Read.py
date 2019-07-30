@@ -46,19 +46,7 @@ from bacpypes.apdu import (
     ReadRangeACK,
 )
 from bacpypes.primitivedata import (
-    Atomic,
-    Boolean,
-    Unsigned,
-    Integer,
-    Real,
-    Double,
-    OctetString,
-    CharacterString,
-    BitString,
-    Enumerated,
-    Date,
-    Time,
-    ObjectIdentifier,
+    Tag
 )
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB
@@ -150,7 +138,7 @@ class ReadProperty:
             )
             if not datatype:
                 # raise TypeError("unknown datatype")
-                value = cast_datatype_with_brute_force(
+                value = cast_datatype_from_tag(
                     apdu.propertyValue,
                     apdu.objectIdentifier[0],
                     apdu.propertyIdentifier,
@@ -311,7 +299,7 @@ class ReadProperty:
                         )
 
                         if not datatype:
-                            value = cast_datatype_with_brute_force(
+                            value = cast_datatype_from_tag(
                                 propertyValue, objectIdentifier[0], propertyIdentifier
                             )
                         else:
@@ -382,7 +370,7 @@ class ReadProperty:
         # if not datatype:
         #    To allow us to try any property
         #    raise ValueError("invalid property for object type")
-        #    datatype = get_datatype_with_brute_force(apdu.propertyValue, apdu.objectIdentifier[0], apdu.propertyIdentifier)
+        #    datatype = get_datatype_from_tag_number(apdu.propertyValue, apdu.objectIdentifier[0], apdu.propertyIdentifier)
 
         # build a request
         request = ReadPropertyRequest(
@@ -436,7 +424,7 @@ class ReadProperty:
                         #        (obj_type, prop_id)
                         #    )
                         # )
-                        datatype = get_datatype_with_brute_force(
+                        datatype = get_datatype_from_tag_number(
                             apdu.propertyValue,
                             apdu.objectIdentifier[0],
                             apdu.propertyIdentifier,
@@ -491,7 +479,7 @@ class ReadProperty:
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
         if not datatype:
             # raise ValueError("invalid property for object type")
-            datatype = get_datatype_with_brute_force(
+            datatype = get_datatype_from_tag_number(
                 apdu.propertyValue, apdu.objectIdentifier[0], apdu.propertyIdentifier
             )
 
@@ -566,7 +554,7 @@ class ReadProperty:
             )
             if not datatype:
                 # raise TypeError("unknown datatype")
-                datatype = get_datatype_with_brute_force(
+                datatype = get_datatype_from_tag_number(
                     apdu.propertyValue,
                     apdu.objectIdentifier[0],
                     apdu.propertyIdentifier,
@@ -642,53 +630,25 @@ def find_reason(apdu):
         return "KeyError: %s has no key %r" % (type(apdu), err.args[0])
 
 
-def cast_datatype_with_brute_force(propertyValue, obj_id, prop_id):
-    tag = propertyValue.tagList.tagList[0].tagNumber
+def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
     try:
-        datatype = get_datatype_with_brute_force(propertyValue, obj_id, prop_id)
-        value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
+        tag_list = propertyValue.tagList.tagList
+        if tag_list[0].tagClass == 0:
+            tag = tag_list[0].tagNumber
+
+            datatype = Tag._app_tag_class[tag]
+            value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
+        else:
+            from bacpypes.constructeddata import ArrayOf
+            subtype_tag = propertyValue.tagList.tagList[0].tagList[0].tagNumber
+            datatype = ArrayOf(Tag._app_tag_class[subtype_tag])
+            value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
+
     except:
         print(
             "Error processing {} {}...probably an array not yet supported".format(
                 obj_id, prop_id
             )
         )
-        value = []
+        return propertyValue
     return value
-
-
-def get_datatype_with_brute_force(propertyValue, obj_id, prop_id):
-    tag = propertyValue.tagList.tagList[0].tagNumber
-    try:
-        if tag == 1:
-            return Boolean
-        elif tag == 2:
-            return Unsigned
-        elif tag == 3:
-            return Integer
-        elif tag == 4:
-            return Real
-        elif tag == 5:
-            return Double
-        elif tag == 6:
-            return OctetString
-        elif tag == 7:
-            return CharacterString
-        elif tag == 8:
-            return BitString
-        elif tag == 9:
-            return Enumerated
-        elif tag == 10:
-            return Date
-        elif tag == 11:
-            return Time
-        elif tag == 12:
-            return ObjectIdentifier
-    except:
-        print(
-            "Error processing {} {}...probably an array not yet supported".format(
-                obj_id, prop_id
-            )
-        )
-
-        return Atomic
