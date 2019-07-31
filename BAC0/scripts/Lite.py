@@ -33,7 +33,7 @@ from ..scripts.Base import Base
 from ..core.io.Read import ReadProperty
 from ..core.io.Write import WriteProperty
 from ..core.functions.GetIPAddr import HostIP
-from ..core.functions.WhoisIAm import WhoisIAm
+from ..core.functions.Discover import Discover
 from ..core.functions.TimeSync import TimeSync
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
@@ -50,7 +50,7 @@ from bacpypes.pdu import Address
 
 
 @note_and_log
-class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation, TimeSync):
+class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
     """
     Build a BACnet application to accept read and write requests.
     [Basic Whois/IAm functions are implemented in parent BasicScript class.]
@@ -108,11 +108,20 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation, TimeSync):
         # Force a global whois to find all devices on the network
         # This also allow to see devices quickly after creation of network
         # as a first read has already been done.
-        self.whois_answer = self.update_whois()
-        time.sleep(2)
+        # self.whois_answer = self.update_whois()
+        # time.sleep(2)
 
-    def update_whois(self):
-        return (self.whois(), str(datetime.now()))
+    def discover(
+        self, deviceInstanceRangeLowLimit=None, deviceInstanceRangeHighLimit=None
+    ):
+        return (
+            self.whois(
+                "{} {}".format(
+                    deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
+                )
+            ),
+            str(datetime.now()),
+        )
 
     def register_device(self, device):
         oid = id(device)

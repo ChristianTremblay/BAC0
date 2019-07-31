@@ -34,7 +34,7 @@ from bacpypes.basetypes import ServicesSupported, DeviceStatus
 from bacpypes.primitivedata import CharacterString
 
 # --- this application's modules ---
-from ..core.app.ScriptApplication import SimpleApplication, ForeignDeviceApplication
+from ..core.app.ScriptApplication import BAC0Application, BAC0ForeignDeviceApplication
 from .. import infos
 from ..core.io.IOExceptions import InitializationError
 from ..core.functions.GetIPAddr import validate_ip_address
@@ -159,7 +159,7 @@ class Base:
             # make an application
             if self.bbmdAddress and self.bbmdTTL > 0:
 
-                self.this_application = ForeignDeviceApplication(
+                self.this_application = BAC0ForeignDeviceApplication(
                     self.this_device,
                     self.localIPAddr,
                     bbmdAddress=self.bbmdAddress,
@@ -167,7 +167,7 @@ class Base:
                 )
                 app_type = "Foreign Device"
             else:
-                self.this_application = SimpleApplication(
+                self.this_application = BAC0Application(
                     self.this_device, self.localIPAddr
                 )
                 app_type = "Simple BACnet/IP App"

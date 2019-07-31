@@ -667,7 +667,9 @@ class DeviceConnected(Device):
         if isinstance(prop, tuple):
             _obj, _instance, _prop = prop
         else:
-            raise ValueError('Please provide property using tuple with object, instance and property')
+            raise ValueError(
+                "Please provide property using tuple with object, instance and property"
+            )
         try:
             request = "{} {} {} {}".format(
                 self.properties.address, _obj, _instance, _prop

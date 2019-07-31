@@ -80,7 +80,7 @@ To read all properties from an object, if implemented, one can use ::
 
 BAC0 will do its best to give you a complete list.
 
-..note::
+.. note::
     Please note that arrays under proprietary objects are not implemented yet. Also, context tags 
     objects are not detected automatically. You will need to build the object class to interact 
     with those objects. See next section.
