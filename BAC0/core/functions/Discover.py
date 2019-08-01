@@ -5,12 +5,9 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-WhoisIAm.py - creation of Whois and IAm requests
+Discover.py
 
-Used while defining an app
-ex.: class BasicScript(WhoisIAm):
-
-Class : WhoisIAm
+Classes needed to make discovering functions on a BACnet network
 
 """
 # --- standard Python modules ---
@@ -25,7 +22,7 @@ from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
 from bacpypes.primitivedata import Unsigned
 from bacpypes.constructeddata import Array
 from bacpypes.object import get_object_class, get_datatype
-from bacpypes.iocb import IOCB
+from bacpypes.iocb import IOCB, SieveQueue, IOController
 
 from bacpypes.netservice import NetworkServiceAccessPoint, NetworkServiceElement
 from bacpypes.npdu import (
@@ -49,19 +46,62 @@ from ..io.IOExceptions import (
 from ...core.utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
-class NetworkServiceElementWithRequests(NetworkServiceElement):
+class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
     """
     This class will add the capability to send requests at network level
+    And capability to read responses for NPDU
+    Deals with IOCB so the request can be deferred to task manager
+
     """
 
     def __init__(self):
         NetworkServiceElement.__init__(self)
+        IOController.__init__(self)
 
         # no pending request
         self._request = None
         self._iartn = []
+        self.queue_by_address = {}
 
-    def request(self, adapter, npdu):
+    def process_io(self, iocb):
+        # get the destination address from the pdu
+        adapter, npdu = iocb.args[0]
+        destination_address = npdu.pduDestination
+
+        # look up the queue
+        queue = self.queue_by_address.get(destination_address, None)
+        if not queue:
+            queue = SieveQueue(self.request, address=destination_address)
+            self.queue_by_address[destination_address] = queue
+        # ask the queue to process the request
+        queue.request_io(iocb)
+
+    def _net_complete(self, npdu):
+
+        # look up the queue
+        queue = self.queue_by_address.get(npdu.pduDestination, None)
+        if not queue:
+            return
+
+        # make sure it has an active iocb
+        if not queue.active_iocb:
+            return
+
+        # this request is complete
+        if isinstance(npdu, (None.__class__, IAmRouterToNetwork, InitializeRoutingTableAck, NetworkNumberIs)):
+            queue.complete_io(queue.active_iocb, npdu)
+        elif isinstance(npdu, RejectMessageToNetwork):
+            queue.abort_io(queue.active_iocb, npdu)
+        else:
+            raise RuntimeError("unrecognized APDU type")
+
+        # if the queue is empty and idle, forget about the controller
+        if not queue.ioQueue.queue and not queue.active_iocb:
+            del self.queue_by_address[address]
+
+    def request(self, arg):
+        adapter, npdu = arg
+        destination_address = npdu.pduDestination
         # save a copy of the request
         self._request = npdu
 
@@ -85,11 +125,9 @@ class NetworkServiceElementWithRequests(NetworkServiceElement):
 
         elif isinstance(npdu, RejectMessageToNetwork):
             print(
-                "{} Rejected message to network (reason : {}) | Request was : {}".format(
-                    npdu.pduSource, npdu.rmtnRejectionReason, self._request
-                )
+                "{} Rejected message to network (reason : {})".format(
+                    npdu.pduSource, rejectMessageToNetworkReasons[npdu.rmtnRejectionReason])
             )
-
         # forward it along
         NetworkServiceElement.indication(self, adapter, npdu)
 
@@ -99,6 +137,7 @@ class NetworkServiceElementWithRequests(NetworkServiceElement):
 
     def confirmation(self, adapter, npdu):
         # forward it along
+        self._net_complete(npdu)
         NetworkServiceElement.confirmation(self, adapter, npdu)
 
 
@@ -119,7 +158,7 @@ class Discover:
 
             whois()             # WhoIs broadcast globally.  Every device will respond with an IAm
             whois('2:5')        # WhoIs looking for the device at (Network 2, Address 5)
-            whois('10 1000')    # WhoIs looking for devices in the ID range (10 - 1000) 
+            whois('10 1000')    # WhoIs looking for devices in the ID range (10 - 1000)
 
         """
         if not self._started:
@@ -166,7 +205,7 @@ class Discover:
 
     def iam(self):
         """
-        Build an IAm response.  IAm are sent in response to a WhoIs request that;  
+        Build an IAm response.  IAm are sent in response to a WhoIs request that;
         matches our device ID, whose device range includes us, or is a broadcast.
         Content is defined by the script (deviceId, vendor, etc...)
 
@@ -216,13 +255,15 @@ class Discover:
         except:
             print("invalid arguments")
             return
-        self.this_application.nse.request(
-            self.this_application.nsap.local_adapter, request
-        )
+        iocb = IOCB((self.this_application.nsap.local_adapter, request))  # make an IOCB
+        iocb.set_timeout(2)
+        deferred(self.this_application.nse.request_io, iocb)
+        iocb.wait()
 
-        # sleep for responses
-        time.sleep(3.0)
-        self.init_routing_table(str(self.this_application.nse._iartn.pop()))
+        try:
+            self.init_routing_table(str(self.this_application.nse._iartn.pop()))
+        except IndexError:
+            pass
 
     def init_routing_table(self, address):
         """
@@ -240,10 +281,10 @@ class Discover:
             print("invalid arguments")
             return
 
-        # give it to the network service element
-        self.this_application.nse.request(
-            self.this_application.nsap.local_adapter, request
-        )
+        iocb = IOCB((self.this_application.nsap.local_adapter, request))  # make an IOCB
+        iocb.set_timeout(2)
+        deferred(self.this_application.nse.request_io, iocb)
+        iocb.wait()
 
     def what_is_network_number(self, args=""):
         """
@@ -265,10 +306,16 @@ class Discover:
             print("invalid arguments")
             return
 
-        # give it to the network service element
-        self.this_application.nse.request(
-            self.this_application.nsap.local_adapter, request
-        )
+        iocb = IOCB((self.this_application.nsap.local_adapter, request))  # make an IOCB
+        iocb.set_timeout(2)
+        deferred(self.this_application.nse.request_io, iocb)
+        iocb.wait()
 
-        # sleep for responses
-        time.sleep(3.0)
+rejectMessageToNetworkReasons = ["Other Error",
+    "The router is not direclty connected to DNET and cannot find a router to DNET on any direclty connected network using Who-Is-Router-To-Network messages",
+    "The tour is busy and unable to accept messages for the specified DNET at the present time",
+    "It is an unknown network layer message",
+    "The message is too long to be routed to this DNET",
+    "The source message was rejected due to a BACnet security error and that error cannot be forwarded to the source device",
+    "The source message was rejected due to errors in the addressing. The length of th DADR or SADR was determined to be invalid"
+    ]

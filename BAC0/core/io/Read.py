@@ -45,7 +45,9 @@ from bacpypes.apdu import (
     ReadRangeRequest,
     ReadRangeACK,
 )
-from bacpypes.primitivedata import Tag
+from bacpypes.primitivedata import (
+    Tag
+)
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
@@ -161,10 +163,18 @@ class ReadProperty:
             apdu = iocb.ioError
             reason = find_reason(apdu)
             if reason == "segmentationNotSupported":
+                # self._log.warning(
+                #    "Segmentation not supported... will read properties one by one..."
+                # )
+                # self._log.debug("The Request was : {}".format(args_split))
                 value = self._split_the_read_request(args, arr_index)
                 return value
             else:
                 if reason == "unknownProperty":
+                    # if "priorityArray" in args:
+                    #    self._log.debug("Unknown property {}".format(args))
+                    # else:
+                    #    self._log.warning("Unknown property {}".format(args))
                     if "description" in args:
                         return "Not Implemented"
                     elif "inactiveText" in args:
@@ -325,6 +335,8 @@ class ReadProperty:
             if reason == "unrecognizedService":
                 raise UnrecognizedService()
             elif reason == "segmentationNotSupported":
+                # value = self._split_the_read_request(args, arr_index)
+                # return value
                 self.segmentation_supported = False
                 raise SegmentationNotSupported()
             elif reason == "unknownObject":
@@ -355,6 +367,10 @@ class ReadProperty:
         if prop_id.isdigit():
             prop_id = int(prop_id)
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
+        # if not datatype:
+        #    To allow us to try any property
+        #    raise ValueError("invalid property for object type")
+        #    datatype = get_datatype_from_tag_number(apdu.propertyValue, apdu.objectIdentifier[0], apdu.propertyIdentifier)
 
         # build a request
         request = ReadPropertyRequest(
@@ -403,6 +419,11 @@ class ReadProperty:
                 else:
                     datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
                     if not datatype:
+                        # raise ValueError(
+                        #    "invalid property for object type : {} | {}".format(
+                        #        (obj_type, prop_id)
+                        #    )
+                        # )
                         datatype = get_datatype_from_tag_number(
                             apdu.propertyValue,
                             apdu.objectIdentifier[0],
@@ -539,6 +560,15 @@ class ReadProperty:
                     apdu.propertyIdentifier,
                 )
 
+            # special case for array parts, others are managed by cast_out
+            #            if issubclass(datatype, Array) and (apdu.propertyArrayIndex is not None):
+            #                if apdu.propertyArrayIndex == 0:
+            #                    value = apdu.propertyValue.cast_out(Unsigned)
+            #                else:
+            #                    value = apdu.propertyValue.cast_out(datatype.subtype)
+            #            else:
+            #                value = apdu.propertyValue.cast_out(datatype)
+
             value = apdu.itemData[0].cast_out(datatype)
 
             self._log.debug("{:<20} {:<20}".format("value", "datatype"))
@@ -610,7 +640,6 @@ def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
             value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
         else:
             from bacpypes.constructeddata import ArrayOf
-
             subtype_tag = propertyValue.tagList.tagList[0].tagList[0].tagNumber
             datatype = ArrayOf(Tag._app_tag_class[subtype_tag])
             value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
