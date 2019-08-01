@@ -61,6 +61,7 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
         # no pending request
         self._request = None
         self._iartn = []
+        self._learnedNetworks = set()
         self.queue_by_address = {}
 
     def process_io(self, iocb):
@@ -88,7 +89,15 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
             return
 
         # this request is complete
-        if isinstance(npdu, (None.__class__, IAmRouterToNetwork, InitializeRoutingTableAck, NetworkNumberIs)):
+        if isinstance(
+            npdu,
+            (
+                None.__class__,
+                IAmRouterToNetwork,
+                InitializeRoutingTableAck,
+                NetworkNumberIs,
+            ),
+        ):
             queue.complete_io(queue.active_iocb, npdu)
         elif isinstance(npdu, RejectMessageToNetwork):
             queue.abort_io(queue.active_iocb, npdu)
@@ -97,11 +106,10 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
 
         # if the queue is empty and idle, forget about the controller
         if not queue.ioQueue.queue and not queue.active_iocb:
-            del self.queue_by_address[address]
+            del self.queue_by_address[npdu.pduDestination]
 
     def request(self, arg):
         adapter, npdu = arg
-        destination_address = npdu.pduDestination
         # save a copy of the request
         self._request = npdu
 
@@ -114,6 +122,8 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
                 print("{} router to {}".format(npdu.pduSource, npdu.iartnNetworkList))
                 address = str(npdu.pduSource)
                 self._iartn.append(address)
+            for each in npdu.iartnNetworkList:
+                self._learnedNetworks.add(int(each))
 
         elif isinstance(npdu, InitializeRoutingTableAck):
             print("{} routing table".format(npdu.pduSource))
@@ -122,11 +132,14 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
 
         elif isinstance(npdu, NetworkNumberIs):
             print("{} network number is {}".format(npdu.pduSource, npdu.nniNet))
+            self._learnedNetworks.add(int(npdu.nniNet))
 
         elif isinstance(npdu, RejectMessageToNetwork):
             print(
                 "{} Rejected message to network (reason : {})".format(
-                    npdu.pduSource, rejectMessageToNetworkReasons[npdu.rmtnRejectionReason])
+                    npdu.pduSource,
+                    rejectMessageToNetworkReasons[npdu.rmtnRejectionReason],
+                )
             )
         # forward it along
         NetworkServiceElement.indication(self, adapter, npdu)
@@ -182,8 +195,11 @@ class Discover:
                 request.pduDestination = LocalBroadcast()
 
         if len(args) == 2:
-            request.deviceInstanceRangeLowLimit = int(args[0])
-            request.deviceInstanceRangeHighLimit = int(args[1])
+            try:
+                request.deviceInstanceRangeLowLimit = int(args[0])
+                request.deviceInstanceRangeHighLimit = int(args[1])
+            except ValueError:
+                pass
         self._log.debug("{:>12} {}".format("- request:", request))
 
         iocb = IOCB(request)  # make an IOCB
@@ -311,11 +327,13 @@ class Discover:
         deferred(self.this_application.nse.request_io, iocb)
         iocb.wait()
 
-rejectMessageToNetworkReasons = ["Other Error",
+
+rejectMessageToNetworkReasons = [
+    "Other Error",
     "The router is not direclty connected to DNET and cannot find a router to DNET on any direclty connected network using Who-Is-Router-To-Network messages",
     "The tour is busy and unable to accept messages for the specified DNET at the present time",
     "It is an unknown network layer message",
     "The message is too long to be routed to this DNET",
     "The source message was rejected due to a BACnet security error and that error cannot be forwarded to the source device",
-    "The source message was rejected due to errors in the addressing. The length of th DADR or SADR was determined to be invalid"
-    ]
+    "The source message was rejected due to errors in the addressing. The length of th DADR or SADR was determined to be invalid",
+]

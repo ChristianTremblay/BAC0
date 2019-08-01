@@ -105,23 +105,56 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
 
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
-        # Force a global whois to find all devices on the network
-        # This also allow to see devices quickly after creation of network
-        # as a first read has already been done.
-        # self.whois_answer = self.update_whois()
-        # time.sleep(2)
 
-    def discover(
-        self, deviceInstanceRangeLowLimit=None, deviceInstanceRangeHighLimit=None
-    ):
-        return (
-            self.whois(
+        # Announce yourself
+        self.iam()
+
+    @property
+    def known_network_numbers(self):
+        if self.discoveredDevices:
+            for each in self.discoveredDevices:
+                addr, instance = each
+                net = addr.split(":")[0] if ":" in addr else None
+                if net:
+                    self.this_application.nse._learnedNetworks.add(int(net))
+
+        return self.this_application.nse._learnedNetworks
+
+    def discover(self, networks=None, limits=(0, 4194303), global_broadcast=False):
+        found = []
+        _networks = []
+        deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit = limits
+
+        if networks:
+            if isinstance(networks, list):
+                # we'll make multiple whois...
+                for network in networks:
+                    _networks.append(network)
+            else:
+                _networks.append(networks)
+
+            for network in _networks:
+                _res = self.whois(
+                    "{}:* {} {}".format(
+                        network,
+                        deviceInstanceRangeLowLimit,
+                        deviceInstanceRangeHighLimit,
+                    ),
+                    global_broadcast=global_broadcast,
+                )
+                for each in _res:
+                    found.append(each)
+        else:
+            _res = self.whois(
                 "{} {}".format(
                     deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
-                )
-            ),
-            str(datetime.now()),
-        )
+                ),
+                global_broadcast=global_broadcast,
+            )
+            for each in _res:
+                found.append(each)
+        self.what_is_network_number()
+        return found
 
     def register_device(self, device):
         oid = id(device)

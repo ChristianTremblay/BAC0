@@ -45,9 +45,7 @@ from bacpypes.apdu import (
     ReadRangeRequest,
     ReadRangeACK,
 )
-from bacpypes.primitivedata import (
-    Tag
-)
+from bacpypes.primitivedata import Tag
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
@@ -640,6 +638,7 @@ def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
             value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
         else:
             from bacpypes.constructeddata import ArrayOf
+
             subtype_tag = propertyValue.tagList.tagList[0].tagList[0].tagNumber
             datatype = ArrayOf(Tag._app_tag_class[subtype_tag])
             value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
