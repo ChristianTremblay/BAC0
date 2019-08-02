@@ -6,21 +6,28 @@ Subpackages
 
 .. toctree::
 
-    BAC0.core
-    BAC0.scripts
+   BAC0.core
+   BAC0.scripts
+   BAC0.sql
+   BAC0.tasks
+   BAC0.web
 
+Submodules
+----------
 
-.. tbd
+BAC0.infos module
+-----------------
 
-    BAC0.sql
-    BAC0.tasks
-    BAC0.bokeh
+.. automodule:: BAC0.infos
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 
 Module contents
 ---------------
 
 .. automodule:: BAC0
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

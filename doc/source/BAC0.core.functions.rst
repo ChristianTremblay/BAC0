@@ -1,44 +1,46 @@
 BAC0.core.functions package
 ===========================
 
+Submodules
+----------
 
-BAC0.core.functions.GetIPAddr
------------------------------
+BAC0.core.functions.Discover module
+-----------------------------------
+
+.. automodule:: BAC0.core.functions.Discover
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+BAC0.core.functions.GetIPAddr module
+------------------------------------
 
 .. automodule:: BAC0.core.functions.GetIPAddr
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-BAC0.core.functions.PrintDebug
-------------------------------
+BAC0.core.functions.TimeSync module
+-----------------------------------
 
-.. automodule:: BAC0.core.functions.PrintDebug
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. automodule:: BAC0.core.functions.TimeSync
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
-BAC0.core.functions.WhoisIAm
-----------------------------
-
-.. automodule:: BAC0.core.functions.WhoisIAm
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-BAC0.core.functions.discoverPoints
-----------------------------------
+BAC0.core.functions.discoverPoints module
+-----------------------------------------
 
 .. automodule:: BAC0.core.functions.discoverPoints
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 
 Module contents
 ---------------
 
 .. automodule:: BAC0.core.functions
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
