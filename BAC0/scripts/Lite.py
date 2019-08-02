@@ -41,7 +41,6 @@ from ..core.devices.Trends import TrendLog
 from ..core.utils.notes import note_and_log
 from ..core.io.IOExceptions import NoResponseFromController, UnrecognizedService
 
-
 from ..infos import __version__ as version
 
 from bacpypes.pdu import Address
@@ -111,6 +110,11 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
 
     @property
     def known_network_numbers(self):
+        """
+        This function will read the table of known network numbers gathered by the 
+        NetworkServiceElement. It will also look into the discoveredDevices property
+        and add any network number that would not be in the NSE table.
+        """
         if self.discoveredDevices:
             for each in self.discoveredDevices:
                 addr, instance = each
@@ -121,6 +125,25 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
         return self.this_application.nse._learnedNetworks
 
     def discover(self, networks=None, limits=(0, 4194303), global_broadcast=False):
+        """
+        Discover is meant to be the function used to explore the network when we
+        connect.
+        It will trigger whois request using the different options provided with 
+        parameters.
+
+        By default, a local broadcast will be used. This is required as in big 
+        BACnet network, global broadcast can lead to network flood and loss of data.
+
+        :param networks (list, integer) : A simple integer or a list of integer
+            representing the network numbers used to issue whois request.
+
+        :param limits (tuple) : tuple made of 2 integer, the low limit and the high
+            limit. Those are the device instances used in the creation of the
+            whois request. Min : 0 ; Max : 4194303
+
+        :param global_broadcast (boolean) : If set to true, a global braodcast
+            will be used for the whois. Use with care.
+        """
         found = []
         _networks = []
         deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit = limits
@@ -211,6 +234,13 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
 
     @property
     def devices(self):
+        """
+        This property will create a good looking table of all the discovered devices
+        seen on the network. 
+
+        For that, some requests will be sent over the network to look for name, 
+        manufacturer, etc and in big network, this could be a long process.
+        """
         lst = []
         for device in list(self.discoveredDevices):
             try:
@@ -232,31 +262,6 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
             lst.append((deviceName, vendorName, device[0], device[1]))
         return lst
 
-    def find_devices_on_network(self, net=None):
-        d = {}
-        networks = set()
-        all_devices = self.whois()
-        for each in all_devices:
-            address, devID = each
-            try:
-                network = address.split(":")[0]
-                mac = int(address.split(":")[1])
-            except (ValueError, IndexError):
-                network = "ip"
-                mac = address
-            networks.add(network)
-            if not network in d.keys():
-                d[network] = []
-            d[network].append((mac, devID))
-        if net:
-            net = str(net)
-            try:
-                return d[net]
-            except (ValueError, KeyError):
-                self._log.warning("Nothing there...")
-                return
-        return (networks, d)
-
     @property
     def trends(self):
         """
@@ -265,6 +270,7 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
         return list(self._points_to_trend.values())
 
     def disconnect(self):
+
         super().disconnect()
 
     def __repr__(self):
