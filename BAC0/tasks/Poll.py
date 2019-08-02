@@ -54,7 +54,7 @@ class DevicePoll(Task):
     ReadPropertyMultiple requests.
     """
 
-    def __init__(self, device, delay=10):
+    def __init__(self, device, delay=10, name=""):
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
         :param delay: (int) Delay between polls in seconds, defaults = 10sec
@@ -66,7 +66,7 @@ class DevicePoll(Task):
         if delay < 5:
             delay = 5
         self._device = weakref.ref(device)
-        Task.__init__(self, name="rpm_poll", delay=delay, daemon=True)
+        Task.__init__(self, name="rpm_poll_{}".format(name), delay=delay, daemon=True)
         self._counter = 0
 
     @property

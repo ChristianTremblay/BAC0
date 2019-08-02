@@ -75,14 +75,25 @@ class SQLMixin(object):
         """
         backup = {}
         for point in self.points:
-            if point.history.dtypes == object:
-                backup[point.properties.name] = (
-                    point.history.replace(["inactive", "active"], [0, 1])
-                    .resample("1s")
-                    .mean()
-                )
+            try:
+                if point.history.dtypes == object:
+                    backup[point.properties.name] = (
+                        point.history.replace(["inactive", "active"], [0, 1])
+                        .resample("1s")
+                        .mean()
+                    )
+            except:
+                # probably not enough points...
+                if point.history.dtypes == object:
+                    backup[point.properties.name] = point.history.replace(
+                        ["inactive", "active"], [0, 1]
+                    )
             else:
-                backup[point.properties.name] = point.history.resample("1s").mean()
+                try:
+                    backup[point.properties.name] = point.history.resample("1s").mean()
+                except:
+                    # probably not enough point...
+                    backup[point.properties.name] = point.history
 
         df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in backup.items()]))
         return df.fillna(method="ffill")

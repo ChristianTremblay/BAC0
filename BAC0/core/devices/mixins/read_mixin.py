@@ -482,7 +482,9 @@ class ReadPropertyMultiple:
                 self._log.info("Polling stopped")
 
         elif self._polling_task.task is None:
-            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task = DevicePoll(
+                self, delay=delay, name=self.properties.name
+            )
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info(
@@ -494,7 +496,9 @@ class ReadPropertyMultiple:
             while self._polling_task.task.is_alive():
                 pass
             self._polling_task.running = False
-            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task = DevicePoll(
+                self, delay=delay, name=self.properties.name
+            )
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info("Polling started, every values read each %s seconds" % delay)
@@ -765,7 +769,9 @@ class ReadProperty:
                 self._log.info("Polling stopped")
 
         elif self._polling_task.task is None:
-            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task = DevicePoll(
+                self, delay=delay, name=self.properties.name
+            )
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info(
@@ -777,7 +783,9 @@ class ReadProperty:
             while self._polling_task.task.is_alive():
                 pass
             self._polling_task.running = False
-            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task = DevicePoll(
+                self, delay=delay, name=self.properties.name
+            )
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info("Polling started, every values read each %s seconds" % delay)

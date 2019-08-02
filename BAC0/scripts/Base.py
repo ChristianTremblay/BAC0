@@ -38,6 +38,7 @@ from ..core.app.ScriptApplication import BAC0Application, BAC0ForeignDeviceAppli
 from .. import infos
 from ..core.io.IOExceptions import InitializationError
 from ..core.functions.GetIPAddr import validate_ip_address
+from ..tasks.TaskManager import stopAllTasks
 
 from ..core.utils.notes import note_and_log
 
@@ -145,17 +146,6 @@ class Base:
                 protocolRevision=0,
             )
 
-            # build a bit string that knows about the bit names
-            #            pss = ServicesSupported()
-            #            pss['whoIs'] = 1
-            #            pss['iAm'] = 1
-            #            pss['readProperty'] = 1
-            #            pss['writeProperty'] = 1
-            #            pss['readPropertyMultiple'] = 1
-            #
-            #            # set the property value to be just the bits
-            #            self.this_device.protocolServicesSupported = pss.value
-
             # make an application
             if self.bbmdAddress and self.bbmdTTL > 0:
 
@@ -197,6 +187,8 @@ class Base:
         """
         Stop the BACnet stack.  Free the IP socket.
         """
+        self._log.debug("Stopping All running tasks")
+        stopAllTasks()
         self._log.debug("Stopping BACnet stack")
         # Freeing socket
         try:

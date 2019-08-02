@@ -27,7 +27,20 @@ class Manager:
 def stopAllTasks():
     for each in Manager.taskList:
         each.exitFlag = True
-    # print('Stopping all threads')
+    while True:
+        _alive = []
+        for each in Manager.taskList:
+            _alive.append(each.is_alive())
+        if not any(_alive):
+            clean_tasklist()
+            break
+    return True
+
+
+def clean_tasklist():
+    for each in Manager.taskList:
+        if not each.is_alive():
+            Manager.taskList.remove(each)
 
 
 class Task(Thread):
@@ -56,6 +69,7 @@ class Task(Thread):
                 if self.exitFlag:
                     break
                 time.sleep(0.5)
+            clean_tasklist()
 
     def task(self):
         raise RuntimeError("task must be overridden")
@@ -63,6 +77,7 @@ class Task(Thread):
     def stop(self):
         self.is_running = False
         self.exitFlag = True
+        clean_tasklist()
 
     def beforeStop(self):
         """

@@ -445,9 +445,11 @@ class DeviceConnected(Device):
         self._buildPointList()
         self.properties.network.register_device(self)
 
-    def disconnect(self):
+    def disconnect(self, save_on_disconnect=True):
         self._log.info("Wait while stopping polling")
         self.poll(command="stop")
+        if save_on_disconnect:
+            self.save()
         self.properties.network.unregister_device(self)
         self.new_state(DeviceFromDB)
 

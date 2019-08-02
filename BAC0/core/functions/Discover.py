@@ -102,7 +102,7 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
         elif isinstance(npdu, RejectMessageToNetwork):
             queue.abort_io(queue.active_iocb, npdu)
         else:
-            raise RuntimeError("unrecognized APDU type")
+            raise RuntimeError("unrecognized NPDU type")
 
         # if the queue is empty and idle, forget about the controller
         if not queue.ioQueue.queue and not queue.active_iocb:
