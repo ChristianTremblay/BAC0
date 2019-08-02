@@ -153,6 +153,8 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
                 # we'll make multiple whois...
                 for network in networks:
                     _networks.append(network)
+            elif networks == "known":
+                _networks = self.known_network_numbers
             else:
                 _networks.append(networks)
 
