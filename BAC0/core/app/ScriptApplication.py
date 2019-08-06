@@ -100,7 +100,7 @@ class BAC0Application(
     ):
 
         ApplicationIOController.__init__(
-            self, localDevice, localAddress, deviceInfoCache, aseID=aseID
+            self, localDevice, deviceInfoCache, aseID=aseID
         )
 
         # local address might be useful for subclasses
