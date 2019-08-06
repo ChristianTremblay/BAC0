@@ -26,6 +26,7 @@ from bacpypes.primitivedata import Date, Time
 from bacpypes.basetypes import DateTime
 from bacpypes.apdu import TimeSynchronizationRequest
 from bacpypes.iocb import IOCB
+from bacpypes.core import deferred
 
 
 @note_and_log
@@ -34,9 +35,28 @@ class TimeSync:
     Mixin to support Time Synchronisation from BAC0 to other devices
     """
 
-    def time_sync(self, *args):
+    def time_sync(self, *args, datetime=None):
         """
-        Take local time and send it to devices
+        Take local time and send it to devices. User can also provide
+        a datetime value (constructed following bacpypes.basetypes.Datetime
+        format).
+
+        To create a DateTime ::
+
+            from bacpypes.basetypes import DateTime
+            from bacpypes.primitivedata import Date, Time
+
+            # Create date and time
+            _date = Date('2019-08-05')
+            _time = Time('16:45')
+
+            # Create Datetime
+            _datetime = DateTime(date=_date, time=_time)
+
+            # Pass this to the function
+            bacnet.time_sync(datetime=_datetime)
+
+
         """
         if not self._started:
             raise ApplicationNotStarted("BACnet stack not running - use startApp()")
@@ -47,9 +67,18 @@ class TimeSync:
 
         self._log.debug("time sync {!r}".format(msg))
 
+        if not datetime:
+            _date = Date().now().value
+            _time = Time().now().value
+            _datetime = DateTime(date=_date, time=_time)
+        elif isinstance(datetime, DateTime):
+            _datetime = datetime
+        else:
+            raise ValueError('Please provide valid DateTime in bacpypes.basetypes.DateTime format')
+
         # build a request
         request = TimeSynchronizationRequest(
-            time=DateTime(date=Date().now().value, time=Time().now().value)
+            time=_datetime
         )
         if len(args) == 1:
             request.pduDestination = Address(args[0])
@@ -62,14 +91,7 @@ class TimeSync:
         iocb = IOCB(request)  # make an IOCB
 
         # pass to the BACnet stack
-        self.this_application.request_io(iocb)
+        deferred(self.this_application.request_io,iocb)
 
+        # Unconfirmed request...so wait until complete
         iocb.wait()  # Wait for BACnet response
-
-        if iocb.ioResponse:  # successful response
-            apdu = iocb.ioResponse
-
-        if iocb.ioError:  # unsuccessful: error/reject/abort
-            apdu = iocb.ioError
-            reason = find_reason(apdu)
-            self._log.error("An error occured : {}".format(reason))
