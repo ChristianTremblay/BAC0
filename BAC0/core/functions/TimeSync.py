@@ -74,12 +74,12 @@ class TimeSync:
         elif isinstance(datetime, DateTime):
             _datetime = datetime
         else:
-            raise ValueError('Please provide valid DateTime in bacpypes.basetypes.DateTime format')
+            raise ValueError(
+                "Please provide valid DateTime in bacpypes.basetypes.DateTime format"
+            )
 
         # build a request
-        request = TimeSynchronizationRequest(
-            time=_datetime
-        )
+        request = TimeSynchronizationRequest(time=_datetime)
         if len(args) == 1:
             request.pduDestination = Address(args[0])
             del args[0]
@@ -91,7 +91,7 @@ class TimeSync:
         iocb = IOCB(request)  # make an IOCB
 
         # pass to the BACnet stack
-        deferred(self.this_application.request_io,iocb)
+        deferred(self.this_application.request_io, iocb)
 
         # Unconfirmed request...so wait until complete
         iocb.wait()  # Wait for BACnet response

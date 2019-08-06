@@ -141,6 +141,10 @@ class Device(SQLMixin):
         self.properties.device_id = device_id
         self.properties.network = network
         self.properties.pollDelay = poll
+        if poll < 10:
+            self.properties.fast_polling = True
+        else:
+            self.properties.fast_polling = False
         self.properties.name = ""
         self.properties.vendor_id = 0
         self.properties.objects_list = []

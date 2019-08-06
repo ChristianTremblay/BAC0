@@ -12,7 +12,7 @@ read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device
 # --- 3rd party modules ---
 
 # --- this application's modules ---
-from ....tasks.Poll import DevicePoll
+from ....tasks.Poll import DeviceNormalPoll, DeviceFastPoll
 from ...io.IOExceptions import (
     ReadPropertyMultipleException,
     NoResponseFromController,
@@ -465,6 +465,19 @@ class ReadPropertyMultiple:
         device.poll('stop')
         device.poll(delay = 5)
         """
+        if delay < 10:
+            self.properties.fast_polling = True
+            _poll_cls = DeviceFastPoll
+        else:
+            self.properties.fast_polling = False
+            _poll_cls = DeviceNormalPoll
+
+        if not str(command).lower() in ["stop", "start", "0", "False"]:
+            self._log.error(
+                'Bad argument for function. Needs "stop", "start", "0" or "False" or provide keyword arg (command or delay)'
+            )
+            return
+
         if (
             str(command).lower() == "stop"
             or command == False
@@ -472,7 +485,9 @@ class ReadPropertyMultiple:
             or delay == 0
         ):
 
-            if isinstance(self._polling_task.task, DevicePoll):
+            if isinstance(self._polling_task.task, DeviceNormalPoll) or isinstance(
+                self._polling_task.task, DeviceFastPoll
+            ):
                 self._polling_task.task.stop()
                 while self._polling_task.task.is_alive():
                     pass
@@ -482,7 +497,7 @@ class ReadPropertyMultiple:
                 self._log.info("Polling stopped")
 
         elif self._polling_task.task is None:
-            self._polling_task.task = DevicePoll(
+            self._polling_task.task = _poll_cls(
                 self, delay=delay, name=self.properties.name
             )
             self._polling_task.task.start()
@@ -496,7 +511,7 @@ class ReadPropertyMultiple:
             while self._polling_task.task.is_alive():
                 pass
             self._polling_task.running = False
-            self._polling_task.task = DevicePoll(
+            self._polling_task.task = _poll_cls(
                 self, delay=delay, name=self.properties.name
             )
             self._polling_task.task.start()
@@ -744,11 +759,18 @@ class ReadProperty:
         device.poll('stop')
         device.poll(delay = 5)
         """
-        if delay > 120:
+        if delay < 10:
             self._log.warning(
-                "Segmentation not supported, forcing delay to 120 seconds (or higher)"
+                "Device do not support RMP, fast polling not available, limiting delay to 10sec."
             )
-            delay = 120
+            self.properties.fast_polling = False
+            delay = 10
+
+        #        if delay > 120:
+        #            self._log.warning(
+        #                "Segmentation not supported, forcing delay to 120 seconds (or higher)"
+        #            )
+        #            delay = 120
         # for each in self.points:
         #    each.value
         # self._log.info('Complete')
@@ -759,7 +781,7 @@ class ReadProperty:
             or delay == 0
         ):
 
-            if isinstance(self._polling_task.task, DevicePoll):
+            if isinstance(self._polling_task.task, DeviceNormalPoll):
                 self._polling_task.task.stop()
                 while self._polling_task.task.is_alive():
                     pass
@@ -769,7 +791,7 @@ class ReadProperty:
                 self._log.info("Polling stopped")
 
         elif self._polling_task.task is None:
-            self._polling_task.task = DevicePoll(
+            self._polling_task.task = DeviceNormalPoll(
                 self, delay=delay, name=self.properties.name
             )
             self._polling_task.task.start()
@@ -783,7 +805,7 @@ class ReadProperty:
             while self._polling_task.task.is_alive():
                 pass
             self._polling_task.running = False
-            self._polling_task.task = DevicePoll(
+            self._polling_task.task = DeviceNormalPoll(
                 self, delay=delay, name=self.properties.name
             )
             self._polling_task.task.start()

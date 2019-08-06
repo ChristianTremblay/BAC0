@@ -32,12 +32,15 @@ class SimplePoll(Task):
         :param point: (BAC0.core.device.Points.Point) name of the point to read
         :param delay: (int) Delay between reads in seconds, defaults = 10sec
         
-        A delay cannot be < 5sec (there are risks of overloading the device)
+        A delay cannot be < 1sec
+        This task is meant for single points, so BAC0 will allow short delays.
+        This way, a fast polling is available for some points in a device that 
+        would not support segmentation.
 
         :returns: Nothing
         """
-        if delay < 5:
-            delay = 5
+        if delay < 1:
+            delay = 1
         if point.properties:
             self._point = point
             Task.__init__(self, name="rp_poll", delay=delay)
@@ -54,19 +57,18 @@ class DevicePoll(Task):
     ReadPropertyMultiple requests.
     """
 
-    def __init__(self, device, delay=10, name=""):
+    def __init__(self, device, delay=10, name="", prefix="basic_poll"):
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
         :param delay: (int) Delay between polls in seconds, defaults = 10sec
         
-        A delay cannot be < 5sec (there are risks of overloading the device)
+        A delay cannot be < 10sec 
+        For delays under 10s, use DeviceFastPoll class.
 
         :returns: Nothing
         """
-        if delay < 5:
-            delay = 5
         self._device = weakref.ref(device)
-        Task.__init__(self, name="rpm_poll_{}".format(name), delay=delay, daemon=True)
+        Task.__init__(self, name="{}_{}".format(prefix, name), delay=delay, daemon=True)
         self._counter = 0
 
     @property
@@ -94,3 +96,53 @@ class DevicePoll(Task):
                 "Something is wrong with polling...stopping. Try setting off segmentation"
             )
             self.stop()
+
+
+class DeviceNormalPoll(DevicePoll):
+    """
+    Start a normal polling task to repeatedly read a list of points from a device using 
+    ReadPropertyMultiple requests.
+    
+    Normal polling will limit the polling speed to 10 second minimum
+
+    """
+
+    def __init__(self, device, delay=10, name=""):
+        """
+        :param device: (BAC0.core.devices.Device.Device) device to poll
+        :param delay: (int) Delay between polls in seconds, defaults = 10sec
+        
+        :returns: Nothing
+        """
+        if delay < 10:
+            delay = 10
+        DevicePoll.__init__(
+            self, device=device, name=name, delay=delay, prefix="rpm_normal_poll"
+        )
+
+
+class DeviceFastPoll(DevicePoll):
+    """
+    Start a fast polling task to repeatedly read a list of points from a device using 
+    ReadPropertyMultiple requests.
+    Delay allowed will be 0 to 10 seconds
+    Normal polling will limit the polling speed to 10 second minimum
+
+    Warning : Fast polling must be used with care or network flooding may occur
+
+    """
+
+    def __init__(self, device, delay=1, name=""):
+        """
+        :param device: (BAC0.core.devices.Device.Device) device to poll
+        :param delay: (int) Delay between polls in seconds, defaults = 1sec
+        
+        :returns: Nothing
+        """
+        if delay < 0:
+            delay = 0.01
+        elif delay > 10:
+            delay = 10
+        DevicePoll.__init__(
+            self, device=device, name=name, delay=delay, prefix="rpm_fast_poll"
+        )

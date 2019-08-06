@@ -46,6 +46,7 @@ from ..io.IOExceptions import (
 from ...core.utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
+@note_and_log
 class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
     """
     This class will add the capability to send requests at network level
@@ -119,23 +120,29 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
     def indication(self, adapter, npdu):
         if isinstance(npdu, IAmRouterToNetwork):
             if isinstance(self._request, WhoIsRouterToNetwork):
-                print("{} router to {}".format(npdu.pduSource, npdu.iartnNetworkList))
+                self._log.info(
+                    "{} router to {}".format(npdu.pduSource, npdu.iartnNetworkList)
+                )
                 address = str(npdu.pduSource)
                 self._iartn.append(address)
             for each in npdu.iartnNetworkList:
                 self._learnedNetworks.add(int(each))
 
         elif isinstance(npdu, InitializeRoutingTableAck):
-            print("{} routing table".format(npdu.pduSource))
+            self._log.info("{} routing table".format(npdu.pduSource))
             for rte in npdu.irtaTable:
-                print("    {} {} {}".format(rte.rtDNET, rte.rtPortID, rte.rtPortInfo))
+                self._log.info(
+                    "    {} {} {}".format(rte.rtDNET, rte.rtPortID, rte.rtPortInfo)
+                )
 
         elif isinstance(npdu, NetworkNumberIs):
-            print("{} network number is {}".format(npdu.pduSource, npdu.nniNet))
+            self._log.info(
+                "{} network number is {}".format(npdu.pduSource, npdu.nniNet)
+            )
             self._learnedNetworks.add(int(npdu.nniNet))
 
         elif isinstance(npdu, RejectMessageToNetwork):
-            print(
+            self._log.warning(
                 "{} Rejected message to network (reason : {})".format(
                     npdu.pduSource,
                     rejectMessageToNetworkReasons[npdu.rmtnRejectionReason],
@@ -255,7 +262,7 @@ class Discover:
             self._log.error("exception: {!r}".format(error))
             return False
 
-    def whois_router_to_network(self, args):
+    def whois_router_to_network(self, args=None):
         # build a request
         try:
             request = WhoIsRouterToNetwork()
@@ -269,7 +276,7 @@ class Discover:
                 if len(args) > 1:
                     request.wirtnNetwork = int(args[1])
         except:
-            print("invalid arguments")
+            self._log.error("WhoIsRouterToNetwork : invalid arguments")
             return
         iocb = IOCB((self.this_application.nsap.local_adapter, request))  # make an IOCB
         iocb.set_timeout(2)
@@ -289,12 +296,12 @@ class Discover:
         will return an acknowledgement with its routing table configuration.
         """
         # build a request
-        print("Addr : ", address)
+        self._log.info("Addr : ", address)
         try:
             request = InitializeRoutingTable()
             request.pduDestination = Address(address)
         except:
-            print("invalid arguments")
+            self._log.error("invalid arguments")
             return
 
         iocb = IOCB((self.this_application.nsap.local_adapter, request))  # make an IOCB

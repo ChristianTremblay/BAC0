@@ -124,7 +124,7 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
 
         return self.this_application.nse._learnedNetworks
 
-    def discover(self, networks=None, limits=(0, 4194303), global_broadcast=False):
+    def discover(self, networks="known", limits=(0, 4194303), global_broadcast=False):
         """
         Discover is meant to be the function used to explore the network when we
         connect.
@@ -133,6 +133,19 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
 
         By default, a local broadcast will be used. This is required as in big 
         BACnet network, global broadcast can lead to network flood and loss of data.
+
+        If not parameters are given, BAC0 will try to :
+
+            * Find the network on which it is
+            * Find routers for other networks (accessible via local broadcast)
+            * Detect "known networks"
+            * Use the list of known networks and create whois request to find all devices on those networks
+
+        This should be sufficient for most cases.
+
+        Once discovery is done, user may access the list of "discovered devices" using ::
+
+            bacnet.discoveredDevices
 
         :param networks (list, integer) : A simple integer or a list of integer
             representing the network numbers used to issue whois request.
@@ -147,6 +160,11 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
         found = []
         _networks = []
         deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit = limits
+        # Try to find on which network we are
+        self.what_is_network_number()
+        # Try to find local routers...
+        self.whois_router_to_network()
+        self._log.info("Found those networks : {}".format(self.known_network_numbers))
 
         if networks:
             if isinstance(networks, list):
@@ -159,6 +177,7 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
                 _networks.append(networks)
 
             for network in _networks:
+                self._log.info("Discovering network {}".format(network))
                 _res = self.whois(
                     "{}:* {} {}".format(
                         network,
@@ -169,6 +188,7 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
                 )
                 for each in _res:
                     found.append(each)
+
         else:
             _res = self.whois(
                 "{} {}".format(
@@ -178,7 +198,6 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
             )
             for each in _res:
                 found.append(each)
-        self.what_is_network_number()
         return found
 
     def register_device(self, device):
