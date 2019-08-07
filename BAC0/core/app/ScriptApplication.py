@@ -61,7 +61,7 @@ class BAC0Common:
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
         self.log("do_IAmRequest {!r}".format(apdu))
- 
+
         # build a key from the source, just use the instance number
         key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
         self.i_am_counter[key] += 1

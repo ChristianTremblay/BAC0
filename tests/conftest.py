@@ -123,4 +123,4 @@ def network_and_devices():
     del params
 
     # If too quick, we may encounter socket issues...
-    time.sleep(2)
+    time.sleep(1)

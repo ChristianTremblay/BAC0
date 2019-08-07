@@ -42,6 +42,16 @@ from ..tasks.TaskManager import stopAllTasks
 
 from ..core.utils.notes import note_and_log
 
+try:
+    import pandas
+    import bokeh
+    import flask
+    import flask_bootstrap
+
+    _COMPLETE = True
+except ImportError:
+    _COMPLETE = False
+
 # ------------------------------------------------------------------------------
 
 
@@ -53,7 +63,7 @@ class Base:
 
     :param localIPAddr='127.0.0.1':
     :param localObjName='BAC0':
-    :param DeviceId=None:
+    :param deviceId=None:
     :param maxAPDULengthAccepted='1024':
     :param maxSegmentsAccepted='1024':
     :param segmentationSupported='segmentedBoth':
@@ -65,7 +75,7 @@ class Base:
         self,
         localIPAddr="127.0.0.1",
         localObjName="BAC0",
-        DeviceId=None,
+        deviceId=None,
         firmwareRevision="".join(sys.version.split("|")[:2]),
         maxAPDULengthAccepted="1024",
         maxSegmentsAccepted="1024",
@@ -78,6 +88,14 @@ class Base:
     ):
 
         self._log.debug("Configurating app")
+
+        if not _COMPLETE:
+            self._log.debug(
+                "To be able to run the web server, you must install pandas, bokeh, flask and flask_bootstrap"
+            )
+            self._log.debug(
+                "Those are not all installed so BAC0 will work in Lite mode only."
+            )
 
         self.response = None
         self._initialized = False
@@ -97,7 +115,7 @@ class Base:
             )
 
         self.Boid = (
-            int(DeviceId) if DeviceId else (3056177 + int(random.uniform(0, 1000)))
+            int(deviceId) if deviceId else (3056177 + int(random.uniform(0, 1000)))
         )
 
         self.segmentationSupported = segmentationSupported

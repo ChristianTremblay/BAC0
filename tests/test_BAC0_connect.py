@@ -24,7 +24,7 @@ def test_bac0_connect_ok():
     bacnet = BAC0.connect(
         ip="127.0.2.1",
         localObjName=fake_bac0_obj,
-        DeviceId=fake_device_id,
+        deviceId=fake_device_id,
         firmwareRevision=fake_firmware_revision,
         maxAPDULengthAccepted=fake_max_apdu_length,
         maxSegmentsAccepted=fake_max_segments,
@@ -45,4 +45,4 @@ def test_bac0_connect_ok():
     assert bacnet.vendorName == fake_vendor_name
 
     bacnet.disconnect()
-    time.sleep(2)
+    time.sleep(1)

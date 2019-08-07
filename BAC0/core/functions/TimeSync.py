@@ -20,6 +20,7 @@ from ...core.utils.notes import note_and_log
 
 # --- standard Python modules ---
 import datetime as dt
+
 # --- 3rd party modules ---
 from bacpypes.pdu import Address, GlobalBroadcast
 from bacpypes.primitivedata import Date, Time
@@ -99,4 +100,4 @@ class TimeSync:
         year = year + 1900
         hour, minutes, sec, msec = _datetime.time
         d = dt.datetime(year, month, day, hour, minutes, sec, msec)
-        self._log.info('Time Sync Request sent to network : {}'.format(d.isoformat()))
+        self._log.info("Time Sync Request sent to network : {}".format(d.isoformat()))

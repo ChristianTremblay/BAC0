@@ -28,10 +28,10 @@ try:
 except ImportError:
     _PANDAS = False
 # --- this application's modules ---
-from ..core.utils.notes import note_and_log
+
 # ------------------------------------------------------------------------------
 
-@note_and_log
+
 class SQLMixin(object):
     """
     Use SQL to persist a device's contents.  By saving the device contents to an SQL 
@@ -103,7 +103,6 @@ class SQLMixin(object):
         Save the point histories to sqlite3 database.  
         Save the device object properties to a pickle file so the device can be reloaded.
         """
-        self._log.info('Saving device...')
         if filename:
             if ".db" in filename:
                 filename = filename.split(".")[0]

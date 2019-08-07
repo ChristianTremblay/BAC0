@@ -17,7 +17,9 @@ from bacpypes.core import deferred
 # --- this application's modules ---
 from .TaskManager import Task
 from ..core.utils.notes import note_and_log
+
 # ------------------------------------------------------------------------------
+
 
 @note_and_log
 class SimplePoll(Task):
@@ -49,6 +51,7 @@ class SimplePoll(Task):
 
     def task(self):
         self._point.value
+
 
 @note_and_log
 class DevicePoll(Task):
@@ -97,6 +100,7 @@ class DevicePoll(Task):
             )
             self.stop()
 
+
 @note_and_log
 class DeviceNormalPoll(DevicePoll):
     """
@@ -116,10 +120,13 @@ class DeviceNormalPoll(DevicePoll):
         """
         if delay < 10:
             delay = 10
-        self._log.info('Device defined for normal polling with a delay of {}sec'.format(delay))
+        self._log.info(
+            "Device defined for normal polling with a delay of {}sec".format(delay)
+        )
         DevicePoll.__init__(
             self, device=device, name=name, delay=delay, prefix="rpm_normal_poll"
         )
+
 
 @note_and_log
 class DeviceFastPoll(DevicePoll):
@@ -144,7 +151,9 @@ class DeviceFastPoll(DevicePoll):
             delay = 0.01
         elif delay > 10:
             delay = 10
-        self._log.warning('Device defined for fast polling with a delay of {}sec'.format(delay))
+        self._log.warning(
+            "Device defined for fast polling with a delay of {}sec".format(delay)
+        )
         DevicePoll.__init__(
             self, device=device, name=name, delay=delay, prefix="rpm_fast_poll"
         )

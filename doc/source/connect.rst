@@ -98,7 +98,7 @@ broadcast messages so they can be sent through diferent subnet and be available 
 To do so, use the syntax::
 
     my_ip = '10.8.0.2/24'
-    bbmdIP = '192.168.1.2'
+    bbmdIP = '192.168.1.2:47808'
     bbmdTTL = 900
     bacnet = BAC0.connect(ip='xxx.xxx.xxx.xxx/mask', bbdmAddress=bbmdIP, bbmdTTL=bbmdTTL)
     
