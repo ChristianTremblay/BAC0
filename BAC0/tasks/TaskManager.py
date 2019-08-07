@@ -15,7 +15,7 @@ import time
 
 # --- 3rd party modules ---
 # --- this application's modules ---
-
+from ..core.utils.notes import note_and_log
 # ------------------------------------------------------------------------------
 
 
@@ -42,7 +42,7 @@ def clean_tasklist():
         if not each.is_alive():
             Manager.taskList.remove(each)
 
-
+@note_and_log
 class Task(Thread):
     def __init__(self, delay=5, daemon=True, name="recurring"):
         Thread.__init__(self, name=name, daemon=daemon)
@@ -86,7 +86,7 @@ class Task(Thread):
         if self in Manager.taskList:
             Manager.taskList.remove(self)
 
-
+@note_and_log
 class OneShotTask(Thread):
     def __init__(self, daemon=True, name="Oneshot"):
         Thread.__init__(self, name=name, daemon=daemon)

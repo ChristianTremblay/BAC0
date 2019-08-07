@@ -25,64 +25,119 @@ except ImportError:
     _PANDAS = False
 
 
+class LogList:
+    LOGGERS = []
+
+
 def convert_level(level):
     if not level:
         return None
+    _valid_levels = [
+        logging.DEBUG,
+        logging.INFO,
+        logging.WARNING,
+        logging.ERROR,
+        logging.CRITICAL,
+    ]
+    if level in _valid_levels:
+        return level
     if level.lower() == "info":
-        level = logging.INFO
+        return logging.INFO
     elif level.lower() == "debug":
-        level = logging.DEBUG
+        return logging.DEBUG
     elif level.lower() == "warning":
-        level = logging.WARNING
+        return logging.WARNING
     elif level.lower() == "error":
-        level = logging.ERROR
+        return logging.ERROR
     elif level.lower() == "critical":
-        level = logging.CRITICAL
-    return level
+        return logging.CRITICAL
+    raise ValueError(
+        "Wrong log level use one of the following : {}".format(_valid_levels)
+    )
 
 
-def update_log_level(level=None, *, file=None, stderr=None, stdout=None):
+def update_log_level(level=None, *, log_file=None, stderr=None, stdout=None):
     """
-    Typical usage : 
-        Normal
-        BAC0.log_level(file='warning', stdout='warning', stderr='error')
-        Info on console....but not in file
-        BAC0.log_level(file='warning', stdout='info', stderr='error')
-        Debug
-        BAC0.log_level(file='debug', stdout='info', stderr='error')
+    Typical usage ::
+        # Silence (use CRITICAL so not much messages will be sent)
+        BAC0.log_level('silence')
+        # Verbose
+        BAC0.log_level('info')
+        # Default, Info on console....but Warning in file
+        BAC0.log_level(file='warning', stdout='info', stderr='critical')
+        # Debug in file and console... this is a bad idea as the console will be filled
+        BAC0.log_level(file='debug', stdout='debug', stderr='critical')
+           
+        # Preferably, debug in the file, keep console limited to info
+        BAC0.log_level('debug')
+        # OR
+        BAC0.log_level(file='debug', stdout='info', stderr='critical')   
+        
+
+    Giving only one parameter will set file and console to the same level.
+    I tend to keep stderr CRITICAL
+     
     """
+    update_log_file_lvl = False
+    update_stderr_lvl = False
+    update_stdout_lvl = False
+
     if level:
-        file = level
-        stderr = level
-        stdout = level
-    file = convert_level(file)
-    stderr = convert_level(stderr)
-    stdout = convert_level(stdout)
-    BAC0_logger = logging.getLogger("BAC0")
-    #    if console:
-    #        BAC0_logger.setLevel(console)
-    #        BAC0_logger.warning('Changed log level of console to {}'.format(logging.getLevelName(level)))
+        if level.lower() == "silence":
+            log_file_lvl = logging.CRITICAL
+            stderr_lvl = logging.CRITICAL
+            stdout_lvl = logging.CRITICAL
+            update_log_file_lvl = True
+            update_stderr_lvl = True
+            update_stdout_lvl = True
+        if level.lower() == "debug":
+            log_file_lvl = logging.DEBUG
+            stdout_lvl = logging.INFO
+            update_log_file_lvl = True
+            update_stdout_lvl = True
+        else:
+            level = convert_level(level)
+            log_file_lvl = level
+            stdout_lvl = level
+            update_log_file_lvl = True
+            update_stdout_lvl = True
+    else:
+        if log_file:
+            log_file_lvl = convert_level(log_file)
+            update_log_file_lvl = True
+        if stderr:
+            stderr_lvl = convert_level(stderr)
+            update_stderr_lvl = True
+        if stdout:
+            stdout_lvl = convert_level(stdout)
+            update_stdout_lvl = True
 
-    for handler in BAC0_logger.handlers:
-        if file and handler.get_name() == "file_handler":
-            handler.setLevel(file)
-            BAC0_logger.info(
-                "Changed log level of file to {}".format(logging.getLevelName(file))
-            )
-        elif stdout and handler.get_name() == "stdout":
-            handler.setLevel(stdout)
-            BAC0_logger.info(
-                "Changed log level of console stdout to {}".format(
-                    logging.getLevelName(stdout)
+    # Choose Base as logger for this task
+    BAC0_logger = logging.getLogger("BAC0_Root.BAC0.scripts.Base.Base")
+
+    for each in LogList.LOGGERS:
+        for handler in each.handlers:
+            if update_log_file_lvl and handler.get_name() == "file_handler":
+                handler.setLevel(log_file_lvl)
+                BAC0_logger.warning(
+                    "Changed log level of file to {}".format(
+                        logging.getLevelName(log_file_lvl)
+                    )
                 )
-            )
-        elif stderr and handler.get_name() == "stderr":
-            handler.setLevel(stderr)
-            BAC0_logger.info(
-                "Changed log level of console stderr to {}".format(
-                    logging.getLevelName(stderr)
+            elif update_stdout_lvl and handler.get_name() == "stdout":
+                handler.setLevel(stdout_lvl)
+                BAC0_logger.warning(
+                    "Changed log level of console stdout to {}".format(
+                        logging.getLevelName(stdout_lvl)
+                    )
                 )
-            )
+            elif update_stderr_lvl and handler.get_name() == "stderr":
+                handler.setLevel(stderr_lvl)
+                BAC0_logger.warning(
+                    "Changed log level of console stderr to {}".format(
+                        logging.getLevelName(stderr_lvl)
+                    )
+                )
 
 
 def note_and_log(cls):
@@ -111,15 +166,19 @@ def note_and_log(cls):
 
     # Defining log object
     cls.logname = "{} | {}".format(cls.__module__, cls.__name__)
-    cls._log = logging.getLogger("BAC0.{}.{}".format(cls.__module__, cls.__name__))
+    cls._log = logging.getLogger("BAC0_Root.{}.{}".format(cls.__module__, cls.__name__))
+
+    # Set level to debug so filter is done by handler
+    cls._log.setLevel(logging.DEBUG)
 
     # Console Handler
-    ch = logging.StreamHandler()
+    ch = logging.StreamHandler(sys.stderr)
     ch.set_name("stderr")
+    ch.setLevel(logging.CRITICAL)
+
     ch2 = logging.StreamHandler(sys.stdout)
     ch2.set_name("stdout")
-    ch.setLevel(console_level)
-    ch2.setLevel(logging.CRITICAL)
+    ch2.setLevel(console_level)
 
     formatter = logging.Formatter("{asctime} - {levelname:<8}| {message}", style="{")
 
@@ -149,7 +208,7 @@ def note_and_log(cls):
         cls._log.addHandler(ch)
         cls._log.addHandler(ch2)
 
-    #    cls._log.setLevel(logging.CRITICAL)
+    LogList.LOGGERS.append(cls._log)
 
     def log_title(self, title, args=None, width=35):
         cls._log.debug("")

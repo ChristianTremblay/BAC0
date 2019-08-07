@@ -9,8 +9,9 @@ RecurringTask.py - execute a recurring task
 """
 
 from .TaskManager import Task
+from ..core.utils.notes import note_and_log
 
-
+@note_and_log
 class RecurringTask(Task):
     """
     Start a recurring task (a function passed)

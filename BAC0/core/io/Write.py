@@ -17,9 +17,6 @@ Write.py - creation of WriteProperty requests
         WriteProperty()
             def write()
 
-    Functions::
-
-        print_debug()
 
 """
 # --- 3rd party modules ---

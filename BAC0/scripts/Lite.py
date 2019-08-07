@@ -72,6 +72,9 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
                 version, self.__module__.split(".")[-1]
             )
         )
+        self._log.info("Use BAC0.log_level to adjust verbosity of the app.")
+        self._log.info("Ex. BAC0.log_level('silence') or BAC0.log_level('error')")
+
         self._log.debug("Configurating app")
         self._registered_devices = weakref.WeakValueDictionary()
 
@@ -269,8 +272,9 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
                     "{} device {} objectName vendorName".format(device[0], device[1])
                 )
             except UnrecognizedService:
-                print(device[0])
-                print(device[1])
+                self._log.warning(
+                    "Unrecognized service for {} | {}".format(device[0], device[1])
+                )
                 deviceName = self.read(
                     "{} device {} objectName".format(device[0], device[1])
                 )
@@ -291,7 +295,7 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
         return list(self._points_to_trend.values())
 
     def disconnect(self):
-
+        self._log.debug("Disconnecting")
         super().disconnect()
 
     def __repr__(self):

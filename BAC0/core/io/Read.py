@@ -644,7 +644,7 @@ def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
             value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
 
     except:
-        print(
+        self._log.error(
             "Error processing {} {}...probably an array not yet supported".format(
                 obj_id, prop_id
             )

@@ -16,10 +16,10 @@ from bacpypes.core import deferred
 
 # --- this application's modules ---
 from .TaskManager import Task
-
+from ..core.utils.notes import note_and_log
 # ------------------------------------------------------------------------------
 
-
+@note_and_log
 class SimplePoll(Task):
     """
     Start a polling task to repeatedly read a point's Present_Value.
@@ -50,7 +50,7 @@ class SimplePoll(Task):
     def task(self):
         self._point.value
 
-
+@note_and_log
 class DevicePoll(Task):
     """
     Start a polling task to repeatedly read a list of points from a device using 
@@ -97,7 +97,7 @@ class DevicePoll(Task):
             )
             self.stop()
 
-
+@note_and_log
 class DeviceNormalPoll(DevicePoll):
     """
     Start a normal polling task to repeatedly read a list of points from a device using 
@@ -116,11 +116,12 @@ class DeviceNormalPoll(DevicePoll):
         """
         if delay < 10:
             delay = 10
+        self._log.info('Device defined for normal polling with a delay of {}sec'.format(delay))
         DevicePoll.__init__(
             self, device=device, name=name, delay=delay, prefix="rpm_normal_poll"
         )
 
-
+@note_and_log
 class DeviceFastPoll(DevicePoll):
     """
     Start a fast polling task to repeatedly read a list of points from a device using 
@@ -143,6 +144,7 @@ class DeviceFastPoll(DevicePoll):
             delay = 0.01
         elif delay > 10:
             delay = 10
+        self._log.warning('Device defined for fast polling with a delay of {}sec'.format(delay))
         DevicePoll.__init__(
             self, device=device, name=name, delay=delay, prefix="rpm_fast_poll"
         )

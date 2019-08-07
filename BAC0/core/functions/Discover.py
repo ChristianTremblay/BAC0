@@ -296,7 +296,7 @@ class Discover:
         will return an acknowledgement with its routing table configuration.
         """
         # build a request
-        self._log.info("Addr : ", address)
+        self._log.info("Addr : {}".format(address))
         try:
             request = InitializeRoutingTable()
             request.pduDestination = Address(address)
@@ -326,7 +326,9 @@ class Discover:
             else:
                 request.pduDestination = LocalBroadcast()
         except:
-            print("invalid arguments")
+            self._log.error(
+                "Cannot build request (invalid arguments) : {}".format(args)
+            )
             return
 
         iocb = IOCB((self.this_application.nsap.local_adapter, request))  # make an IOCB

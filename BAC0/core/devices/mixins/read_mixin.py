@@ -225,7 +225,7 @@ class ReadPropertyMultiple:
                 )
 
             except NoResponseFromController:
-                self.log.error(
+                self._log.error(
                     "No object list available. Please provide a custom list using the object_list parameter"
                 )
                 objList = []

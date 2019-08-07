@@ -42,8 +42,7 @@ from ..functions.Discover import NetworkServiceElementWithRequests
 class BAC0Common:
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
-        self.log(("do_WhoIsRequest {!r}".format(apdu)))
-        print("WHO IS")
+        self.log("do_WhoIsRequest {!r}".format(apdu))
 
         # build a key from the source and parameters
         key = (
@@ -61,17 +60,12 @@ class BAC0Common:
 
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
-        self.log(("do_IAmRequest {!r}".format(apdu)))
-        print("I AM")
-
+        self.log("do_IAmRequest {!r}".format(apdu))
+ 
         # build a key from the source, just use the instance number
         key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
         self.i_am_counter[key] += 1
         self._last_i_am_received.append(key)
-        # continue with the default implementation
-
-
-#        BIPSimpleApplication.do_IAmRequest(self, apdu)
 
 
 @note_and_log
@@ -151,19 +145,16 @@ class BAC0Application(
 
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
-        self.log(("do_IAmRequest {!r}".format(apdu)))
-        # print('I AM')
+        self.log("do_IAmRequest {!r}".format(apdu))
 
         # build a key from the source, just use the instance number
         key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
         self.i_am_counter[key] += 1
         self._last_i_am_received.append(key)
-        # continue with the default implementation
 
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
-        self.log(("do_WhoIsRequest {!r}".format(apdu)))
-        # print('WHO IS')
+        self.log("do_WhoIsRequest {!r}".format(apdu))
 
         # build a key from the source and parameters
         key = (
@@ -175,10 +166,6 @@ class BAC0Application(
         # count the times this has been received
         self.who_is_counter[key] += 1
 
-        # continue with the default implementation
-
-    #        BIPSimpleApplication.do_WhoIsRequest(self, apdu)
-    #        BIPSimpleApplication.do_IAmRequest(self, apdu)
     def close_socket(self):
         # pass to the multiplexer, then down to the sockets
         self.mux.close_socket()
@@ -197,7 +184,6 @@ class BAC0ForeignDeviceApplication(
     WhoIsIAmServices,
     ReadWritePropertyServices,
     ReadWritePropertyMultipleServices,
-    BAC0Common,
 ):
     """
     Defines a basic BACnet/IP application to process BACnet requests.
@@ -218,7 +204,7 @@ class BAC0ForeignDeviceApplication(
     ):
 
         ApplicationIOController.__init__(
-            self, localDevice, localAddress, deviceInfoCache, aseID=aseID
+            self, localDevice, deviceInfoCache, aseID=aseID
         )
 
         # local address might be useful for subclasses
@@ -268,8 +254,7 @@ class BAC0ForeignDeviceApplication(
 
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
-        self.log(("do_IAmRequest {!r}".format(apdu)))
-        # print('I AM')
+        self.log("do_IAmRequest {!r}".format(apdu))
 
         # build a key from the source, just use the instance number
         key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
@@ -279,8 +264,7 @@ class BAC0ForeignDeviceApplication(
 
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
-        self.log(("do_WhoIsRequest {!r}".format(apdu)))
-        # print('WHO IS')
+        self.log("do_WhoIsRequest {!r}".format(apdu))
 
         # build a key from the source and parameters
         key = (
@@ -291,8 +275,6 @@ class BAC0ForeignDeviceApplication(
 
         # count the times this has been received
         self.who_is_counter[key] += 1
-
-        # continue with the default implementation
 
     def close_socket(self):
         # pass to the multiplexer, then down to the sockets
