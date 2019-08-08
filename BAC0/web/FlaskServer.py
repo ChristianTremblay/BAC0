@@ -9,13 +9,14 @@ This module will start the Flask server
 """
 from threading import Thread
 import weakref
-
+import logging
 from flask import Flask, render_template, jsonify, request
 from flask_bootstrap import Bootstrap
 import json
 from bokeh.embed import server_document
 
 from .templates import create_sidebar, create_card, update_notifications
+from flask.logging import default_handler
 
 
 class FlaskServer(Thread):
@@ -46,6 +47,7 @@ class FlaskServer(Thread):
 
     def startServer(self):
         self.flask_app.run(port=self.port, host="0.0.0.0")
+        self.flask_app.logger.removeHandler(default_handler)
 
     def config_flask_app(self):
         @self.flask_app.route("/trends", methods=["GET"])
@@ -139,7 +141,7 @@ class FlaskServer(Thread):
             self.notifications_list = update_notifications(
                 self.notifications_log, "Sent a WhoIs Request"
             )
-            self.network.whois_answer = self.network.update_whois()
+            self.network.discover()
             return jsonify(done="done")
 
         @self.flask_app.route("/_dash_live_stats", methods=["GET"])

@@ -23,8 +23,9 @@ Once the class is created, create the local object and use it::
 """
 # --- standard Python modules ---
 from datetime import datetime
-
+import logging
 import pandas as pd
+import time
 
 
 # --- 3rd party modules ---
@@ -38,7 +39,7 @@ from ..core.io.IOExceptions import (
     NoResponseFromController,
     UnrecognizedService,
 )
-from ..core.utils.notes import note_and_log
+from ..core.utils.notes import note_and_log, update_log_level
 
 from ..web.BokehRenderer import (
     DevicesTableHandler,
@@ -58,8 +59,10 @@ class Stats_Mixin:
 
     @property
     def number_of_devices(self):
+        if not self.discoveredDevices:
+            return 0
         s = []
-        [s.append(x) for x in self.whois_answer[0].items() if x[1] > 0]
+        [s.append(x) for x in self.discoveredDevices.items() if x[1] > 0]
         return len(s)
 
     @property
@@ -108,21 +111,22 @@ class Stats_Mixin:
         ip_devices = []
         bacoids = []
         mstp_devices = []
-        for address, bacoid in self.whois_answer[0].keys():
-            if ":" in address:
-                net, mac = address.split(":")
-                mstp_networks.append(net)
-                mstp_devices.append(mac)
-                try:
-                    mstp_map[net].append(mac)
-                except KeyError:
-                    mstp_map[net] = []
-                    mstp_map[net].append(mac)
-            else:
-                net = "ip"
-                mac = address
-                ip_devices.append(address)
-            bacoids.append((bacoid, address))
+        if self.discoveredDevices:
+            for address, bacoid in self.discoveredDevices.keys():
+                if ":" in address:
+                    net, mac = address.split(":")
+                    mstp_networks.append(net)
+                    mstp_devices.append(mac)
+                    try:
+                        mstp_map[net].append(mac)
+                    except KeyError:
+                        mstp_map[net] = []
+                        mstp_map[net].append(mac)
+                else:
+                    net = "ip"
+                    mac = address
+                    ip_devices.append(address)
+                bacoids.append((bacoid, address))
         mstpnetworks = sorted(set(mstp_networks))
         statistics["mstp_networks"] = mstpnetworks
         statistics["ip_devices"] = sorted(ip_devices)
@@ -177,6 +181,7 @@ class Complete(Lite, Stats_Mixin):
             self.FlaskServer.start()
         else:
             self._log.warning("Bokeh server not started. Trend feature will not work")
+        self.discover()
 
     @property
     def devices(self):
@@ -223,6 +228,9 @@ class Complete(Lite, Stats_Mixin):
             )
             self.bk_worker.start()
             self.bokehserver = True
+            time.sleep(1)
+            logging.getLogger().handlers[0].setLevel(logging.CRITICAL)
+            update_log_level("default", log_this=False)
             self._log.info(
                 "Server started : http://{}:{}".format(
                     self.localIPAddr.addrTuple[0], self.flask_port

@@ -419,13 +419,13 @@ class ReadProperty:
                     try:
                         if "@prop_" in prop_id:
                             prop_id = int(prop_id.split("_")[1])
-                            self._log.info(
+                            self._log.debug(
                                 "Proprietary property : {} | {} -> Vendor : {}".format(
                                     obj_type, prop_id, vendor_id
                                 )
                             )
                             dt = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
-                            self._log.info("Found dt : {}".format(dt))
+                            self._log.debug("Found dt : {}".format(dt))
                         else:
                             break
                     except:
