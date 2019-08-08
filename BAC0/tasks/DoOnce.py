@@ -9,8 +9,10 @@ DoOnce.py - execute a task once
 """
 
 from .TaskManager import OneShotTask
+from ..core.utils.notes import note_and_log
 
 
+@note_and_log
 class DoOnce(OneShotTask):
     """
     Start a polling task which is in fact a recurring read of the point.

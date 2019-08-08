@@ -13,8 +13,7 @@ This variable will also be passed to some functions when you will define a devic
 
 When creating the connection to the network, BAC0 needs to know the ip network of the interface on which it will work. It also needs to know the subnet mask (as BACnet operations often use broadcast messages).If you don't provide one, BAC0 will try to detect the interface for you.
 
-..Note
-
+.. note::
     If you use ios, you will need to provide a ip manually. The script is unable to detect the subnet mask yet.
 
 By default, if Bokeh, Pandas and Flask are installed, using the connect script will launch the complete version. But you can also use the lite version if you want something simple.
@@ -33,8 +32,6 @@ Example::
     # bacnet = BAC0.lite() to force the script to load only minimum features.
     # Please note that if Bokeh, Pandas or Flask are not installed, using connect() will in fact call the lite version.
 
-
-    
 
 Lite vs Complete
 *****************

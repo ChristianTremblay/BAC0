@@ -357,18 +357,19 @@ class ReadProperty:
 
         if obj_type.isdigit():
             obj_type = int(obj_type)
-        elif not get_object_class(obj_type):
-            raise ValueError("unknown object type")
+        elif "@type_" in obj_type:
+            obj_type = int(obj_type.split("_")[1])
+        elif not get_object_class(obj_type, vendor_id=vendor_id):
+            raise ValueError("Unknown object type : {}".format(obj_type))
 
         obj_inst = int(obj_inst)
 
         if prop_id.isdigit():
             prop_id = int(prop_id)
+        elif "@prop_" in prop_id:
+            prop_id = int(prop_id.split("_")[1])
+
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
-        # if not datatype:
-        #    To allow us to try any property
-        #    raise ValueError("invalid property for object type")
-        #    datatype = get_datatype_from_tag_number(apdu.propertyValue, apdu.objectIdentifier[0], apdu.propertyIdentifier)
 
         # build a request
         request = ReadPropertyRequest(
@@ -387,6 +388,7 @@ class ReadProperty:
         """
         Build request from args
         """
+        self._log.debug(args)
         i = 0
         addr = args[i]
         i += 1
@@ -399,33 +401,49 @@ class ReadProperty:
 
             if obj_type.isdigit():
                 obj_type = int(obj_type)
-            elif not get_object_class(obj_type):
-                raise ValueError("unknown object type")
+            elif "@type_" in obj_type:
+                obj_type = int(obj_type.split("_")[1])
+            elif not get_object_class(obj_type, vendor_id=vendor_id):
+                raise ValueError("Unknown object type : {}".format(obj_type))
 
             obj_inst = int(args[i])
             i += 1
 
             prop_reference_list = []
             while i < len(args):
+                dt = None
                 prop_id = args[i]
-                if prop_id not in PropertyIdentifier.enumerations:
+                if "@type_" in prop_id:
                     break
+                if prop_id not in PropertyIdentifier.enumerations:
+                    try:
+                        if "@prop_" in prop_id:
+                            prop_id = int(prop_id.split("_")[1])
+                            self._log.info(
+                                "Proprietary property : {} | {} -> Vendor : {}".format(
+                                    obj_type, prop_id, vendor_id
+                                )
+                            )
+                            dt = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
+                            self._log.info("Found dt : {}".format(dt))
+                        else:
+                            break
+                    except:
+                        break
 
                 i += 1
                 if prop_id in ("all", "required", "optional"):
                     pass
+                elif dt:
+                    datatype = dt
+                    self._log.debug("Found datatype : {}".format(dt))
                 else:
                     datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
                     if not datatype:
-                        # raise ValueError(
-                        #    "invalid property for object type : {} | {}".format(
-                        #        (obj_type, prop_id)
-                        #    )
-                        # )
-                        datatype = get_datatype_from_tag_number(
-                            apdu.propertyValue,
-                            apdu.objectIdentifier[0],
-                            apdu.propertyIdentifier,
+                        raise ValueError(
+                            "invalid property for object type : {} | {}".format(
+                                obj_type, prop_id
+                            )
                         )
 
                 # build a property reference
@@ -457,7 +475,6 @@ class ReadProperty:
             listOfReadAccessSpecs=read_access_spec_list
         )
         request.pduDestination = Address(addr)
-        self._log.debug("{:<20} {!r}".format("REQUEST", request))
         return request
 
     def build_rrange_request(self, args, arr_index=None, vendor_id=0, bacoid=None):
@@ -467,8 +484,8 @@ class ReadProperty:
 
         if obj_type.isdigit():
             obj_type = int(obj_type)
-        elif not get_object_class(obj_type):
-            raise ValueError("unknown object type")
+        elif not get_object_class(obj_type, vendor_id=vendor_id):
+            raise ValueError("Unknown object type {}".format(obj_type))
 
         obj_inst = int(obj_inst)
 
@@ -476,10 +493,7 @@ class ReadProperty:
             prop_id = int(prop_id)
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
         if not datatype:
-            # raise ValueError("invalid property for object type")
-            datatype = get_datatype_from_tag_number(
-                apdu.propertyValue, apdu.objectIdentifier[0], apdu.propertyIdentifier
-            )
+            raise ValueError("invalid property for object type")
 
         # build a request
         request = ReadRangeRequest(
@@ -552,7 +566,7 @@ class ReadProperty:
             )
             if not datatype:
                 # raise TypeError("unknown datatype")
-                datatype = get_datatype_from_tag_number(
+                datatype = cast_datatype_from_tag(
                     apdu.propertyValue,
                     apdu.objectIdentifier[0],
                     apdu.propertyIdentifier,
@@ -644,10 +658,10 @@ def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
             value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
 
     except:
-        self._log.error(
-            "Error processing {} {}...probably an array not yet supported".format(
-                obj_id, prop_id
-            )
-        )
-        return propertyValue
+        # self._log.error(
+        #    "Error processing {} {}...probably an array not yet supported".format(
+        #        obj_id, prop_id
+        #    )
+        # )
+        value = {"{}_{}".format(obj_id, prop_id): propertyValue}
     return value

@@ -39,35 +39,6 @@ from ..functions.Discover import NetworkServiceElementWithRequests
 # ------------------------------------------------------------------------------
 
 
-class BAC0Common:
-    def do_WhoIsRequest(self, apdu):
-        """Respond to a Who-Is request."""
-        self.log("do_WhoIsRequest {!r}".format(apdu))
-
-        # build a key from the source and parameters
-        key = (
-            str(apdu.pduSource),
-            apdu.deviceInstanceRangeLowLimit,
-            apdu.deviceInstanceRangeHighLimit,
-        )
-
-        # count the times this has been received
-        self.who_is_counter[key] += 1
-
-        # continue with the default implementation
-
-    #        BIPSimpleApplication.do_WhoIsRequest(self, apdu)
-
-    def do_IAmRequest(self, apdu):
-        """Given an I-Am request, cache it."""
-        self.log("do_IAmRequest {!r}".format(apdu))
-
-        # build a key from the source, just use the instance number
-        key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
-        self.i_am_counter[key] += 1
-        self._last_i_am_received.append(key)
-
-
 @note_and_log
 class BAC0Application(
     ApplicationIOController,
