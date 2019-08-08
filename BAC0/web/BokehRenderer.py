@@ -139,7 +139,7 @@ class DynamicPlotHandler(Handler):
                     source=self.sources[each.name],
                     name=each.name,
                     color=color_mapper[each.name],
-                    legend=("%s | %s (OFF-ON)" % (each.name, each.description)),
+                    legend=("{} | {} (OFF-ON)".format(each.name, each.description)),
                     y_range_name="bool",
                     size=10,
                 )
@@ -153,20 +153,12 @@ class DynamicPlotHandler(Handler):
                     source=self.sources[each.name],
                     name=each.name,
                     color=color_mapper[each.name],
-                    legend=("%s | %s (%s)" % (each.name, each.description, each.units)),
+                    legend=(
+                        "{} | {} ({})".format(each.name, each.description, each.units)
+                    ),
                     y_range_name="enum",
                     size=20,
                 )
-                # self.legends_list.append(
-                #    (
-                #        (
-                #            "{} | {} ({})".format(
-                #                each.name, each.description, each.units
-                #            )
-                #        ),
-                #        [c],
-                #    )
-                # )
             else:
                 self.p.line(
                     "x",
@@ -174,19 +166,11 @@ class DynamicPlotHandler(Handler):
                     source=self.sources[each.name],
                     name=each.name,
                     color=color_mapper[each.name],
-                    legend=("%s | %s (%s)" % (each.name, each.description, each.units)),
+                    legend=(
+                        "{} | {} ({})".format(each.name, each.description, each.units)
+                    ),
                     line_width=2,
                 )
-                # self.legends_list.append(
-                #    (
-                #        (
-                #            "{} | {} ({})".format(
-                #                each.name, each.description, each.units
-                #            )
-                #        ),
-                #        [c],
-                #    )
-                # )
 
             self.p.legend.location = "top_left"
             # legend = Legend(items=self.legends_list, location=(0, -60))
@@ -387,7 +371,7 @@ class NotesTableHandler(Handler):
         self.data_table = DataTable(source=notes, columns=self.columns)
         layout = row([self.data_table])
         doc.add_root(layout)
-        doc.title = "Notes for %s" % controller
+        doc.title = "Notes for {}".format(controller)
         # doc.add_periodic_callback(self.update_data,100)
         return doc
 
@@ -397,4 +381,4 @@ class NotesTableHandler(Handler):
         notes_df.columns = ["index", "notes"]
         notes = ColumnDataSource(notes_df)
         self.data_table.source.data.update(notes.data)
-        curdoc().title = "Notes for %s" % controller
+        curdoc().title = "Notes for {}".format(controller)

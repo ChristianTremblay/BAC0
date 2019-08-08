@@ -45,7 +45,7 @@ from bacpypes.apdu import (
     ReadRangeRequest,
     ReadRangeACK,
 )
-from bacpypes.primitivedata import Tag
+from bacpypes.primitivedata import Tag, ObjectIdentifier
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
@@ -639,7 +639,7 @@ def find_reason(apdu):
         except IndexError:
             return code
     except KeyError as err:
-        return "KeyError: %s has no key %r" % (type(apdu), err.args[0])
+        return "KeyError: {} has no key {0!r}".format(type(apdu), err.args[0])
 
 
 def cast_datatype_from_tag(propertyValue, obj_id, prop_id):

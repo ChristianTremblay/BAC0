@@ -299,7 +299,6 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
         super().disconnect()
 
     def __repr__(self):
-        return "Bacnet Network using ip %s with device id %s" % (
-            self.localIPAddr,
-            self.Boid,
+        return "Bacnet Network using ip {} with device id {}".format(
+            self.localIPAddr, self.Boid
         )

@@ -77,7 +77,7 @@ class Stats_Mixin:
         series_pct = ["%.2f %%" % (len(self.network_stats["ip_devices"]) / total * 100)]
         series = [len(self.network_stats["ip_devices"]) / total * 100]
         for each in self.network_stats["mstp_map"].keys():
-            labels.append("MSTP #%s" % each)
+            labels.append("MSTP #{}".format(each))
             series_pct.append(
                 "%.2f %%" % (len(self.network_stats["mstp_map"][each]) / total * 100)
             )

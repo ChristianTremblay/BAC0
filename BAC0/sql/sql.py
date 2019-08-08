@@ -159,7 +159,7 @@ class SQLMixin(object):
         """
         Retrive point histories from SQL database
         """
-        his = self._read_from_sql('select * from "%s"' % "history", db_name)
+        his = self._read_from_sql('select * from "{}"'.format("history", db_name))
         his.index = his["index"].apply(Timestamp)
         return his.set_index("index")[point]
 
@@ -173,7 +173,7 @@ class SQLMixin(object):
         """
         Points properties retrieved from pickle
         """
-        with open("%s.bin" % device_name, "rb") as file:
+        with open("{}.bin".format(device_name, "rb")) as file:
             return pickle.load(file)["points"][point]
 
     def read_dev_prop(self, device_name):

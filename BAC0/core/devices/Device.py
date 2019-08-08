@@ -76,7 +76,7 @@ class DeviceProperties(object):
         self.history_size = None
 
     def __repr__(self):
-        return "%s" % self.asdict
+        return "{}".format(self.asdict)
 
     @property
     def asdict(self):
@@ -435,7 +435,7 @@ class Device(SQLMixin):
         DoOnce(func).start()
 
     def __repr__(self):
-        return "%s / Undefined" % self.properties.name
+        return "{} / Undefined".format(self.properties.name)
 
 
 # @fix_docs
@@ -684,11 +684,11 @@ class DeviceConnected(Device):
                 request, vendor_id=self.properties.vendor_id
             )
         except KeyError as error:
-            raise Exception("Unknown property : %s" % error)
+            raise Exception("Unknown property : {}".format(error))
         return val
 
     def __repr__(self):
-        return "%s / Connected" % self.properties.name
+        return "{} / Connected".format(self.properties.name)
 
 
 # ------------------------------------------------------------------------------

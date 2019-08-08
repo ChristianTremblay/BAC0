@@ -58,9 +58,11 @@ class ReadPropertyMultiple:
             point = self._findPoint(each, force_read=False)
             points.append(point)
 
-            str_list.append(" " + point.properties.type)
-            str_list.append(" " + str(point.properties.address))
-            str_list.append(" presentValue")
+            str_list.append(
+                " {} {} presentValue".format(
+                    point.properties.type, point.properties.address
+                )
+            )
             rpm_param = "".join(str_list)
             requests.append(rpm_param)
 
@@ -108,7 +110,7 @@ class ReadPropertyMultiple:
                         request = "{} {}".format(
                             self.properties.address, "".join(request)
                         )
-                        self._log.debug("RPM_Request: %s " % request)
+                        self._log.debug("RPM_Request: {} ".format(request))
                         try:
                             val = self.properties.network.readMultiple(
                                 request, vendor_id=self.properties.vendor_id
@@ -122,7 +124,7 @@ class ReadPropertyMultiple:
                             raise SegmentationNotSupported
 
                     except KeyError as error:
-                        raise Exception("Unknown point name : %s" % error)
+                        raise Exception("Unknown point name : {}".format(error))
 
                     except SegmentationNotSupported as error:
                         self.properties.segmentation_supported = False
@@ -163,7 +165,7 @@ class ReadPropertyMultiple:
                         )
 
                     except KeyError as error:
-                        raise Exception("Unknown point name : %s" % error)
+                        raise Exception("Unknown point name : {}".format(error))
 
                     else:
                         points_values = zip(big_request[1][i : i + len(val)], val)
@@ -187,7 +189,7 @@ class ReadPropertyMultiple:
                     )
 
                 except KeyError as error:
-                    raise Exception("Unknown point name : %s" % error)
+                    raise Exception("Unknown point name : {}".format(error))
 
                 # Save each value to history of each point
                 for points_info in self._batches(val, info_length):
@@ -210,7 +212,7 @@ class ReadPropertyMultiple:
                         each[0]._trend(each[1])
 
                 except KeyError as error:
-                    raise Exception("Unknown point name : %s" % error)
+                    raise Exception("Unknown point name : {}".format(error))
 
     def _discoverPoints(self, custom_object_list=None):
         if custom_object_list:
@@ -516,7 +518,9 @@ class ReadPropertyMultiple:
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info("Polling started, every values read each %s seconds" % delay)
+            self._log.info(
+                "Polling started, every values read each {} seconds".format(delay)
+            )
 
         else:
             raise RuntimeError("Stop polling before redefining it")
@@ -576,7 +580,6 @@ class ReadProperty:
 
         device.read_multiple(['point1', 'point2', 'point3'], points_per_request = 10)
         """
-        # print('PSS : %s' % self.properties.pss['readPropertyMultiple'])
         if isinstance(points_list, list):
             for each in points_list:
                 self.read_single(
@@ -594,7 +597,7 @@ class ReadProperty:
                 request, vendor_id=self.properties.vendor_id
             )
         except KeyError as error:
-            raise Exception("Unknown point name: %s" % error)
+            raise Exception("Unknown point name: {}".format(error))
 
         except NoResponseFromController as error:
             return ""
@@ -810,7 +813,9 @@ class ReadProperty:
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info("Polling started, every values read each %s seconds" % delay)
+            self._log.info(
+                "Polling started, every values read each {} seconds".format(delay)
+            )
 
         else:
             raise RuntimeError("Stop polling before redefining it")

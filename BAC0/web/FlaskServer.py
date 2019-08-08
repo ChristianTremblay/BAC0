@@ -51,7 +51,7 @@ class FlaskServer(Thread):
         @self.flask_app.route("/trends", methods=["GET"])
         def bkapp_trends_page():
             if self.network.number_of_registered_trends > 0:
-                script = server_document("http://%s:5006/trends" % self.ip)
+                script = server_document("http://{}:5006/trends".format(self.ip))
             else:
                 script = "<div>No trend registered yet...</div>"
             return render_template(
@@ -68,7 +68,7 @@ class FlaskServer(Thread):
 
         @self.flask_app.route("/notes", methods=["GET"])
         def bkapp_notes_page():
-            script = server_document("http://%s:5006/notes" % self.ip)
+            script = server_document("http://{}:5006/notes".format(self.ip))
             return render_template("embed.html", script=script, template="Flask")
 
         @self.flask_app.route("/", methods=["GET"])
@@ -93,12 +93,15 @@ class FlaskServer(Thread):
 
             cnmn = create_card(
                 icon="ti-plug",
-                title="%s MSTP Networks"
-                % len(self.network.network_stats["mstp_networks"]),
-                data="# %s" % (self.network.network_stats["print_mstpnetworks"]),
+                title="{} MSTP Networks".format(
+                    len(self.network.network_stats["mstp_networks"])
+                ),
+                data="# {}".format(self.network.network_stats["print_mstpnetworks"]),
                 id_data="mstpnetworks",
                 foot_icon="ti-timer",
-                foot_data="Last update : %s" % self.network.network_stats["timestamp"],
+                foot_data="Last update : {}".format(
+                    self.network.network_stats["timestamp"]
+                ),
                 id_foot_data="lastwhoisupdate",
             )
 
@@ -115,7 +118,7 @@ class FlaskServer(Thread):
 
         @self.flask_app.route("/dash_devices", methods=["GET"])
         def dashboard_devices_page():
-            script = server_document("http://%s:5006/devices" % self.ip)
+            script = server_document("http://{}:5006/devices".format(self.ip))
             return render_template(
                 "device_table.html",
                 sidebar=create_sidebar(devices_class='class="active"'),

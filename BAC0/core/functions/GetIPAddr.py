@@ -145,7 +145,6 @@ class HostIP:
                 mask = re.findall(pattern, line.decode())[0]
             except:
                 mask = "255.255.255.255"
-        # self._log.debug('Mask found : %s' %  mask)
         return mask
 
 

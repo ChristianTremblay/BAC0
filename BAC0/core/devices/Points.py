@@ -54,7 +54,7 @@ class PointProperties(object):
         self.history_size = None
 
     def __repr__(self):
-        return "%s" % self.asdict
+        return "{}".format(self.asdict)
 
     @property
     def asdict(self):
@@ -774,7 +774,6 @@ class EnumPoint(Point):
             )
 
     def __repr__(self):
-        # return '%s : %s' % (self.name, )
         return "{}/{} : {}".format(
             self.properties.device.properties.name, self.properties.name, self.enumValue
         )
