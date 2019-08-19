@@ -315,6 +315,8 @@ class ReadPropertyMultiple:
                 presentValue = point_infos[_find_propid_index("presentValue")]
                 if obj_type == "analog":
                     presentValue = float(presentValue)
+                elif obj_type == "multi":
+                    presentValue = int(presentValue)
                 try:
                     point_description = point_infos[_find_propid_index("description")]
                 except KeyError:
@@ -323,7 +325,7 @@ class ReadPropertyMultiple:
                     point_units_state = point_infos[_find_propid_index("units")]
                 except KeyError:
                     try:
-                        point_units_state = point_infos[_find_propid_index("statetext")]
+                        point_units_state = point_infos[_find_propid_index("stateText")]
                     except KeyError:
                         try:
                             _inactive = point_infos[_find_propid_index("inactiveText")]
