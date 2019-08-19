@@ -13,6 +13,8 @@ from datetime import datetime
 from collections import namedtuple
 import time
 
+from bacpypes.primitivedata import CharacterString
+
 # --- 3rd party modules ---
 try:
     import pandas as pd
@@ -782,6 +784,58 @@ class EnumPoint(Point):
         return self.value == self.properties.units_state.index(other) + 1
 
 
+class StringPoint(Point):
+    """
+    Representation of an Enumerated (multiState) value
+    """
+
+    def __init__(
+        self,
+        device=None,
+        pointType=None,
+        pointAddress=None,
+        pointName=None,
+        description=None,
+        units_state=None,
+        presentValue=None,
+        history_size=None,
+    ):
+
+        Point.__init__(
+            self,
+            device=device,
+            pointType=pointType,
+            pointAddress=pointAddress,
+            pointName=pointName,
+            description=description,
+            presentValue=presentValue,
+            history_size=history_size,
+        )
+
+    @property
+    def units(self):
+        """
+        Characterstring value do not have units or state text
+        """
+        return None
+
+    def _set(self, value):
+        if isinstance(value, str):
+            self._setitem(CharacterString(value))
+        elif isinstance(value, CharacterString):
+            self._setitem(value)
+        else:
+            raise ValueError("Value must be string or CharacterString")
+
+    def __repr__(self):
+        return "{}/{} : {}".format(
+            self.properties.device.properties.name, self.properties.name, self.value
+        )
+
+    def __eq__(self, other):
+        return self.value == other.value
+
+
 # ------------------------------------------------------------------------------
 
 
@@ -928,6 +982,42 @@ class EnumPointOffline(EnumPoint):
             value = self.properties.units_state[int(self.lastValue) - 1]
         except IndexError:
             value = "unknown"
+        except ValueError:
+            value = "NaN"
+        return value
+
+    def _set(self, value):
+        raise OfflineException("Point must be online to write")
+
+    def write(self, value, *, prop="presentValue", priority=""):
+        raise OfflineException("Must be online to write")
+
+    def sim(self, value, *, prop="presentValue", priority=""):
+        raise OfflineException("Must be online to write")
+
+    def release(self, value, *, prop="presentValue", priority=""):
+        raise OfflineException("Must be online to write")
+
+
+class StringPointOffline(EnumPoint):
+    @property
+    def history(self):
+        his = self.properties.device._read_from_sql(
+            'select * from "{}"'.format("history"),
+            self.properties.device.properties.db_name,
+        )
+        his.index = his["index"].apply(Timestamp)
+        return his.set_index("index")[self.properties.name]
+
+    @property
+    def value(self):
+        """
+        Take last known value as the value
+        """
+        try:
+            value = self.lastValue
+        except IndexError:
+            value = "NaN"
         except ValueError:
             value = "NaN"
         return value
