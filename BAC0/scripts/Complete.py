@@ -229,7 +229,11 @@ class Complete(Lite, Stats_Mixin):
             self.bk_worker.start()
             self.bokehserver = True
             time.sleep(1)
-            logging.getLogger().handlers[0].setLevel(logging.CRITICAL)
+            try:
+                logging.getLogger().handlers[0].setLevel(logging.CRITICAL)
+            except IndexError:
+                # Possibly in Jupyter Notebook... root logger not defined
+                pass
             update_log_level("default", log_this=False)
             self._log.info(
                 "Server started : http://{}:{}".format(
