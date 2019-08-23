@@ -304,8 +304,8 @@ class Point:
                 ),
                 vendor_id=self.properties.device.properties.vendor_id,
             )
-        except Exception:
-            raise NoResponseFromController()
+        except NoResponseFromController:
+            raise
 
         # Read after the write so history gets updated.
         self.value
@@ -821,9 +821,9 @@ class StringPoint(Point):
 
     def _set(self, value):
         if isinstance(value, str):
-            self._setitem(CharacterString(value))
-        elif isinstance(value, CharacterString):
             self._setitem(value)
+        elif isinstance(value, CharacterString):
+            self._setitem(value.value)
         else:
             raise ValueError("Value must be string or CharacterString")
 

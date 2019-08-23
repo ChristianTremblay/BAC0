@@ -16,10 +16,14 @@ from BAC0.core.devices.create_objects import (
     create_BI,
     create_AO,
     create_BO,
+    create_CharStrValue,
 )
 
 from collections import namedtuple
 import time
+
+from bacpypes.primitivedata import CharacterString
+from bacpypes.basetypes import EngineeringUnits
 
 
 @pytest.fixture(scope="session")
@@ -35,17 +39,27 @@ def network_and_devices():
         bis = []
         aos = []
         bos = []
+        charstr = []
 
         for i in range(qty):
             mvs.append(create_MV(oid=i, name="mv{}".format(i), pv=1, pv_writable=True))
-            avs.append(
-                create_AV(oid=i, name="av{}".format(i), pv=99.9, pv_writable=True)
-            )
+            new_av = create_AV(oid=i, name="av{}".format(i), pv=99.9, pv_writable=True)
+            new_av.units = EngineeringUnits.enumerations["degreesCelsius"]
+            new_av.description = "Fake Description {}".format(i)
+            avs.append(new_av)
             bvs.append(create_BV(oid=i, name="bv{}".format(i), pv=1, pv_writable=True))
             ais.append(create_AI(oid=i, name="ai{}".format(i), pv=99.9))
             aos.append(create_AO(oid=i, name="ao{}".format(i), pv=99.9))
             bis.append(create_BI(oid=i, name="bi{}".format(i), pv=1))
             bos.append(create_BO(oid=i, name="bo{}".format(i), pv=1))
+            charstr.append(
+                create_CharStrValue(
+                    oid=i,
+                    name="string{}".format(i),
+                    pv=CharacterString("test"),
+                    pv_writable=True,
+                )
+            )
 
         for mv in mvs:
             device.this_application.add_object(mv)
@@ -61,6 +75,8 @@ def network_and_devices():
             device.this_application.add_object(bi)
         for bo in bos:
             device.this_application.add_object(bo)
+        for cs in charstr:
+            device.this_application.add_object(cs)
 
     # We'll use 3 devices with our first instance
     device_app = BAC0.lite(port=47809)
@@ -102,17 +118,6 @@ def network_and_devices():
     params.test_device_30.disconnect()
     params.test_device_300.disconnect()
 
-    del test_device
-    del test_device_30
-    del test_device_300
-
-    del device_app
-    del device30_app
-    del device300_app
-
     params.bacnet.disconnect()
-    del bacnet
-    del params
-
     # If too quick, we may encounter socket issues...
     time.sleep(1)
