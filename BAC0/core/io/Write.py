@@ -41,6 +41,7 @@ from .IOExceptions import (
     ApplicationNotStarted,
 )
 from ...core.utils.notes import note_and_log
+from .Read import find_reason
 
 # ------------------------------------------------------------------------------
 
@@ -56,7 +57,7 @@ class WriteProperty:
 
     """
 
-    def write(self, args, vendor_id=0):
+    def write(self, args, vendor_id=0, timeout=5):
         """ Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
 
         :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]
@@ -80,6 +81,7 @@ class WriteProperty:
         try:
             # build a WriteProperty request
             iocb = IOCB(self.build_wp_request(args, vendor_id=vendor_id))
+            iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
             self._log.debug("{:<20} {!r}".format("iocb", iocb))
@@ -101,7 +103,9 @@ class WriteProperty:
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
-            raise NoResponseFromController()
+            apdu = iocb.ioError
+            reason = find_reason(apdu)
+            raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
 
     def build_wp_request(self, args, vendor_id=0):
         addr, obj_type, obj_inst, prop_id = args[:4]

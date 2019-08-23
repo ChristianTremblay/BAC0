@@ -52,7 +52,7 @@ class TimeSync:
             _time = Time('16:45')
 
             # Create Datetime
-            _datetime = DateTime(date=_date, time=_time)
+            _datetime = DateTime(date=_date.value, time=_time.value)
 
             # Pass this to the function
             bacnet.time_sync(datetime=_datetime)

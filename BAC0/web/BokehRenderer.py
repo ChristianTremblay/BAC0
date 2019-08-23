@@ -241,12 +241,6 @@ class DynamicPlotHandler(Handler):
             self._update_complete = True
 
     def modify_document(self, doc):
-        curdoc().clear()
-        # doc = curdoc()
-        try:
-            curdoc().remove_periodic_callback(self._pcb)
-        except:
-            pass
         doc.clear()
         self.build_plot()
         layout = gridplot(self.plots, ncols=2)
@@ -263,14 +257,18 @@ class DynamicPlotHandler(Handler):
 
     def stop_update_data(self):
         doc = curdoc()
+        try:
+            doc.remove_periodic_callback(self._pcb)
+        except:
+            pass
         if self._recurring_update.is_running:
             self._recurring_update.stop()
             while self._recurring_update.is_running:
                 pass
-            try:
-                doc.remove_next_tick_callback(self._ntcb)
-            except (ValueError, RuntimeError):
-                pass  # Already gone
+        try:
+            doc.remove_next_tick_callback(self._ntcb)
+        except (ValueError, RuntimeError):
+            pass  # Already gone
 
     def start_update_data(self):
         if not self._recurring_update.is_running:

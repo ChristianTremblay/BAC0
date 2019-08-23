@@ -3,11 +3,20 @@
 """
 Johnson Controls Proprietary Objects for FX/FEC Line
 """
-from bacpypes.primitivedata import Real, Boolean, CharacterString, Enumerated, Unsigned
+from bacpypes.primitivedata import (
+    Real,
+    Boolean,
+    CharacterString,
+    Enumerated,
+    Unsigned,
+    Atomic,
+)
 from bacpypes.object import (
     Object,
     DeviceObject,
     AnalogValueObject,
+    AnalogInputObject,
+    AnalogOutputObject,
     BinaryValueObject,
     Property,
     register_object_type,
@@ -52,7 +61,7 @@ JCIDeviceObject = {
         },
         "CPU Idle": {"obj_id": 30082, "primitive": Real, "mutable": False},
         "alarm": {"obj_id": 673, "primitive": Boolean, "mutable": False},
-        "alarm1": {"obj_id": 603, "primitive": Boolean, "mutable": False},
+        "end_of_line": {"obj_id": 603, "primitive": Boolean, "mutable": False},
         "objectStatus": {"obj_id": 512, "primitive": Enumerated, "mutable": False},
     },
 }
@@ -65,7 +74,45 @@ JCIAnalogValueObject = {
     "objectType": "analogValue",
     "bacpypes_type": AnalogValueObject,
     "properties": {
-        "FLOW-SP_EEPROM": {"obj_id": 3113, "primitive": Real, "mutable": True}
+        "FLOW-SP_EEPROM": {"obj_id": 3113, "primitive": Real, "mutable": True},
+        "Offset": {"obj_id": 956, "primitive": Real, "mutable": True},
+        "Offline": {"obj_id": 913, "primitive": Boolean, "mutable": False},
+        "SABusAddr": {"obj_id": 3645, "primitive": Unsigned, "mutable": False},
+        "PeerToPeer": {"obj_id": 748, "primitive": Atomic, "mutable": False},
+        "P2P_ErrorStatus": {"obj_id": 746, "primitive": Enumerated, "mutable": False},
+    },
+}
+
+JCIAnalogInputObject = {
+    "name": "JCIAnalogInputObject",
+    "vendor_id": 5,
+    "objectType": "analogInput",
+    "bacpypes_type": AnalogInputObject,
+    "properties": {
+        "Offset": {"obj_id": 956, "primitive": Real, "mutable": True},
+        "Offline": {"obj_id": 913, "primitive": Boolean, "mutable": False},
+        "SABusAddr": {"obj_id": 3645, "primitive": Unsigned, "mutable": False},
+        "InputRangeLow": {"obj_id": 1293, "primitive": Real, "mutable": True},
+        "InputRangeHigh": {"obj_id": 1294, "primitive": Real, "mutable": True},
+        "OutputRangeLow": {"obj_id": 1295, "primitive": Real, "mutable": True},
+        "OutputRangeHigh": {"obj_id": 1296, "primitive": Real, "mutable": True},
+    },
+}
+
+JCIAnalogOutputObject = {
+    "name": "JCIAnalogOutputObject",
+    "vendor_id": 5,
+    "objectType": "analogOutput",
+    "bacpypes_type": AnalogOutputObject,
+    "properties": {
+        "Offline": {"obj_id": 913, "primitive": Boolean, "mutable": False},
+        "SABusAddr": {"obj_id": 3645, "primitive": Unsigned, "mutable": False},
+        "InputRangeLow": {"obj_id": 1293, "primitive": Real, "mutable": True},
+        "InputRangeHigh": {"obj_id": 1294, "primitive": Real, "mutable": True},
+        "OutputRangeLow": {"obj_id": 1295, "primitive": Real, "mutable": True},
+        "OutputRangeHigh": {"obj_id": 1296, "primitive": Real, "mutable": True},
+        # "polarity": {"obj_id": "polarity", "primitive": Enumerated, "mutable": True},
+        "stroketime": {"obj_id": 3478, "primitive": Real, "mutable": True},
     },
 }
 

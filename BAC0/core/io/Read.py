@@ -47,7 +47,7 @@ from bacpypes.apdu import (
 )
 from bacpypes.primitivedata import Tag, ObjectIdentifier
 from bacpypes.constructeddata import Array
-from bacpypes.iocb import IOCB
+from bacpypes.iocb import IOCB, TimeoutError
 from bacpypes.core import deferred
 
 # --- this application's modules ---
@@ -76,7 +76,7 @@ class ReadProperty:
     A timeout of 10 seconds allows detection of invalid device or communciation errors.
     """
 
-    def read(self, args, arr_index=None, vendor_id=0, bacoid=None):
+    def read(self, args, arr_index=None, vendor_id=0, bacoid=None, timeout=5):
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -110,6 +110,7 @@ class ReadProperty:
                     args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid
                 )
             )
+            iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
             self._log.debug("{:<20} {!r}".format("iocb", iocb))
@@ -208,7 +209,7 @@ class ReadProperty:
             objlist.append(self.read(args, arr_index=i))
         return objlist
 
-    def readMultiple(self, args, vendor_id=0):
+    def readMultiple(self, args, vendor_id=0, timeout=5):
         """ Build a ReadPropertyMultiple request, wait for the answer and return the values
 
         :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
@@ -236,6 +237,7 @@ class ReadProperty:
         try:
             # build an ReadPropertyMultiple request
             iocb = IOCB(self.build_rpm_request(args, vendor_id=vendor_id))
+            iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
             self._log.debug("{:<20} {!r}".format("iocb", iocb))
@@ -346,7 +348,7 @@ class ReadProperty:
                 values.append("")
                 return values
             else:
-                self._log.warning("No response from controller")
+                self._log.warning("No response from controller : {}".format(reason))
                 values.append("")
                 return values
 
@@ -506,7 +508,7 @@ class ReadProperty:
         self._log.debug("{:<20} {!r}".format("REQUEST", request))
         return request
 
-    def readRange(self, args, arr_index=None, vendor_id=0, bacoid=None):
+    def readRange(self, args, arr_index=None, vendor_id=0, bacoid=None, timeout=5):
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -540,6 +542,7 @@ class ReadProperty:
                     args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid
                 )
             )
+            iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
             self._log.debug("{:<20} {!r}".format("iocb", iocb))
@@ -624,7 +627,9 @@ class ReadProperty:
 
 def find_reason(apdu):
     try:
-        if apdu.pduType == RejectPDU.pduType:
+        if apdu == TimeoutError:
+            return "Timeout"
+        elif apdu.pduType == RejectPDU.pduType:
             reasons = RejectReason.enumerations
         elif apdu.pduType == AbortPDU.pduType:
             reasons = AbortReason.enumerations
