@@ -45,7 +45,7 @@ from bacpypes.apdu import (
     ReadRangeRequest,
     ReadRangeACK,
 )
-from bacpypes.primitivedata import Tag, ObjectIdentifier
+from bacpypes.primitivedata import Tag, ObjectIdentifier, Unsigned
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB, TimeoutError
 from bacpypes.core import deferred
@@ -76,7 +76,7 @@ class ReadProperty:
     A timeout of 10 seconds allows detection of invalid device or communciation errors.
     """
 
-    def read(self, args, arr_index=None, vendor_id=0, bacoid=None, timeout=5):
+    def read(self, args, arr_index=None, vendor_id=0, bacoid=None, timeout=10, prop_id_required=False):
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -156,24 +156,25 @@ class ReadProperty:
 
                 self._log.debug("{:<20} {:<20}".format("value", "datatype"))
                 self._log.debug("{!r:<20} {!r:<20}".format(value, datatype))
-            return value
+            if prop_id_required:
+                try:
+                    int(apdu.propertyIdentifier)
+                    prop_id = '@prop_{}'.format(apdu.propertyIdentifier)
+                    value = list(value.items())[0][1]
+                except ValueError:
+                    prop_id = apdu.propertyIdentifier
+                return (value, prop_id)
+            else:
+                return value
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
             if reason == "segmentationNotSupported":
-                # self._log.warning(
-                #    "Segmentation not supported... will read properties one by one..."
-                # )
-                # self._log.debug("The Request was : {}".format(args_split))
                 value = self._split_the_read_request(args, arr_index)
                 return value
             else:
                 if reason == "unknownProperty":
-                    # if "priorityArray" in args:
-                    #    self._log.debug("Unknown property {}".format(args))
-                    # else:
-                    #    self._log.warning("Unknown property {}".format(args))
                     if "description" in args:
                         return "Not Implemented"
                     elif "inactiveText" in args:
@@ -187,7 +188,7 @@ class ReadProperty:
                     raise UnknownObjectError("Unknown object {}".format(args))
                 else:
                     # Other error... consider NoResponseFromController (65)
-                    # even if the realy reason is another one
+                    # even if the real reason is another one
                     raise NoResponseFromController(
                         "APDU Abort Reason : {}".format(reason)
                     )
@@ -209,7 +210,7 @@ class ReadProperty:
             objlist.append(self.read(args, arr_index=i))
         return objlist
 
-    def readMultiple(self, args, vendor_id=0, timeout=5):
+    def readMultiple(self, args, vendor_id=0, timeout=10, prop_id_required=False):
         """ Build a ReadPropertyMultiple request, wait for the answer and return the values
 
         :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
@@ -303,7 +304,6 @@ class ReadProperty:
                                 propertyValue, objectIdentifier[0], propertyIdentifier
                             )
                         else:
-
                             # special case for array parts, others are managed by cast_out
                             if issubclass(datatype, Array) and (
                                 propertyArrayIndex is not None
@@ -323,7 +323,16 @@ class ReadProperty:
                                     datatype,
                                 )
                             )
-                        values.append(value)
+                        if prop_id_required:
+                            try:
+                                int(propertyIdentifier)
+                                prop_id = '@prop_{}'.format(propertyIdentifier)
+                                value = list(value.items())[0][1]
+                            except ValueError:
+                                prop_id = propertyIdentifier
+                            values.append((value,prop_id))
+                        else:
+                            values.append(value)
 
             return values
 
@@ -343,7 +352,7 @@ class ReadProperty:
                 self._log.warning("Unknown object {}".format(args))
                 raise UnknownObjectError("Unknown object {}".format(args))
             elif reason == "unknownProperty":
-                self._log.warning("325 Unknown property {}".format(args))
+                self._log.warning("Unknown property {}".format(args))
 
                 values.append("")
                 return values
@@ -359,7 +368,7 @@ class ReadProperty:
 
         if obj_type.isdigit():
             obj_type = int(obj_type)
-        elif "@type_" in obj_type:
+        elif "@obj_" in obj_type:
             obj_type = int(obj_type.split("_")[1])
         elif not get_object_class(obj_type, vendor_id=vendor_id):
             raise ValueError("Unknown object type : {}".format(obj_type))
@@ -371,7 +380,7 @@ class ReadProperty:
         elif "@prop_" in prop_id:
             prop_id = int(prop_id.split("_")[1])
 
-        datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
+        #datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
 
         # build a request
         request = ReadPropertyRequest(
@@ -403,7 +412,7 @@ class ReadProperty:
 
             if obj_type.isdigit():
                 obj_type = int(obj_type)
-            elif "@type_" in obj_type:
+            elif "@obj_" in obj_type:
                 obj_type = int(obj_type.split("_")[1])
             elif not get_object_class(obj_type, vendor_id=vendor_id):
                 raise ValueError("Unknown object type : {}".format(obj_type))
@@ -413,9 +422,8 @@ class ReadProperty:
 
             prop_reference_list = []
             while i < len(args):
-                dt = None
                 prop_id = args[i]
-                if "@type_" in prop_id:
+                if "@obj_" in prop_id:
                     break
                 if prop_id not in PropertyIdentifier.enumerations:
                     try:
@@ -426,19 +434,13 @@ class ReadProperty:
                                     obj_type, prop_id, vendor_id
                                 )
                             )
-                            dt = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
-                            self._log.debug("Found dt : {}".format(dt))
                         else:
                             break
                     except:
                         break
 
-                i += 1
-                if prop_id in ("all", "required", "optional"):
+                elif prop_id in ("all", "required", "optional", "objectName", "objectType", "objectIdentifier", "polarity"):
                     pass
-                elif dt:
-                    datatype = dt
-                    self._log.debug("Found datatype : {}".format(dt))
                 else:
                     datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
                     if not datatype:
@@ -447,6 +449,7 @@ class ReadProperty:
                                 obj_type, prop_id
                             )
                         )
+                i += 1
 
                 # build a property reference
                 prop_reference = PropertyReference(propertyIdentifier=prop_id)
@@ -508,7 +511,7 @@ class ReadProperty:
         self._log.debug("{:<20} {!r}".format("REQUEST", request))
         return request
 
-    def readRange(self, args, arr_index=None, vendor_id=0, bacoid=None, timeout=5):
+    def readRange(self, args, arr_index=None, vendor_id=0, bacoid=None, timeout=10):
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -574,15 +577,6 @@ class ReadProperty:
                     apdu.objectIdentifier[0],
                     apdu.propertyIdentifier,
                 )
-
-            # special case for array parts, others are managed by cast_out
-            #            if issubclass(datatype, Array) and (apdu.propertyArrayIndex is not None):
-            #                if apdu.propertyArrayIndex == 0:
-            #                    value = apdu.propertyValue.cast_out(Unsigned)
-            #                else:
-            #                    value = apdu.propertyValue.cast_out(datatype.subtype)
-            #            else:
-            #                value = apdu.propertyValue.cast_out(datatype)
 
             value = apdu.itemData[0].cast_out(datatype)
 
@@ -663,10 +657,5 @@ def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
             value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
 
     except:
-        # self._log.error(
-        #    "Error processing {} {}...probably an array not yet supported".format(
-        #        obj_id, prop_id
-        #    )
-        # )
         value = {"{}_{}".format(obj_id, prop_id): propertyValue}
     return value

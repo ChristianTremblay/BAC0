@@ -54,6 +54,7 @@ class PointProperties(object):
         self.overridden = (False, None)
         self.priority_array = None
         self.history_size = None
+        self.bacnet_properties = {}
 
     def __repr__(self):
         return "{}".format(self.asdict)
@@ -125,11 +126,11 @@ class Point:
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
-                )
+                ), vendor_id=self.properties.device.properties.vendor_id
             )
             self._trend(res)
-        except Exception:
-            raise Exception("Problem reading : {}".format(self.properties.name))
+        except Exception as e:
+            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
 
         return res
 
@@ -144,13 +145,53 @@ class Point:
                         self.properties.device.properties.address,
                         self.properties.type,
                         str(self.properties.address),
-                    )
+                    ), vendor_id=self.properties.device.properties.vendor_id
                 )
                 self.properties.priority_array = res
             except (ValueError, UnknownPropertyError):
                 self.properties.priority_array = False
-            except Exception:
-                raise Exception("Problem reading : {}".format(self.properties.name))
+            except Exception as e:
+                raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+
+    def read_property(self, prop):
+        try:
+            res = self.properties.device.properties.network.read(
+                "{} {} {} {}".format(
+                    self.properties.device.properties.address,
+                    self.properties.type,
+                    str(self.properties.address),
+                    prop
+                ), vendor_id=0
+            )
+            return res
+        except Exception as e:
+            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))        
+
+    def update_bacnet_properties(self):
+        """
+        Retrieve bacnet properties for this point
+        To retrieve something general, forcing vendor id 0
+        """
+        try:
+            res = self.properties.device.properties.network.readMultiple(
+                "{} {} {} all".format(
+                    self.properties.device.properties.address,
+                    self.properties.type,
+                    str(self.properties.address),
+                ), vendor_id=0, prop_id_required=True
+            )
+            for each in res:
+                v, prop = each
+                self.properties.bacnet_properties[prop] = v
+        
+        except Exception as e:
+            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+
+    @property
+    def bacnet_properties(self):
+        if not self.properties.bacnet_properties:
+            self.update_bacnet_properties()
+        return self.properties.bacnet_properties
 
     @property
     def is_overridden(self):
@@ -271,7 +312,12 @@ class Point:
         try:
             return getattr(self.properties, key)
         except AttributeError:
-            raise ValueError("Wrong property")
+            try:
+                if '@prop_' in key:
+                    key = key.split('prop_')[1]
+                return self.read_property(key)
+            except Exception:
+                raise ValueError("Cannot find property named {}".format(key))
 
     def write(self, value, *, prop="presentValue", priority=""):
         """
@@ -561,9 +607,9 @@ class NumericPoint(Point):
     def __repr__(self):
         polling = self.properties.device.properties.pollDelay
         if polling < 60 and polling > 0:
-            val = self.lastValue
+            val = float(self.lastValue)
         else:
-            val = self.value
+            val = float(self.value)
         return "{}/{} : {:.2f} {}".format(
             self.properties.device.properties.name,
             self.properties.name,
@@ -642,12 +688,12 @@ class BooleanPoint(Point):
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
-                )
+                ), vendor_id=self.properties.device.properties.vendor_id
             )
             self._trend(res)
 
-        except Exception:
-            raise Exception("Problem reading : {}".format(self.properties.name))
+        except Exception as e:
+            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
 
         if res == "inactive":
             self._key = 0
@@ -1037,3 +1083,4 @@ class StringPointOffline(EnumPoint):
 
 class OfflineException(Exception):
     pass
+

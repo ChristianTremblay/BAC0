@@ -27,7 +27,7 @@ from bacpypes.object import get_datatype
 
 from bacpypes.apdu import WritePropertyRequest, SimpleAckPDU
 
-from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
+from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real, Enumerated
 from bacpypes.constructeddata import Array, Any
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
@@ -57,7 +57,7 @@ class WriteProperty:
 
     """
 
-    def write(self, args, vendor_id=0, timeout=5):
+    def write(self, args, vendor_id=0, timeout=10):
         """ Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
 
         :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]
@@ -152,6 +152,8 @@ class WriteProperty:
             elif datatype is Real:
                 value = float(value)
             elif datatype is Unsigned:
+                value = int(value)
+            elif datatype is Enumerated:
                 value = int(value)
             value = datatype(value)
 

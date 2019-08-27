@@ -8,7 +8,7 @@ def create_proprietary_object(params):
     except:
         raise
     for k, v in params["properties"].items():
-        props.append(Property(int(v["obj_id"]), v["primitive"], mutable=v["mutable"]))
+        props.append(Property(v["obj_id"], v["primitive"], mutable=v["mutable"]))
 
     new_class = type(
         params["name"],

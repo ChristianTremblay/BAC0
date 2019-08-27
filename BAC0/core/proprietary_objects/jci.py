@@ -111,7 +111,7 @@ JCIAnalogOutputObject = {
         "InputRangeHigh": {"obj_id": 1294, "primitive": Real, "mutable": True},
         "OutputRangeLow": {"obj_id": 1295, "primitive": Real, "mutable": True},
         "OutputRangeHigh": {"obj_id": 1296, "primitive": Real, "mutable": True},
-        # "polarity": {"obj_id": "polarity", "primitive": Enumerated, "mutable": True},
+        "polarity": {"obj_id": "polarity", "primitive": Enumerated, "mutable": True},
         "stroketime": {"obj_id": 3478, "primitive": Real, "mutable": True},
     },
 }

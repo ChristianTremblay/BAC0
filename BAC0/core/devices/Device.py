@@ -74,6 +74,7 @@ class DeviceProperties(object):
         self.db_name = None
         self.segmentation_supported = True
         self.history_size = None
+        self.bacnet_properties = {}
 
     def __repr__(self):
         return "{}".format(self.asdict)
@@ -552,7 +553,15 @@ class DeviceConnected(Device):
                 try:
                     return self._findPoint(point_name, force_read=False)
                 except ValueError:
-                    return self._findTrend(point_name)
+                    try:
+                        return self._findTrend(point_name)
+                    except ValueError:
+                        try:
+                            if '@prop_' in point_name:
+                                point_name = point_name.split('prop_')[1]
+                            return self.read_property(('device', self.properties.device_id, point_name))
+                        except Exception as e:
+                            raise ValueError(e)
         except ValueError as ve:
             self._log.error("{}".format(ve))
 
@@ -681,11 +690,54 @@ class DeviceConnected(Device):
                 self.properties.address, _obj, _instance, _prop
             )
             val = self.properties.network.read(
+                request, vendor_id=0
+            )
+        except KeyError as error:
+            raise Exception("Unknown property : {}".format(error))
+        return val
+
+    def write_property(self, prop, value, priority=16):
+        if isinstance(prop, tuple):
+            _obj, _instance, _prop = prop
+        else:
+            raise ValueError(
+                "Please provide property using tuple with object, instance and property"
+            )
+        try:
+            request = "{} {} {} {} {} - {}".format(
+                self.properties.address, _obj, _instance, _prop, value, priority
+            )
+            val = self.properties.network.write(
                 request, vendor_id=self.properties.vendor_id
             )
         except KeyError as error:
             raise Exception("Unknown property : {}".format(error))
         return val
+
+    def update_bacnet_properties(self):
+        """
+        Retrieve bacnet properties for this device
+        To retrieve something general, forcing vendor id 0
+        """
+        try:
+            res = self.properties.network.readMultiple(
+                "{} device {} all".format(
+                    self.properties.address,
+                    str(self.properties.device_id),
+                ), vendor_id=0, prop_id_required=True
+            )
+            for each in res:
+                v, prop = each
+                self.properties.bacnet_properties[prop] = v
+        
+        except Exception as e:
+            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+
+    @property
+    def bacnet_properties(self):
+        if not self.properties.bacnet_properties:
+            self.update_bacnet_properties()
+        return self.properties.bacnet_properties
 
     def __repr__(self):
         return "{} / Connected".format(self.properties.name)
