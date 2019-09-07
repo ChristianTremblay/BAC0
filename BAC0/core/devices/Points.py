@@ -126,7 +126,8 @@ class Point:
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
-                ), vendor_id=self.properties.device.properties.vendor_id
+                ),
+                vendor_id=self.properties.device.properties.vendor_id,
             )
             self._trend(res)
         except Exception as e:
@@ -145,13 +146,16 @@ class Point:
                         self.properties.device.properties.address,
                         self.properties.type,
                         str(self.properties.address),
-                    ), vendor_id=self.properties.device.properties.vendor_id
+                    ),
+                    vendor_id=self.properties.device.properties.vendor_id,
                 )
                 self.properties.priority_array = res
             except (ValueError, UnknownPropertyError):
                 self.properties.priority_array = False
             except Exception as e:
-                raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+                raise Exception(
+                    "Problem reading : {} | {}".format(self.properties.name, e)
+                )
 
     def read_property(self, prop):
         try:
@@ -160,12 +164,13 @@ class Point:
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
-                    prop
-                ), vendor_id=0
+                    prop,
+                ),
+                vendor_id=0,
             )
             return res
         except Exception as e:
-            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))        
+            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
 
     def update_bacnet_properties(self):
         """
@@ -178,12 +183,14 @@ class Point:
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
-                ), vendor_id=0, prop_id_required=True
+                ),
+                vendor_id=0,
+                prop_id_required=True,
             )
             for each in res:
                 v, prop = each
                 self.properties.bacnet_properties[prop] = v
-        
+
         except Exception as e:
             raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
 
@@ -313,8 +320,8 @@ class Point:
             return getattr(self.properties, key)
         except AttributeError:
             try:
-                if '@prop_' in key:
-                    key = key.split('prop_')[1]
+                if "@prop_" in key:
+                    key = key.split("prop_")[1]
                 return self.read_property(key)
             except Exception:
                 raise ValueError("Cannot find property named {}".format(key))
@@ -688,7 +695,8 @@ class BooleanPoint(Point):
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
-                ), vendor_id=self.properties.device.properties.vendor_id
+                ),
+                vendor_id=self.properties.device.properties.vendor_id,
             )
             self._trend(res)
 
@@ -1083,4 +1091,3 @@ class StringPointOffline(EnumPoint):
 
 class OfflineException(Exception):
     pass
-

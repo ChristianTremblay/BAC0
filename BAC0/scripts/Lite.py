@@ -35,6 +35,7 @@ from ..core.io.Write import WriteProperty
 from ..core.functions.GetIPAddr import HostIP
 from ..core.functions.Discover import Discover
 from ..core.functions.TimeSync import TimeSync
+from ..core.functions.Reinitialize import Reinitialize
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
 from ..core.devices.Trends import TrendLog
@@ -49,7 +50,9 @@ from bacpypes.pdu import Address
 
 
 @note_and_log
-class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
+class Lite(
+    Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync, Reinitialize
+):
     """
     Build a BACnet application to accept read and write requests.
     [Basic Whois/IAm functions are implemented in parent BasicScript class.]
@@ -296,6 +299,8 @@ class Lite(Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync):
 
     def disconnect(self):
         self._log.debug("Disconnecting")
+        for each in self.registered_devices:
+            each.disconnect()
         super().disconnect()
 
     def __repr__(self):

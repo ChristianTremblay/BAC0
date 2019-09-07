@@ -27,6 +27,7 @@ def test_RelinquishDefault(network_and_devices):
     new_value = test_device["av0"].value
     assert (new_value - 90) < 0.01
 
+
 def test_WriteCharStr(network_and_devices):
     # Write to an object and validate new value is correct
     test_device = network_and_devices.test_device
@@ -40,14 +41,15 @@ def test_SimulateAI(network_and_devices):
     test_device = network_and_devices.test_device
     test_device["ai0"] = 1
     new_value = test_device["ai0"].value
-    assert test_device.read_property(('analogInput',0,'outOfService'))
+    assert test_device.read_property(("analogInput", 0, "outOfService"))
     # something is missing so pv can be written to if outOfService == True
     # assert new_value == 1
+
 
 def test_RevertSimulation(network_and_devices):
     # Write to an object and validate new value is correct
     test_device = network_and_devices.test_device
-    test_device["ai0"] = 'auto'
+    test_device["ai0"] = "auto"
     new_value = test_device["ai0"].value
-    assert not test_device.read_property(('analogInput',0,'outOfService'))
+    assert not test_device.read_property(("analogInput", 0, "outOfService"))
     assert (new_value - 99.9) < 0.01

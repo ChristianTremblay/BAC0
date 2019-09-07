@@ -173,12 +173,13 @@ class SQLMixin(object):
         """
         Points properties retrieved from pickle
         """
-        with open("{}.bin".format(device_name, "rb")) as file:
+        with open("{}.bin".format(device_name), "rb") as file:
             return pickle.load(file)["points"][point]
 
     def read_dev_prop(self, device_name):
         """
         Device properties retrieved from pickle
         """
+        self._log.debug("Reading prop from DB file")
         with open("{}.bin".format(device_name), "rb") as file:
             return pickle.load(file)["device"]

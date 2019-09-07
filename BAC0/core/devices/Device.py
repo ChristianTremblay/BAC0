@@ -557,9 +557,11 @@ class DeviceConnected(Device):
                         return self._findTrend(point_name)
                     except ValueError:
                         try:
-                            if '@prop_' in point_name:
-                                point_name = point_name.split('prop_')[1]
-                            return self.read_property(('device', self.properties.device_id, point_name))
+                            if "@prop_" in point_name:
+                                point_name = point_name.split("prop_")[1]
+                            return self.read_property(
+                                ("device", self.properties.device_id, point_name)
+                            )
                         except Exception as e:
                             raise ValueError(e)
         except ValueError as ve:
@@ -689,9 +691,7 @@ class DeviceConnected(Device):
             request = "{} {} {} {}".format(
                 self.properties.address, _obj, _instance, _prop
             )
-            val = self.properties.network.read(
-                request, vendor_id=0
-            )
+            val = self.properties.network.read(request, vendor_id=0)
         except KeyError as error:
             raise Exception("Unknown property : {}".format(error))
         return val
@@ -722,21 +722,25 @@ class DeviceConnected(Device):
         try:
             res = self.properties.network.readMultiple(
                 "{} device {} all".format(
-                    self.properties.address,
-                    str(self.properties.device_id),
-                ), vendor_id=0, prop_id_required=True
+                    self.properties.address, str(self.properties.device_id)
+                ),
+                vendor_id=0,
+                prop_id_required=True,
             )
             for each in res:
                 v, prop = each
                 self.properties.bacnet_properties[prop] = v
-        
+
         except Exception as e:
             raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
 
+    def _bacnet_properties(self, update=False):
+        if not self.properties.bacnet_properties or update:
+            self.update_bacnet_properties()
+        return self.properties.bacnet_properties
+
     @property
     def bacnet_properties(self):
-        if not self.properties.bacnet_properties:
-            self.update_bacnet_properties()
         return self.properties.bacnet_properties
 
     def __repr__(self):
@@ -782,6 +786,7 @@ class DeviceDisconnected(Device):
         (so the user can use previously saved data).
         """
         if not self.properties.network:
+            self._log.debug("No network...calling DeviceFromDB")
             self.new_state(DeviceFromDB)
         else:
             try:
@@ -915,8 +920,10 @@ class DeviceFromDB(DeviceConnected):
     def _init_state(self):
         try:
             self.initialize_device_from_db()
-        except ValueError:
-            self.new_state(DeviceDisconnected)
+        except ValueError as e:
+            self._log.error("Problem with DB initialization : {}".format(e))
+            # self.new_state(DeviceDisconnected)
+            raise
 
     def connect(self, *, network=None, from_backup=None):
         """
@@ -927,6 +934,7 @@ class DeviceFromDB(DeviceConnected):
             raise WrongParameter("Please provide network OR from_backup")
 
         elif network:
+            self._log.debug("Network provided... trying to connect")
             self.properties.network = network
             try:
                 name = self.properties.network.read(
@@ -952,16 +960,20 @@ class DeviceFromDB(DeviceConnected):
 
                 if name:
                     if segmentation_supported:
+                        self._log.debug("Segmentation supported, connecting...")
                         self.new_state(RPMDeviceConnected)
                     else:
+                        self._log.debug("Segmentation not supported, connecting...")
                         self.new_state(RPDeviceConnected)
                     # self.db.close()
 
             except NoResponseFromController:
                 self._log.error("Unable to connect, keeping DB mode active")
 
-        elif from_backup:
-            self.properties.db_name = from_backup.split(".")[0]
+        elif from_backup or not network:
+            self._log.debug("Not connected, open DB")
+            if from_backup:
+                self.properties.db_name = from_backup.split(".")[0]
             self._init_state()
 
     def initialize_device_from_db(self):
@@ -970,9 +982,10 @@ class DeviceFromDB(DeviceConnected):
         if self.properties.db_name:
             dbname = self.properties.db_name
         else:
+            self._log.info("Missing argument DB")
             raise ValueError("Please provide db name using device.load_db('name')")
 
-        network = self.properties.network
+        # network = self.properties.network
         pss = self.properties.pss
 
         self._props = self.read_dev_prop(self.properties.db_name)
@@ -984,7 +997,7 @@ class DeviceFromDB(DeviceConnected):
         self.properties.db_name = dbname
         self.properties.address = self._props["address"]
         self.properties.device_id = self._props["device_id"]
-        self.properties.network = network
+        self.properties.network = None
         self.properties.pollDelay = self._props["pollDelay"]
         self.properties.name = self._props["name"]
         self.properties.objects_list = self._props["objects_list"]

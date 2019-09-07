@@ -52,7 +52,9 @@ class Simulation:
                     "{} {} {} outOfService True".format(addr, obj_type, obj_inst)
                 )
             except NoResponseFromController:
-                self._log.warning('Failed to write to OutOfService property ({})'.format(e))
+                self._log.warning(
+                    "Failed to write to OutOfService property ({})".format(e)
+                )
 
             try:
                 if self.read("{} {} {} outOfService".format(addr, obj_type, obj_inst)):
@@ -64,7 +66,9 @@ class Simulation:
                 else:
                     raise OutOfServiceNotSet()
             except NoResponseFromController:
-                self._log.warning('Failed to write to OutOfService property ({})'.format(e))
+                self._log.warning(
+                    "Failed to write to OutOfService property ({})".format(e)
+                )
 
     def out_of_service(self, args):
         """
@@ -82,7 +86,7 @@ class Simulation:
         try:
             self.write("{} {} {} outOfService True".format(addr, obj_type, obj_inst))
         except NoResponseFromController:
-            self._log.warning('Failed to write to OutOfService property ({})'.format(e))
+            self._log.warning("Failed to write to OutOfService property ({})".format(e))
 
     def release(self, args):
         """
@@ -100,7 +104,7 @@ class Simulation:
         try:
             self.write("{} {} {} outOfService False".format(addr, obj_type, obj_inst))
         except NoResponseFromController as e:
-            self._log.warning('Failed to write to OutOfService property ({})'.format(e))
+            self._log.warning("Failed to write to OutOfService property ({})".format(e))
 
         try:
             if self.read("{} {} {} outOfService".format(addr, obj_type, obj_inst)):
@@ -108,4 +112,4 @@ class Simulation:
             else:
                 pass  # Everything is ok"
         except NoResponseFromController:
-            self._log.warning('Failed to read OutOfService property ({})'.format(e))
+            self._log.warning("Failed to read OutOfService property ({})".format(e))

@@ -76,7 +76,15 @@ class ReadProperty:
     A timeout of 10 seconds allows detection of invalid device or communciation errors.
     """
 
-    def read(self, args, arr_index=None, vendor_id=0, bacoid=None, timeout=10, prop_id_required=False):
+    def read(
+        self,
+        args,
+        arr_index=None,
+        vendor_id=0,
+        bacoid=None,
+        timeout=10,
+        prop_id_required=False,
+    ):
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -159,7 +167,7 @@ class ReadProperty:
             if prop_id_required:
                 try:
                     int(apdu.propertyIdentifier)
-                    prop_id = '@prop_{}'.format(apdu.propertyIdentifier)
+                    prop_id = "@prop_{}".format(apdu.propertyIdentifier)
                     value = list(value.items())[0][1]
                 except ValueError:
                     prop_id = apdu.propertyIdentifier
@@ -326,11 +334,11 @@ class ReadProperty:
                         if prop_id_required:
                             try:
                                 int(propertyIdentifier)
-                                prop_id = '@prop_{}'.format(propertyIdentifier)
+                                prop_id = "@prop_{}".format(propertyIdentifier)
                                 value = list(value.items())[0][1]
                             except ValueError:
                                 prop_id = propertyIdentifier
-                            values.append((value,prop_id))
+                            values.append((value, prop_id))
                         else:
                             values.append(value)
 
@@ -380,7 +388,7 @@ class ReadProperty:
         elif "@prop_" in prop_id:
             prop_id = int(prop_id.split("_")[1])
 
-        #datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
+        # datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
 
         # build a request
         request = ReadPropertyRequest(
@@ -439,7 +447,15 @@ class ReadProperty:
                     except:
                         break
 
-                elif prop_id in ("all", "required", "optional", "objectName", "objectType", "objectIdentifier", "polarity"):
+                elif prop_id in (
+                    "all",
+                    "required",
+                    "optional",
+                    "objectName",
+                    "objectType",
+                    "objectIdentifier",
+                    "polarity",
+                ):
                     pass
                 else:
                     datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)

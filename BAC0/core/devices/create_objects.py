@@ -48,10 +48,9 @@ def create_AV(oid=1, pv=0, name="AV", units=None, pv_writable=False):
         presentValue=pv,
         units=units,
         relinquishDefault=0,
-        
     )
     avo = _make_mutable(avo, mutable=pv_writable)
-    avo = _make_mutable(avo, identifier='relinquishDefault', mutable=pv_writable)
+    avo = _make_mutable(avo, identifier="relinquishDefault", mutable=pv_writable)
     return avo
 
 
@@ -75,9 +74,9 @@ def create_AI(oid=1, pv=0, name="AI", units=None):
         objectName=name,
         presentValue=pv,
         units=units,
-        outOfService=Boolean(False)
+        outOfService=Boolean(False),
     )
-    aio = _make_mutable(aio, identifier='outOfService', mutable=True)
+    aio = _make_mutable(aio, identifier="outOfService", mutable=True)
     return aio
 
 
