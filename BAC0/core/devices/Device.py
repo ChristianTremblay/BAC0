@@ -741,7 +741,7 @@ class DeviceConnected(Device):
 
     @property
     def bacnet_properties(self):
-        return self.properties.bacnet_properties
+        return self._bacnet_properties(update=True)
 
     def __repr__(self):
         return "{} / Connected".format(self.properties.name)

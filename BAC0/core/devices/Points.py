@@ -920,6 +920,8 @@ class OfflinePoint(Point):
             self.new_state(EnumPointOffline)
         elif "binary" in self.properties.type:
             self.new_state(BooleanPointOffline)
+        elif "string" in self.properties.type:
+            self.new_state(StringPointOffline)
         else:
             raise TypeError("Unknown point type")
 
