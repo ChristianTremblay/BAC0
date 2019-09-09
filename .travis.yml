@@ -3,6 +3,7 @@ python:
 - '3.4'
 - '3.5'
 - '3.6'
+- '3.7'
 bundler_args: "--retry 3"
 install:
 - pip install -r requirements.txt
@@ -24,6 +25,6 @@ deploy:
     secure: Wgb3PCFut7RCbajytFP4IchYZ1ghA6UH0qjLtBm5qdCYesQKipo3p4Pm5N2IlyOfen1RGd0igaksQqHj19bpwoMXvvR6Rb/Q/eqON+mUWtN1BDPJFh60bWfyJ9c3ZsrCmkVChIQxOPwmyUTX23LV+1Z4nuRdlktdzIDbBZn847BesVylHP9gQ7CKZb3Fxr69ZeOtMbTwAyfK1BbMcFjXMQQGzl4W0R9CuFH7eDa8Ih/fUsvUupDNDKwl6hyKNWwtzDu/DPP0TDBgQexjntIo+MkByatmXyGCoYuHzIrjIMKHCxHGtciCnD6cNGT9meUkwjiCHITfRKCdCAZmwfCeVJuB/AsjgMj4M/dA6kMklqs4A+DEqbw+JiYxMSP1VZL5Sy864Api+7Rhm7tQNNPzjQywSlCjwKexEmSdbKy3M0A7OkORzFFsWDE5WUG1OjR8iJGnhKINmAjfvPhlZCjf/9Dgsd5EA735WiUmhTjj7Vzu3MTtMOzg95UtdDVekqZHf4Yjk6cjhqJQxKM0GZSomAdTZhpYiFFMXgpiup9hUmRujPvGMOci/vydi3rWEe4QARGdDZb/6spydyCy/9sw1O+D93hzLq09fSm3IWN/awdj0dkbhKbHSfH+Gq/436DgRdG/5GlevL3u8b/QARGu2bAXzNJJIuBcGcesTzLch30=
   on:
     branch: master
-    python: '3.6'
+    python: '3.7'
     distributions: sdist bdist_wheel
     repo: ChristianTremblay/BAC0

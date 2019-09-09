@@ -17,9 +17,6 @@ Write.py - creation of WriteProperty requests
         WriteProperty()
             def write()
 
-    Functions::
-
-        print_debug()
 
 """
 # --- 3rd party modules ---
@@ -30,7 +27,7 @@ from bacpypes.object import get_datatype
 
 from bacpypes.apdu import WritePropertyRequest, SimpleAckPDU
 
-from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real
+from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real, Enumerated
 from bacpypes.constructeddata import Array, Any
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
@@ -44,6 +41,7 @@ from .IOExceptions import (
     ApplicationNotStarted,
 )
 from ...core.utils.notes import note_and_log
+from .Read import find_reason
 
 # ------------------------------------------------------------------------------
 
@@ -59,7 +57,7 @@ class WriteProperty:
 
     """
 
-    def write(self, args, vendor_id=0):
+    def write(self, args, vendor_id=0, timeout=10):
         """ Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
 
         :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]
@@ -83,6 +81,7 @@ class WriteProperty:
         try:
             # build a WriteProperty request
             iocb = IOCB(self.build_wp_request(args, vendor_id=vendor_id))
+            iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
             self._log.debug("{:<20} {!r}".format("iocb", iocb))
@@ -104,7 +103,9 @@ class WriteProperty:
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
-            raise NoResponseFromController()
+            apdu = iocb.ioError
+            reason = find_reason(apdu)
+            raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
 
     def build_wp_request(self, args, vendor_id=0):
         addr, obj_type, obj_inst, prop_id = args[:4]
@@ -151,6 +152,8 @@ class WriteProperty:
             elif datatype is Real:
                 value = float(value)
             elif datatype is Unsigned:
+                value = int(value)
+            elif datatype is Enumerated:
                 value = int(value)
             value = datatype(value)
 

@@ -63,6 +63,11 @@ class TrendLogProperties(object):
 
         self._df = None
 
+    def __repr__(self):
+        return "{} | Descr : {} | Record count : {}".format(
+            self.object_name, self.description, self.record_count
+        )
+
 
 @note_and_log
 class TrendLog(TrendLogProperties):
@@ -86,8 +91,8 @@ class TrendLog(TrendLogProperties):
 
             if read_log_on_creation:
                 self.read_log_buffer()
-        except Exception:
-            raise Exception("Problem reading trendLog informations")
+        except Exception as error:
+            raise Exception("Problem reading trendLog informations: {}".format(error))
 
     def read_log_buffer(self):
         try:
@@ -97,8 +102,8 @@ class TrendLog(TrendLogProperties):
                 )
             )
             self.create_dataframe(_log_buffer)
-        except Exception:
-            raise Exception("Problem reading TrendLog")
+        except Exception as error:
+            raise Exception("Problem reading buffer: {}".format(error))
 
     def create_dataframe(self, log_buffer):
         index = []
@@ -141,11 +146,13 @@ class TrendLog(TrendLogProperties):
                 self.properties.log_device_object_property.objectIdentifier
             )
             try:
-                logged_point = self.properties.device.find_point(objectType, objectAddress)
+                logged_point = self.properties.device.find_point(
+                    objectType, objectAddress
+                )
             except ValueError:
                 logged_point = None
             serie = self.properties._df[self.properties.object_name].copy()
-            serie.units = logged_point.properties.units_state if logged_point else 'n/a'
+            serie.units = logged_point.properties.units_state if logged_point else "n/a"
             serie.name = ("{}/{}").format(
                 self.properties.device.properties.name, self.properties.object_name
             )
@@ -154,7 +161,9 @@ class TrendLog(TrendLogProperties):
             else:
                 if logged_point.properties.name in self.properties.device.binary_states:
                     serie.states = "binary"
-                elif logged_point.properties.name in self.properties.device.multi_states:
+                elif (
+                    logged_point.properties.name in self.properties.device.multi_states
+                ):
                     serie.states = "multistates"
                 else:
                     serie.states = "analog"
@@ -182,3 +191,6 @@ class TrendLog(TrendLogProperties):
                 self.properties.device.properties.network.remove_trend(self)
             else:
                 self.properties.device.properties.network.add_trend(self)
+
+    def __repr__(self):
+        return self.properties.__repr__()

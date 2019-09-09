@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2015-2017 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+# Copyright (C) 2015-2017 by Christian Tremblay, P.Eng <christian.tremblay@servisysDeviceObject.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
@@ -74,9 +74,10 @@ class DeviceProperties(object):
         self.db_name = None
         self.segmentation_supported = True
         self.history_size = None
+        self.bacnet_properties = {}
 
     def __repr__(self):
-        return "%s" % self.asdict
+        return "{}".format(self.asdict)
 
     @property
     def asdict(self):
@@ -86,7 +87,7 @@ class DeviceProperties(object):
 @note_and_log
 class Device(SQLMixin):
     """
-    Represent a BACnet device.  Once defined, it allows use of read, write, sim, release 
+    Represent a BACnet device.  Once defined, it allows use of read, write, sim, release
     functions to communicate with the device on the network.
 
     :param address: address of the device (ex. '2:5')
@@ -95,7 +96,7 @@ class Device(SQLMixin):
     :param poll: (int) if > 0, will poll every points each x seconds.
     :from_backup: sqlite backup file
     :segmentation_supported: (boolean) When segmentation is not supported, BAC0
-                             will not use read property multiple to poll the 
+                             will not use read property multiple to poll the
                              device.
     :object_list: (list) Use can provide a custom object_list to use for the
                   the creation of the device. the object list must be built
@@ -141,7 +142,12 @@ class Device(SQLMixin):
         self.properties.device_id = device_id
         self.properties.network = network
         self.properties.pollDelay = poll
+        if poll < 10:
+            self.properties.fast_polling = True
+        else:
+            self.properties.fast_polling = False
         self.properties.name = ""
+        self.properties.vendor_id = 0
         self.properties.objects_list = []
         self.properties.pss = ServicesSupported()
         self.properties.multistates = {}
@@ -157,7 +163,7 @@ class Device(SQLMixin):
         self.properties.db_name = ""
 
         self.points = []
-        self.trendlogs = {}
+        self._list_of_trendlogs = {}
 
         self._polling_task = namedtuple("_polling_task", ["task", "running"])
         self._polling_task.task = None
@@ -242,7 +248,7 @@ class Device(SQLMixin):
 
     def _buildPointList(self):
         """
-        Read all points from a device into a (Pandas) dataframe (Pandas).  Items are 
+        Read all points from a device into a (Pandas) dataframe (Pandas).  Items are
         accessible by point name.
         """
         raise NotImplementedError()
@@ -300,7 +306,7 @@ class Device(SQLMixin):
 
     def _parseArgs(self, arg):
         """
-        Given a string, interpret the last word as the value, everything else is 
+        Given a string, interpret the last word as the value, everything else is
         considered to be the point name.
         """
         args = arg.split()
@@ -430,7 +436,7 @@ class Device(SQLMixin):
         DoOnce(func).start()
 
     def __repr__(self):
-        return "%s / Undefined" % self.properties.name
+        return "{} / Undefined".format(self.properties.name)
 
 
 # @fix_docs
@@ -444,16 +450,18 @@ class DeviceConnected(Device):
         self._buildPointList()
         self.properties.network.register_device(self)
 
-    def disconnect(self):
+    def disconnect(self, save_on_disconnect=True):
         self._log.info("Wait while stopping polling")
         self.poll(command="stop")
+        if save_on_disconnect:
+            self.save()
         self.properties.network.unregister_device(self)
         self.new_state(DeviceFromDB)
 
     def connect(self, *, db=None):
         """
-        A connected device can be switched to 'database mode' where the device will 
-        not use the BACnet network but instead obtain its contents from a previously 
+        A connected device can be switched to 'database mode' where the device will
+        not use the BACnet network but instead obtain its contents from a previously
         stored database.
         """
         if db:
@@ -506,14 +514,18 @@ class DeviceConnected(Device):
                 self.properties.address, self.properties.device_id
             )
         )
-
+        self.properties.vendor_id = self.properties.network.read(
+            "{} device {} vendorIdentifier".format(
+                self.properties.address, self.properties.device_id
+            )
+        )
         self._log.info(
             "Device {}:[{}] found... building points list".format(
                 self.properties.device_id, self.properties.name
             )
         )
         try:
-            self.properties.objects_list, self.points, self.trendlogs = self._discoverPoints(
+            self.properties.objects_list, self.points, self._list_of_trendlogs = self._discoverPoints(
                 self.custom_object_list
             )
             if self.properties.pollDelay > 0:
@@ -538,7 +550,20 @@ class DeviceConnected(Device):
             if isinstance(point_name, list):
                 return self.df(point_name, force_read=False)
             else:
-                return self._findPoint(point_name, force_read=False)
+                try:
+                    return self._findPoint(point_name, force_read=False)
+                except ValueError:
+                    try:
+                        return self._findTrend(point_name)
+                    except ValueError:
+                        try:
+                            if "@prop_" in point_name:
+                                point_name = point_name.split("prop_")[1]
+                            return self.read_property(
+                                ("device", self.properties.device_id, point_name)
+                            )
+                        except Exception as e:
+                            raise ValueError(e)
         except ValueError as ve:
             self._log.error("{}".format(ve))
 
@@ -549,7 +574,7 @@ class DeviceConnected(Device):
     def __contains__(self, value):
         """
         Allows the syntax:
-            if "point_name" in device: 
+            if "point_name" in device:
         """
         return value in self.points_name
 
@@ -560,7 +585,7 @@ class DeviceConnected(Device):
 
     def __setitem__(self, point_name, value):
         """
-        Allows the syntax: 
+        Allows the syntax:
             device['point_name'] = value
         """
         try:
@@ -637,8 +662,89 @@ class DeviceConnected(Device):
                 return point
         raise ValueError("{} doesn't exist in controller".format(name))
 
+    def _trendlogs(self):
+        for k, v in self._list_of_trendlogs.items():
+            name, trendlog = v
+            yield trendlog
+
+    @property
+    def trendlogs(self):
+        for each in self._trendlogs():
+            yield each.properties.object_name
+
+    def _findTrend(self, name):
+        for trend in self._trendlogs():
+            if trend.properties.object_name == name:
+                return trend
+        raise ValueError("{} doesn't exist in controller".format(name))
+
+    def read_property(self, prop):
+        # if instance == -1:
+        #    pass
+        if isinstance(prop, tuple):
+            _obj, _instance, _prop = prop
+        else:
+            raise ValueError(
+                "Please provide property using tuple with object, instance and property"
+            )
+        try:
+            request = "{} {} {} {}".format(
+                self.properties.address, _obj, _instance, _prop
+            )
+            val = self.properties.network.read(request, vendor_id=0)
+        except KeyError as error:
+            raise Exception("Unknown property : {}".format(error))
+        return val
+
+    def write_property(self, prop, value, priority=16):
+        if isinstance(prop, tuple):
+            _obj, _instance, _prop = prop
+        else:
+            raise ValueError(
+                "Please provide property using tuple with object, instance and property"
+            )
+        try:
+            request = "{} {} {} {} {} - {}".format(
+                self.properties.address, _obj, _instance, _prop, value, priority
+            )
+            val = self.properties.network.write(
+                request, vendor_id=self.properties.vendor_id
+            )
+        except KeyError as error:
+            raise Exception("Unknown property : {}".format(error))
+        return val
+
+    def update_bacnet_properties(self):
+        """
+        Retrieve bacnet properties for this device
+        To retrieve something general, forcing vendor id 0
+        """
+        try:
+            res = self.properties.network.readMultiple(
+                "{} device {} all".format(
+                    self.properties.address, str(self.properties.device_id)
+                ),
+                vendor_id=0,
+                prop_id_required=True,
+            )
+            for each in res:
+                v, prop = each
+                self.properties.bacnet_properties[prop] = v
+
+        except Exception as e:
+            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+
+    def _bacnet_properties(self, update=False):
+        if not self.properties.bacnet_properties or update:
+            self.update_bacnet_properties()
+        return self.properties.bacnet_properties
+
+    @property
+    def bacnet_properties(self):
+        return self._bacnet_properties(update=True)
+
     def __repr__(self):
-        return "%s / Connected" % self.properties.name
+        return "{} / Connected".format(self.properties.name)
 
 
 # ------------------------------------------------------------------------------
@@ -676,10 +782,11 @@ class DeviceDisconnected(Device):
 
     def connect(self, *, db=None):
         """
-        Attempt to connect to device.  If unable, attempt to connect to a controller database  
+        Attempt to connect to device.  If unable, attempt to connect to a controller database
         (so the user can use previously saved data).
         """
         if not self.properties.network:
+            self._log.debug("No network...calling DeviceFromDB")
             self.new_state(DeviceFromDB)
         else:
             try:
@@ -806,15 +913,17 @@ class DeviceDisconnected(Device):
 
 class DeviceFromDB(DeviceConnected):
     """
-    [Device state] Where requests for a point's present value returns the last 
+    [Device state] Where requests for a point's present value returns the last
     valid value from the point's history.
     """
 
     def _init_state(self):
         try:
             self.initialize_device_from_db()
-        except ValueError:
-            self.new_state(DeviceDisconnected)
+        except ValueError as e:
+            self._log.error("Problem with DB initialization : {}".format(e))
+            # self.new_state(DeviceDisconnected)
+            raise
 
     def connect(self, *, network=None, from_backup=None):
         """
@@ -825,6 +934,7 @@ class DeviceFromDB(DeviceConnected):
             raise WrongParameter("Please provide network OR from_backup")
 
         elif network:
+            self._log.debug("Network provided... trying to connect")
             self.properties.network = network
             try:
                 name = self.properties.network.read(
@@ -850,16 +960,20 @@ class DeviceFromDB(DeviceConnected):
 
                 if name:
                     if segmentation_supported:
+                        self._log.debug("Segmentation supported, connecting...")
                         self.new_state(RPMDeviceConnected)
                     else:
+                        self._log.debug("Segmentation not supported, connecting...")
                         self.new_state(RPDeviceConnected)
                     # self.db.close()
 
             except NoResponseFromController:
                 self._log.error("Unable to connect, keeping DB mode active")
 
-        elif from_backup:
-            self.properties.db_name = from_backup.split(".")[0]
+        elif from_backup or not network:
+            self._log.debug("Not connected, open DB")
+            if from_backup:
+                self.properties.db_name = from_backup.split(".")[0]
             self._init_state()
 
     def initialize_device_from_db(self):
@@ -868,9 +982,10 @@ class DeviceFromDB(DeviceConnected):
         if self.properties.db_name:
             dbname = self.properties.db_name
         else:
+            self._log.info("Missing argument DB")
             raise ValueError("Please provide db name using device.load_db('name')")
 
-        network = self.properties.network
+        # network = self.properties.network
         pss = self.properties.pss
 
         self._props = self.read_dev_prop(self.properties.db_name)
@@ -882,7 +997,7 @@ class DeviceFromDB(DeviceConnected):
         self.properties.db_name = dbname
         self.properties.address = self._props["address"]
         self.properties.device_id = self._props["device_id"]
-        self.properties.network = network
+        self.properties.network = None
         self.properties.pollDelay = self._props["pollDelay"]
         self.properties.name = self._props["name"]
         self.properties.objects_list = self._props["objects_list"]

@@ -13,6 +13,8 @@ from datetime import datetime
 from collections import namedtuple
 import time
 
+from bacpypes.primitivedata import CharacterString
+
 # --- 3rd party modules ---
 try:
     import pandas as pd
@@ -52,9 +54,10 @@ class PointProperties(object):
         self.overridden = (False, None)
         self.priority_array = None
         self.history_size = None
+        self.bacnet_properties = {}
 
     def __repr__(self):
-        return "%s" % self.asdict
+        return "{}".format(self.asdict)
 
     @property
     def asdict(self):
@@ -123,11 +126,12 @@ class Point:
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
-                )
+                ),
+                vendor_id=self.properties.device.properties.vendor_id,
             )
             self._trend(res)
-        except Exception:
-            raise Exception("Problem reading : {}".format(self.properties.name))
+        except Exception as e:
+            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
 
         return res
 
@@ -142,13 +146,59 @@ class Point:
                         self.properties.device.properties.address,
                         self.properties.type,
                         str(self.properties.address),
-                    )
+                    ),
+                    vendor_id=self.properties.device.properties.vendor_id,
                 )
                 self.properties.priority_array = res
             except (ValueError, UnknownPropertyError):
                 self.properties.priority_array = False
-            except Exception:
-                raise Exception("Problem reading : {}".format(self.properties.name))
+            except Exception as e:
+                raise Exception(
+                    "Problem reading : {} | {}".format(self.properties.name, e)
+                )
+
+    def read_property(self, prop):
+        try:
+            res = self.properties.device.properties.network.read(
+                "{} {} {} {}".format(
+                    self.properties.device.properties.address,
+                    self.properties.type,
+                    str(self.properties.address),
+                    prop,
+                ),
+                vendor_id=0,
+            )
+            return res
+        except Exception as e:
+            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+
+    def update_bacnet_properties(self):
+        """
+        Retrieve bacnet properties for this point
+        To retrieve something general, forcing vendor id 0
+        """
+        try:
+            res = self.properties.device.properties.network.readMultiple(
+                "{} {} {} all".format(
+                    self.properties.device.properties.address,
+                    self.properties.type,
+                    str(self.properties.address),
+                ),
+                vendor_id=0,
+                prop_id_required=True,
+            )
+            for each in res:
+                v, prop = each
+                self.properties.bacnet_properties[prop] = v
+
+        except Exception as e:
+            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+
+    @property
+    def bacnet_properties(self):
+        if not self.properties.bacnet_properties:
+            self.update_bacnet_properties()
+        return self.properties.bacnet_properties
 
     @property
     def is_overridden(self):
@@ -226,10 +276,9 @@ class Point:
         """
         if not _PANDAS:
             return dict(zip(self._history.timestamp, self._history.value))
-        his_table = pd.Series(
-            self._history.value[: len(self._history.timestamp)],
-            index=self._history.timestamp,
-        )
+        idx = self._history.timestamp.copy()
+        his_table = pd.Series(index=idx, data=self._history.value[: len(idx)])
+        del idx
         his_table.name = ("{}/{}").format(
             self.properties.device.properties.name, self.properties.name
         )
@@ -270,7 +319,12 @@ class Point:
         try:
             return getattr(self.properties, key)
         except AttributeError:
-            raise ValueError("Wrong property")
+            try:
+                if "@prop_" in key:
+                    key = key.split("prop_")[1]
+                return self.read_property(key)
+            except Exception:
+                raise ValueError("Cannot find property named {}".format(key))
 
     def write(self, value, *, prop="presentValue", priority=""):
         """
@@ -300,10 +354,11 @@ class Point:
                     prop,
                     value,
                     priority,
-                )
+                ),
+                vendor_id=self.properties.device.properties.vendor_id,
             )
-        except Exception:
-            raise NoResponseFromController()
+        except NoResponseFromController:
+            raise
 
         # Read after the write so history gets updated.
         self.value
@@ -557,10 +612,15 @@ class NumericPoint(Point):
                 raise ValueError("Value must be numeric")
 
     def __repr__(self):
+        polling = self.properties.device.properties.pollDelay
+        if polling < 60 and polling > 0:
+            val = float(self.lastValue)
+        else:
+            val = float(self.value)
         return "{}/{} : {:.2f} {}".format(
             self.properties.device.properties.name,
             self.properties.name,
-            self.value,
+            val,
             self.properties.units_state,
         )
 
@@ -635,12 +695,13 @@ class BooleanPoint(Point):
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
-                )
+                ),
+                vendor_id=self.properties.device.properties.vendor_id,
             )
             self._trend(res)
 
-        except Exception:
-            raise Exception("Problem reading : {}".format(self.properties.name))
+        except Exception as e:
+            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
 
         if res == "inactive":
             self._key = 0
@@ -737,6 +798,10 @@ class EnumPoint(Point):
         """
         try:
             return self.properties.units_state[int(self.lastValue) - 1]
+        except TypeError:
+            # polling probably off, no last value
+            v = self.value
+            return self.properties.units_state[v - 1]
         except IndexError:
             value = "unknown"
         except ValueError:
@@ -765,13 +830,64 @@ class EnumPoint(Point):
             )
 
     def __repr__(self):
-        # return '%s : %s' % (self.name, )
         return "{}/{} : {}".format(
             self.properties.device.properties.name, self.properties.name, self.enumValue
         )
 
     def __eq__(self, other):
         return self.value == self.properties.units_state.index(other) + 1
+
+
+class StringPoint(Point):
+    """
+    Representation of an Enumerated (multiState) value
+    """
+
+    def __init__(
+        self,
+        device=None,
+        pointType=None,
+        pointAddress=None,
+        pointName=None,
+        description=None,
+        units_state=None,
+        presentValue=None,
+        history_size=None,
+    ):
+
+        Point.__init__(
+            self,
+            device=device,
+            pointType=pointType,
+            pointAddress=pointAddress,
+            pointName=pointName,
+            description=description,
+            presentValue=presentValue,
+            history_size=history_size,
+        )
+
+    @property
+    def units(self):
+        """
+        Characterstring value do not have units or state text
+        """
+        return None
+
+    def _set(self, value):
+        if isinstance(value, str):
+            self._setitem(value)
+        elif isinstance(value, CharacterString):
+            self._setitem(value.value)
+        else:
+            raise ValueError("Value must be string or CharacterString")
+
+    def __repr__(self):
+        return "{}/{} : {}".format(
+            self.properties.device.properties.name, self.properties.name, self.value
+        )
+
+    def __eq__(self, other):
+        return self.value == other.value
 
 
 # ------------------------------------------------------------------------------
@@ -804,6 +920,8 @@ class OfflinePoint(Point):
             self.new_state(EnumPointOffline)
         elif "binary" in self.properties.type:
             self.new_state(BooleanPointOffline)
+        elif "string" in self.properties.type:
+            self.new_state(StringPointOffline)
         else:
             raise TypeError("Unknown point type")
 
@@ -920,6 +1038,42 @@ class EnumPointOffline(EnumPoint):
             value = self.properties.units_state[int(self.lastValue) - 1]
         except IndexError:
             value = "unknown"
+        except ValueError:
+            value = "NaN"
+        return value
+
+    def _set(self, value):
+        raise OfflineException("Point must be online to write")
+
+    def write(self, value, *, prop="presentValue", priority=""):
+        raise OfflineException("Must be online to write")
+
+    def sim(self, value, *, prop="presentValue", priority=""):
+        raise OfflineException("Must be online to write")
+
+    def release(self, value, *, prop="presentValue", priority=""):
+        raise OfflineException("Must be online to write")
+
+
+class StringPointOffline(EnumPoint):
+    @property
+    def history(self):
+        his = self.properties.device._read_from_sql(
+            'select * from "{}"'.format("history"),
+            self.properties.device.properties.db_name,
+        )
+        his.index = his["index"].apply(Timestamp)
+        return his.set_index("index")[self.properties.name]
+
+    @property
+    def value(self):
+        """
+        Take last known value as the value
+        """
+        try:
+            value = self.lastValue
+        except IndexError:
+            value = "NaN"
         except ValueError:
             value = "NaN"
         return value

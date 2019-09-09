@@ -8,6 +8,7 @@ Test Bacnet communication with another device
 CHANGE_DELTA = 99.90
 TOLERANCE = 0.01
 BINARY_TEST_STATE = "active"
+CHARACTERSTRINGVALUE = "test"
 
 
 def test_ReadAV(network_and_devices):
@@ -43,3 +44,8 @@ def test_ReadBI(network_and_devices):
 def test_ReadBO(network_and_devices):
     test_device = network_and_devices.test_device
     assert test_device["bo0"].value == BINARY_TEST_STATE
+
+
+def test_ReadCharacterstringValue(network_and_devices):
+    test_device = network_and_devices.test_device
+    assert test_device["string0"].value == CHARACTERSTRINGVALUE

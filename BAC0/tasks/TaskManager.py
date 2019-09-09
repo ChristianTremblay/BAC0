@@ -15,6 +15,7 @@ import time
 
 # --- 3rd party modules ---
 # --- this application's modules ---
+from ..core.utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
 
@@ -27,9 +28,23 @@ class Manager:
 def stopAllTasks():
     for each in Manager.taskList:
         each.exitFlag = True
-    # print('Stopping all threads')
+    while True:
+        _alive = []
+        for each in Manager.taskList:
+            _alive.append(each.is_alive())
+        if not any(_alive):
+            clean_tasklist()
+            break
+    return True
 
 
+def clean_tasklist():
+    for each in Manager.taskList:
+        if not each.is_alive():
+            Manager.taskList.remove(each)
+
+
+@note_and_log
 class Task(Thread):
     def __init__(self, delay=5, daemon=True, name="recurring"):
         Thread.__init__(self, name=name, daemon=daemon)
@@ -56,6 +71,7 @@ class Task(Thread):
                 if self.exitFlag:
                     break
                 time.sleep(0.5)
+            clean_tasklist()
 
     def task(self):
         raise RuntimeError("task must be overridden")
@@ -63,6 +79,7 @@ class Task(Thread):
     def stop(self):
         self.is_running = False
         self.exitFlag = True
+        clean_tasklist()
 
     def beforeStop(self):
         """
@@ -72,6 +89,7 @@ class Task(Thread):
             Manager.taskList.remove(self)
 
 
+@note_and_log
 class OneShotTask(Thread):
     def __init__(self, daemon=True, name="Oneshot"):
         Thread.__init__(self, name=name, daemon=daemon)

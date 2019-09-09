@@ -12,13 +12,13 @@ read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device
 # --- 3rd party modules ---
 
 # --- this application's modules ---
-from ....tasks.Poll import DevicePoll
+from ....tasks.Poll import DeviceNormalPoll, DeviceFastPoll
 from ...io.IOExceptions import (
     ReadPropertyMultipleException,
     NoResponseFromController,
     SegmentationNotSupported,
 )
-from ..Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
+from ..Points import NumericPoint, BooleanPoint, EnumPoint, StringPoint, OfflinePoint
 from ..Trends import TrendLog
 
 # ------------------------------------------------------------------------------
@@ -28,6 +28,13 @@ def retrieve_type(obj_list, point_type_key):
     for point_type, point_address in obj_list:
         if point_type_key in str(point_type):
             yield (point_type, point_address)
+
+
+def to_float_if_possible(val):
+    try:
+        return float(val)
+    except:
+        return val
 
 
 class ReadPropertyMultiple:
@@ -58,9 +65,11 @@ class ReadPropertyMultiple:
             point = self._findPoint(each, force_read=False)
             points.append(point)
 
-            str_list.append(" " + point.properties.type)
-            str_list.append(" " + str(point.properties.address))
-            str_list.append(" presentValue")
+            str_list.append(
+                " {} {} presentValue".format(
+                    point.properties.type, point.properties.address
+                )
+            )
             rpm_param = "".join(str_list)
             requests.append(rpm_param)
 
@@ -108,8 +117,13 @@ class ReadPropertyMultiple:
                         request = "{} {}".format(
                             self.properties.address, "".join(request)
                         )
-                        self._log.debug("RPM_Request: %s " % request)
-                        val = self.properties.network.readMultiple(request)
+                        self._log.debug("RPM_Request: {} ".format(request))
+                        try:
+                            val = self.properties.network.readMultiple(
+                                request, vendor_id=self.properties.vendor_id
+                            )
+                        except SegmentationNotSupported:
+                            raise
 
                         # print('val : ', val, len(val), type(val))
                         if val == None:
@@ -117,7 +131,7 @@ class ReadPropertyMultiple:
                             raise SegmentationNotSupported
 
                     except KeyError as error:
-                        raise Exception("Unknown point name : %s" % error)
+                        raise Exception("Unknown point name : {}".format(error))
 
                     except SegmentationNotSupported as error:
                         self.properties.segmentation_supported = False
@@ -145,7 +159,9 @@ class ReadPropertyMultiple:
                         request = "{} {}".format(
                             self.properties.address, "".join(request)
                         )
-                        val = self.properties.network.readMultiple(request)
+                        val = self.properties.network.readMultiple(
+                            request, vendor_id=self.properties.vendor_id
+                        )
 
                     except SegmentationNotSupported as error:
                         self.properties.segmentation_supported = False
@@ -156,7 +172,7 @@ class ReadPropertyMultiple:
                         )
 
                     except KeyError as error:
-                        raise Exception("Unknown point name : %s" % error)
+                        raise Exception("Unknown point name : {}".format(error))
 
                     else:
                         points_values = zip(big_request[1][i : i + len(val)], val)
@@ -175,10 +191,12 @@ class ReadPropertyMultiple:
             for request in self._batches(big_request, points_per_request):
                 try:
                     request = "{} {}".format(self.properties.address, "".join(request))
-                    val = self.properties.network.read(request)
+                    val = self.properties.network.read(
+                        request, vendor_id=self.properties.vendor_id
+                    )
 
                 except KeyError as error:
-                    raise Exception("Unknown point name : %s" % error)
+                    raise Exception("Unknown point name : {}".format(error))
 
                 # Save each value to history of each point
                 for points_info in self._batches(val, info_length):
@@ -192,14 +210,16 @@ class ReadPropertyMultiple:
             for request in self._batches(big_request[0], points_per_request):
                 try:
                     request = "{} {}".format(self.properties.address, "".join(request))
-                    val = self.properties.network.read(request)
+                    val = self.properties.network.read(
+                        request, vendor_id=self.properties.vendor_id
+                    )
                     points_values = zip(big_request[1][i : i + len(val)], val)
                     i += len(val)
                     for each in points_values:
                         each[0]._trend(each[1])
 
                 except KeyError as error:
-                    raise Exception("Unknown point name : %s" % error)
+                    raise Exception("Unknown point name : {}".format(error))
 
     def _discoverPoints(self, custom_object_list=None):
         if custom_object_list:
@@ -209,11 +229,12 @@ class ReadPropertyMultiple:
                 objList = self.properties.network.read(
                     "{} device {} objectList".format(
                         self.properties.address, self.properties.device_id
-                    )
+                    ),
+                    vendor_id=self.properties.vendor_id,
                 )
 
             except NoResponseFromController:
-                self.log.error(
+                self._log.error(
                     "No object list available. Please provide a custom list using the object_list parameter"
                 )
                 objList = []
@@ -225,6 +246,7 @@ class ReadPropertyMultiple:
                         self.properties.address, self.properties.device_id
                     ),
                     arr_index=0,
+                    vendor_id=self.properties.vendor_id,
                 )
 
                 for i in range(1, number_of_objects + 1):
@@ -234,191 +256,131 @@ class ReadPropertyMultiple:
                                 self.properties.address, self.properties.device_id
                             ),
                             arr_index=i,
+                            vendor_id=self.properties.vendor_id,
                         )
                     )
 
         points = []
         trendlogs = {}
 
-        # Numeric
-        analog_request = []
-        list_of_analog = retrieve_type(objList, "analog")
-        for analog_points, address in list_of_analog:
-            analog_request.append(
-                "{} {} objectName presentValue units description ".format(
-                    analog_points, address
+        def _process_new_objects(
+            obj_cls=NumericPoint, obj_type="analog", objList=None, points_per_request=5
+        ):
+            """
+            Template to generate BAC0 points instances from information coming from the network.
+            """
+            request = []
+            new_points = []
+            if obj_type == "analog":
+                prop_list = "objectName presentValue units description"
+            elif obj_type == "binary":
+                prop_list = (
+                    "objectName presentValue inactiveText activeText description"
                 )
-            )
-
-        try:
-            analog_points_info = self.read_multiple(
-                "", discover_request=(analog_request, 4), points_per_request=5
-            )
-            self._log.debug(analog_points_info)
-        except SegmentationNotSupported:
-            raise
-
-        i = 0
-        for each in retrieve_type(objList, "analog"):
-            point_type = str(each[0])
-            point_address = str(each[1])
-            point_infos = analog_points_info[i]
-
-            if len(point_infos) == 4:
-                point_units_state = point_infos[2]
-                point_description = point_infos[3]
-
-            elif len(point_infos) == 3:
-                # we probably get only objectName, presentValue and units
-                point_units_state = point_infos[2]
-                point_description = ""
-
-            elif len(point_infos) == 2:
-                point_units_state = ""
-                point_description = ""
-
+            elif obj_type == "multi":
+                prop_list = "objectName presentValue stateText description"
+            elif obj_type == "characterstringValue":
+                prop_list = "objectName presentValue"
             else:
-                # raise ValueError('Not enough values returned', each, point_infos)
-                # SHOULD SWITCH TO SEGMENTATION_SUPPORTED = FALSE HERE
-                self._log.warning(
-                    "Cannot add {} / {} | {}".format(
-                        point_type, point_address, len(point_infos)
-                    )
-                )
-                continue
+                raise ValueError("Unsupported objectType")
 
-            i += 1
-            try:
-                points.append(
-                    NumericPoint(
-                        pointType=point_type,
-                        pointAddress=point_address,
-                        pointName=point_infos[0],
-                        description=point_description,
-                        presentValue=float(point_infos[1]),
-                        units_state=point_units_state,
-                        device=self,
-                        history_size=self.properties.history_size,
-                    )
-                )
-            except IndexError:
-                self._log.warning(
-                    "There has been a problem defining analog points. It is sometimes due to busy network. Please retry the device creation"
-                )
-                raise
+            list_of_obj = retrieve_type(objList, obj_type)
+            for points, address in list_of_obj:
+                request.append("{} {} {} ".format(points, address, prop_list))
 
-        multistate_request = []
-        list_of_multistate = retrieve_type(objList, "multi")
-        for multistate_points, address in list_of_multistate:
-            multistate_request.append(
-                "{} {} objectName presentValue stateText description ".format(
-                    multistate_points, address
-                )
-            )
-
-        try:
-            multistate_points_info = self.read_multiple(
-                "", discover_request=(multistate_request, 4), points_per_request=5
-            )
-        except SegmentationNotSupported:
-            raise
-
-        i = 0
-        for each in retrieve_type(objList, "multi"):
-            point_type = str(each[0])
-            point_address = str(each[1])
-            point_infos = multistate_points_info[i]
-            i += 1
+            def _find_propid_index(key):
+                _prop_list = prop_list.split(" ")
+                for i, each in enumerate(_prop_list):
+                    if key == each:
+                        return i
+                raise KeyError("{} not part of property list".format(key))
 
             try:
-                points.append(
-                    EnumPoint(
-                        pointType=point_type,
-                        pointAddress=point_address,
-                        pointName=point_infos[0],
-                        description=point_infos[3],
-                        presentValue=point_infos[1],
-                        units_state=point_infos[2],
-                        device=self,
-                        history_size=self.properties.history_size,
-                    )
+                points_info = self.read_multiple(
+                    "",
+                    discover_request=(request, len(prop_list.split(" "))),
+                    points_per_request=points_per_request,
                 )
-            except IndexError:
-                self._log.warning(
-                    "There has been a problem defining multistate points. It is sometimes due to busy network. Please retry the device creation"
-                )
+            except SegmentationNotSupported:
                 raise
+            # Process responses and create point
+            i = 0
+            for each in retrieve_type(objList, obj_type):
+                point_type = str(each[0])
+                point_address = str(each[1])
+                point_infos = points_info[i]
+                i += 1
 
-        binary_request = []
-        list_of_binary = retrieve_type(objList, "binary")
-        for binary_points, address in list_of_binary:
-            binary_request.append(
-                "{} {} objectName presentValue inactiveText activeText description ".format(
-                    binary_points, address
-                )
-            )
-
-        try:
-            binary_points_info = self.read_multiple(
-                "", discover_request=(binary_request, 5), points_per_request=5
-            )
-        except SegmentationNotSupported:
-            raise
-
-        i = 0
-        for each in retrieve_type(objList, "binary"):
-            point_type = str(each[0])
-            point_address = str(each[1])
-            point_infos = binary_points_info[i]
-
-            if len(point_infos) == 3:
-                # we probably get only objectName, presentValue and description
-                point_units_state = ("OFF", "ON")
-                point_description = point_infos[2]
-
-            elif len(point_infos) == 5:
-                point_units_state = (point_infos[2], point_infos[3])
-                point_description = point_infos[4]
-
-                if point_description is None:
+                pointName = point_infos[_find_propid_index("objectName")]
+                presentValue = point_infos[_find_propid_index("presentValue")]
+                if obj_type == "analog":
+                    presentValue = float(presentValue)
+                elif obj_type == "multi":
+                    presentValue = int(presentValue)
+                try:
+                    point_description = point_infos[_find_propid_index("description")]
+                except KeyError:
                     point_description = ""
+                try:
+                    point_units_state = point_infos[_find_propid_index("units")]
+                except KeyError:
+                    try:
+                        point_units_state = point_infos[_find_propid_index("stateText")]
+                    except KeyError:
+                        try:
+                            _inactive = point_infos[_find_propid_index("inactiveText")]
+                            _active = point_infos[_find_propid_index("inactiveText")]
+                            point_units_state = (_inactive, _active)
+                        except KeyError:
+                            if obj_type == "binary":
+                                point_units_state = ("OFF", "ON")
+                            elif obj_type == "multi":
+                                point_units_state = [""]
+                            else:
+                                point_units_state = None
 
-            elif len(point_infos) == 2:
-                point_units_state = ("OFF", "ON")
-                point_description = ""
-
-            else:
-                # raise ValueError('Not enough values returned', each, point_infos)
-                # SHOULD SWITCH TO SEGMENTATION_SUPPORTED = FALSE HERE
-                self._log.warning(
-                    "Cannot add {} / {}".format(point_type, point_address)
-                )
-                continue
-
-            i += 1
-            try:
-                points.append(
-                    BooleanPoint(
-                        pointType=point_type,
-                        pointAddress=point_address,
-                        pointName=point_infos[0],
-                        description=point_description,
-                        presentValue=point_infos[1],
-                        units_state=point_units_state,
-                        device=self,
-                        history_size=self.properties.history_size,
+                try:
+                    new_points.append(
+                        obj_cls(
+                            pointType=point_type,
+                            pointAddress=point_address,
+                            pointName=pointName,
+                            description=point_description,
+                            presentValue=presentValue,
+                            units_state=point_units_state,
+                            device=self,
+                            history_size=self.properties.history_size,
+                        )
                     )
-                )
-            except IndexError:
-                self._log.warning(
-                    "There has been a problem defining binary points. It is sometimes due to busy network. Please retry the device creation"
-                )
-                raise
+                except IndexError:
+                    self._log.warning(
+                        "There has been a problem defining {} points. It is sometimes due to busy network. Please retry the device creation".format(
+                            obj_type
+                        )
+                    )
+                    raise
+            return new_points
 
-        # trenLogs_request = []
-        # list_of_trendLogs = retrieve_type(objList, 'trendLog')
-        # for binary_points, address in list_of_trendLogs:
-        #    trendLogs_request.append('{} {}')
+        points.extend(
+            _process_new_objects(
+                obj_cls=NumericPoint, obj_type="analog", objList=objList
+            )
+        )
+        points.extend(
+            _process_new_objects(
+                obj_cls=BooleanPoint, obj_type="binary", objList=objList
+            )
+        )
+        points.extend(
+            _process_new_objects(obj_cls=EnumPoint, obj_type="multi", objList=objList)
+        )
+        points.extend(
+            _process_new_objects(
+                obj_cls=StringPoint, obj_type="characterstringValue", objList=objList
+            )
+        )
+
+        # TrendLogs
         for each in retrieve_type(objList, "trendLog"):
             point_address = str(each[1])
             tl = TrendLog(point_address, self, read_log_on_creation=False)
@@ -431,6 +393,7 @@ class ReadPropertyMultiple:
                 tl,
             )
 
+        self._log.debug("RPM Mixin : {} | {} | {}".format(objList, points, trendlogs))
         self._log.info("Ready!")
         return (objList, points, trendlogs)
 
@@ -451,6 +414,19 @@ class ReadPropertyMultiple:
         device.poll('stop')
         device.poll(delay = 5)
         """
+        if delay < 10:
+            self.properties.fast_polling = True
+            _poll_cls = DeviceFastPoll
+        else:
+            self.properties.fast_polling = False
+            _poll_cls = DeviceNormalPoll
+
+        if not str(command).lower() in ["stop", "start", "0", "False"]:
+            self._log.error(
+                'Bad argument for function. Needs "stop", "start", "0" or "False" or provide keyword arg (command or delay)'
+            )
+            return
+
         if (
             str(command).lower() == "stop"
             or command == False
@@ -458,7 +434,9 @@ class ReadPropertyMultiple:
             or delay == 0
         ):
 
-            if isinstance(self._polling_task.task, DevicePoll):
+            if isinstance(self._polling_task.task, DeviceNormalPoll) or isinstance(
+                self._polling_task.task, DeviceFastPoll
+            ):
                 self._polling_task.task.stop()
                 while self._polling_task.task.is_alive():
                     pass
@@ -468,7 +446,9 @@ class ReadPropertyMultiple:
                 self._log.info("Polling stopped")
 
         elif self._polling_task.task is None:
-            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task = _poll_cls(
+                self, delay=delay, name=self.properties.name
+            )
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info(
@@ -480,10 +460,14 @@ class ReadPropertyMultiple:
             while self._polling_task.task.is_alive():
                 pass
             self._polling_task.running = False
-            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task = _poll_cls(
+                self, delay=delay, name=self.properties.name
+            )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info("Polling started, every values read each %s seconds" % delay)
+            self._log.info(
+                "Polling started, every values read each {} seconds".format(delay)
+            )
 
         else:
             raise RuntimeError("Stop polling before redefining it")
@@ -543,7 +527,6 @@ class ReadProperty:
 
         device.read_multiple(['point1', 'point2', 'point3'], points_per_request = 10)
         """
-        # print('PSS : %s' % self.properties.pss['readPropertyMultiple'])
         if isinstance(points_list, list):
             for each in points_list:
                 self.read_single(
@@ -557,9 +540,11 @@ class ReadProperty:
     def read_single(self, request, *, points_per_request=1, discover_request=(None, 4)):
         try:
             request = "{} {}".format(self.properties.address, "".join(request))
-            return self.properties.network.read(request)
+            return self.properties.network.read(
+                request, vendor_id=self.properties.vendor_id
+            )
         except KeyError as error:
-            raise Exception("Unknown point name: %s" % error)
+            raise Exception("Unknown point name: {}".format(error))
 
         except NoResponseFromController as error:
             return ""
@@ -572,7 +557,8 @@ class ReadProperty:
                 objList = self.properties.network.read(
                     "{} device {} objectList".format(
                         self.properties.address, self.properties.device_id
-                    )
+                    ),
+                    vendor_id=self.properties.vendor_id,
                 )
 
             except SegmentationNotSupported:
@@ -582,6 +568,7 @@ class ReadProperty:
                         self.properties.address, self.properties.device_id
                     ),
                     arr_index=0,
+                    vendor_id=self.properties.vendor_id,
                 )
 
                 for i in range(1, number_of_objects + 1):
@@ -591,85 +578,29 @@ class ReadProperty:
                                 self.properties.address, self.properties.device_id
                             ),
                             arr_index=i,
+                            vendor_id=self.properties.vendor_id,
                         )
                     )
 
         points = []
         trendlogs = {}
 
-        # Numeric
-        for each in retrieve_type(objList, "analog"):
-            point_type = str(each[0])
-            point_address = str(each[1])
+        def _process_new_objects(obj_cls=NumericPoint, obj_type="analog", objList=None):
+            _newpoints = []
+            for each in retrieve_type(objList, obj_type):
+                point_type = str(each[0])
+                point_address = str(each[1])
 
-            points.append(
-                NumericPoint(
-                    pointType=point_type,
-                    pointAddress=point_address,
-                    pointName=self.read_single(
-                        "{} {} objectName ".format(point_type, point_address)
-                    ),
-                    description=self.read_single(
-                        "{} {} description ".format(point_type, point_address)
-                    ),
-                    presentValue=float(
-                        self.read_single(
-                            "{} {} presentValue ".format(point_type, point_address)
-                        )
-                    ),
-                    units_state=self.read_single(
+                if obj_type == "analog":
+                    units_state = self.read_single(
                         "{} {} units ".format(point_type, point_address)
-                    ),
-                    device=self,
-                )
-            )
-
-        for each in retrieve_type(objList, "multi"):
-            point_type = str(each[0])
-            point_address = str(each[1])
-
-            points.append(
-                EnumPoint(
-                    pointType=point_type,
-                    pointAddress=point_address,
-                    pointName=self.read_single(
-                        "{} {} objectName ".format(point_type, point_address)
-                    ),
-                    description=self.read_single(
-                        "{} {} description ".format(point_type, point_address)
-                    ),
-                    presentValue=(
-                        self.read_single(
-                            "{} {} presentValue ".format(point_type, point_address)
-                        ),
-                    ),
-                    units_state=self.read_single(
+                    )
+                elif obj_type == "multi":
+                    units_state = self.read_single(
                         "{} {} stateText ".format(point_type, point_address)
-                    ),
-                    device=self,
-                )
-            )
-
-        for each in retrieve_type(objList, "binary"):
-            point_type = str(each[0])
-            point_address = str(each[1])
-
-            points.append(
-                BooleanPoint(
-                    pointType=point_type,
-                    pointAddress=point_address,
-                    pointName=self.read_single(
-                        "{} {} objectName ".format(point_type, point_address)
-                    ),
-                    description=self.read_single(
-                        "{} {} description ".format(point_type, point_address)
-                    ),
-                    presentValue=(
-                        self.read_single(
-                            "{} {} presentValue ".format(point_type, point_address)
-                        ),
-                    ),
-                    units_state=(
+                    )
+                elif obj_type == "binary":
+                    units_state = (
                         (
                             self.read_single(
                                 "{} {} inactiveText ".format(point_type, point_address)
@@ -680,14 +611,47 @@ class ReadProperty:
                                 "{} {} activeText ".format(point_type, point_address)
                             )
                         ),
-                    ),
-                    device=self,
+                    )
+                else:
+                    units_state = None
+
+                presentValue = self.read_single(
+                    "{} {} presentValue ".format(point_type, point_address)
                 )
-            )
+                if obj_type == "analog":
+                    presentValue = float(presentValue)
+
+                _newpoints.append(
+                    obj_cls(
+                        pointType=point_type,
+                        pointAddress=point_address,
+                        pointName=self.read_single(
+                            "{} {} objectName ".format(point_type, point_address)
+                        ),
+                        description=self.read_single(
+                            "{} {} description ".format(point_type, point_address)
+                        ),
+                        presentValue=presentValue,
+                        units_state=units_state,
+                        device=self,
+                    )
+                )
+            return _newpoints
+
+        points.extend(_process_new_objects(NumericPoint, "analog", objList))
+        points.extend(_process_new_objects(BooleanPoint, "binary", objList))
+        points.extend(_process_new_objects(EnumPoint, "multi", objList))
+        points.extend(
+            _process_new_objects(StringPoint, "characterstringValue", objList)
+        )
 
         for each in retrieve_type(objList, "trendLog"):
             point_address = str(each[1])
-            tl = TrendLog(point_address, self)
+            try:
+                tl = TrendLog(point_address, self)
+            except Exception:
+                self._log.error("Problem creating {}".format(each))
+                continue
             ldop_type, ldop_addr = (
                 tl.properties.log_device_object_property.objectIdentifier
             )
@@ -717,14 +681,13 @@ class ReadProperty:
         device.poll('stop')
         device.poll(delay = 5)
         """
-        if delay > 120:
+        if delay < 10:
             self._log.warning(
-                "Segmentation not supported, forcing delay to 120 seconds (or higher)"
+                "Device do not support RPM, fast polling not available, limiting delay to 10sec."
             )
-            delay = 120
-        # for each in self.points:
-        #    each.value
-        # self._log.info('Complete')
+            self.properties.fast_polling = False
+            delay = 10
+
         if (
             str(command).lower() == "stop"
             or command == False
@@ -732,7 +695,7 @@ class ReadProperty:
             or delay == 0
         ):
 
-            if isinstance(self._polling_task.task, DevicePoll):
+            if isinstance(self._polling_task.task, DeviceNormalPoll):
                 self._polling_task.task.stop()
                 while self._polling_task.task.is_alive():
                     pass
@@ -742,7 +705,9 @@ class ReadProperty:
                 self._log.info("Polling stopped")
 
         elif self._polling_task.task is None:
-            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task = DeviceNormalPoll(
+                self, delay=delay, name=self.properties.name
+            )
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info(
@@ -754,10 +719,14 @@ class ReadProperty:
             while self._polling_task.task.is_alive():
                 pass
             self._polling_task.running = False
-            self._polling_task.task = DevicePoll(self, delay=delay)
+            self._polling_task.task = DeviceNormalPoll(
+                self, delay=delay, name=self.properties.name
+            )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info("Polling started, every values read each %s seconds" % delay)
+            self._log.info(
+                "Polling started, every values read each {} seconds".format(delay)
+            )
 
         else:
             raise RuntimeError("Stop polling before redefining it")

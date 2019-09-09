@@ -9,7 +9,7 @@ This module deals with Bokeh Session, Document and Plots
 A connection to the server is mandatory to use update_data
 """
 from bokeh.plotting import Figure
-from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis
+from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis, Legend
 from bokeh.models.widgets import DataTable, TableColumn, Div
 from bokeh.layouts import widgetbox, row, column, gridplot
 from bokeh.palettes import d3, Spectral6
@@ -120,6 +120,8 @@ class DynamicPlotHandler(Handler):
         )
         self.p.add_tools(hover)
 
+        self.legends_list = []
+
         length = len(self.s.keys())
         if length <= 10:
             if length < 3:
@@ -137,10 +139,13 @@ class DynamicPlotHandler(Handler):
                     source=self.sources[each.name],
                     name=each.name,
                     color=color_mapper[each.name],
-                    legend=("%s | %s (OFF-ON)" % (each.name, each.description)),
+                    legend=("{} | {} (OFF-ON)".format(each.name, each.description)),
                     y_range_name="bool",
                     size=10,
                 )
+                # self.legends_list.append(
+                #    (("{} | {} (OFF-ON)".format(each.name, each.description)), [c])
+                # )
             elif each.states == "multistates":
                 self.p.diamond(
                     "x",
@@ -148,7 +153,9 @@ class DynamicPlotHandler(Handler):
                     source=self.sources[each.name],
                     name=each.name,
                     color=color_mapper[each.name],
-                    legend=("%s | %s (%s)" % (each.name, each.description, each.units)),
+                    legend=(
+                        "{} | {} ({})".format(each.name, each.description, each.units)
+                    ),
                     y_range_name="enum",
                     size=20,
                 )
@@ -159,13 +166,16 @@ class DynamicPlotHandler(Handler):
                     source=self.sources[each.name],
                     name=each.name,
                     color=color_mapper[each.name],
-                    legend=("%s | %s (%s)" % (each.name, each.description, each.units)),
+                    legend=(
+                        "{} | {} ({})".format(each.name, each.description, each.units)
+                    ),
                     line_width=2,
                 )
 
-            self.p.legend.location = "bottom_right"
+            self.p.legend.location = "top_left"
+            # legend = Legend(items=self.legends_list, location=(0, -60))
             self.p.legend.click_policy = "hide"
-
+            # self.p.add_layout(legend, "right")
             self.plots = [self.p]
 
     def update_data(self):
@@ -231,12 +241,6 @@ class DynamicPlotHandler(Handler):
             self._update_complete = True
 
     def modify_document(self, doc):
-        curdoc().clear()
-        # doc = curdoc()
-        try:
-            curdoc().remove_periodic_callback(self._pcb)
-        except:
-            pass
         doc.clear()
         self.build_plot()
         layout = gridplot(self.plots, ncols=2)
@@ -253,14 +257,18 @@ class DynamicPlotHandler(Handler):
 
     def stop_update_data(self):
         doc = curdoc()
+        try:
+            doc.remove_periodic_callback(self._pcb)
+        except:
+            pass
         if self._recurring_update.is_running:
             self._recurring_update.stop()
             while self._recurring_update.is_running:
                 pass
-            try:
-                doc.remove_next_tick_callback(self._ntcb)
-            except (ValueError, RuntimeError):
-                pass  # Already gone
+        try:
+            doc.remove_next_tick_callback(self._ntcb)
+        except (ValueError, RuntimeError):
+            pass  # Already gone
 
     def start_update_data(self):
         if not self._recurring_update.is_running:
@@ -361,7 +369,7 @@ class NotesTableHandler(Handler):
         self.data_table = DataTable(source=notes, columns=self.columns)
         layout = row([self.data_table])
         doc.add_root(layout)
-        doc.title = "Notes for %s" % controller
+        doc.title = "Notes for {}".format(controller)
         # doc.add_periodic_callback(self.update_data,100)
         return doc
 
@@ -371,4 +379,4 @@ class NotesTableHandler(Handler):
         notes_df.columns = ["index", "notes"]
         notes = ColumnDataSource(notes_df)
         self.data_table.source.data.update(notes.data)
-        curdoc().title = "Notes for %s" % controller
+        curdoc().title = "Notes for {}".format(controller)

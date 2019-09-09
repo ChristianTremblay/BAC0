@@ -13,8 +13,7 @@ This variable will also be passed to some functions when you will define a devic
 
 When creating the connection to the network, BAC0 needs to know the ip network of the interface on which it will work. It also needs to know the subnet mask (as BACnet operations often use broadcast messages).If you don't provide one, BAC0 will try to detect the interface for you.
 
-..Note
-
+.. note::
     If you use ios, you will need to provide a ip manually. The script is unable to detect the subnet mask yet.
 
 By default, if Bokeh, Pandas and Flask are installed, using the connect script will launch the complete version. But you can also use the lite version if you want something simple.
@@ -33,8 +32,6 @@ Example::
     # bacnet = BAC0.lite() to force the script to load only minimum features.
     # Please note that if Bokeh, Pandas or Flask are not installed, using connect() will in fact call the lite version.
 
-
-    
 
 Lite vs Complete
 *****************
@@ -98,22 +95,86 @@ broadcast messages so they can be sent through diferent subnet and be available 
 To do so, use the syntax::
 
     my_ip = '10.8.0.2/24'
-    bbmdIP = '192.168.1.2'
+    bbmdIP = '192.168.1.2:47808'
     bbmdTTL = 900
     bacnet = BAC0.connect(ip='xxx.xxx.xxx.xxx/mask', bbdmAddress=bbmdIP, bbmdTTL=bbmdTTL)
     
-Quick Discover
-****************
-Once your bacnet network is connected, you can use ::
+Discovering devices on a network
+*********************************
+BACnet protocole relies on "whois" and "iam" messages to search and find devices. Typically, 
+those are broadcast messages that are sent to the network so every device listening will be 
+able to answer to whois requests by a iam request.
 
-    bacnet.whois()
-    
-and get a simple list of network:mac/device_instances on your network. 
-Perfect for quick checkup.
+By default, BAC0 will use "local broadcast" whois message. This mean that in some situation,
+you will not see by default the global network. Local broadcast will not traverse subnets and 
+won't propagate to MSTP network behind BACnet/IP-BACnet/MSTP router that are on the same subnet
+than BAC0.
 
-Or you can get a more detailed view using ::
+This is done on purpose because using "global broadcast" by default will create a great amount
+of traffic on big BACnet network when all devices will send their "iam" response at the same
+time.
+
+Instead, it is recommended to be careful and try to find devices on BACnet networks one at a time.
+For that though, you have to "already know" what is on your network. Which is not always the case.
+This is why BAC0 will still be able to issue global broadcast whois request if explicitly told to do so.
+
+The recommended function to use is ::
+
+    bacnet.discover(networks=['listofnetworks'], limits=(0,4194303), global_broadcast=False)
+    # networks can be a list of integers, a simple integer, or 'known'
+    # By default global_broadcast is set to False 
+    # By default, the limits are set to any device instance, user can choose to request only a
+    # range of device instances (1000,1200) for instance
+
+
+This function will trigger the whois function and get you results. It will also emit a special request
+named 'What-si-network-number' to try to learn the network number actually in use for BAC0. As this function
+have been added in the protocole 2008, it may not be available on all networks.
+
+BAC0 will store all network number found in the property named `bacnet.known_network_numbers`. User can then 
+use this list to work with discover and find everything on the network without issuing global broadcasts.
+To make a discover on known networks, use ::
+
+    bacnet.discover(networks='known')
+
+Also, all found devices can be seen in the property `bacnet.discoveredDevices`. This list is filled with all
+the devices found when issuing whois requests.
+
+BAC0 also provide a special functions to get a device table with details about the found devices. This function
+will try to read on the network for the manufacturer name, the object name, and other informations to present 
+all the devices in a pandas dataframe. This is for presentation purposes and if you want to explore the network, 
+I recommend using discover. 
+
+Devices dataframe ::
 
     bacnet.devices
+
+..note::
+    WARNING. `bacnet.devices` may in some circumstances, be a bad choice when you want to discover
+    devices on a network. A lot of read requests are made to look for manufacturer, object name, etc
+    and if a lot of devices are on the network, it is recommended to use whois() and start from there.
+
+BAC0 also support the 'Who-Is-Router-To-Network' request so you can ask the network and you will see the address
+of the router for this particular BACnet network. The request 'Initialize-Router-Table' will be triggered on the 
+reception of the 'I-Am-Router-To-Network' answer.
+
+Once BAC0 will know which router leads to a network, the requests for the network inside the network will be 
+sent directly to the router as unicast messages. For example ::
+
+    # if router for network 3 is 192.168.1.2
+    bacnet.whois('3:*') 
+    # will send the request to 192.168.1.2, even if by default, a local broadcast would sent the request
+    # to 192.168.1.255 (typically with a subnet 255.255.255.0 or /24)
+
+Time Sync
+****************
+You can use BAC0 to send time synchronisation requests to the network ::
+
+    bacnet.time_sync()
+    # or
+    bacnet.time_sync('2:5') # <- Providing an address
+    
+BAC0 will not accept requests from other devices.
 
 .. _berryconda : https://github.com/jjhelmus/berryconda  
 .. _RaspberryPi : http://www.raspberrypi.org

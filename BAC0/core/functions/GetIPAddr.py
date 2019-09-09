@@ -90,7 +90,6 @@ class HostIP:
         try:
             s.connect(("google.com", 0))
             addr = s.getsockname()[0]
-            # print('Using ip : {addr}'.format(addr=addr))
             s.close()
         except socket.error:
             raise NetworkInterfaceException(
@@ -146,7 +145,6 @@ class HostIP:
                 mask = re.findall(pattern, line.decode())[0]
             except:
                 mask = "255.255.255.255"
-        # self._log.debug('Mask found : %s' %  mask)
         return mask
 
 

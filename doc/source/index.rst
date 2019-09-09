@@ -31,9 +31,9 @@ Table of contents
 Developer documentation
 =======================
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 6
 
-   BAC0
+    BAC0
 
 
 Index and search tool

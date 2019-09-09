@@ -7,10 +7,10 @@
 """
 BasicScript - implement the BAC0.core.app.ScriptApplication
 Its basic function is to start and stop the bacpypes stack.
-Stopping the stack, frees the IP socket used for BACnet communications. 
+Stopping the stack, frees the IP socket used for BACnet communications.
 No communications will occur if the stack is stopped.
 
-Bacpypes stack enables Whois and Iam functions, since this minimum is needed to be 
+Bacpypes stack enables Whois and Iam functions, since this minimum is needed to be
 a BACnet device.  Other stack services can be enabled later (via class inheritance).
 [see: see BAC0.scripts.ReadWriteScript]
 
@@ -34,12 +34,23 @@ from bacpypes.basetypes import ServicesSupported, DeviceStatus
 from bacpypes.primitivedata import CharacterString
 
 # --- this application's modules ---
-from ..core.app.ScriptApplication import SimpleApplication, ForeignDeviceApplication
+from ..core.app.ScriptApplication import BAC0Application, BAC0ForeignDeviceApplication
 from .. import infos
 from ..core.io.IOExceptions import InitializationError
 from ..core.functions.GetIPAddr import validate_ip_address
+from ..tasks.TaskManager import stopAllTasks
 
 from ..core.utils.notes import note_and_log
+
+try:
+    import pandas
+    import bokeh
+    import flask
+    import flask_bootstrap
+
+    _COMPLETE = True
+except ImportError:
+    _COMPLETE = False
 
 # ------------------------------------------------------------------------------
 
@@ -52,7 +63,7 @@ class Base:
 
     :param localIPAddr='127.0.0.1':
     :param localObjName='BAC0':
-    :param DeviceId=None:
+    :param deviceId=None:
     :param maxAPDULengthAccepted='1024':
     :param maxSegmentsAccepted='1024':
     :param segmentationSupported='segmentedBoth':
@@ -64,15 +75,27 @@ class Base:
         self,
         localIPAddr="127.0.0.1",
         localObjName="BAC0",
-        DeviceId=None,
+        deviceId=None,
+        firmwareRevision="".join(sys.version.split("|")[:2]),
         maxAPDULengthAccepted="1024",
         maxSegmentsAccepted="1024",
         segmentationSupported="segmentedBoth",
         bbmdAddress=None,
         bbmdTTL=0,
+        modelName=CharacterString("BAC0 Scripting Tool"),
+        vendorId=842,
+        vendorName=CharacterString("SERVISYS inc."),
     ):
 
         self._log.debug("Configurating app")
+
+        if not _COMPLETE:
+            self._log.debug(
+                "To be able to run the web server, you must install pandas, bokeh, flask and flask_bootstrap"
+            )
+            self._log.debug(
+                "Those are not all installed so BAC0 will work in Lite mode only."
+            )
 
         self.response = None
         self._initialized = False
@@ -92,7 +115,7 @@ class Base:
             )
 
         self.Boid = (
-            int(DeviceId) if DeviceId else (3056177 + int(random.uniform(0, 1000)))
+            int(deviceId) if deviceId else (3056177 + int(random.uniform(0, 1000)))
         )
 
         self.segmentationSupported = segmentationSupported
@@ -100,15 +123,17 @@ class Base:
         self.localObjName = localObjName
 
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
-        self.vendorId = 842
-        self.vendorName = CharacterString("SERVISYS inc.")
-        self.modelName = CharacterString("BAC0 Scripting Tool")
+        self.vendorId = vendorId
+        self.vendorName = vendorName
+        self.modelName = modelName
 
         self.discoveredDevices = None
         self.systemStatus = DeviceStatus(1)
 
         self.bbmdAddress = bbmdAddress
         self.bbmdTTL = bbmdTTL
+
+        self.firmwareRevision = firmwareRevision
 
         try:
             self.startApp()
@@ -133,27 +158,16 @@ class Base:
                 modelName=self.modelName,
                 systemStatus=self.systemStatus,
                 description="http://christiantremblay.github.io/BAC0/",
-                firmwareRevision="".join(sys.version.split("|")[:2]),
+                firmwareRevision=self.firmwareRevision,
                 applicationSoftwareVersion=infos.__version__,
                 protocolVersion=1,
                 protocolRevision=0,
             )
 
-            # build a bit string that knows about the bit names
-            #            pss = ServicesSupported()
-            #            pss['whoIs'] = 1
-            #            pss['iAm'] = 1
-            #            pss['readProperty'] = 1
-            #            pss['writeProperty'] = 1
-            #            pss['readPropertyMultiple'] = 1
-            #
-            #            # set the property value to be just the bits
-            #            self.this_device.protocolServicesSupported = pss.value
-
             # make an application
             if self.bbmdAddress and self.bbmdTTL > 0:
 
-                self.this_application = ForeignDeviceApplication(
+                self.this_application = BAC0ForeignDeviceApplication(
                     self.this_device,
                     self.localIPAddr,
                     bbmdAddress=self.bbmdAddress,
@@ -161,7 +175,7 @@ class Base:
                 )
                 app_type = "Foreign Device"
             else:
-                self.this_application = SimpleApplication(
+                self.this_application = BAC0Application(
                     self.this_device, self.localIPAddr
                 )
                 app_type = "Simple BACnet/IP App"
@@ -175,7 +189,7 @@ class Base:
                 self._log.warning("Error opening socket: {}".format(error))
                 raise InitializationError("Error opening socket: {}".format(error))
             self._log.debug("Running")
-        except OSError:
+        except OSError as error:
             self._log.error("an error has occurred: {}".format(error))
             raise InitializationError("Error starting app: {}".format(error))
         finally:
@@ -191,6 +205,8 @@ class Base:
         """
         Stop the BACnet stack.  Free the IP socket.
         """
+        self._log.debug("Stopping All running tasks")
+        stopAllTasks()
         self._log.debug("Stopping BACnet stack")
         # Freeing socket
         try:

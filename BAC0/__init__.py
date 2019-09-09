@@ -44,6 +44,9 @@ try:
         lite = connect
         # print('All features not available as some modules are missing (flask, flask-bootstrap, bokeh, pandas). See docs for details')
 
+    # Import proprietary classes
+    from .core.proprietary_objects import jci
+
 except ImportError as error:
     print("=" * 80)
     print(

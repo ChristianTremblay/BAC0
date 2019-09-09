@@ -33,13 +33,14 @@ from ..scripts.Base import Base
 from ..core.io.Read import ReadProperty
 from ..core.io.Write import WriteProperty
 from ..core.functions.GetIPAddr import HostIP
-from ..core.functions.WhoisIAm import WhoisIAm
+from ..core.functions.Discover import Discover
+from ..core.functions.TimeSync import TimeSync
+from ..core.functions.Reinitialize import Reinitialize
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
 from ..core.devices.Trends import TrendLog
 from ..core.utils.notes import note_and_log
 from ..core.io.IOExceptions import NoResponseFromController, UnrecognizedService
-
 
 from ..infos import __version__ as version
 
@@ -49,7 +50,9 @@ from bacpypes.pdu import Address
 
 
 @note_and_log
-class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
+class Lite(
+    Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync, Reinitialize
+):
     """
     Build a BACnet application to accept read and write requests.
     [Basic Whois/IAm functions are implemented in parent BasicScript class.]
@@ -64,12 +67,17 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         set to True.
     """
 
-    def __init__(self, ip=None, port=None, mask=None, bbmdAddress=None, bbmdTTL=0):
+    def __init__(
+        self, ip=None, port=None, mask=None, bbmdAddress=None, bbmdTTL=0, **params
+    ):
         self._log.info(
             "Starting BAC0 version {} ({})".format(
                 version, self.__module__.split(".")[-1]
             )
         )
+        self._log.info("Use BAC0.log_level to adjust verbosity of the app.")
+        self._log.info("Ex. BAC0.log_level('silence') or BAC0.log_level('error')")
+
         self._log.debug("Configurating app")
         self._registered_devices = weakref.WeakValueDictionary()
 
@@ -93,19 +101,110 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
             ip_addr = Address("{}/{}:{}".format(ip, mask, port))
         self._log.info("Using ip : {ip_addr}".format(ip_addr=ip_addr))
         Base.__init__(
-            self, localIPAddr=ip_addr, bbmdAddress=bbmdAddress, bbmdTTL=bbmdTTL
+            self,
+            localIPAddr=ip_addr,
+            bbmdAddress=bbmdAddress,
+            bbmdTTL=bbmdTTL,
+            **params
         )
 
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
-        # Force a global whois to find all devices on the network
-        # This also allow to see devices quickly after creation of network
-        # as a first read has already been done.
-        self.whois_answer = self.update_whois()
-        time.sleep(2)
 
-    def update_whois(self):
-        return (self.whois(), str(datetime.now()))
+        # Announce yourself
+        self.iam()
+
+    @property
+    def known_network_numbers(self):
+        """
+        This function will read the table of known network numbers gathered by the 
+        NetworkServiceElement. It will also look into the discoveredDevices property
+        and add any network number that would not be in the NSE table.
+        """
+        if self.discoveredDevices:
+            for each in self.discoveredDevices:
+                addr, instance = each
+                net = addr.split(":")[0] if ":" in addr else None
+                if net:
+                    self.this_application.nse._learnedNetworks.add(int(net))
+
+        return self.this_application.nse._learnedNetworks
+
+    def discover(self, networks="known", limits=(0, 4194303), global_broadcast=False):
+        """
+        Discover is meant to be the function used to explore the network when we
+        connect.
+        It will trigger whois request using the different options provided with 
+        parameters.
+
+        By default, a local broadcast will be used. This is required as in big 
+        BACnet network, global broadcast can lead to network flood and loss of data.
+
+        If not parameters are given, BAC0 will try to :
+
+            * Find the network on which it is
+            * Find routers for other networks (accessible via local broadcast)
+            * Detect "known networks"
+            * Use the list of known networks and create whois request to find all devices on those networks
+
+        This should be sufficient for most cases.
+
+        Once discovery is done, user may access the list of "discovered devices" using ::
+
+            bacnet.discoveredDevices
+
+        :param networks (list, integer) : A simple integer or a list of integer
+            representing the network numbers used to issue whois request.
+
+        :param limits (tuple) : tuple made of 2 integer, the low limit and the high
+            limit. Those are the device instances used in the creation of the
+            whois request. Min : 0 ; Max : 4194303
+
+        :param global_broadcast (boolean) : If set to true, a global braodcast
+            will be used for the whois. Use with care.
+        """
+        found = []
+        _networks = []
+        deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit = limits
+        # Try to find on which network we are
+        self.what_is_network_number()
+        # Try to find local routers...
+        self.whois_router_to_network()
+        self._log.info("Found those networks : {}".format(self.known_network_numbers))
+
+        if networks:
+            if isinstance(networks, list):
+                # we'll make multiple whois...
+                for network in networks:
+                    _networks.append(network)
+            elif networks == "known":
+                _networks = self.known_network_numbers
+            else:
+                _networks.append(networks)
+
+            for network in _networks:
+                self._log.info("Discovering network {}".format(network))
+                _res = self.whois(
+                    "{}:* {} {}".format(
+                        network,
+                        deviceInstanceRangeLowLimit,
+                        deviceInstanceRangeHighLimit,
+                    ),
+                    global_broadcast=global_broadcast,
+                )
+                for each in _res:
+                    found.append(each)
+
+        else:
+            _res = self.whois(
+                "{} {}".format(
+                    deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
+                ),
+                global_broadcast=global_broadcast,
+            )
+            for each in _res:
+                found.append(each)
+        return found
 
     def register_device(self, device):
         oid = id(device)
@@ -162,6 +261,13 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
 
     @property
     def devices(self):
+        """
+        This property will create a good looking table of all the discovered devices
+        seen on the network. 
+
+        For that, some requests will be sent over the network to look for name, 
+        manufacturer, etc and in big network, this could be a long process.
+        """
         lst = []
         for device in list(self.discoveredDevices):
             try:
@@ -169,8 +275,9 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
                     "{} device {} objectName vendorName".format(device[0], device[1])
                 )
             except UnrecognizedService:
-                print(device[0])
-                print(device[1])
+                self._log.warning(
+                    "Unrecognized service for {} | {}".format(device[0], device[1])
+                )
                 deviceName = self.read(
                     "{} device {} objectName".format(device[0], device[1])
                 )
@@ -183,31 +290,6 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
             lst.append((deviceName, vendorName, device[0], device[1]))
         return lst
 
-    def find_devices_on_network(self, net=None):
-        d = {}
-        networks = set()
-        all_devices = self.whois()
-        for each in all_devices:
-            address, devID = each
-            try:
-                network = address.split(":")[0]
-                mac = int(address.split(":")[1])
-            except (ValueError, IndexError):
-                network = "ip"
-                mac = address
-            networks.add(network)
-            if not network in d.keys():
-                d[network] = []
-            d[network].append((mac, devID))
-        if net:
-            net = str(net)
-            try:
-                return d[net]
-            except (ValueError, KeyError):
-                self._log.warning("Nothing there...")
-                return
-        return (networks, d)
-
     @property
     def trends(self):
         """
@@ -216,10 +298,12 @@ class Lite(Base, WhoisIAm, ReadProperty, WriteProperty, Simulation):
         return list(self._points_to_trend.values())
 
     def disconnect(self):
+        self._log.debug("Disconnecting")
+        for each in self.registered_devices:
+            each.disconnect()
         super().disconnect()
 
     def __repr__(self):
-        return "Bacnet Network using ip %s with device id %s" % (
-            self.localIPAddr,
-            self.Boid,
+        return "Bacnet Network using ip {} with device id {}".format(
+            self.localIPAddr, self.Boid
         )

@@ -1,19 +1,31 @@
 Logging and debugging
 =======================
+All interactions with the user in the console is made using logging and an handler. Depending on 
+the user desire, the level can be adjusted to limit or extend the verbosity of the app.
+
+It is not recommended to set the stdout to logging.DEBUG level as it may fill the shell with messages
+and make it very hard to enter commands. Typically, 'debug' is sent to the file (see below).
+
+By default, stderr is set to logging.CRITICAL and is not used; stdout is set to logging.INFO; file is set to
+logging.WARNING. The goal behind to not fill the file if it is not explicitly wanted.
+
 Level
 --------
 
 You can change the logging level using ::
 
+    import BAC0
     BAC0.log_level(level)
     # level being 'debug, info, warning, error'
+    # or
+    BAC0.log_leve(log_file=logging.DEBUG, stdout=logging.INFO, stderr=logging.CRITICAL)
     
 File
 --------
-A log file will be created under your user folder / .BAC0
-It will contain warning by default until you change the level.
+A log file will be created under your user folder (~) / .BAC0
+It will contain warnings by default until you change the level.
 
-Extract from the log file ::
+Extract from the log file (with INFO level entries) ::
 
     2018-04-08 21:42:45,387 - INFO    | Starting app...
     2018-04-08 21:42:45,390 - INFO    | BAC0 started
