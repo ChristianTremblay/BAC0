@@ -27,6 +27,8 @@ from bacpypes.netservice import NetworkServiceAccessPoint, NetworkServiceElement
 from bacpypes.bvllservice import BIPSimple, BIPForeign, AnnexJCodec, UDPMultiplexer
 from bacpypes.appservice import StateMachineAccessPoint, ApplicationServiceAccessPoint
 from bacpypes.comm import ApplicationServiceElement, bind
+from bacpypes.iocb import IOCB
+from bacpypes.core import deferred
 
 # basic services
 from bacpypes.service.device import WhoIsIAmServices
@@ -62,12 +64,14 @@ class BAC0Application(
         bbmdTTL=0,
         deviceInfoCache=None,
         aseID=None,
+        iam_req=None,
     ):
 
         ApplicationIOController.__init__(
             self, localDevice, deviceInfoCache, aseID=aseID
         )
 
+        self.iam_req = iam_req
         # local address might be useful for subclasses
         if isinstance(localAddress, Address):
             self.localAddress = localAddress
@@ -116,7 +120,7 @@ class BAC0Application(
 
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
-        self.log("do_IAmRequest {!r}".format(apdu))
+        self._log.debug("do_IAmRequest {!r}".format(apdu))
 
         # build a key from the source, just use the instance number
         key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
@@ -125,7 +129,7 @@ class BAC0Application(
 
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
-        self.log("do_WhoIsRequest {!r}".format(apdu))
+        self._log.debug("do_WhoIsRequest {!r}".format(apdu))
 
         # build a key from the source and parameters
         key = (
@@ -136,6 +140,23 @@ class BAC0Application(
 
         # count the times this has been received
         self.who_is_counter[key] += 1
+        low_limit = key[1]
+        high_limit = key[2]
+
+        # count the times this has been received
+        self.who_is_counter[key] += 1
+
+        if low_limit is not None:
+            if self.localDevice.objectIdentifier[1] < low_limit:
+                return
+        if high_limit is not None:
+            if self.localDevice.objectIdentifier[1] > high_limit:
+                return
+        # generate an I-Am
+        self._log.info("Responding to Who is by a Iam")
+        self.iam_req.pduDestination = apdu.pduSource
+        iocb = IOCB(self.iam_req)  # make an IOCB
+        deferred(self.request_io, iocb)
 
     def close_socket(self):
         # pass to the multiplexer, then down to the sockets
@@ -172,12 +193,14 @@ class BAC0ForeignDeviceApplication(
         bbmdTTL=0,
         deviceInfoCache=None,
         aseID=None,
+        iam_req=None,
     ):
 
         ApplicationIOController.__init__(
             self, localDevice, deviceInfoCache, aseID=aseID
         )
 
+        self.iam_req = iam_req
         # local address might be useful for subclasses
         if isinstance(localAddress, Address):
             self.localAddress = localAddress
@@ -225,7 +248,7 @@ class BAC0ForeignDeviceApplication(
 
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
-        self.log("do_IAmRequest {!r}".format(apdu))
+        self._log.debug("do_IAmRequest {!r}".format(apdu))
 
         # build a key from the source, just use the instance number
         key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
@@ -235,7 +258,7 @@ class BAC0ForeignDeviceApplication(
 
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
-        self.log("do_WhoIsRequest {!r}".format(apdu))
+        self._log.debug("do_WhoIsRequest {!r}".format(apdu))
 
         # build a key from the source and parameters
         key = (
@@ -243,9 +266,23 @@ class BAC0ForeignDeviceApplication(
             apdu.deviceInstanceRangeLowLimit,
             apdu.deviceInstanceRangeHighLimit,
         )
+        low_limit = key[1]
+        high_limit = key[2]
 
         # count the times this has been received
         self.who_is_counter[key] += 1
+
+        if low_limit is not None:
+            if self.localDevice.objectIdentifier[1] < low_limit:
+                return
+        if high_limit is not None:
+            if self.localDevice.objectIdentifier[1] > high_limit:
+                return
+        # generate an I-Am
+        self._log.debug("Responding to Who is by a Iam")
+        self.iam_req.pduDestination = apdu.pduSource
+        iocb = IOCB(self.iam_req)  # make an IOCB
+        deferred(self.request_io, iocb)
 
     def close_socket(self):
         # pass to the multiplexer, then down to the sockets

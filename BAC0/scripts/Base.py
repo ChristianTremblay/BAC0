@@ -172,11 +172,12 @@ class Base:
                     self.localIPAddr,
                     bbmdAddress=self.bbmdAddress,
                     bbmdTTL=self.bbmdTTL,
+                    iam_req=self._iam_request(),
                 )
                 app_type = "Foreign Device"
             else:
                 self.this_application = BAC0Application(
-                    self.this_device, self.localIPAddr
+                    self.this_device, self.localIPAddr, iam_req=self._iam_request()
                 )
                 app_type = "Simple BACnet/IP App"
             self._log.debug("Starting")
