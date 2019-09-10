@@ -226,7 +226,32 @@ class Discover:
         self.discoveredDevices = self.this_application.i_am_counter
         return self.this_application._last_i_am_received
 
-    def iam(self):
+    def _iam_request(self, dest=None):
+        """
+        Build the IOCB request for a I Am
+        """
+        try:
+            # build a response
+            request = IAmRequest()
+            if dest:
+                request.pduDestination = dest
+            else:
+                request.pduDestination = GlobalBroadcast()
+
+            # fill the response with details about us (from our device object)
+            request.iAmDeviceIdentifier = self.this_device.objectIdentifier
+            request.maxAPDULengthAccepted = self.this_device.maxApduLengthAccepted
+            request.segmentationSupported = self.this_device.segmentationSupported
+            request.vendorID = self.this_device.vendorIdentifier
+            self._log.debug("{:>12} {}".format("- request:", request))
+
+            return request
+
+        except Exception as error:
+            self._log.error("exception: {!r}".format(error))
+            raise
+
+    def iam(self, dest=None):
         """
         Build an IAm response.  IAm are sent in response to a WhoIs request that;
         matches our device ID, whose device range includes us, or is a broadcast.
@@ -243,16 +268,7 @@ class Discover:
 
         try:
             # build a response
-            request = IAmRequest()
-            request.pduDestination = GlobalBroadcast()
-
-            # fill the response with details about us (from our device object)
-            request.iAmDeviceIdentifier = self.this_device.objectIdentifier
-            request.maxAPDULengthAccepted = self.this_device.maxApduLengthAccepted
-            request.segmentationSupported = self.this_device.segmentationSupported
-            request.vendorID = self.this_device.vendorIdentifier
-            self._log.debug("{:>12} {}".format("- request:", request))
-
+            request = self._iam_request(dest=dest)
             iocb = IOCB(request)  # make an IOCB
             deferred(self.this_application.request_io, iocb)
             iocb.wait()
