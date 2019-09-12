@@ -40,7 +40,11 @@ from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
 from ..core.devices.Trends import TrendLog
 from ..core.utils.notes import note_and_log
-from ..core.io.IOExceptions import NoResponseFromController, UnrecognizedService
+from ..core.io.IOExceptions import (
+    NoResponseFromController,
+    UnrecognizedService,
+    Timeout,
+)
 
 from ..infos import __version__ as version
 
@@ -130,7 +134,9 @@ class Lite(
 
         return self.this_application.nse._learnedNetworks
 
-    def discover(self, networks="known", limits=(0, 4194303), global_broadcast=False):
+    def discover(
+        self, networks="known", limits=(0, 4194303), global_broadcast=False, reset=False
+    ):
         """
         Discover is meant to be the function used to explore the network when we
         connect.
@@ -163,6 +169,8 @@ class Lite(
         :param global_broadcast (boolean) : If set to true, a global braodcast
             will be used for the whois. Use with care.
         """
+        if reset:
+            self.discoveredDevices = None
         found = []
         _networks = []
         deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit = limits
@@ -180,7 +188,8 @@ class Lite(
             elif networks == "known":
                 _networks = self.known_network_numbers
             else:
-                _networks.append(networks)
+                if networks < 65535:
+                    _networks.append(networks)
 
             for network in _networks:
                 self._log.info("Discovering network {}".format(network))
@@ -274,17 +283,21 @@ class Lite(
                 deviceName, vendorName = self.readMultiple(
                     "{} device {} objectName vendorName".format(device[0], device[1])
                 )
-            except UnrecognizedService:
+            except (UnrecognizedService, ValueError):
                 self._log.warning(
                     "Unrecognized service for {} | {}".format(device[0], device[1])
                 )
-                deviceName = self.read(
-                    "{} device {} objectName".format(device[0], device[1])
-                )
-                vendorName = self.read(
-                    "{} device {} vendorName".format(device[0], device[1])
-                )
-            except NoResponseFromController:
+                try:
+                    deviceName = self.read(
+                        "{} device {} objectName".format(device[0], device[1])
+                    )
+                    vendorName = self.read(
+                        "{} device {} vendorName".format(device[0], device[1])
+                    )
+                except NoResponseFromController:
+                    self._log.warning("No response from {}".format(device))
+                    continue
+            except (NoResponseFromController, Timeout):
                 self._log.warning("No response from {}".format(device))
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))

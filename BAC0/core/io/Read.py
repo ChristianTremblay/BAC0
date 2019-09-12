@@ -365,7 +365,7 @@ class ReadProperty:
                 values.append("")
                 return values
             else:
-                self._log.warning("No response from controller : {}".format(reason))
+                self._log.warning("No response from controller {}".format(reason))
                 values.append("")
                 return values
 

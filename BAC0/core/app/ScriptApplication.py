@@ -153,7 +153,7 @@ class BAC0Application(
             if self.localDevice.objectIdentifier[1] > high_limit:
                 return
         # generate an I-Am
-        self._log.info("Responding to Who is by a Iam")
+        self._log.debug("Responding to Who is by a Iam")
         self.iam_req.pduDestination = apdu.pduSource
         iocb = IOCB(self.iam_req)  # make an IOCB
         deferred(self.request_io, iocb)
