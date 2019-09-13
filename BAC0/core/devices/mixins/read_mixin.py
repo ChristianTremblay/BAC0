@@ -314,9 +314,9 @@ class ReadPropertyMultiple:
                 pointName = point_infos[_find_propid_index("objectName")]
                 presentValue = point_infos[_find_propid_index("presentValue")]
                 if obj_type == "analog":
-                    presentValue = float(presentValue)
+                    presentValue = float(presentValue or 0)
                 elif obj_type == "multi":
-                    presentValue = int(presentValue)
+                    presentValue = int(presentValue or 0)
                 try:
                     point_description = point_infos[_find_propid_index("description")]
                 except KeyError:
