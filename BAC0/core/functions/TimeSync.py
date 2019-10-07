@@ -22,7 +22,7 @@ from ...core.utils.notes import note_and_log
 import datetime as dt
 
 # --- 3rd party modules ---
-from bacpypes.pdu import Address, GlobalBroadcast
+from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
 from bacpypes.primitivedata import Date, Time
 from bacpypes.basetypes import DateTime
 from bacpypes.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest
@@ -57,7 +57,7 @@ class TimeSync:
     Mixin to support Time Synchronisation from BAC0 to other devices
     """
 
-    def time_sync(self, *args, datetime=None, UTC=False):
+    def time_sync(self, destination=None, datetime=None, UTC=False):
         """
         Take local time and send it to devices. User can also provide
         a datetime value (constructed following bacpypes.basetypes.Datetime
@@ -83,10 +83,6 @@ class TimeSync:
         if not self._started:
             raise ApplicationNotStarted("BACnet stack not running - use startApp()")
 
-        if args:
-            args = args[0].split()
-        msg = args if args else "everyone"
-
         self._log.debug("time sync {!r}".format(msg))
 
         if not datetime:
@@ -103,11 +99,17 @@ class TimeSync:
             request = UTCTimeSynchronizationRequest(time=_datetime)
         else:
             request = TimeSynchronizationRequest(time=_datetime)
-        if len(args) == 1:
-            request.pduDestination = Address(args[0])
-            del args[0]
-        else:
+
+
+        if destination.lower() == 'global':
             request.pduDestination = GlobalBroadcast()
+        elif destination.lower() == 'local'
+            request.pduDestination = LocalBroadcast()
+        else:
+            try:
+                request.pduDestination = Address(destination)
+            except TypeError:
+                request.pduDestination = LocalBroadcast()
 
         self._log.debug("{:>12} {}".format("- request:", request))
 
