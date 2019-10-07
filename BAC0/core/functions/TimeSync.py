@@ -25,9 +25,30 @@ import datetime as dt
 from bacpypes.pdu import Address, GlobalBroadcast
 from bacpypes.primitivedata import Date, Time
 from bacpypes.basetypes import DateTime
-from bacpypes.apdu import TimeSynchronizationRequest
+from bacpypes.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
+
+
+def _build_datetime(UTC=False):
+    if UTC:
+        _d = dt.datetime.utcnow().date()
+        _t = dt.datetime.utcnow().time()
+        _date = Date(
+            year=_d.year - 1900, month=_d.month, day=_d.day, day_of_week=_d.isoweekday()
+        ).value
+        _time = Time(
+            hour=_t.hour,
+            minute=_t.minute,
+            second=_t.second,
+            hundredth=int(_t.microsecond / 10000),
+        ).value
+    else:
+        _date = Date().now().value
+        _time = Time().now().value
+    _datetime = DateTime(date=_date, time=_time)
+
+    return _datetime
 
 
 @note_and_log
@@ -36,7 +57,7 @@ class TimeSync:
     Mixin to support Time Synchronisation from BAC0 to other devices
     """
 
-    def time_sync(self, *args, datetime=None):
+    def time_sync(self, *args, datetime=None, UTC=False):
         """
         Take local time and send it to devices. User can also provide
         a datetime value (constructed following bacpypes.basetypes.Datetime
@@ -69,9 +90,7 @@ class TimeSync:
         self._log.debug("time sync {!r}".format(msg))
 
         if not datetime:
-            _date = Date().now().value
-            _time = Time().now().value
-            _datetime = DateTime(date=_date, time=_time)
+            _datetime = _build_datetime(UTC=UTC)
         elif isinstance(datetime, DateTime):
             _datetime = datetime
         else:
@@ -80,7 +99,10 @@ class TimeSync:
             )
 
         # build a request
-        request = TimeSynchronizationRequest(time=_datetime)
+        if UTC:
+            request = UTCTimeSynchronizationRequest(time=_datetime)
+        else:
+            request = TimeSynchronizationRequest(time=_datetime)
         if len(args) == 1:
             request.pduDestination = Address(args[0])
             del args[0]
