@@ -14,9 +14,7 @@ Classes needed to make discovering functions on a BACnet network
 import time
 
 # --- 3rd party modules ---
-from bacpypes.debugging import bacpypes_debugging
 from bacpypes.apdu import WhoIsRequest, IAmRequest
-
 from bacpypes.core import deferred
 from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
 from bacpypes.primitivedata import Unsigned
@@ -167,7 +165,7 @@ class Discover:
     Define BACnet WhoIs and IAm functions.
     """
 
-    def whois(self, *args, global_broadcast=False):
+    def whois(self, *args, global_broadcast=False, destination=None):
         """
         Build a WhoIs request
 
@@ -209,6 +207,8 @@ class Discover:
                 pass
         self._log.debug("{:>12} {}".format("- request:", request))
 
+        if destination:
+            request.pduDestination = Address(destination)
         iocb = IOCB(request)  # make an IOCB
         self.this_application._last_i_am_received = []
         # pass to the BACnet stack
@@ -226,15 +226,15 @@ class Discover:
         self.discoveredDevices = self.this_application.i_am_counter
         return self.this_application._last_i_am_received
 
-    def _iam_request(self, dest=None):
+    def _iam_request(self, destination=None):
         """
         Build the IOCB request for a I Am
         """
         try:
             # build a response
             request = IAmRequest()
-            if dest:
-                request.pduDestination = dest
+            if destination:
+                request.pduDestination = destination
             else:
                 request.pduDestination = GlobalBroadcast()
 
@@ -251,7 +251,7 @@ class Discover:
             self._log.error("exception: {!r}".format(error))
             raise
 
-    def iam(self, dest=None):
+    def iam(self, destination=None):
         """
         Build an IAm response.  IAm are sent in response to a WhoIs request that;
         matches our device ID, whose device range includes us, or is a broadcast.
@@ -268,7 +268,7 @@ class Discover:
 
         try:
             # build a response
-            request = self._iam_request(dest=dest)
+            request = self._iam_request(destination=destination)
             iocb = IOCB(request)  # make an IOCB
             deferred(self.this_application.request_io, iocb)
             iocb.wait()
@@ -278,19 +278,16 @@ class Discover:
             self._log.error("exception: {!r}".format(error))
             return False
 
-    def whois_router_to_network(self, args=None):
+    def whois_router_to_network(self, network=None, *, destination=None):
         # build a request
         try:
             request = WhoIsRouterToNetwork()
-            if not args:
-                request.pduDestination = LocalBroadcast()
-            elif args[0].isdigit():
-                request.pduDestination = LocalBroadcast()
-                request.wirtnNetwork = int(args[0])
+            if network:
+                request.wirtnNetwork = int(network)
+            if destination:
+                request.pduDestination = Address(destination)
             else:
-                request.pduDestination = Address(args[0])
-                if len(args) > 1:
-                    request.wirtnNetwork = int(args[1])
+                request.pduDestination = LocalBroadcast()
         except:
             self._log.error("WhoIsRouterToNetwork : invalid arguments")
             return
@@ -325,27 +322,20 @@ class Discover:
         deferred(self.this_application.nse.request_io, iocb)
         iocb.wait()
 
-    def what_is_network_number(self, args=""):
+    def what_is_network_number(self, destination=None):
         """
         winn [ <addr> ]
 
         Send a What-Is-Network-Number message.  If the address is unspecified
         the message is locally broadcast.
         """
-        args = args.split()
-
         # build a request
-        try:
-            request = WhatIsNetworkNumber()
-            if len(args) > 0:
-                request.pduDestination = Address(args[0])
-            else:
-                request.pduDestination = LocalBroadcast()
-        except:
-            self._log.error(
-                "Cannot build request (invalid arguments) : {}".format(args)
-            )
-            return
+
+        request = WhatIsNetworkNumber()
+        if destination:
+            request.pduDestination = Address(destination)
+        else:
+            request.pduDestination = LocalBroadcast()
 
         iocb = IOCB((self.this_application.nsap.local_adapter, request))  # make an IOCB
         iocb.set_timeout(2)
