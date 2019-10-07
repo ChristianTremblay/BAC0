@@ -83,8 +83,6 @@ class TimeSync:
         if not self._started:
             raise ApplicationNotStarted("BACnet stack not running - use startApp()")
 
-        self._log.debug("time sync {!r}".format(msg))
-
         if not datetime:
             _datetime = _build_datetime(UTC=UTC)
         elif isinstance(datetime, DateTime):
@@ -100,15 +98,23 @@ class TimeSync:
         else:
             request = TimeSynchronizationRequest(time=_datetime)
 
-        if destination.lower() == "global":
-            request.pduDestination = GlobalBroadcast()
-        elif destination.lower() == "local":
-            request.pduDestination = LocalBroadcast()
-        else:
-            try:
-                request.pduDestination = Address(destination)
-            except TypeError:
+        if destination:
+            if destination.lower() == "global":
+                request.pduDestination = GlobalBroadcast()
+            elif destination.lower() == "local":
                 request.pduDestination = LocalBroadcast()
+            else:
+                try:
+                    request.pduDestination = Address(destination)
+                except (TypeError, ValueError):
+                    self._log.warning(
+                        "Destination unrecognized ({}), setting local broadcast".format(
+                            destination
+                        )
+                    )
+                    request.pduDestination = LocalBroadcast()
+        else:
+            request.pduDestination = LocalBroadcast()
 
         self._log.debug("{:>12} {}".format("- request:", request))
 
