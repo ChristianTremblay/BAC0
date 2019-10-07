@@ -100,10 +100,9 @@ class TimeSync:
         else:
             request = TimeSynchronizationRequest(time=_datetime)
 
-
-        if destination.lower() == 'global':
+        if destination.lower() == "global":
             request.pduDestination = GlobalBroadcast()
-        elif destination.lower() == 'local'
+        elif destination.lower() == "local":
             request.pduDestination = LocalBroadcast()
         else:
             try:
