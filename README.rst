@@ -37,14 +37,14 @@ Now you can write your test and run them as often as you want. We'll show you ho
 
 Better start-up with data acquisition
 =====================================
-As you will discover, when you define a controller in BAC0, you will get access to historical data of
-every variables in the controllers. Every points are trended every 10 seconds by default. Which means 
-that you can do data analysis on everything while you're doing your startup. It allows to see performances and
-trouble really fast.
+As you will discover, when you define a controller in BAC0 you will get access to historical data of
+every variable in the controller. All points are trended every 10 seconds by default. Which means 
+that you can do data analysis on everything while you're doing your startup. This allows you to diagnose 
+performance and other issues really fast.
 
-This make BAC0 not only a good tool to test your sequence while your in the office.
-But also a really good tool to assist your startup, test and balancing. Using Jupyter Notebook, you'll
-even be able to create nice looking report right from your code.
+This makes BAC0 not only a good tool to test your sequence while your in the office, but also a really good 
+tool to assist your startup, test and balancing. Using Jupyter Notebook, you'll even be able to create 
+nice looking reports right from your code.
 
 
 .. |build-status| image:: https://travis-ci.org/ChristianTremblay/BAC0.svg?branch=master
