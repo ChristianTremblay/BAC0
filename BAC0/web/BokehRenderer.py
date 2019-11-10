@@ -12,7 +12,7 @@ from bokeh.plotting import Figure
 from bokeh.models import ColumnDataSource, HoverTool, Range1d, LinearAxis, Legend
 from bokeh.models.widgets import DataTable, TableColumn, Div
 from bokeh.layouts import widgetbox, row, column, gridplot
-from bokeh.palettes import d3, Spectral6
+from bokeh.palettes import d3, viridis
 from bokeh.io import curdoc
 from bokeh.application.handlers import Handler
 
@@ -129,7 +129,9 @@ class DynamicPlotHandler(Handler):
             color_mapper = dict(zip(self.s.keys(), d3["Category10"][length]))
         else:
             # This would be a very loaded trend...
-            color_mapper = dict(zip(self.s.keys(), Spectral6[:length]))
+            palette_size = min(length, 256)
+            palette_count = length // palette_size + 1
+            color_mapper = dict(zip(self.s.keys(), [color for color in viridis(palette_size) for _ in range(palette_count)]))
 
         for each in self.lst_of_trends:
             if each.states == "binary":
