@@ -137,3 +137,7 @@ class BadDeviceDefinition(Exception):
 
 class InitializationError(Exception):
     pass
+
+
+class Timeout(Exception):
+    pass
