@@ -131,7 +131,16 @@ class DynamicPlotHandler(Handler):
             # This would be a very loaded trend...
             palette_size = min(length, 256)
             palette_count = length // palette_size + 1
-            color_mapper = dict(zip(self.s.keys(), [color for color in viridis(palette_size) for _ in range(palette_count)]))
+            color_mapper = dict(
+                zip(
+                    self.s.keys(),
+                    [
+                        color
+                        for color in viridis(palette_size)
+                        for _ in range(palette_count)
+                    ],
+                )
+            )
 
         for each in self.lst_of_trends:
             if each.states == "binary":
