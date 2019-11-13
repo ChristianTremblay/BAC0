@@ -18,7 +18,7 @@ class RecurringTask(Task):
     Start a recurring task (a function passed)
     """
 
-    def __init__(self, fnc, delay=60):
+    def __init__(self, fnc, delay=60, name='recurring'):
         """
         :param point: (BAC0.core.device.Points.Point) name of the point to read
         :param delay: (int) Delay between reads in seconds, defaults = 10sec
@@ -29,7 +29,7 @@ class RecurringTask(Task):
         """
         if hasattr(fnc, "__call__"):
             self.func = fnc
-            Task.__init__(self, name="recurring_function", delay=delay)
+            Task.__init__(self, name=name, delay=delay)
         else:
             raise ValueError("You must pass a function to this...")
 
