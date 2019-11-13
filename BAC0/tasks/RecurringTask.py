@@ -29,7 +29,7 @@ class RecurringTask(Task):
         """
         if hasattr(fnc, "__call__"):
             self.func = fnc
-            Task.__init__(self)
+            Task.__init__(self, name="recurring_function", delay=delay)
         else:
             raise ValueError("You must pass a function to this...")
 
