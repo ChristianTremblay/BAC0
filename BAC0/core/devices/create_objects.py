@@ -11,9 +11,12 @@ from bacpypes.object import (
     Property,
     register_object_type,
 )
+
 from bacpypes.primitivedata import CharacterString, Date, Time, Real, Boolean
 from bacpypes.constructeddata import ArrayOf
 from bacpypes.basetypes import EngineeringUnits, DateTime, PriorityArray
+
+from .mixins.CommandableMixin import LocalBinaryOutputObjectCmd
 
 
 def _make_mutable(obj, identifier="presentValue", mutable=True):
@@ -109,13 +112,12 @@ def create_AO(oid=1, pv=0, name="AO", units=None, pv_writable=False):
 def create_BO(
     oid=1, pv=0, name="BO", activeText="On", inactiveText="Off", pv_writable=False
 ):
-    boo = BinaryOutputObject(
+    boo = LocalBinaryOutputObjectCmd(
         objectIdentifier=("binaryOutput", oid),
         objectName=name,
         presentValue=pv,
         activeText=activeText,
         inactiveText=inactiveText,
-        priorityArray=PriorityArray(),
     )
     boo = _make_mutable(boo, mutable=pv_writable)
     return boo

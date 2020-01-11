@@ -286,6 +286,9 @@ class Discover:
                 request.wirtnNetwork = int(network)
             if destination:
                 request.pduDestination = Address(destination)
+                self._log.debug(
+                    "WhoIsRouterToNetwork Destination : {}".format(destination)
+                )
             else:
                 request.pduDestination = LocalBroadcast()
         except:

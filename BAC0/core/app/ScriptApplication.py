@@ -129,13 +129,15 @@ class BAC0Application(
 
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
-        self._log.debug("do_WhoIsRequest {!r}".format(apdu))
 
         # build a key from the source and parameters
         key = (
             str(apdu.pduSource),
             apdu.deviceInstanceRangeLowLimit,
             apdu.deviceInstanceRangeHighLimit,
+        )
+        self._log.debug(
+            "do_WhoIsRequest from {} | {} to {}".format(key[0], key[1], key[2])
         )
 
         # count the times this has been received

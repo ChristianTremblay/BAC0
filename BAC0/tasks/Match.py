@@ -27,15 +27,17 @@ class Match(Task):
     Match two properties of a BACnet Object (i.e. a point status with its command).
     """
 
-    def __init__(self, command=None, status=None, delay=5):
+    def __init__(self, status=None, command=None, delay=5, name=None):
         self._log.debug(
             "Creating Match task for {} and {}. Delay : {}".format(
                 command, status, delay
             )
         )
+        if not name:
+            name = "Match on " + status.properties.name
         self.command = command
         self.status = status
-        Task.__init__(self, delay=delay, daemon=True)
+        Task.__init__(self, delay=delay, daemon=True, name=name)
 
     def task(self):
         try:
@@ -65,11 +67,13 @@ class Match_Value(Task):
     i.e. Does Fan value = On after 5 seconds. 
     """
 
-    def __init__(self, value=None, point=None, delay=5):
+    def __init__(self, value=None, point=None, delay=5, name=None):
         self._log.debug("Creating MatchValue task for {} and {}".format(value, point))
         self.value = value
         self.point = point
-        Task.__init__(self, delay=delay, daemon=True)
+        if not name:
+            name = "Match_Value on " + point.properties.name
+        Task.__init__(self, delay=delay, daemon=True, name=name)
 
     def task(self):
         try:
