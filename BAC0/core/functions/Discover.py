@@ -174,9 +174,9 @@ class Discover:
 
         Example::
 
-            whois()             # WhoIs broadcast globally.  Every device will respond with an IAm
-            whois('2:5')        # WhoIs looking for the device at (Network 2, Address 5)
-            whois('10 1000')    # WhoIs looking for devices in the ID range (10 - 1000)
+            whois(global_broadcast=True) # WhoIs broadcast globally.  Every device will respond with an IAm
+            whois('2:5')                 # WhoIs looking for the device at (Network 2, Address 5)
+            whois('10 1000')             # WhoIs looking for devices in the ID range (10 - 1000)
 
         """
         if not self._started:

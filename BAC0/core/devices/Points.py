@@ -131,7 +131,7 @@ class Point:
             )
             self._trend(res)
         except Exception as e:
-            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+            raise
 
         return res
 
@@ -701,7 +701,7 @@ class BooleanPoint(Point):
             self._trend(res)
 
         except Exception as e:
-            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+            raise
 
         if res == "inactive":
             self._key = 0
