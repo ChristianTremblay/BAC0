@@ -329,7 +329,7 @@ class ReadPropertyMultiple:
                     except KeyError:
                         try:
                             _inactive = point_infos[_find_propid_index("inactiveText")]
-                            _active = point_infos[_find_propid_index("inactiveText")]
+                            _active = point_infos[_find_propid_index("activeText")]
                             point_units_state = (_inactive, _active)
                         except KeyError:
                             if obj_type == "binary":
