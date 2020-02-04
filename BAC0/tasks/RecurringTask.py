@@ -18,7 +18,7 @@ class RecurringTask(Task):
     Start a recurring task (a function passed)
     """
 
-    def __init__(self, fnc, delay=60, name='recurring'):
+    def __init__(self, fnc, delay=60, name="recurring"):
         """
         :param point: (BAC0.core.device.Points.Point) name of the point to read
         :param delay: (int) Delay between reads in seconds, defaults = 10sec

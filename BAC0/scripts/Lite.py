@@ -38,6 +38,7 @@ from ..core.functions.TimeSync import TimeSync
 from ..core.functions.Reinitialize import Reinitialize
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
+from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
 from ..core.devices.Trends import TrendLog
 from ..core.utils.notes import note_and_log
 from ..core.io.IOExceptions import (
@@ -45,6 +46,7 @@ from ..core.io.IOExceptions import (
     UnrecognizedService,
     Timeout,
 )
+from ..tasks.RecurringTask import RecurringTask
 
 from ..infos import __version__ as version
 
@@ -84,6 +86,12 @@ class Lite(
 
         self._log.debug("Configurating app")
         self._registered_devices = weakref.WeakValueDictionary()
+
+        # Ping task will deal with all registered device and disconnect them if they do not respond.
+        self._ping_task = RecurringTask(
+            self.ping_registered_devices, delay=10, name="Ping Task"
+        )
+        self._ping_task.start()
 
         if ip is None:
             host = HostIP(port)
@@ -218,6 +226,53 @@ class Lite(
     def register_device(self, device):
         oid = id(device)
         self._registered_devices[oid] = device
+
+    def ping_registered_devices(self):
+        """
+        Registered device on a network (self) are kept in a list (registered_devices). 
+        This function will allow pinging thoses device regularly to monitor them. In case
+        of disconnected devices, we will disconnect the device (which will save it). Then 
+        we'll ping again until reconnection, where the device will be bring back online.
+
+        To permanently disconnect a device, an explicit device.disconnect(unregister=True [default value])
+        will be needed. This way, the device won't be in the registered_devices list and 
+        BAC0 won't try to ping it.
+        """
+        for each in self.registered_devices:
+            if isinstance(each, RPDeviceConnected) or isinstance(
+                each, RPMDeviceConnected
+            ):
+                device_connected = True
+            else:
+                device_connected = False
+
+            respond_to_ping = True
+            try:
+                self._log.debug(
+                    "Ping {}|{}".format(each.properties.name, each.properties.address)
+                )
+                device_id = each.properties.device_id
+                addr = each.properties.address
+                self.read("{} device {} objectName".format(addr, device_id))
+            except NoResponseFromController:
+                respond_to_ping = False
+
+            if not respond_to_ping and device_connected:
+                self._log.warning(
+                    "{}|{} is offline, disconnecting it.".format(
+                        each.properties.name, each.properties.address
+                    )
+                )
+                each.disconnect(unregister=False)
+            elif not device_connected and respond_to_ping:
+                self._log.info(
+                    "{}|{} is back online, reconnecting.".format(
+                        each.properties.name, each.properties.address
+                    )
+                )
+                each.connect(network=self)
+            else:
+                pass
 
     @property
     def registered_devices(self):

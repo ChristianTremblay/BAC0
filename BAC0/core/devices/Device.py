@@ -42,6 +42,7 @@ from ..io.IOExceptions import (
     NoResponseFromController,
     SegmentationNotSupported,
     BadDeviceDefinition,
+    RemovedPointException,
 )
 
 # from ...bokeh.BokehRenderer import BokehPlot
@@ -450,12 +451,13 @@ class DeviceConnected(Device):
         self._buildPointList()
         self.properties.network.register_device(self)
 
-    def disconnect(self, save_on_disconnect=True):
+    def disconnect(self, save_on_disconnect=True, unregister=True):
         self._log.info("Wait while stopping polling")
         self.poll(command="stop")
         if save_on_disconnect:
             self.save()
-        self.properties.network.unregister_device(self)
+        if unregister:
+            self.properties.network.unregister_device(self)
         self.new_state(DeviceFromDB)
 
     def connect(self, *, db=None):
@@ -683,6 +685,10 @@ class DeviceConnected(Device):
         #    pass
         if isinstance(prop, tuple):
             _obj, _instance, _prop = prop
+        elif isinstance(prop, str):
+            _obj = "device"
+            _instance = self.properties.device_id
+            _prop = prop
         else:
             raise ValueError(
                 "Please provide property using tuple with object, instance and property"
@@ -991,7 +997,10 @@ class DeviceFromDB(DeviceConnected):
         self._props = self.read_dev_prop(self.properties.db_name)
         self.points = []
         for point in self.points_from_sql(self.properties.db_name):
-            self.points.append(OfflinePoint(self, point))
+            try:
+                self.points.append(OfflinePoint(self, point))
+            except RemovedPointException:
+                continue
 
         self.properties = DeviceProperties()
         self.properties.db_name = dbname
