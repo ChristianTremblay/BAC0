@@ -74,7 +74,14 @@ class Lite(
     """
 
     def __init__(
-        self, ip=None, port=None, mask=None, bbmdAddress=None, bbmdTTL=0, ping=True,**params
+        self,
+        ip=None,
+        port=None,
+        mask=None,
+        bbmdAddress=None,
+        bbmdTTL=0,
+        ping=True,
+        **params
     ):
         self._log.info(
             "Starting BAC0 version {} ({})".format(
