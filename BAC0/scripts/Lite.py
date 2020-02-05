@@ -74,7 +74,7 @@ class Lite(
     """
 
     def __init__(
-        self, ip=None, port=None, mask=None, bbmdAddress=None, bbmdTTL=0, **params
+        self, ip=None, port=None, mask=None, bbmdAddress=None, bbmdTTL=0, ping=True,**params
     ):
         self._log.info(
             "Starting BAC0 version {} ({})".format(
@@ -88,10 +88,12 @@ class Lite(
         self._registered_devices = weakref.WeakValueDictionary()
 
         # Ping task will deal with all registered device and disconnect them if they do not respond.
+
         self._ping_task = RecurringTask(
             self.ping_registered_devices, delay=10, name="Ping Task"
         )
-        self._ping_task.start()
+        if ping:
+            self._ping_task.start()
 
         if ip is None:
             host = HostIP(port)

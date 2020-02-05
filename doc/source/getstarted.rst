@@ -79,7 +79,7 @@ Dependencies
 
 * It uses Bokeh_ for Live trending features 
 * It uses Pandas_ for every Series and DataFrame (histories)
-* It uses Flask_ to serve the Web app
+* It uses Flask_ to serve the Web app (you will need to pip install flask_bootstrap)
 
 Normally, if you have installed Anaconda_, Flask_, Bokeh_ and Pandas_ will already
 be installed. You'll only need to install BACpypes_ ::

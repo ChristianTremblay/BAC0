@@ -176,5 +176,22 @@ You can use BAC0 to send time synchronisation requests to the network ::
     
 BAC0 will not accept requests from other devices.
 
+Ping devices (monitoring feature)
+**********************************
+BAC0 includes a way to ping constantly the devices that have been registered. 
+This way, when devices go offline, BAC0 will disconnect them until they come back
+online. This feature can be disabled if required when declaring the network ::
+
+    bacnet = BAC0.lite(ping=False)
+    
+By default, the feature is activated.
+
+When reconnecting after being disconnected, a complete rebuild of the device is done.
+This way, if the device have changed (a download have been done and point list changed)
+new points will be available. Old one will not.
+
+..note::
+    WARNING. When BAC0 disconnects a device, it will try to save the device to SQL.
+
 .. _berryconda : https://github.com/jjhelmus/berryconda  
 .. _RaspberryPi : http://www.raspberrypi.org

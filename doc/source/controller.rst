@@ -1,6 +1,6 @@
-How to connect to a device and interact with points
+How to define a device and interact with points
 ===================================================
-Define  a controller
+Define a controller
 ----------------------------------------
 
 Once the bacnet variable is created, you can define devices.
@@ -229,3 +229,38 @@ you may with this command::
     :figclass: align-center
     
     *Example from Niagara 4 station*
+
+BACnet properties
+*******************
+BAC0 defines its own "image" of a controller. All points inside a `BAC0.device` are Python 
+objects with which we can interact. If you want to access native BACnet objects and properties
+there are functions you can use.
+
+Read all device properties
+===========================
+You can retrieve the list of device properties using::
+
+    device.bacnet_properties
+    # will return a cached version by default. If things have changed, you can refresh using.
+    device.update_bacnet_properties()
+
+Often, in this list, you will see proprietary properties added by the manufacturer. They can be 
+recognize by their name, an integer.
+
+Read Property
+==============
+You can read simple properties using ::
+    
+    prop = ('device',100,'objectName')
+    device.read_property(prop)
+    # this will return the object name 
+    prop = ('analogInput',1,'priorityArray')
+    device.read_property(prop)
+    # this will return the priority array of AI1 
+
+Write to property
+==================
+You can write to a property using ::
+
+    prop = ('analogValue',1,'presentValue')
+    bacnet.write_property(prop,value=98,priority=7)

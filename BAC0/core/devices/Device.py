@@ -69,8 +69,6 @@ class DeviceProperties(object):
         self.pollDelay = None
         self.objects_list = None
         self.pss = ServicesSupported()
-        # self.serving_chart = None
-        # self.charts = None
         self.multistates = None
         self.db_name = None
         self.segmentation_supported = True
