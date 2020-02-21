@@ -632,6 +632,17 @@ class ReadProperty:
                         "APDU Abort Reason : {}".format(reason)
                     )
 
+    def read_priority_array(self, addr, obj, obj_instance):
+        pa = self.read("{} {} {} priorityArray".format(addr, obj, obj_instance))
+        res = []
+        res.append(pa)
+        for each in range(1, 17):
+            _pa = pa[each]
+            for k, v in _pa.__dict__.items():
+                if v != None:
+                    res.append(v)
+        return res
+
 
 def find_reason(apdu):
     try:
