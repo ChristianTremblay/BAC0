@@ -38,9 +38,15 @@ from ..core.functions.TimeSync import TimeSync
 from ..core.functions.Reinitialize import Reinitialize
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
+from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
 from ..core.devices.Trends import TrendLog
 from ..core.utils.notes import note_and_log
-from ..core.io.IOExceptions import NoResponseFromController, UnrecognizedService
+from ..core.io.IOExceptions import (
+    NoResponseFromController,
+    UnrecognizedService,
+    Timeout,
+)
+from ..tasks.RecurringTask import RecurringTask
 
 from ..infos import __version__ as version
 
@@ -68,7 +74,14 @@ class Lite(
     """
 
     def __init__(
-        self, ip=None, port=None, mask=None, bbmdAddress=None, bbmdTTL=0, **params
+        self,
+        ip=None,
+        port=None,
+        mask=None,
+        bbmdAddress=None,
+        bbmdTTL=0,
+        ping=True,
+        **params
     ):
         self._log.info(
             "Starting BAC0 version {} ({})".format(
@@ -80,6 +93,14 @@ class Lite(
 
         self._log.debug("Configurating app")
         self._registered_devices = weakref.WeakValueDictionary()
+
+        # Ping task will deal with all registered device and disconnect them if they do not respond.
+
+        self._ping_task = RecurringTask(
+            self.ping_registered_devices, delay=10, name="Ping Task"
+        )
+        if ping:
+            self._ping_task.start()
 
         if ip is None:
             host = HostIP(port)
@@ -130,7 +151,9 @@ class Lite(
 
         return self.this_application.nse._learnedNetworks
 
-    def discover(self, networks="known", limits=(0, 4194303), global_broadcast=False):
+    def discover(
+        self, networks="known", limits=(0, 4194303), global_broadcast=False, reset=False
+    ):
         """
         Discover is meant to be the function used to explore the network when we
         connect.
@@ -163,6 +186,8 @@ class Lite(
         :param global_broadcast (boolean) : If set to true, a global braodcast
             will be used for the whois. Use with care.
         """
+        if reset:
+            self.discoveredDevices = None
         found = []
         _networks = []
         deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit = limits
@@ -180,7 +205,8 @@ class Lite(
             elif networks == "known":
                 _networks = self.known_network_numbers
             else:
-                _networks.append(networks)
+                if networks < 65535:
+                    _networks.append(networks)
 
             for network in _networks:
                 self._log.info("Discovering network {}".format(network))
@@ -209,6 +235,53 @@ class Lite(
     def register_device(self, device):
         oid = id(device)
         self._registered_devices[oid] = device
+
+    def ping_registered_devices(self):
+        """
+        Registered device on a network (self) are kept in a list (registered_devices). 
+        This function will allow pinging thoses device regularly to monitor them. In case
+        of disconnected devices, we will disconnect the device (which will save it). Then 
+        we'll ping again until reconnection, where the device will be bring back online.
+
+        To permanently disconnect a device, an explicit device.disconnect(unregister=True [default value])
+        will be needed. This way, the device won't be in the registered_devices list and 
+        BAC0 won't try to ping it.
+        """
+        for each in self.registered_devices:
+            if isinstance(each, RPDeviceConnected) or isinstance(
+                each, RPMDeviceConnected
+            ):
+                device_connected = True
+            else:
+                device_connected = False
+
+            respond_to_ping = True
+            try:
+                self._log.debug(
+                    "Ping {}|{}".format(each.properties.name, each.properties.address)
+                )
+                device_id = each.properties.device_id
+                addr = each.properties.address
+                self.read("{} device {} objectName".format(addr, device_id))
+            except NoResponseFromController:
+                respond_to_ping = False
+
+            if not respond_to_ping and device_connected:
+                self._log.warning(
+                    "{}|{} is offline, disconnecting it.".format(
+                        each.properties.name, each.properties.address
+                    )
+                )
+                each.disconnect(unregister=False)
+            elif not device_connected and respond_to_ping:
+                self._log.info(
+                    "{}|{} is back online, reconnecting.".format(
+                        each.properties.name, each.properties.address
+                    )
+                )
+                each.connect(network=self)
+            else:
+                pass
 
     @property
     def registered_devices(self):
@@ -274,17 +347,21 @@ class Lite(
                 deviceName, vendorName = self.readMultiple(
                     "{} device {} objectName vendorName".format(device[0], device[1])
                 )
-            except UnrecognizedService:
+            except (UnrecognizedService, ValueError):
                 self._log.warning(
                     "Unrecognized service for {} | {}".format(device[0], device[1])
                 )
-                deviceName = self.read(
-                    "{} device {} objectName".format(device[0], device[1])
-                )
-                vendorName = self.read(
-                    "{} device {} vendorName".format(device[0], device[1])
-                )
-            except NoResponseFromController:
+                try:
+                    deviceName = self.read(
+                        "{} device {} objectName".format(device[0], device[1])
+                    )
+                    vendorName = self.read(
+                        "{} device {} vendorName".format(device[0], device[1])
+                    )
+                except NoResponseFromController:
+                    self._log.warning("No response from {}".format(device))
+                    continue
+            except (NoResponseFromController, Timeout):
                 self._log.warning("No response from {}".format(device))
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))

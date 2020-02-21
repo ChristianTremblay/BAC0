@@ -11,9 +11,12 @@ from bacpypes.object import (
     Property,
     register_object_type,
 )
+
 from bacpypes.primitivedata import CharacterString, Date, Time, Real, Boolean
 from bacpypes.constructeddata import ArrayOf
-from bacpypes.basetypes import EngineeringUnits, DateTime
+from bacpypes.basetypes import EngineeringUnits, DateTime, PriorityArray
+
+from .mixins.CommandableMixin import LocalBinaryOutputObjectCmd
 
 
 def _make_mutable(obj, identifier="presentValue", mutable=True):
@@ -36,6 +39,7 @@ def create_MV(
         presentValue=pv,
         numberOfStates=len(states),
         stateText=ArrayOf(CharacterString)(states),
+        priorityArray=PriorityArray(),
     )
     msvo = _make_mutable(msvo, mutable=pv_writable)
     return msvo
@@ -48,6 +52,7 @@ def create_AV(oid=1, pv=0, name="AV", units=None, pv_writable=False):
         presentValue=pv,
         units=units,
         relinquishDefault=0,
+        priorityArray=PriorityArray(),
     )
     avo = _make_mutable(avo, mutable=pv_writable)
     avo = _make_mutable(avo, identifier="relinquishDefault", mutable=pv_writable)
@@ -63,6 +68,7 @@ def create_BV(
         presentValue=pv,
         activeText=activeText,
         inactiveText=inactiveText,
+        priorityArray=PriorityArray(),
     )
     bvo = _make_mutable(bvo, mutable=pv_writable)
     return bvo
@@ -97,6 +103,7 @@ def create_AO(oid=1, pv=0, name="AO", units=None, pv_writable=False):
         objectName=name,
         presentValue=pv,
         units=units,
+        priorityArray=PriorityArray(),
     )
     aoo = _make_mutable(aoo, mutable=pv_writable)
     return aoo
@@ -105,7 +112,7 @@ def create_AO(oid=1, pv=0, name="AO", units=None, pv_writable=False):
 def create_BO(
     oid=1, pv=0, name="BO", activeText="On", inactiveText="Off", pv_writable=False
 ):
-    boo = BinaryOutputObject(
+    boo = LocalBinaryOutputObjectCmd(
         objectIdentifier=("binaryOutput", oid),
         objectName=name,
         presentValue=pv,

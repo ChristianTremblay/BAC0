@@ -162,6 +162,7 @@ class Complete(Lite, Stats_Mixin):
         port=None,
         bbmdAddress=None,
         bbmdTTL=0,
+        ping=True,
         bokeh_server=True,
         flask_port=8111,
         **params
@@ -173,6 +174,7 @@ class Complete(Lite, Stats_Mixin):
             port=port,
             bbmdAddress=bbmdAddress,
             bbmdTTL=bbmdTTL,
+            ping=ping,
             **params
         )
         self.flask_port = flask_port

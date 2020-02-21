@@ -104,14 +104,18 @@ class Base:
 
         if localIPAddr in Base._used_ips:
             raise InitializationError(
-                "IP Address provided ({}) already used.".format(localIPAddr)
+                "IP Address provided ({}) already used by BAC0. Check if another software is using port 47808 on this network interface. If so, you can define multiple IP per interface. Or specify another IP using BAC0.lite(ip='IP/mask')".format(
+                    localIPAddr
+                )
             )
 
         if validate_ip_address(localIPAddr):
             self.localIPAddr = localIPAddr
         else:
             raise InitializationError(
-                "IP Address provided ({}) invalid.".format(localIPAddr)
+                "IP Address provided ({}) invalid. Check if another software is using port 47808 on this network interface. If so, you can define multiple IP per interface. Or specify another IP using BAC0.lite(ip='IP/mask')".format(
+                    localIPAddr
+                )
             )
 
         self.Boid = (

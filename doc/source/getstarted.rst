@@ -20,7 +20,8 @@ Some examples of complete distributions are Anaconda_ or `Enthought Canopy <http
 As I use Anaconda_, I'll focus on this one but you're free to choose the one
 you prefer.
 
-If you are using a RaspberryPi, have a look to miniconda_ or berryconda_. Both can allow a complete installation of modules like bokeh_ and Flask_
+If you are using a RaspberryPi, have a look to miniconda_ or berryconda_. Both can allow a complete installation of modules like bokeh_ and Flask_. 
+For berryconda, once it's done, run `conda install pandas`. This will install pandas on your RaspberryPi without the need to compile it.
 
 .. _installing-a-complete-distribution:
 
@@ -79,7 +80,7 @@ Dependencies
 
 * It uses Bokeh_ for Live trending features 
 * It uses Pandas_ for every Series and DataFrame (histories)
-* It uses Flask_ to serve the Web app
+* It uses Flask_ to serve the Web app (you will need to pip install flask_bootstrap)
 
 Normally, if you have installed Anaconda_, Flask_, Bokeh_ and Pandas_ will already
 be installed. You'll only need to install BACpypes_ ::

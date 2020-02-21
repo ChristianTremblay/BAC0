@@ -129,13 +129,15 @@ class BAC0Application(
 
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
-        self._log.debug("do_WhoIsRequest {!r}".format(apdu))
 
         # build a key from the source and parameters
         key = (
             str(apdu.pduSource),
             apdu.deviceInstanceRangeLowLimit,
             apdu.deviceInstanceRangeHighLimit,
+        )
+        self._log.debug(
+            "do_WhoIsRequest from {} | {} to {}".format(key[0], key[1], key[2])
         )
 
         # count the times this has been received
@@ -153,7 +155,7 @@ class BAC0Application(
             if self.localDevice.objectIdentifier[1] > high_limit:
                 return
         # generate an I-Am
-        self._log.info("Responding to Who is by a Iam")
+        self._log.debug("Responding to Who is by a Iam")
         self.iam_req.pduDestination = apdu.pduSource
         iocb = IOCB(self.iam_req)  # make an IOCB
         deferred(self.request_io, iocb)

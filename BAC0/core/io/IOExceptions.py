@@ -137,3 +137,16 @@ class BadDeviceDefinition(Exception):
 
 class InitializationError(Exception):
     pass
+
+
+class Timeout(Exception):
+    pass
+
+
+class RemovedPointException(Exception):
+    """
+    When defining a device from DB it may not be identical to the 
+    actual device.
+    """
+
+    pass

@@ -51,7 +51,7 @@ class Simulation:
                 self.write(
                     "{} {} {} outOfService True".format(addr, obj_type, obj_inst)
                 )
-            except NoResponseFromController:
+            except NoResponseFromController as e:
                 self._log.warning(
                     "Failed to write to OutOfService property ({})".format(e)
                 )

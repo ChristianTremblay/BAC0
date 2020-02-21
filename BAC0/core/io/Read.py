@@ -134,9 +134,7 @@ class ReadProperty:
 
             if not isinstance(apdu, ReadPropertyACK):  # expecting an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))
-                )
+                self._log.debug("Not an ack. | APDU : {}".format(apdu))
                 return
 
             # find the datatype
@@ -365,7 +363,7 @@ class ReadProperty:
                 values.append("")
                 return values
             else:
-                self._log.warning("No response from controller : {}".format(reason))
+                self._log.warning("No response from controller {}".format(reason))
                 values.append("")
                 return values
 

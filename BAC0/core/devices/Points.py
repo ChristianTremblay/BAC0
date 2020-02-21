@@ -31,7 +31,11 @@ except ImportError:
 # --- this application's modules ---
 from ...tasks.Poll import SimplePoll as Poll
 from ...tasks.Match import Match, Match_Value
-from ..io.IOExceptions import NoResponseFromController, UnknownPropertyError
+from ..io.IOExceptions import (
+    NoResponseFromController,
+    UnknownPropertyError,
+    RemovedPointException,
+)
 from ..utils.notes import note_and_log
 
 
@@ -131,7 +135,7 @@ class Point:
             )
             self._trend(res)
         except Exception as e:
-            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+            raise
 
         return res
 
@@ -701,7 +705,7 @@ class BooleanPoint(Point):
             self._trend(res)
 
         except Exception as e:
-            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+            raise
 
         if res == "inactive":
             self._key = 0
@@ -903,7 +907,10 @@ class OfflinePoint(Point):
         self.properties = PointProperties()
         self.properties.device = device
         dev_name = self.properties.device.properties.db_name
-        props = self.properties.device.read_point_prop(dev_name, name)
+        try:
+            props = self.properties.device.read_point_prop(dev_name, name)
+        except RemovedPointException:
+            raise
 
         self.properties.name = props["name"]
         self.properties.type = props["type"]

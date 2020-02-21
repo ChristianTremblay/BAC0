@@ -27,6 +27,9 @@ try:
     _PANDAS = True
 except ImportError:
     _PANDAS = False
+
+from ..core.io.IOExceptions import RemovedPointException
+
 # --- this application's modules ---
 
 # ------------------------------------------------------------------------------
@@ -130,6 +133,12 @@ class SQLMixin(object):
         with contextlib.closing(
             sqlite3.connect("{}.db".format(self.properties.db_name))
         ) as con:
+            try:
+                data = pd.read_sql("SELECT * FROM history", con)
+                df = pd.concat([data, df_to_backup], sort=True)
+            except:
+                df = df_to_backup
+
             sql.to_sql(
                 df_to_backup,
                 name="history",
@@ -174,7 +183,13 @@ class SQLMixin(object):
         Points properties retrieved from pickle
         """
         with open("{}.bin".format(device_name), "rb") as file:
-            return pickle.load(file)["points"][point]
+            try:
+                _point = pickle.load(file)["points"][point]
+            except KeyError:
+                raise RemovedPointException(
+                    "{} not found (probably deleted)".format(point)
+                )
+            return _point
 
     def read_dev_prop(self, device_name):
         """
