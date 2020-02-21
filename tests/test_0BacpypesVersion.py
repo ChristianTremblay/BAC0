@@ -17,5 +17,5 @@ def test_BacpypesVersion():
     For comparison, 17.5 becomes 17.005
     """
     maj, minor, patch = bacpypes.__version__.split(".")
-    version = float(maj) * 1000000 + float(minor) + float(patch)/1000
+    version = float(maj) * 1000000 + float(minor) + float(patch) / 1000
     assert version >= 17.005

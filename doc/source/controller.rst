@@ -237,7 +237,7 @@ objects with which we can interact. If you want to access native BACnet objects 
 there are functions you can use.
 
 Read all device properties
-===========================
+...........................
 You can retrieve the list of device properties using::
 
     device.bacnet_properties
@@ -248,7 +248,7 @@ Often, in this list, you will see proprietary properties added by the manufactur
 recognize by their name, an integer.
 
 Read Property
-==============
+...........................
 You can read simple properties using ::
     
     prop = ('device',100,'objectName')
@@ -259,7 +259,7 @@ You can read simple properties using ::
     # this will return the priority array of AI1 
 
 Write to property
-==================
+...........................
 You can write to a property using ::
 
     prop = ('analogValue',1,'presentValue')

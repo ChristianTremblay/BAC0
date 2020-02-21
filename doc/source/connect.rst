@@ -83,7 +83,7 @@ And log to the web server pointing your browser to http://localhost:8111
 
 
 Use BAC0 on a different subnect (Foreign Device)
-*************************************************
+***************************************************
 In some situations (like using BAC0 with a VPN using TUN) your BAC0 instance
 will run on a different subnet than the BACnet/IP network.
 
@@ -192,6 +192,41 @@ new points will be available. Old one will not.
 
 ..note::
     WARNING. When BAC0 disconnects a device, it will try to save the device to SQL.
+
+Read and write (Using the BACnet instance)
+*******************************************
+BAC0 typically use the concept of controller that we'll see later. But At its core, read and write
+operation will be done throught the BACnet instance (`bacnet = BAC0.lite()` for example).
+
+Read property
+........................
+Once you know the device you need to read from, you can use ::
+
+    bacnet.read('address object object_instance property')
+
+Read properties
+........................
+Read property multiple can also be used ::
+
+    bacnet.readMultiple('address object object_instance property_1 property_2') #or
+    bacnet.readMultiple('address object object_instance all')
+
+Write to property
+........................
+To write to a single property ::
+
+    bacnet.write('address object object_instance property value - priority')
+
+Write to multiple properties
+....................................
+Write property multiple is also implemented. You will need to build a list for your requets ::
+
+    r = ['analogValue 1 presentValue 100','analogValue 2 presentValue 100','analogValue 3 presentValue 100 - 8','@obj_142 1 @prop_1042 True']
+    bacnet.writeMultiple(addr='2:5',args=r,vendor_id=842)
+    
+..note::
+    WARNING. See the section on Proprietary objects and properties for details about vendor_id and @obj_142.
+
 
 .. _berryconda : https://github.com/jjhelmus/berryconda  
 .. _RaspberryPi : http://www.raspberrypi.org

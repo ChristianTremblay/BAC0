@@ -1,7 +1,6 @@
 Contributors:
 
 Christian Tremblay        christian.tremblay@servisys.com
-Ken J. Lockhart           klockhart@coppertreeanalytics.com (helped a lot with documentation)
-
+Ken J. LoSee https://github.com/ChristianTremblay/BAC0/graphs/contributors
 
 Thanks !

@@ -169,7 +169,7 @@ This will allow us to interact with them after registration ::
     proprietary objects to them so tec['SupOnline'] would work...
 
 Vendor Context for Read and Write
-==================================
+**********************************
 In `BAC0.device`, the vendor_id context will be provided to the stack automatically. This mean that 
 if a device is created and there is a extended implementation of an object (JCIDeviceObject for example)
 BAC0 will recognize the proprietary object by default, without having the need to explicitly define the
@@ -185,7 +185,7 @@ Also, proprietary objects and properties classes are defined at startup so it is
 register them.
 
 Can proprietary objects be addded to a BAC0.device points
-==========================================================
+********************************************************************
 Actually not, because of the way "points" are defined in BAC0. If you look at `BAC0.core.devices.Points.Point`
 you will see that the notion of point is oriented differently than a BACnet object. 
 Properties are a set of informations useful for BAC0 itself but are not "strictly" BACnet properties.
@@ -199,7 +199,7 @@ For this reason, proprietary objects must be dealt outside of the scope of a dev
 of writing to them.
 
 How to implement readMultiple with proprietary objects and properties
-======================================================================
+**********************************************************************
 It is possible to create read property multiple requests with them, using the syntax `@obj_` and `@prop_`.
 So for now, you will be able to create a request yourself for one device at a time by chaining properties you want 
 to read : 
@@ -207,7 +207,7 @@ to read :
     bacnet.readMultiple('2000:31 device 5012 @prop_3653 analogInput 1106 presentValue units') 
 
 How to find proprietary objects and properties
-================================================
+********************************************************************
 In BAC0, for a device or a point, you can use :
 
     device.bacnet_properties
