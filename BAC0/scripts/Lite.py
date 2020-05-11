@@ -36,6 +36,7 @@ from ..core.functions.GetIPAddr import HostIP
 from ..core.functions.Discover import Discover
 from ..core.functions.TimeSync import TimeSync
 from ..core.functions.Reinitialize import Reinitialize
+from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
@@ -57,7 +58,14 @@ from bacpypes.pdu import Address
 
 @note_and_log
 class Lite(
-    Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync, Reinitialize
+    Base,
+    Discover,
+    ReadProperty,
+    WriteProperty,
+    Simulation,
+    TimeSync,
+    Reinitialize,
+    DeviceCommunicationControl,
 ):
     """
     Build a BACnet application to accept read and write requests.

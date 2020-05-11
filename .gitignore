@@ -36,3 +36,7 @@ obj30.bin
 obj30.db
 obj300.bin
 /.vscode
+*.bin
+*.db
+*.log
+wily-report.html
