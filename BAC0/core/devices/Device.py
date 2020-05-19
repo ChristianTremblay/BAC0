@@ -186,7 +186,7 @@ class Device(SQLMixin):
             if (
                 self.properties.network
                 and self.properties.address
-                and self.properties.device_id
+                and self.properties.device_id is not None
             ):
                 self.new_state(DeviceDisconnected)
             else:
