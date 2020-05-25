@@ -209,13 +209,15 @@ class Lite(
             if isinstance(networks, list):
                 # we'll make multiple whois...
                 for network in networks:
-                    _networks.append(network)
+                    if networks < 65535:
+                        _networks.append(network)
             elif networks == "known":
                 _networks = self.known_network_numbers
             else:
                 if networks < 65535:
                     _networks.append(networks)
 
+        if _networks:
             for network in _networks:
                 self._log.info("Discovering network {}".format(network))
                 _res = self.whois(
@@ -230,6 +232,11 @@ class Lite(
                     found.append(each)
 
         else:
+            self._log.info(
+                "No BACnet network found, attempting a simple whois using provided device instances limits ({} - {})".format(
+                    deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
+                )
+            )
             _res = self.whois(
                 "{} {}".format(
                     deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
