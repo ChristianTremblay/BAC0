@@ -33,7 +33,9 @@ JCIDeviceObject = {
     "bacpypes_type": DeviceObject,
     "properties": {
         "SupervisorOnline": {"obj_id": 3653, "primitive": Boolean, "mutable": True},
-        "Model": {"obj_id": 1320, "primitive": CharacterString, "mutable": False},
+        "Model": {"obj_id": 1320, "primitive": CharacterString, "mutable": True},
+        "ModelType": {"obj_id": 32527, "primitive": CharacterString, "mutable": True},
+        "State": {"obj_id": 2390, "primitive": CharacterString, "mutable": False},
         "MemoryUsage": {"obj_id": 2581, "primitive": Real, "mutable": False},
         "ObjectMemoryUsage": {"obj_id": 2582, "primitive": Real, "mutable": False},
         "CPU": {"obj_id": 2583, "primitive": Real, "mutable": False},
