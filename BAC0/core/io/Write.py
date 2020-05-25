@@ -134,7 +134,7 @@ class WriteProperty:
         if len(args) >= 6:
             priority = int(args[5])
         if "@prop_" in prop_id:
-            prop_id = int(prop_id.split("_")[1])
+            prop_id = prop_id.split("_")[1]
         if prop_id.isdigit():
             prop_id = int(prop_id)
 
