@@ -61,6 +61,7 @@ from .IOExceptions import (
     SegmentationNotSupported,
     UnknownPropertyError,
     UnknownObjectError,
+    BufferOverflow,
 )
 
 from ..utils.notes import note_and_log
@@ -192,6 +193,13 @@ class ReadProperty:
                 elif reason == "unknownObject":
                     self._log.warning("Unknown object {}".format(args))
                     raise UnknownObjectError("Unknown object {}".format(args))
+                elif reason == "bufferOverflow":
+                    self._log.warning(
+                        "Buffer capacity exceeded in device{}".format(args)
+                    )
+                    raise BufferOverflow(
+                        "Buffer capacity exceeded in device{}".format(args)
+                    )
                 else:
                     # Other error... consider NoResponseFromController (65)
                     # even if the real reason is another one

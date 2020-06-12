@@ -150,3 +150,11 @@ class RemovedPointException(Exception):
     """
 
     pass
+
+
+class BufferOverflow(Exception):
+    """
+    Buffer capacity of device exceeded.
+    """
+
+    pass

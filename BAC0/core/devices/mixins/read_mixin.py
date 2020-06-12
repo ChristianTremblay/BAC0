@@ -17,6 +17,7 @@ from ...io.IOExceptions import (
     ReadPropertyMultipleException,
     NoResponseFromController,
     SegmentationNotSupported,
+    BufferOverflow,
 )
 from ..Points import NumericPoint, BooleanPoint, EnumPoint, StringPoint, OfflinePoint
 from ..Trends import TrendLog
@@ -239,7 +240,7 @@ class ReadPropertyMultiple:
                 )
                 objList = []
 
-            except SegmentationNotSupported:
+            except (SegmentationNotSupported, BufferOverflow):
                 objList = []
                 number_of_objects = self.properties.network.read(
                     "{} device {} objectList".format(
