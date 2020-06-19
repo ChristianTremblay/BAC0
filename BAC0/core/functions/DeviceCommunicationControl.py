@@ -13,7 +13,7 @@ import datetime as dt
 
 # --- 3rd party modules ---
 from bacpypes.pdu import Address, GlobalBroadcast
-from bacpypes.primitivedata import Date, Time, CharacterString
+from bacpypes.primitivedata import Date, Time, CharacterString, Unsigned16
 from bacpypes.basetypes import DateTime
 from bacpypes.apdu import (
     DeviceCommunicationControlRequest,
@@ -22,7 +22,6 @@ from bacpypes.apdu import (
 )
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
-from bacpypes.primitivedata import Unsigned16
 
 from ...core.io.Read import find_reason
 from ..io.IOExceptions import (
