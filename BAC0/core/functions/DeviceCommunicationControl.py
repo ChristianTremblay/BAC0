@@ -8,17 +8,6 @@
 Reinitialize.py - creation of ReinitializeDeviceRequest
 
 """
-from ...core.io.Read import find_reason
-from ..io.IOExceptions import (
-    SegmentationNotSupported,
-    ReadPropertyException,
-    ReadPropertyMultipleException,
-    NoResponseFromController,
-    ApplicationNotStarted,
-)
-from bacpypes.object import Unsigned16
-from ...core.utils.notes import note_and_log
-
 # --- standard Python modules ---
 import datetime as dt
 
@@ -33,6 +22,18 @@ from bacpypes.apdu import (
 )
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
+from bacpypes.primitivedata import Unsigned16
+
+from ...core.io.Read import find_reason
+from ..io.IOExceptions import (
+    SegmentationNotSupported,
+    ReadPropertyException,
+    ReadPropertyMultipleException,
+    NoResponseFromController,
+    ApplicationNotStarted,
+)
+
+from ...core.utils.notes import note_and_log
 
 
 @note_and_log
