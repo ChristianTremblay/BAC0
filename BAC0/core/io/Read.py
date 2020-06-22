@@ -195,11 +195,9 @@ class ReadProperty:
                     raise UnknownObjectError("Unknown object {}".format(args))
                 elif reason == "bufferOverflow":
                     self._log.warning(
-                        "Buffer capacity exceeded in device{}".format(args)
+                        "Buffer capacity exceeded in device {}".format(args)
                     )
-                    raise BufferOverflow(
-                        "Buffer capacity exceeded in device{}".format(args)
-                    )
+                    return self._split_the_read_request(args, arr_index)
                 else:
                     # Other error... consider NoResponseFromController (65)
                     # even if the real reason is another one
