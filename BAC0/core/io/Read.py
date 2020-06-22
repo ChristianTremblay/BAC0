@@ -211,7 +211,7 @@ class ReadProperty:
         """
         When a device doesn't support segmentation, this function
         will split the request according to the length of the
-        predicted result which can be known when readin the array_index
+        predicted result which can be known when reading the array_index
         number 0.
 
         This can be a very long process as some devices count a large
