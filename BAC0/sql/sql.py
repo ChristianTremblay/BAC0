@@ -72,11 +72,17 @@ class SQLMixin(object):
         df = pd.DataFrame(pprops)
         return df
 
-    def backup_histories_df(self):
+    def backup_histories_df(self, resampling="1s"):
         """
         Build a dataframe of the point histories
         """
         backup = {}
+        if isinstance(resampling, str):
+            resampling_needed = True
+            resampling_freq = resampling
+        elif resampling == 0 or resampling == False:
+            resampling_needed = False
+
         for point in self.points:
             try:
                 if point.history.dtypes == object:
@@ -93,7 +99,12 @@ class SQLMixin(object):
                     )
             else:
                 try:
-                    backup[point.properties.name] = point.history.resample("1s").mean()
+                    if resampling_needed:
+                        backup[point.properties.name] = point.history.resample(
+                            resampling_freq
+                        ).mean()
+                    else:
+                        backup[point.properties.name] = point.history
                 except:
                     # probably not enough point...
                     backup[point.properties.name] = point.history
@@ -101,10 +112,12 @@ class SQLMixin(object):
         df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in backup.items()]))
         return df.fillna(method="ffill")
 
-    def save(self, filename=None):
+    def save(self, filename=None, resampling="1s"):
         """
         Save the point histories to sqlite3 database.  
         Save the device object properties to a pickle file so the device can be reloaded.
+
+        Resampling : valid Pandas resampling frequency. If 0 or False, dataframe will not be resampled on save.
         """
         if filename:
             if ".db" in filename:
@@ -123,7 +136,7 @@ class SQLMixin(object):
                 last = his.index[-1]
                 df_to_backup = self.backup_histories_df()[last:]
             except IndexError:
-                df_to_backup = self.backup_histories_df()
+                df_to_backup = self.backup_histories_df(resampling=resampling)
 
         else:
             self._log.debug("Creating a new backup database")
