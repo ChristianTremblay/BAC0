@@ -77,10 +77,7 @@ class Match_Value(Task):
 
     def task(self):
         try:
-            if hasattr(self.value, "__call__"):
-                value = self.value()
-            else:
-                value = self.value
+            value = self.value() if hasattr(self.value, "__call__") else self.value
             if value != self.point.value:
                 self.point._set(value)
         except Exception:

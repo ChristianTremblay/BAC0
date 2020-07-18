@@ -87,14 +87,13 @@ def create_AI(oid=1, pv=0, name="AI", units=None):
 
 
 def create_BI(oid=1, pv=0, name="BI", activeText="On", inactiveText="Off"):
-    bio = BinaryInputObject(
+    return BinaryInputObject(
         objectIdentifier=("binaryInput", oid),
         objectName=name,
         presentValue=pv,
         activeText=activeText,
         inactiveText=inactiveText,
     )
-    return bio
 
 
 def create_AO(oid=1, pv=0, name="AO", units=None, pv_writable=False):

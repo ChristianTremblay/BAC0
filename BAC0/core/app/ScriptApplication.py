@@ -148,12 +148,10 @@ class BAC0Application(
         # count the times this has been received
         self.who_is_counter[key] += 1
 
-        if low_limit is not None:
-            if self.localDevice.objectIdentifier[1] < low_limit:
-                return
-        if high_limit is not None:
-            if self.localDevice.objectIdentifier[1] > high_limit:
-                return
+        if low_limit is not None and self.localDevice.objectIdentifier[1] < low_limit:
+            return
+        if high_limit is not None and self.localDevice.objectIdentifier[1] > high_limit:
+            return
         # generate an I-Am
         self._log.debug("Responding to Who is by a Iam")
         self.iam_req.pduDestination = apdu.pduSource
@@ -274,12 +272,10 @@ class BAC0ForeignDeviceApplication(
         # count the times this has been received
         self.who_is_counter[key] += 1
 
-        if low_limit is not None:
-            if self.localDevice.objectIdentifier[1] < low_limit:
-                return
-        if high_limit is not None:
-            if self.localDevice.objectIdentifier[1] > high_limit:
-                return
+        if low_limit is not None and self.localDevice.objectIdentifier[1] < low_limit:
+            return
+        if high_limit is not None and self.localDevice.objectIdentifier[1] > high_limit:
+            return
         # generate an I-Am
         self._log.debug("Responding to Who is by a Iam")
         self.iam_req.pduDestination = apdu.pduSource

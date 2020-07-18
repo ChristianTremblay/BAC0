@@ -120,7 +120,7 @@ JCIAnalogOutputObject = {
 
 
 def tec_short_point_list():
-    lst = [
+    return [
         ("binaryInput", 30827),
         ("binaryInput", 30828),
         ("binaryOutput", 86908),
@@ -171,4 +171,3 @@ def tec_short_point_list():
         ("analogOutput", 86915),
         ("multiStateValue", 6),
     ]
-    return lst

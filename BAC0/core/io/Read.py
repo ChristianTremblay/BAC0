@@ -216,11 +216,8 @@ class ReadProperty:
         number of properties without supporting segmentation
         (FieldServers are a good example)
         """
-        objlist = []
         nmbr_obj = self.read(args, arr_index=0)
-        for i in range(1, nmbr_obj + 1):
-            objlist.append(self.read(args, arr_index=i))
-        return objlist
+        return [self.read(args, arr_index=i) for i in range(1, nmbr_obj + 1)]
 
     def readMultiple(self, args, vendor_id=0, timeout=10, prop_id_required=False):
         """ Build a ReadPropertyMultiple request, wait for the answer and return the values
@@ -451,7 +448,7 @@ class ReadProperty:
                     except:
                         break
 
-                elif prop_id in (
+                elif prop_id not in (
                     "all",
                     "required",
                     "optional",
@@ -460,8 +457,6 @@ class ReadProperty:
                     "objectIdentifier",
                     "polarity",
                 ):
-                    pass
-                else:
                     datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
                     if not datatype:
                         raise ValueError(
@@ -640,8 +635,7 @@ class ReadProperty:
 
     def read_priority_array(self, addr, obj, obj_instance):
         pa = self.read("{} {} {} priorityArray".format(addr, obj, obj_instance))
-        res = []
-        res.append(pa)
+        res = [pa]
         for each in range(1, 17):
             _pa = pa[each]
             for k, v in _pa.__dict__.items():
@@ -679,14 +673,12 @@ def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
             tag = tag_list[0].tagNumber
 
             datatype = Tag._app_tag_class[tag]
-            value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
         else:
             from bacpypes.constructeddata import ArrayOf
 
             subtype_tag = propertyValue.tagList.tagList[0].tagList[0].tagNumber
             datatype = ArrayOf(Tag._app_tag_class[subtype_tag])
-            value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
-
+        value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
     except:
         value = {"{}_{}".format(obj_id, prop_id): propertyValue}
     return value

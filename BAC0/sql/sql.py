@@ -69,8 +69,7 @@ class SQLMixin(object):
             p.pop("overridden", None)
             pprops[each.properties.name] = p
 
-        df = pd.DataFrame(pprops)
-        return df
+        return pd.DataFrame(pprops)
 
     def backup_histories_df(self, resampling="1s"):
         """
@@ -80,18 +79,25 @@ class SQLMixin(object):
         if isinstance(resampling, str):
             resampling_needed = True
             resampling_freq = resampling
-        elif resampling == 0 or resampling == False:
+        elif resampling in [0, False]:
             resampling_needed = False
 
+        print(resampling, resampling_freq, resampling_needed)
         for point in self.points:
             try:
                 if point.history.dtypes == object:
-                    backup[point.properties.name] = (
-                        point.history.replace(["inactive", "active"], [0, 1])
-                        .resample("1s")
-                        .mean()
-                    )
-            except:
+                    if resampling_needed:
+                        backup[point.properties.name] = (
+                            point.history.replace(["inactive", "active"], [0, 1])
+                            .resample(resampling_freq)
+                            .last()
+                        )
+                    else:
+                        backup[point.properties.name] = point.history.replace(
+                            ["inactive", "active"], [0, 1]
+                        )
+            except Exception as error:
+                print(point, error)
                 # probably not enough points...
                 if point.history.dtypes == object:
                     backup[point.properties.name] = point.history.replace(
@@ -134,13 +140,13 @@ class SQLMixin(object):
             his.index = his["index"].apply(Timestamp)
             try:
                 last = his.index[-1]
-                df_to_backup = self.backup_histories_df()[last:]
+                df_to_backup = self.backup_histories_df(resampling=resampling)[last:]
             except IndexError:
                 df_to_backup = self.backup_histories_df(resampling=resampling)
 
         else:
             self._log.debug("Creating a new backup database")
-            df_to_backup = self.backup_histories_df()
+            df_to_backup = self.backup_histories_df(resampling=resampling)
 
         # DataFrames that will be saved to SQL
         with contextlib.closing(
@@ -162,8 +168,7 @@ class SQLMixin(object):
             )
 
         # Saving other properties to a pickle file...
-        prop_backup = {}
-        prop_backup["device"] = self.dev_properties_df()
+        prop_backup = {"device": self.dev_properties_df()}
         prop_backup["points"] = self.points_properties_df()
         with open("{}.bin".format(self.properties.db_name), "wb") as file:
             pickle.dump(prop_backup, file)

@@ -29,9 +29,7 @@ def stopAllTasks():
     for each in Manager.taskList:
         each.exitFlag = True
     while True:
-        _alive = []
-        for each in Manager.taskList:
-            _alive.append(each.is_alive())
+        _alive = [each.is_alive() for each in Manager.taskList]
         if not any(_alive):
             clean_tasklist()
             break
@@ -52,7 +50,7 @@ class Task(Thread):
         self.exitFlag = False
         self.lock = Manager.threadLock
         self.delay = delay
-        if not self.name in Manager.taskList:
+        if self.name not in Manager.taskList:
             Manager.taskList.append(self)
 
     def run(self):
@@ -67,7 +65,7 @@ class Task(Thread):
             # This replace a single time.sleep
             # the goal is to speed up the stop
             # of the thread by providing an easy way out
-            for i in range(self.delay * 2):
+            for _ in range(self.delay * 2):
                 if self.exitFlag:
                     break
                 time.sleep(0.5)
@@ -94,7 +92,7 @@ class OneShotTask(Thread):
     def __init__(self, daemon=True, name="Oneshot"):
         Thread.__init__(self, name=name, daemon=daemon)
         self.lock = Manager.threadLock
-        if not self.name in Manager.taskList:
+        if self.name not in Manager.taskList:
             Manager.taskList.append(self)
 
     def run(self):

@@ -78,7 +78,7 @@ class DeviceCommunicationControl:
         if iocb.ioResponse:  # successful response
             apdu = iocb.ioResponse
 
-            if not isinstance(iocb.ioResponse, SimpleAckPDU):  # expect an ACK
+            if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
                 self._log.debug(
                     "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))

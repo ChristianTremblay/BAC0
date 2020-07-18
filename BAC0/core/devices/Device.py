@@ -355,9 +355,11 @@ class Device(SQLMixin):
         Find point based on type and address
         """
         for point in self.points:
-            if point.properties.type == objectType:
-                if float(point.properties.address) == objectAddress:
-                    return point
+            if (
+                point.properties.type == objectType
+                and float(point.properties.address) == objectAddress
+            ):
+                return point
         raise ValueError(
             "{} {} doesn't exist in controller".format(objectType, objectAddress)
         )
@@ -565,8 +567,7 @@ class DeviceConnected(Device):
             self._log.error("{}".format(ve))
 
     def __iter__(self):
-        for each in self.points:
-            yield each
+        yield from self.points
 
     def __contains__(self, value):
         """
@@ -971,7 +972,7 @@ class DeviceFromDB(DeviceConnected):
             except NoResponseFromController:
                 self._log.error("Unable to connect, keeping DB mode active")
 
-        elif from_backup or not network:
+        else:
             self._log.debug("Not connected, open DB")
             if from_backup:
                 self.properties.db_name = from_backup.split(".")[0]

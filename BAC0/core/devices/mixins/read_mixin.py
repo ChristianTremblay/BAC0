@@ -422,7 +422,7 @@ class ReadPropertyMultiple:
             self.properties.fast_polling = False
             _poll_cls = DeviceNormalPoll
 
-        if not str(command).lower() in ["stop", "start", "0", "False"]:
+        if str(command).lower() not in ["stop", "start", "0", "False"]:
             self._log.error(
                 'Bad argument for function. Needs "stop", "start", "0" or "False" or provide keyword arg (command or delay)'
             )

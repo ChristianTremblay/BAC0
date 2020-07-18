@@ -141,42 +141,37 @@ class TrendLog(TrendLogProperties):
 
     @property
     def history(self):
-        if _PANDAS:
-            objectType, objectAddress = (
-                self.properties.log_device_object_property.objectIdentifier
-            )
-            try:
-                logged_point = self.properties.device.find_point(
-                    objectType, objectAddress
-                )
-            except ValueError:
-                logged_point = None
-            serie = self.properties._df[self.properties.object_name].copy()
-            serie.units = logged_point.properties.units_state if logged_point else "n/a"
-            serie.name = ("{}/{}").format(
-                self.properties.device.properties.name, self.properties.object_name
-            )
-            if not logged_point:
-                serie.states = "unknown"
-            else:
-                if logged_point.properties.name in self.properties.device.binary_states:
-                    serie.states = "binary"
-                elif (
-                    logged_point.properties.name in self.properties.device.multi_states
-                ):
-                    serie.states = "multistates"
-                else:
-                    serie.states = "analog"
-            serie.description = self.properties.description
-            serie.datatype = objectType
-            return serie
-        else:
+        if not _PANDAS:
             return dict(
                 zip(
                     self.properties._history_components[0],
                     self.properties._history_components[1],
                 )
             )
+        objectType, objectAddress = (
+            self.properties.log_device_object_property.objectIdentifier
+        )
+        try:
+            logged_point = self.properties.device.find_point(objectType, objectAddress)
+        except ValueError:
+            logged_point = None
+        serie = self.properties._df[self.properties.object_name].copy()
+        serie.units = logged_point.properties.units_state if logged_point else "n/a"
+        serie.name = ("{}/{}").format(
+            self.properties.device.properties.name, self.properties.object_name
+        )
+        if not logged_point:
+            serie.states = "unknown"
+        else:
+            if logged_point.properties.name in self.properties.device.binary_states:
+                serie.states = "binary"
+            elif logged_point.properties.name in self.properties.device.multi_states:
+                serie.states = "multistates"
+            else:
+                serie.states = "analog"
+        serie.description = self.properties.description
+        serie.datatype = objectType
+        return serie
 
     def chart(self, remove=False):
         """

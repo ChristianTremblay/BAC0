@@ -104,8 +104,7 @@ class Point:
         self._match_task.running = False
 
         self._history.timestamp = []
-        self._history.value = []
-        self._history.value.append(presentValue)
+        self._history.value = [presentValue]
         self._history.timestamp.append(datetime.now())
         self.history_size = history_size
 
@@ -163,7 +162,7 @@ class Point:
 
     def read_property(self, prop):
         try:
-            res = self.properties.device.properties.network.read(
+            return self.properties.device.properties.network.read(
                 "{} {} {} {}".format(
                     self.properties.device.properties.address,
                     self.properties.type,
@@ -172,7 +171,6 @@ class Point:
                 ),
                 vendor_id=0,
             )
-            return res
         except Exception as e:
             raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
 
@@ -239,7 +237,7 @@ class Point:
     def _trend(self, res):
         self._history.timestamp.append(datetime.now())
         self._history.value.append(res)
-        if self.properties.history_size == None:
+        if self.properties.history_size is None:
             return
         else:
             if self.properties.history_size < 1:
@@ -379,12 +377,10 @@ class Point:
         :param value: (float) value to simulate
         """
         if (
-            self.properties.simulated[0]
-            and self.properties.simulated[1] == value
-            and force == False
+            not self.properties.simulated[0]
+            or self.properties.simulated[1] != value
+            or force != False
         ):
-            pass
-        else:
             self.properties.device.properties.network.sim(
                 "{} {} {} presentValue {}".format(
                     self.properties.device.properties.address,
@@ -720,7 +716,7 @@ class BooleanPoint(Point):
         """
         returns : (boolean) Value
         """
-        if self.lastValue == 1 or self.lastValue == "active":
+        if self.lastValue in [1, "active"]:
             self._key = 1
             self._boolKey = True
         else:

@@ -2,13 +2,14 @@ from bacpypes.object import Object, Property, register_object_type
 
 # Prochaine étape : créer une focntion qui va lire "all" et se redéfinir dynamiquement
 def create_proprietary_object(params):
-    props = []
     try:
         _validate_params(params)
     except:
         raise
-    for k, v in params["properties"].items():
-        props.append(Property(v["obj_id"], v["primitive"], mutable=v["mutable"]))
+    props = [
+        Property(v["obj_id"], v["primitive"], mutable=v["mutable"])
+        for k, v in params["properties"].items()
+    ]
 
     new_class = type(
         params["name"],

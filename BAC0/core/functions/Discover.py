@@ -233,11 +233,7 @@ class Discover:
         try:
             # build a response
             request = IAmRequest()
-            if destination:
-                request.pduDestination = destination
-            else:
-                request.pduDestination = GlobalBroadcast()
-
+            request.pduDestination = destination if destination else GlobalBroadcast()
             # fill the response with details about us (from our device object)
             request.iAmDeviceIdentifier = self.this_device.objectIdentifier
             request.maxAPDULengthAccepted = self.this_device.maxApduLengthAccepted
