@@ -85,6 +85,7 @@ class Base:
         modelName=CharacterString("BAC0 Scripting Tool"),
         vendorId=842,
         vendorName=CharacterString("SERVISYS inc."),
+        description=CharacterString("http://christiantremblay.github.io/BAC0/")
     ):
 
         self._log.debug("Configurating app")
@@ -130,6 +131,7 @@ class Base:
         self.vendorId = vendorId
         self.vendorName = vendorName
         self.modelName = modelName
+        self.description = description
 
         self.discoveredDevices = None
         self.systemStatus = DeviceStatus(1)
@@ -161,7 +163,7 @@ class Base:
                 vendorName=self.vendorName,
                 modelName=self.modelName,
                 systemStatus=self.systemStatus,
-                description="http://christiantremblay.github.io/BAC0/",
+                description=self.description,
                 firmwareRevision=self.firmwareRevision,
                 applicationSoftwareVersion=infos.__version__,
                 protocolVersion=1,
