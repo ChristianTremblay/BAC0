@@ -43,6 +43,7 @@ from ..io.IOExceptions import (
     SegmentationNotSupported,
     BadDeviceDefinition,
     RemovedPointException,
+    WritePropertyException,
 )
 
 # from ...bokeh.BokehRenderer import BokehPlot
@@ -588,7 +589,7 @@ class DeviceConnected(Device):
         """
         try:
             self._findPoint(point_name)._set(value)
-        except ValueError as ve:
+        except WritePropertyException as ve:
             self._log.error("{}".format(ve))
 
     def __len__(self):

@@ -144,7 +144,10 @@ class WriteProperty:
         This will ensure the value can be encoded and is valid in the context
         """
         # get the datatype
+        print(obj_type, prop_id, vendor_id)
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
+        print(datatype)
+        print(type(datatype))
         # change atomic values into something encodeable, null is a special
         # case
         if value == "null":
@@ -152,13 +155,19 @@ class WriteProperty:
         elif issubclass(datatype, Atomic):
             if (
                 datatype is Integer
-                or datatype is not Real
+                # or datatype is not Real
                 or datatype is Unsigned
                 or datatype is Enumerated
             ):
                 value = int(value)
-            else:
+            elif datatype is Real:
                 value = float(value)
+                # value = datatype(value)
+            else:
+                # value = float(value)
+                value = datatype(value)
+
+            value = datatype(value)
         elif issubclass(datatype, Array) and (indx is not None):
             if indx == 0:
                 value = Integer(value)
@@ -175,6 +184,7 @@ class WriteProperty:
             raise TypeError(
                 "invalid result datatype, expecting {}".format((datatype.__name__,))
             )
+
         self._log.debug("{:<20} {!r} {}".format("Encodeable value", value, type(value)))
 
         _value = Any()

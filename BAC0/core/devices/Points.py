@@ -13,7 +13,15 @@ from datetime import datetime
 from collections import namedtuple
 import time
 
-from bacpypes.primitivedata import CharacterString
+from bacpypes.primitivedata import (
+    CharacterString,
+    Null,
+    Atomic,
+    Integer,
+    Unsigned,
+    Real,
+    Enumerated,
+)
 
 # --- 3rd party modules ---
 try:
@@ -35,6 +43,7 @@ from ..io.IOExceptions import (
     NoResponseFromController,
     UnknownPropertyError,
     RemovedPointException,
+    WritePropertyException,
 )
 from ..utils.notes import note_and_log
 
@@ -464,7 +473,7 @@ class Point:
         Allows the syntax:
             device['point'] = value
         """
-        raise Exception("Must be overridden")
+        raise NotImplementedError("Must be overridden")
 
     def poll(self, command="start", *, delay=10):
         """
@@ -608,8 +617,10 @@ class NumericPoint(Point):
                 val = float(value)
                 if isinstance(val, float):
                     self._setitem(value)
-            except:
-                raise ValueError("Value must be numeric")
+            except Exception as error:
+                raise WritePropertyException(
+                    "Problem writing to device : {}".format(error)
+                )
 
     def __repr__(self):
         polling = self.properties.device.properties.pollDelay
@@ -732,14 +743,19 @@ class BooleanPoint(Point):
         return None
 
     def _set(self, value):
-        if value == True:
-            self._setitem("active")
-        elif value == False:
-            self._setitem("inactive")
-        elif str(value) in ["inactive", "active"] or str(value).lower() == "auto":
-            self._setitem(value)
-        else:
-            raise ValueError('Value must be boolean True, False or "active"/"inactive"')
+        try:
+            if value == True:
+                self._setitem("active")
+            elif value == False:
+                self._setitem("inactive")
+            elif str(value) in ["inactive", "active"] or str(value).lower() == "auto":
+                self._setitem(value)
+            else:
+                raise ValueError(
+                    'Value must be boolean True, False or "active"/"inactive"'
+                )
+        except (Exception, ValueError) as error:
+            raise WritePropertyException("Problem writing to device : {}".format(error))
 
     def __repr__(self):
         return "{}/{} : {}".format(
@@ -816,18 +832,21 @@ class EnumPoint(Point):
         return None
 
     def _set(self, value):
-        if isinstance(value, int):
-            self._setitem(value)
-        elif str(value) in self.properties.units_state:
-            self._setitem(self.properties.units_state.index(value) + 1)
-        elif str(value).lower() == "auto":
-            self._setitem("auto")
-        else:
-            raise ValueError(
-                "Value must be integer or correct enum state : {}".format(
-                    self.properties.units_state
+        try:
+            if isinstance(value, int):
+                self._setitem(value)
+            elif str(value) in self.properties.units_state:
+                self._setitem(self.properties.units_state.index(value) + 1)
+            elif str(value).lower() == "auto":
+                self._setitem("auto")
+            else:
+                raise ValueError(
+                    "Value must be integer or correct enum state : {}".format(
+                        self.properties.units_state
+                    )
                 )
-            )
+        except (Exception, ValueError) as error:
+            raise WritePropertyException("Problem writing to device : {}".format(error))
 
     def __repr__(self):
         return "{}/{} : {}".format(
@@ -874,12 +893,15 @@ class StringPoint(Point):
         return None
 
     def _set(self, value):
-        if isinstance(value, str):
-            self._setitem(value)
-        elif isinstance(value, CharacterString):
-            self._setitem(value.value)
-        else:
-            raise ValueError("Value must be string or CharacterString")
+        try:
+            if isinstance(value, str):
+                self._setitem(value)
+            elif isinstance(value, CharacterString):
+                self._setitem(value.value)
+            else:
+                raise ValueError("Value must be string or CharacterString")
+        except (Exception, ValueError) as error:
+            raise WritePropertyException("Problem writing to device : {}".format(error))
 
     def __repr__(self):
         return "{}/{} : {}".format(

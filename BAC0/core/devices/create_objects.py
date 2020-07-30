@@ -12,6 +12,13 @@ from bacpypes.object import (
     register_object_type,
 )
 
+from bacpypes.local.object import (
+    AnalogOutputCmdObject,
+    AnalogValueCmdObject,
+    BinaryOutputCmdObject,
+    BinaryValueCmdObject,
+)
+
 from bacpypes.primitivedata import CharacterString, Date, Time, Real, Boolean
 from bacpypes.constructeddata import ArrayOf
 from bacpypes.basetypes import EngineeringUnits, DateTime, PriorityArray

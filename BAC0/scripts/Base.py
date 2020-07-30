@@ -85,7 +85,7 @@ class Base:
         modelName=CharacterString("BAC0 Scripting Tool"),
         vendorId=842,
         vendorName=CharacterString("SERVISYS inc."),
-        description=CharacterString("http://christiantremblay.github.io/BAC0/")
+        description=CharacterString("http://christiantremblay.github.io/BAC0/"),
     ):
 
         self._log.debug("Configurating app")

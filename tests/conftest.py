@@ -19,16 +19,48 @@ from BAC0.core.devices.create_objects import (
     create_CharStrValue,
 )
 
+
 from collections import namedtuple
 import time
 
-from bacpypes.primitivedata import CharacterString
-from bacpypes.basetypes import EngineeringUnits
+from bacpypes.primitivedata import CharacterString, Date, Time, Real, Boolean, Integer
+from bacpypes.basetypes import EngineeringUnits, BinaryPV
+
+from bacpypes.local.object import (
+    AnalogOutputCmdObject,
+    AnalogValueCmdObject,
+    BinaryOutputCmdObject,
+    BinaryValueCmdObject,
+    MultiStateValueCmdObject,
+    CharacterStringValueCmdObject,
+)
+
+from bacpypes.object import (
+    MultiStateValueObject,
+    AnalogValueObject,
+    BinaryValueObject,
+    AnalogInputObject,
+    BinaryInputObject,
+    AnalogOutputObject,
+    BinaryOutputObject,
+    CharacterStringValueObject,
+    DateTimeValueObject,
+    Property,
+    register_object_type,
+)
+from bacpypes.constructeddata import ArrayOf
 
 
 @pytest.fixture(scope="session")
 def network_and_devices():
     bacnet = BAC0.lite()
+
+    # Register class to activate behaviours
+    register_object_type(AnalogOutputCmdObject, vendor_id=842)
+    register_object_type(AnalogValueCmdObject, vendor_id=842)
+    register_object_type(BinaryOutputCmdObject, vendor_id=842)
+    register_object_type(BinaryValueCmdObject, vendor_id=842)
+    register_object_type(MultiStateValueCmdObject, vendor_id=842)
 
     def _add_points(qty, device):
         # Add a lot of points for tests (segmentation required)
@@ -42,16 +74,89 @@ def network_and_devices():
         charstr = []
 
         for i in range(qty):
-            mvs.append(create_MV(oid=i, name="mv{}".format(i), pv=1, pv_writable=True))
-            new_av = create_AV(oid=i, name="av{}".format(i), pv=99.9, pv_writable=True)
-            new_av.units = EngineeringUnits.enumerations["degreesCelsius"]
-            new_av.description = "Fake Description {}".format(i)
+            states = ["red", "green", "blue"]
+            new_mv = MultiStateValueCmdObject(
+                objectIdentifier=("multiStateValue", i),
+                objectName="mv{}".format(i),
+                presentValue=1,
+                numberOfStates=len(states),
+                stateText=ArrayOf(CharacterString)(states),
+                description=CharacterString(
+                    "MultiState Value Description {}".format(i)
+                ),
+            )
+            new_mv.add_property(
+                Property("relinquishDefault", Integer, default=0, mutable=True)
+            )
+            mvs.append(new_mv)
+
+            new_av = AnalogValueCmdObject(
+                objectIdentifier=("analogValue", i),
+                objectName="av{}".format(i),
+                presentValue=99.9,
+                description=CharacterString("AnalogValue Description {}".format(i)),
+                units=EngineeringUnits.enumerations["degreesCelsius"],
+            )
+            new_av.add_property(
+                Property("relinquishDefault", Real, default=0, mutable=True)
+            )
             avs.append(new_av)
-            bvs.append(create_BV(oid=i, name="bv{}".format(i), pv=1, pv_writable=True))
-            ais.append(create_AI(oid=i, name="ai{}".format(i), pv=99.9))
-            aos.append(create_AO(oid=i, name="ao{}".format(i), pv=99.9))
-            bis.append(create_BI(oid=i, name="bi{}".format(i), pv=1))
-            bos.append(create_BO(oid=i, name="bo{}".format(i), pv=1))
+
+            new_bv = BinaryValueCmdObject(
+                objectIdentifier=("binaryValue", i),
+                objectName="bv{}".format(i),
+                presentValue="active",
+                description=CharacterString("Binary Value Description {}".format(i)),
+            )
+            new_bv.add_property(
+                Property(
+                    "relinquishDefault", BinaryPV, default="inactive", mutable=True
+                )
+            )
+            bvs.append(new_bv)
+
+            new_ai = AnalogInputObject(
+                objectIdentifier=i,
+                objectName="ai{}".format(i),
+                presentValue=99.9,
+                units=EngineeringUnits.enumerations["percent"],
+                description=CharacterString("AnalogInput Description {}".format(i)),
+            )
+            new_ai.add_property(
+                Property("outOfService", Boolean, default=False, mutable=True)
+            )
+            ais.append(new_ai)
+
+            new_ao = AnalogOutputCmdObject(
+                objectIdentifier=("analogOutput", i),
+                objectName="ao{}".format(i),
+                presentValue=99.9,
+                units=EngineeringUnits.enumerations["percent"],
+                description=CharacterString("AnalogOutput Description {}".format(i)),
+            )
+            aos.append(new_ao)
+
+            new_bi = BinaryInputObject(
+                objectIdentifier=i,
+                objectName="bi{}".format(i),
+                presentValue="active",
+                description=CharacterString("BinaryInput Description {}".format(i)),
+            )
+            new_bi.add_property(
+                Property("outOfService", Boolean, default=False, mutable=True)
+            )
+            bis.append(new_bi)
+
+            bos.append(
+                BinaryOutputCmdObject(
+                    objectIdentifier=("binaryOutput", i),
+                    objectName="bo{}".format(i),
+                    presentValue="active",
+                    description=CharacterString(
+                        "BinaryOutput Description {}".format(i)
+                    ),
+                )
+            )
             charstr.append(
                 create_CharStrValue(
                     oid=i,

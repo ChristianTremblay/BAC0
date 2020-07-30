@@ -31,7 +31,7 @@ from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
 
 # basic services
-from bacpypes.service.device import WhoIsIAmServices
+from bacpypes.service.device import WhoIsIAmServices, WhoHasIHaveServices
 from bacpypes.service.object import ReadWritePropertyServices
 
 # --- this application's modules ---
@@ -45,6 +45,7 @@ from ..functions.Discover import NetworkServiceElementWithRequests
 class BAC0Application(
     ApplicationIOController,
     WhoIsIAmServices,
+    WhoHasIHaveServices,
     ReadWritePropertyServices,
     ReadWritePropertyMultipleServices,
 ):
@@ -112,11 +113,13 @@ class BAC0Application(
         self.nsap.bind(self.bip, address=self.localAddress)
 
         self.i_am_counter = defaultdict(int)
+        self.i_have_counter = defaultdict(int)
         self.who_is_counter = defaultdict(int)
 
         # keep track of requests to line up responses
         self._request = None
         self._last_i_am_received = []
+        self._last_i_have_received = []
 
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
@@ -126,6 +129,15 @@ class BAC0Application(
         key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
         self.i_am_counter[key] += 1
         self._last_i_am_received.append(key)
+
+    def do_IHaveRequest(self, apdu):
+        """Given an I-Have request, cache it."""
+        self._log.debug("do_IHaveRequest {!r}".format(apdu))
+
+        # build a key from the source, using object name
+        key = (str(apdu.pduSource), apdu.objectName)
+        self.i_have_counter[key] += 1
+        self._last_i_have_received.append(key)
 
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
@@ -174,6 +186,7 @@ class BAC0Application(
 class BAC0ForeignDeviceApplication(
     ApplicationIOController,
     WhoIsIAmServices,
+    WhoHasIHaveServices,
     ReadWritePropertyServices,
     ReadWritePropertyMultipleServices,
 ):
@@ -241,10 +254,12 @@ class BAC0ForeignDeviceApplication(
         self.nsap.bind(self.bip)
 
         self.i_am_counter = defaultdict(int)
+        self.i_have_counter = defaultdict(int)
         self.who_is_counter = defaultdict(int)
         # keep track of requests to line up responses
         self._request = None
         self._last_i_am_received = []
+        self._last_i_have_received = []
 
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
@@ -255,6 +270,15 @@ class BAC0ForeignDeviceApplication(
         self.i_am_counter[key] += 1
         self._last_i_am_received.append(key)
         # continue with the default implementation
+
+    def do_IHaveRequest(self, apdu):
+        """Given an I-Have request, cache it."""
+        self._log.debug("do_IHaveRequest {!r}".format(apdu))
+
+        # build a key from the source, using object name
+        key = (str(apdu.pduSource), apdu.objectName)
+        self.i_have_counter[key] += 1
+        self._last_i_have_received.append(key)
 
     def do_WhoIsRequest(self, apdu):
         """Respond to a Who-Is request."""
