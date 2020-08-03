@@ -34,7 +34,11 @@ from bacpypes.basetypes import ServicesSupported, DeviceStatus
 from bacpypes.primitivedata import CharacterString
 
 # --- this application's modules ---
-from ..core.app.ScriptApplication import BAC0Application, BAC0ForeignDeviceApplication
+from ..core.app.ScriptApplication import (
+    BAC0Application,
+    BAC0ForeignDeviceApplication,
+    BAC0BBMDDeviceApplication,
+)
 from .. import infos
 from ..core.io.IOExceptions import InitializationError
 from ..core.functions.GetIPAddr import validate_ip_address
@@ -82,6 +86,7 @@ class Base:
         segmentationSupported="segmentedBoth",
         bbmdAddress=None,
         bbmdTTL=0,
+        bdtable=None,
         modelName=CharacterString("BAC0 Scripting Tool"),
         vendorId=842,
         vendorName=CharacterString("SERVISYS inc."),
@@ -138,6 +143,7 @@ class Base:
 
         self.bbmdAddress = bbmdAddress
         self.bbmdTTL = bbmdTTL
+        self.bdtable = bdtable
 
         self.firmwareRevision = firmwareRevision
 
@@ -171,7 +177,15 @@ class Base:
             )
 
             # make an application
-            if self.bbmdAddress and self.bbmdTTL > 0:
+            if self.bdtable:
+                self.this_application = BAC0BBMDDeviceApplication(
+                    self.this_device,
+                    self.localIPAddr,
+                    bdtable=self.bdtable,
+                    iam_req=self._iam_request(),
+                )
+                app_type = "BBMD Device"
+            elif self.bbmdAddress and self.bbmdTTL > 0:
 
                 self.this_application = BAC0ForeignDeviceApplication(
                     self.this_device,

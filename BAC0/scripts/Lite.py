@@ -88,6 +88,7 @@ class Lite(
         mask=None,
         bbmdAddress=None,
         bbmdTTL=0,
+        bdtable=None,
         ping=True,
         **params
     ):
@@ -134,6 +135,7 @@ class Lite(
             localIPAddr=ip_addr,
             bbmdAddress=bbmdAddress,
             bbmdTTL=bbmdTTL,
+            bdtable=bdtable,
             **params
         )
 
