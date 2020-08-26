@@ -263,3 +263,7 @@ class Base:
             stopBacnetIPApp()
             self.t.join()
             raise
+
+    @property
+    def discoveredNetworks(self):
+        return self.this_application.nse._learnedNetworks or set()
