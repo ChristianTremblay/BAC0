@@ -21,7 +21,7 @@ from bacpypes.local.object import (
 
 from bacpypes.primitivedata import CharacterString, Date, Time, Real, Boolean
 from bacpypes.constructeddata import ArrayOf
-from bacpypes.basetypes import EngineeringUnits, DateTime, PriorityArray
+from bacpypes.basetypes import EngineeringUnits, DateTime, PriorityArray, StatusFlags
 
 from .mixins.CommandableMixin import LocalBinaryOutputObjectCmd
 
@@ -47,6 +47,7 @@ def create_MV(
         numberOfStates=len(states),
         stateText=ArrayOf(CharacterString)(states),
         priorityArray=PriorityArray(),
+        statusFlags=StatusFlags(),
     )
     msvo = _make_mutable(msvo, mutable=pv_writable)
     return msvo
@@ -60,6 +61,7 @@ def create_AV(oid=1, pv=0, name="AV", units=None, pv_writable=False):
         units=units,
         relinquishDefault=0,
         priorityArray=PriorityArray(),
+        statusFlags=StatusFlags(),
     )
     avo = _make_mutable(avo, mutable=pv_writable)
     avo = _make_mutable(avo, identifier="relinquishDefault", mutable=pv_writable)
@@ -76,6 +78,7 @@ def create_BV(
         activeText=activeText,
         inactiveText=inactiveText,
         priorityArray=PriorityArray(),
+        statusFlags=StatusFlags(),
     )
     bvo = _make_mutable(bvo, mutable=pv_writable)
     return bvo
@@ -88,6 +91,7 @@ def create_AI(oid=1, pv=0, name="AI", units=None):
         presentValue=pv,
         units=units,
         outOfService=Boolean(False),
+        statusFlags=StatusFlags(),
     )
     aio = _make_mutable(aio, identifier="outOfService", mutable=True)
     return aio
@@ -100,6 +104,7 @@ def create_BI(oid=1, pv=0, name="BI", activeText="On", inactiveText="Off"):
         presentValue=pv,
         activeText=activeText,
         inactiveText=inactiveText,
+        statusFlags=StatusFlags(),
     )
 
 
@@ -110,6 +115,7 @@ def create_AO(oid=1, pv=0, name="AO", units=None, pv_writable=False):
         presentValue=pv,
         units=units,
         priorityArray=PriorityArray(),
+        statusFlags=StatusFlags(),
     )
     aoo = _make_mutable(aoo, mutable=pv_writable)
     return aoo
@@ -124,6 +130,7 @@ def create_BO(
         presentValue=pv,
         activeText=activeText,
         inactiveText=inactiveText,
+        statusFlags=StatusFlags(),
     )
     boo = _make_mutable(boo, mutable=pv_writable)
     return boo
@@ -131,7 +138,9 @@ def create_BO(
 
 def create_CharStrValue(oid=1, pv="null", name="String", pv_writable=False):
     charval = CharacterStringValueObject(
-        objectIdentifier=("characterstringValue", oid), objectName=name
+        objectIdentifier=("characterstringValue", oid),
+        objectName=name,
+        statusFlags=StatusFlags(),
     )
     charval = _make_mutable(charval, mutable=pv_writable)
     charval.presentValue = CharacterString(pv)
@@ -142,8 +151,45 @@ def create_DateTimeValue(
     oid=1, date=None, time=None, name="DateTime", pv_writable=False
 ):
     datetime = DateTimeValueObject(
-        objectIdentifier=("datetimeValue", oid), objectName=name
+        objectIdentifier=("datetimeValue", oid),
+        objectName=name,
+        statusFlags=StatusFlags(),
     )
     datetime = _make_mutable(datetime, mutable=pv_writable)
     datetime.presentValue = DateTime(date=Date(date), time=Time(time))
     return datetime
+
+
+def create_object(
+    object_class, oid, objectName, description, presentValue=None, commandable=False
+):
+    new_object = object_class(
+        objectIdentifier=(object_class.objectType, oid),
+        objectName="{}".format(objectName),
+        presentValue=presentValue,
+        description=CharacterString("{}".format(description)),
+        statusFlags=StatusFlags(),
+    )
+    return _make_mutable(new_object, mutable=commandable)
+
+
+def set_pv(obj=None, value=None, flags=[0, 0, 0, 0]):
+    obj.presentValue = value
+    obj.statusFlags = flags
+
+
+def create_object_list(objects_dict):
+    """
+    d = {name: (name, description, presentValue, units, commandable)}
+    """
+    obj_list = []
+    for obj_id, v in objects_dict.items():
+        name, oid, description, presentValue, commandable = v
+        description = CharacterString(description)
+        new_obj = create_object(
+            object_class, name, oid, description, commandable=commandable
+        )
+        if presentValue:
+            new_obj.presentValue = presentValue
+        obj_list.append(new_obj)
+    return obj_list
