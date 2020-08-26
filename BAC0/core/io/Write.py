@@ -144,10 +144,7 @@ class WriteProperty:
         This will ensure the value can be encoded and is valid in the context
         """
         # get the datatype
-        print(obj_type, prop_id, vendor_id)
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
-        print(datatype)
-        print(type(datatype))
         # change atomic values into something encodeable, null is a special
         # case
         if value == "null":
