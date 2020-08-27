@@ -146,6 +146,7 @@ class Base:
         self.bdtable = bdtable
 
         self.firmwareRevision = firmwareRevision
+        self._ric = {}
 
         try:
             self.startApp()
@@ -268,6 +269,18 @@ class Base:
     def discoveredNetworks(self):
         return self.this_application.nse._learnedNetworks or set()
 
+    #    @property
+    #    def routing_table(self):
+    #        return self.this_application.nse._routing_table or {}
+
     @property
     def routing_table(self):
-        return self.this_application.nse._routing_table or {}
+        self._ric = {}
+        ric = self.this_application.nsap.router_info_cache
+        for net in self.this_application.nse._learnedNetworks:
+            ri = ric.get_router_info(None, net).__dict__
+            self._ric[ri["address"]] = {
+                "source_network": ri["snet"],
+                "destination_networks": ri["dnets"],
+            }
+        return self._ric
