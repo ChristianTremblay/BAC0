@@ -267,3 +267,7 @@ class Base:
     @property
     def discoveredNetworks(self):
         return self.this_application.nse._learnedNetworks or set()
+
+    @property
+    def routing_table(self):
+        return self.this_application.nse._routing_table or {}

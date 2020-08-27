@@ -68,6 +68,7 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
         self._iartn = []
         self._learnedNetworks = set()
         self.queue_by_address = {}
+        self._routing_table = {}
 
     def process_io(self, iocb):
         # get the destination address from the pdu
@@ -124,11 +125,10 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
     def indication(self, adapter, npdu):
         if isinstance(npdu, IAmRouterToNetwork):
             if isinstance(self._request, WhoIsRouterToNetwork):
-                self._log.info(
-                    "{} router to {}".format(npdu.pduSource, npdu.iartnNetworkList)
-                )
-                address = str(npdu.pduSource)
+                address, netlist = str(npdu.pduSource), npdu.iartnNetworkList
+                self._log.info("{} router to {}".format(address, netlist))
                 self._iartn.append(address)
+                self._routing_table[address] = netlist
             for each in npdu.iartnNetworkList:
                 self._learnedNetworks.add(int(each))
 
