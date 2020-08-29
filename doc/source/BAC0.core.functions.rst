@@ -4,6 +4,14 @@ BAC0.core.functions package
 Submodules
 ----------
 
+BAC0.core.functions.DeviceCommunicationControl module
+-----------------------------------------------------
+
+.. automodule:: BAC0.core.functions.DeviceCommunicationControl
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 BAC0.core.functions.Discover module
 -----------------------------------
 
@@ -20,6 +28,14 @@ BAC0.core.functions.GetIPAddr module
    :undoc-members:
    :show-inheritance:
 
+BAC0.core.functions.Reinitialize module
+---------------------------------------
+
+.. automodule:: BAC0.core.functions.Reinitialize
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 BAC0.core.functions.TimeSync module
 -----------------------------------
 
@@ -27,15 +43,6 @@ BAC0.core.functions.TimeSync module
    :members:
    :undoc-members:
    :show-inheritance:
-
-BAC0.core.functions.discoverPoints module
------------------------------------------
-
-.. automodule:: BAC0.core.functions.discoverPoints
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 
 Module contents
 ---------------

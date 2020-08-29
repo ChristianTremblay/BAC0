@@ -36,7 +36,6 @@ BAC0.core.io.Write module
    :undoc-members:
    :show-inheritance:
 
-
 Module contents
 ---------------
 

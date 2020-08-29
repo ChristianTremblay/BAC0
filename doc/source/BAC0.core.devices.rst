@@ -5,7 +5,9 @@ Subpackages
 -----------
 
 .. toctree::
+   :maxdepth: 7
 
+   BAC0.core.devices.local
    BAC0.core.devices.mixins
 
 Submodules
@@ -42,7 +44,6 @@ BAC0.core.devices.create\_objects module
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 Module contents
 ---------------

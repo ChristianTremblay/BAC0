@@ -67,7 +67,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "BAC0"
-copyright = "2015, Christian Tremblay, P.Eng. | SERVISYS inc."
+copyright = "2020, Christian Tremblay, P.Eng. | SERVISYS inc."
 author = infos.__author__
 
 # The version info for the project you're documenting, acts as replacement for
