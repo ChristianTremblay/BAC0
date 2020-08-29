@@ -275,12 +275,40 @@ class Base:
 
     @property
     def routing_table(self):
+        """
+        Routing Table will give all the details about routers and how they
+        connect BACnet networks together.
+
+        It's a decoded presentation of what bacpypes.router_info_cache contains.
+
+        Returns a dict with the address of routers as key.
+        """
+
+        class Router:
+            def __init__(self, router_info, index=None, path=None):
+                self.source_network = router_info.snet
+                self.address = router_info.address
+                self.destination_networks = router_info.dnets
+                self.index = index
+                self.path = path
+
+            def __repr__(self):
+                return "Source Network: {} | Address: {} | Destination Networks: {} | Path: {}".format(
+                    self.source_network,
+                    self.address,
+                    self.destination_networks,
+                    self.path,
+                )
+
+        self._routers = {}
+
         self._ric = {}
         ric = self.this_application.nsap.router_info_cache
-        for net in self.this_application.nse._learnedNetworks:
-            ri = ric.get_router_info(None, net).__dict__
-            self._ric[ri["address"]] = {
-                "source_network": ri["snet"],
-                "destination_networks": ri["dnets"],
-            }
-        return self._ric
+
+        for networks, routers in ric.routers.items():
+            for address, router in routers.items():
+                self._routers[str(address)] = Router(router, index=networks)
+        for path, router in ric.path_info.items():
+            self._routers[str(router.address)].path = path
+
+        return self._routers

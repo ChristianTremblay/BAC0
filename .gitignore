@@ -40,3 +40,4 @@ obj300.bin
 *.db
 *.log
 wily-report.html
+make_doc.bat
