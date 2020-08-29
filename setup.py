@@ -22,6 +22,7 @@ setup(
         "BAC0.core.io",
         "BAC0.core.functions",
         "BAC0.core.devices",
+        "BAC0.core.devices.local",
         "BAC0.core.devices.mixins",
         "BAC0.core.utils",
         "BAC0.core.proprietary_objects",

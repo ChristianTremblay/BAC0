@@ -50,6 +50,7 @@ def create_MV(
         statusFlags=StatusFlags(),
     )
     msvo = _make_mutable(msvo, mutable=pv_writable)
+    deprecate_msg()
     return msvo
 
 
@@ -65,6 +66,7 @@ def create_AV(oid=1, pv=0, name="AV", units=None, pv_writable=False):
     )
     avo = _make_mutable(avo, mutable=pv_writable)
     avo = _make_mutable(avo, identifier="relinquishDefault", mutable=pv_writable)
+    deprecate_msg()
     return avo
 
 
@@ -81,6 +83,7 @@ def create_BV(
         statusFlags=StatusFlags(),
     )
     bvo = _make_mutable(bvo, mutable=pv_writable)
+    deprecate_msg()
     return bvo
 
 
@@ -94,10 +97,12 @@ def create_AI(oid=1, pv=0, name="AI", units=None):
         statusFlags=StatusFlags(),
     )
     aio = _make_mutable(aio, identifier="outOfService", mutable=True)
+    deprecate_msg()
     return aio
 
 
 def create_BI(oid=1, pv=0, name="BI", activeText="On", inactiveText="Off"):
+    deprecate_msg()
     return BinaryInputObject(
         objectIdentifier=("binaryInput", oid),
         objectName=name,
@@ -118,6 +123,7 @@ def create_AO(oid=1, pv=0, name="AO", units=None, pv_writable=False):
         statusFlags=StatusFlags(),
     )
     aoo = _make_mutable(aoo, mutable=pv_writable)
+    deprecate_msg()
     return aoo
 
 
@@ -133,6 +139,7 @@ def create_BO(
         statusFlags=StatusFlags(),
     )
     boo = _make_mutable(boo, mutable=pv_writable)
+    deprecate_msg()
     return boo
 
 
@@ -140,10 +147,12 @@ def create_CharStrValue(oid=1, pv="null", name="String", pv_writable=False):
     charval = CharacterStringValueObject(
         objectIdentifier=("characterstringValue", oid),
         objectName=name,
+        priorityArray=PriorityArray(),
         statusFlags=StatusFlags(),
     )
     charval = _make_mutable(charval, mutable=pv_writable)
     charval.presentValue = CharacterString(pv)
+    deprecate_msg()
     return charval
 
 
@@ -157,6 +166,7 @@ def create_DateTimeValue(
     )
     datetime = _make_mutable(datetime, mutable=pv_writable)
     datetime.presentValue = DateTime(date=Date(date), time=Time(time))
+    deprecate_msg()
     return datetime
 
 
@@ -170,6 +180,7 @@ def create_object(
         description=CharacterString("{}".format(description)),
         statusFlags=StatusFlags(),
     )
+    deprecate_msg()
     return _make_mutable(new_object, mutable=commandable)
 
 
@@ -193,3 +204,11 @@ def create_object_list(objects_dict):
             new_obj.presentValue = presentValue
         obj_list.append(new_obj)
     return obj_list
+
+
+def deprecate_msg():
+    print("*" * 80)
+    print("create_xx functions are deprecated and will disappear from a future release")
+    print("BAC0.core.device.local.object will be the new way to define objects")
+    print("Refer to the doc for details")
+    print("*" * 80)
