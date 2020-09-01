@@ -74,6 +74,21 @@ class SQLMixin(object):
     def backup_histories_df(self, resampling="1s"):
         """
         Build a dataframe of the point histories
+        By default, dataframe will be resampled for 1sec intervals,
+        NaN will be forward filled then backward filled. This way, no
+        NaN values will remains and analytics will be easier.
+
+        Please note that this can be disabled using resampling=False
+
+        In the process of building the dataframe, analog values are
+        resampled using the mean() function. So we have intermediate 
+        results between to records.
+
+        For binary values, we'll use .last() so we won't get a 0.5 value
+        which means nothing in this context. 
+
+        If saving a DB that already exists, previous resampling will survive
+        the merge of old data and new data.
         """
         backup = {}
         if isinstance(resampling, str):
@@ -82,41 +97,51 @@ class SQLMixin(object):
         elif resampling in [0, False]:
             resampling_needed = False
 
-        print(resampling, resampling_freq, resampling_needed)
+        # print(resampling, resampling_freq, resampling_needed)
         for point in self.points:
             try:
-                if point.history.dtypes == object:
-                    if resampling_needed:
-                        backup[point.properties.name] = (
-                            point.history.replace(["inactive", "active"], [0, 1])
-                            .resample(resampling_freq)
-                            .last()
-                        )
-                    else:
-                        backup[point.properties.name] = point.history.replace(
-                            ["inactive", "active"], [0, 1]
-                        )
+                if resampling_needed and "binary" in point.properties.type:
+                    backup[point.properties.name] = (
+                        point.history.replace(["inactive", "active"], [0, 1])
+                        .resample(resampling_freq)
+                        .last()
+                    )
+                elif resampling_needed and "analog" in point.properties.type:
+                    backup[point.properties.name] = point.history.resample(
+                        resampling_freq
+                    ).mean()
+                else:
+                    backup[point.properties.name] = point.history.resample(
+                        resampling_freq
+                    ).last()
+
             except Exception as error:
-                print(point, error)
-                # probably not enough points...
-                if point.history.dtypes == object:
+                self._log.error(
+                    "Error in resampling {} | {} (probably not enough points)".format(
+                        point, error
+                    )
+                )
+                if "binary" in point.properties.type:
                     backup[point.properties.name] = point.history.replace(
                         ["inactive", "active"], [0, 1]
                     )
-            else:
-                try:
-                    if resampling_needed:
-                        backup[point.properties.name] = point.history.resample(
-                            resampling_freq
-                        ).mean()
-                    else:
-                        backup[point.properties.name] = point.history
-                except:
-                    # probably not enough point...
+                elif "analog" in point.properties.type:
+                    backup[point.properties.name] = point.history.resample(
+                        resampling_freq
+                    ).mean()
+                else:
                     backup[point.properties.name] = point.history
 
         df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in backup.items()]))
-        return df.fillna(method="ffill")
+        if resampling_needed:
+            return (
+                df.resample(resampling_freq)
+                .last()
+                .fillna(method="ffill")
+                .fillna(method="bfill")
+            )
+        else:
+            return df
 
     def save(self, filename=None, resampling="1s"):
         """

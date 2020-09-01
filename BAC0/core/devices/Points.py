@@ -141,7 +141,7 @@ class Point:
                 ),
                 vendor_id=self.properties.device.properties.vendor_id,
             )
-            self._trend(res)
+            # self._trend(res)
         except Exception as e:
             raise
 
@@ -604,6 +604,12 @@ class NumericPoint(Point):
         )
 
     @property
+    def value(self):
+        res = super().value
+        self._trend(res)
+        return res
+
+    @property
     def units(self):
         return self.properties.units_state
 
@@ -695,24 +701,17 @@ class BooleanPoint(Point):
             history_size=history_size,
         )
 
+    def _trend(self, res):
+        res = "1: active" if res == "active" else "0: inactive"
+        super()._trend(res)
+
     @property
     def value(self):
         """
         Read the value from BACnet network
         """
-        try:
-            res = self.properties.device.properties.network.read(
-                "{} {} {} presentValue".format(
-                    self.properties.device.properties.address,
-                    self.properties.type,
-                    str(self.properties.address),
-                ),
-                vendor_id=self.properties.device.properties.vendor_id,
-            )
-            self._trend(res)
-
-        except Exception as e:
-            raise
+        res = super().value
+        self._trend(res)
 
         if res == "inactive":
             self._key = 0
@@ -807,17 +806,32 @@ class EnumPoint(Point):
             history_size=history_size,
         )
 
+    def _trend(self, res):
+        res = "{}: {}".format(res, self.get_state(res))
+        super()._trend(res)
+
+    @property
+    def value(self):
+        res = super().value
+        self._log.info("Value : {}".format(res))
+        self._log.info("EnumValue : {}".format(self.get_state(res)))
+        self._trend(res)
+        return res
+
+    def get_state(self, v):
+        return self.properties.units_state[v - 1]
+
     @property
     def enumValue(self):
         """
         returns: (str) Enum state value
         """
         try:
-            return self.properties.units_state[int(self.lastValue) - 1]
+            return self.get_state(int(self.lastValue))
         except TypeError:
             # polling probably off, no last value
             v = self.value
-            return self.properties.units_state[v - 1]
+            return self.get_state(v)
         except IndexError:
             value = "unknown"
         except ValueError:
