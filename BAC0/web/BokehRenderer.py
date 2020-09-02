@@ -13,15 +13,22 @@ from bokeh.models import (
     ColumnDataSource,
     HoverTool,
     Range1d,
+    Label,
+    LabelSet,
     LinearAxis,
     Legend,
     LegendItem,
+    Dropdown,
+    MultiChoice,
+    CustomJS,
 )
 from bokeh.models.widgets import DataTable, TableColumn, Div
-from bokeh.layouts import widgetbox, row, column, gridplot
+from bokeh.layouts import widgetbox, row, column, gridplot, widgetbox
 from bokeh.palettes import d3, viridis
 from bokeh.io import curdoc
 from bokeh.application.handlers import Handler
+from bokeh.models.tools import CustomJSHover
+
 from functools import partial
 
 from tornado import gen
@@ -48,8 +55,15 @@ class DynamicPlotHandler(Handler):
         self._network = weakref.ref(network)
 
         self._last_time_list = None
+        self._last_time_devices = None
+        self._peristent_widget_choices = {}
         self._update_complete = False
         self._pcb = None  # Periodic callback
+        self.widget = column(
+            children=[MultiChoice(value=[], options=["n/a"])],
+            sizing_mode="scale_width",
+            name="widgetbox",
+        )
 
         self._analog_name = ["A{}".format(each) for each in range(20)]
         self._binary_name = ["B{}".format(each) for each in range(20)]
@@ -198,10 +212,59 @@ class DynamicPlotHandler(Handler):
         except RuntimeError as error:
             self._log.warning("Update failed, will try later | {}".format(error))
 
+        # add selected points to bacnet.trend
+        def get_device(name):
+            for controller in self.network.registered_devices:
+                if controller.properties.name == name:
+                    return controller
+            raise KeyError("Controller not found")
+
+        def _already_trended(name):
+            # print('Point name : {}'.format(name))
+            for point in self.network.trends:
+                if point.properties.name == name:
+                    return True
+            return False
+
+        self._all_points_selected = []
+
+        for device_choice in self.widget.children:
+            try:
+                _device = get_device(device_choice.title)
+            except KeyError:
+                continue
+            self._peristent_widget_choices[device_choice.title] = device_choice.value
+            for point_name in device_choice.value:
+                self._all_points_selected.append(
+                    "{}/{}".format(device_choice.title, point_name)
+                )
+                if not _already_trended(point_name):
+                    _name = "{}/{}".format(device_choice.title, point_name)
+                    self._log.info("Adding {} to trends".format(_name))
+                    _device[point_name].chart()
+
+        #       self._all_points_selected = [device_choice.value for device_choice in self.widget.children][0]
+        for point in self.network.trends:
+            _trend_name = "{}/{}".format(
+                point.properties.device.properties.name, point.properties.name
+            )
+            if _trend_name not in self._all_points_selected:
+                self._log.info("Removing {} from trends".format(_trend_name))
+                self.network.remove_trend(point)
+                for k, v in self._cds_struct.items():
+                    if v == _trend_name:
+                        self._cds_struct[k] = None
+
+                for device_choice in self.widget.children:
+                    self._peristent_widget_choices[
+                        device_choice.title
+                    ] = device_choice.value
+
         if self.verify_if_document_needs_to_be_modified():
             try:
                 self.update_glyphs()
                 self.update_legend()
+                self.update_widgets()
             except RuntimeError:
                 self._log.warning("Problem updating. Will retry")
 
@@ -235,17 +298,23 @@ class DynamicPlotHandler(Handler):
             LinearAxis(y_range_name="bool", axis_label="Binary", visible=False), "left"
         )
         p.add_layout(
-            LinearAxis(y_range_name="enum", axis_label="Enumerated", visible=True),
+            LinearAxis(
+                y_range_name="enum",
+                axis_label="Enumerated",
+                visible=True,
+                ticker=list(range(11)),
+            ),
             "right",
         )
 
         hover = HoverTool(
             tooltips=[
                 ("name", "$name"),
-                ("value", "$y"),
-                # ("units", "$tags[0]"),
+                ("value", "$data_y"),
+                # ("units", "$tags"),
                 ("time", "@time_s"),
-            ]
+            ],
+            mode="vline",
         )
         p.add_tools(hover)
 
@@ -293,7 +362,9 @@ class DynamicPlotHandler(Handler):
             "binary": binary_glyphs,
             "multistates": multistates_glyphs,
         }
-        p.add_layout(Legend(items=[]), "below")
+        legend = Legend(items=[])
+        legend.click_policy = "mute"
+        p.add_layout(legend, "below")
         return p
 
     @staticmethod
@@ -303,7 +374,6 @@ class DynamicPlotHandler(Handler):
             _k = t[k[0]]
         except KeyError:
             _k = k
-        # print(_k)
         return _k
 
     def update_legend(self):
@@ -311,10 +381,8 @@ class DynamicPlotHandler(Handler):
         for k, v in self._cds_struct.items():
             if not v:
                 continue
-            # print(k, v)
             try:
                 glyph = self.glyphs[DynamicPlotHandler._type(k)][k]
-                # glyph = _glyph
                 label = "{} | {} ({})".format(glyph.name, glyph.tags[1], glyph.tags[0])
                 lst_of_items.append(LegendItem(label=label, renderers=[glyph]))
             except KeyError:
@@ -357,17 +425,26 @@ class DynamicPlotHandler(Handler):
         self._cds_struct = {}
         self.cds = self.initialize_cds()
         self.figure = self.create_figure()
-        layout = gridplot([self.figure], ncols=2)
+        layout = row(
+            [
+                column([self.figure], name="main_plot"),
+                column([self.widget], name="widgets"),
+            ]
+        )
         doc.add_root(layout)
         self._pcb = doc.add_periodic_callback(self.update, 3000)
         return doc
 
     def verify_if_document_needs_to_be_modified(self):
-        if self._last_time_list != self.network.trends:
+        if (
+            self._last_time_list != self.network.trends
+            or self._last_time_devices != self.network.registered_devices
+        ):
             self._log.debug(
                 "List of points to trend have changed, document will be modified."
             )
             self._last_time_list = self.network.trends
+            self._last_time_devices = self.network.registered_devices
             return True
         else:
             return False
@@ -378,6 +455,36 @@ class DynamicPlotHandler(Handler):
             doc.remove_periodic_callback(self._pcb)
         except:
             pass
+
+    def update_widgets(self):
+        sel = self.generate_selection()
+        self.widget.children = sel
+
+    def generate_selection(self):
+        devices = self.network.registered_devices
+        selectors = []
+        _cache = []
+
+        for device in devices:
+            try:
+                _cache = self._peristent_widget_choices[device.properties.name]
+            except KeyError:
+                pass
+            options = list(device.points_name)
+            mc = MultiChoice(
+                value=_cache, options=options, title=device.properties.name
+            )
+            mc.js_on_change(
+                "value",
+                CustomJS(
+                    code="""
+                console.log('multi_choice: value=' + this.value, this.toString())
+                """
+                ),
+            )
+
+            selectors.append(mc)
+        return selectors
 
 
 class DevicesTableHandler(Handler):
