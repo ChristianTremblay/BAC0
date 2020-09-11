@@ -52,10 +52,10 @@ class FlaskServer(Thread):
     def config_flask_app(self):
         @self.flask_app.route("/trends", methods=["GET"])
         def bkapp_trends_page():
-            if self.network.number_of_registered_trends > 0:
+            if self.network.registered_devices:
                 script = server_document("http://{}:5006/trends".format(self.ip))
             else:
-                script = "<div>No trend registered yet...</div>"
+                script = "<div>No devices registered yet...</div>"
             return render_template(
                 "trends.html",
                 sidebar=create_sidebar(trends_class='class="active"'),
