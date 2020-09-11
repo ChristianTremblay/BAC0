@@ -35,14 +35,13 @@ try:
     except ImportError:
         _COMPLETE = False
 
+    from .scripts.Lite import Lite as lite
     if _COMPLETE:
-        from .scripts.Complete import Complete as connect
-        from .scripts.Lite import Lite as lite
+        from .scripts.Complete import Complete as web
+        connect = web
     else:
-        from .scripts.Lite import Lite as connect
-
-        lite = connect
-        # print('All features not available as some modules are missing (flask, flask-bootstrap, bokeh, pandas). See docs for details')
+        connect = lite
+        web = lambda: print('All features not available to run BAC0.web(). Some modules are missing (flask, flask-bootstrap, bokeh, pandas). See docs for details. To start BAC0, use BAC0.lite()')
 
     # Import proprietary classes
     from .core.proprietary_objects import jci
