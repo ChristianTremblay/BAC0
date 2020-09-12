@@ -10,7 +10,7 @@ from bacpypes.object import (
     DatePatternValueObject,
 )
 from bacpypes.primitivedata import CharacterString, Date, Time, Real, Boolean, Integer
-from bacpypes.basetypes import EngineeringUnits, BinaryPV
+from bacpypes.basetypes import EngineeringUnits, BinaryPV, Polarity
 from bacpypes.local.object import AnalogValueCmdObject, Commandable, MinOnOff
 
 _SHOULD_BE_COMMANDABLE = ["relinquishDefault", "outOfService", "lowLimit", "highLimit"]
@@ -138,7 +138,7 @@ def add_feature(cls):
                 objectIdentifier=(base_cls.objectType, instance),
                 objectName="{}".format(objectName),
                 presentValue=presentValue,
-                description=CharacterString("{}".format(presentValue)),
+                description=CharacterString("{}".format(description)),
             )
             return new_object
 

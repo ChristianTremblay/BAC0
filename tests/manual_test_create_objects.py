@@ -2,56 +2,55 @@ import pytest
 import bacpypes
 import BAC0
 
-from bacpypes.primitivedata import Real, CharacterString
-from BAC0.core.devices.local.object import ObjectFactory
-from bacpypes.object import (
-    AnalogValueObject,
-    CharacterStringValueObject,
-    AnalogInputObject,
+from BAC0.core.devices.local import (
+    analog_input,
+    analog_output,
+    analog_value,
+    binary_input,
+    binary_output,
+    binary_value,
+    multistate_input,
+    multistate_output,
+    multistate_value,
+    date_value,
+    datetime_value,
+    temperature_input,
+    temperature_value,
+    humidity_input,
+    humidity_value,
+    character_string,
 )
+from BAC0.core.devices.local.object import ObjectFactory
+from BAC0.core.devices.local.models import make_state_text
 
 
 def build():
     bacnet = BAC0.lite(deviceId=3056235)
+    # Add 10 AI with automatic names
+    for each in range(10):
+        _new_objects = analog_input()
 
-    new_obj = ObjectFactory(
-        AnalogValueObject,
-        0,
-        "av0",
-        properties={"units": "degreesCelsius"},
-        presentValue=1,
-        description="Analog Value 0",
-    )
-    ObjectFactory(
-        AnalogValueObject,
-        1,
-        "av1",
-        properties={"units": "degreesCelsius"},
-        presentValue=12,
-        description="Analog Value 1",
-        is_commandable=True,
-    )
-    ObjectFactory(
-        CharacterStringValueObject,
-        0,
-        "cs0",
-        presentValue="Default value",
-        description="String Value 0",
-    )
-    ObjectFactory(
-        CharacterStringValueObject,
-        1,
-        "cs1",
-        presentValue="Default value",
-        description="Writable String Value 1",
+    # Add 10 BI with names from a list
+    names_list = ["A", "B", "C"]
+    for i, each in enumerate(range(3)):
+        _new_objects = binary_input(name=names_list[i])
+
+    # Multistates objects
+    _new_object = multistate_value(description="A Simple On Off Value")
+
+    states = make_state_text(["Normal", "Alarm", "Super Emergency"])
+    _new_object = multistate_value(
+        description="An Alarm Value",
+        properties={"stateText": states},
+        name="BIG-ALARM",
         is_commandable=True,
     )
 
-    new_obj.add_objects_to_application(bacnet.this_application)
+    # Add to BAC0
+    _new_objects.add_objects_to_application(bacnet)
     return bacnet
 
 
-def test_creation():
-    bacnet = build()
-    while True:
-        pass
+bacnet = build()
+while True:
+    pass
