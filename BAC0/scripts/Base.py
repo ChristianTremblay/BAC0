@@ -151,7 +151,9 @@ class Base:
         try:
             self.startApp()
         except InitializationError as error:
-            raise InitializationError("Gros probleme : {}. Address requested : {}".format(error, localIPAddr))
+            raise InitializationError(
+                "Gros probleme : {}. Address requested : {}".format(error, localIPAddr)
+            )
 
     def startApp(self):
         """
