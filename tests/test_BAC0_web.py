@@ -10,7 +10,7 @@ import time
 import BAC0
 
 
-def test_bac0_connect_ok():
+def test_bac0_web_ok():
     fake_bac0_obj = "my_test_bac0"
     fake_device_id = 666
     fake_firmware_revision = "0.1.0"
@@ -21,7 +21,7 @@ def test_bac0_connect_ok():
     fake_vendor_id = 999
     fake_vendor_name = "Innotrode"
 
-    bacnet = BAC0.connect(
+    bacnet = BAC0.web(
         ip="127.0.2.1",
         localObjName=fake_bac0_obj,
         deviceId=fake_device_id,
