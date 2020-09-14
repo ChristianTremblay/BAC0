@@ -73,10 +73,6 @@ class CoV:
     """
     Mixin to support COV registration
     """
-
-    def cov_notification(self, apdu):
-        print("do something here")
-
     def send_cov_subscription(self, request):
         self._log.info("Request : {}".format(request))
         iocb = IOCB(request)
