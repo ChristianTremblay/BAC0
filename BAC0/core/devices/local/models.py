@@ -50,7 +50,6 @@ def _create(definition, **kwargs):
     for k, v in kwargs.items():
         if k == "properties":
             for _k, _v in v.items():
-                # print(k[_k])
                 kwargs[k][_k] = _v
         _definition[k] = v
     return ObjectFactory.from_dict(_definition)
