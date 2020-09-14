@@ -23,7 +23,7 @@ from bacpypes.basetypes import (
     Unsigned,
 )
 from bacpypes.constructeddata import ArrayOf
-from bacpypes.primitivedata import CharacterString
+from bacpypes.primitivedata import CharacterString, Real
 from .object import ObjectFactory
 
 """
@@ -46,12 +46,15 @@ def _create(definition, **kwargs):
         "is_commandable": False,
         "relinquish_default": None,
     }
+    print('_definition : ', _definition)
     _definition.update(definition)
+    print('_definition update : ', _definition)
     for k, v in kwargs.items():
         if k == "properties":
             for _k, _v in v.items():
-                kwargs[k][_k] = _v
+                _definition[k][_k] = _v
         _definition[k] = v
+    print('Final : ', _definition)
     return ObjectFactory.from_dict(_definition)
 
 
@@ -73,7 +76,7 @@ def analog(**kwargs):
     definition = {
         "instance": 0,
         "description": "No description",
-        "properties": {"units": "percent", "eventState": EventState()},
+        "properties": {"units": "percent", "eventState": EventState(), "covIncrement": 0.15,},
         "presentValue": 0,
         "is_commandable": False,
         "relinquish_default": 0,
@@ -104,7 +107,6 @@ def analog_value(**kwargs):
     kwargs["objectType"] = AnalogValueObject
     kwargs["instance"] = 0
     kwargs["is_commandable"] = True
-
     return analog(**kwargs)
 
 
@@ -196,25 +198,25 @@ def multistate_value(**kwargs):
 
 
 def temperature_input(**kwargs):
-    kwargs["name"] = set_name("TEMP_INPUT", **kwargs)
+    kwargs["name"] = set_default_if_not_provided("name", "TEMP_INPUT", **kwargs)
     kwargs["properties"] = {"units": "degreesCelsius"}
     return analog_input(**kwargs)
 
 
 def temperature_value(**kwargs):
-    kwargs["name"] = set_name("TEMP_VALUE", **kwargs)
+    kwargs["name"] = set_default_if_not_provided("name", "TEMP_VALUE", **kwargs)
     kwargs["properties"] = {"units": "degreesCelsius"}
     return analog_value(**kwargs)
 
 
 def humidity_input(**kwargs):
-    kwargs["name"] = set_name("HUM_INPUT", **kwargs)
+    kwargs["name"] = set_default_if_not_provided("name", "HUM_INPUT", **kwargs)
     kwargs["properties"] = {"units": "percentRelativeHumidity"}
     return analog_input(**kwargs)
 
 
 def humidity_value(**kwargs):
-    kwargs["name"] = set_name("HUM_VALUE", **kwargs)
+    kwargs["name"] = set_default_if_not_provided("name", "HUM_VALUE", **kwargs)
     kwargs["properties"] = {"units": "percentRelativeHumidity"}
     return analog_value(**kwargs)
 
