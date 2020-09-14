@@ -23,6 +23,7 @@ from collections import defaultdict
 from bacpypes.app import ApplicationIOController
 from bacpypes.pdu import Address
 from bacpypes.service.object import ReadWritePropertyMultipleServices
+from bacpypes.service.cov import ChangeOfValueServices
 from bacpypes.netservice import NetworkServiceAccessPoint, NetworkServiceElement
 from bacpypes.bvllservice import (
     BIPSimple,
@@ -31,6 +32,8 @@ from bacpypes.bvllservice import (
     AnnexJCodec,
     UDPMultiplexer,
 )
+from bacpypes.apdu import SubscribeCOVRequest, SimpleAckPDU, RejectPDU, AbortPDU
+
 from bacpypes.appservice import StateMachineAccessPoint, ApplicationServiceAccessPoint
 from bacpypes.comm import ApplicationServiceElement, bind, Client
 from bacpypes.iocb import IOCB
@@ -97,6 +100,33 @@ class common_mixin:
         iocb = IOCB(self.iam_req)  # make an IOCB
         deferred(self.request_io, iocb)
 
+    def do_ConfirmedCOVNotificationRequest(self, apdu):
+        # look up the process identifier
+        context = self.subscription_contexts.get(apdu.subscriberProcessIdentifier, None)
+        if not context or apdu.pduSource != context.address:
+            # this is turned into an ErrorPDU and sent back to the client
+            raise RuntimeError("services", "unknownSubscription")
+
+        # now tell the context object
+        elements = context.cov_notification(apdu)
+
+        # success
+        response = SimpleAckPDU(context=apdu)
+
+        # return the result
+        self.response(response)
+        print(elements)
+
+    def do_UnconfirmedCOVNotificationRequest(self, apdu):
+        # look up the process identifier
+        context = self.subscription_contexts.get(apdu.subscriberProcessIdentifier, None)
+        if not context or apdu.pduSource != context.address:
+            return
+
+        # now tell the context object
+        elements = context.cov_notification(apdu)
+        print(elements)
+
 
 @note_and_log
 class BAC0Application(
@@ -106,6 +136,7 @@ class BAC0Application(
     WhoHasIHaveServices,
     ReadWritePropertyServices,
     ReadWritePropertyMultipleServices,
+    ChangeOfValueServices,
 ):
     """
     Defines a basic BACnet/IP application to process BACnet requests.
@@ -179,6 +210,9 @@ class BAC0Application(
         self._last_i_am_received = []
         self._last_i_have_received = []
 
+        # to support CoV
+        self.subscription_contexts = {}
+
     def close_socket(self):
         # pass to the multiplexer, then down to the sockets
         self.mux.close_socket()
@@ -199,6 +233,7 @@ class BAC0ForeignDeviceApplication(
     WhoHasIHaveServices,
     ReadWritePropertyServices,
     ReadWritePropertyMultipleServices,
+    ChangeOfValueServices,
 ):
     """
     Defines a basic BACnet/IP application to process BACnet requests.
@@ -271,6 +306,9 @@ class BAC0ForeignDeviceApplication(
         self._last_i_am_received = []
         self._last_i_have_received = []
 
+        # to support CoV
+        self.subscription_contexts = {}
+
     def close_socket(self):
         # pass to the multiplexer, then down to the sockets
         self.mux.close_socket()
@@ -292,6 +330,7 @@ class BAC0BBMDDeviceApplication(
     WhoHasIHaveServices,
     ReadWritePropertyServices,
     ReadWritePropertyMultipleServices,
+    ChangeOfValueServices,
 ):
     """
     Defines a basic BACnet/IP application to process BACnet requests.
@@ -373,6 +412,9 @@ class BAC0BBMDDeviceApplication(
         self._request = None
         self._last_i_am_received = []
         self._last_i_have_received = []
+
+        # to support CoV
+        self.subscription_contexts = {}
 
     def add_peer(self, address):
         try:

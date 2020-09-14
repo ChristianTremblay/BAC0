@@ -37,6 +37,7 @@ from ..core.functions.Discover import Discover
 from ..core.functions.TimeSync import TimeSync
 from ..core.functions.Reinitialize import Reinitialize
 from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
+from ..core.functions.cov import CoV
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
@@ -66,6 +67,7 @@ class Lite(
     TimeSync,
     Reinitialize,
     DeviceCommunicationControl,
+    CoV,
 ):
     """
     Build a BACnet application to accept read and write requests.
@@ -76,9 +78,6 @@ class Lite(
     :param ip='127.0.0.1': Address must be in the same subnet as the BACnet network
         [BBMD and Foreign Device - not supported]
 
-    :param bokeh_server: (boolean) If set to false, will prevent Bokeh server
-        from being started. Can help troubleshoot issues with Bokeh. By default,
-        set to True.
     """
 
     def __init__(
