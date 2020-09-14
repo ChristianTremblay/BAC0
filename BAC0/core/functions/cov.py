@@ -104,15 +104,17 @@ class CoV:
             address, objectID, confirmed=confirmed, lifetime=lifetime
         )
         request = self._build_cov_request(context)
+
         self.send_cov_subscription(request)
 
     def _build_cov_context(self, address, objectID, confirmed=True, lifetime=None):
         context = SubscriptionContext(
             address=address, objectID=objectID, confirmed=confirmed, lifetime=lifetime
         )
-        self.this_application.subscription_contexts[
-            context.subscriberProcessIdentifier
-        ] = context
+        self.subscription_contexts[context.subscriberProcessIdentifier] = context
+
+        if "context_callback" not in self.subscription_contexts.keys():
+            self.subscription_contexts["context_callback"] = self.context_callback
         return context
 
     def _build_cov_request(self, context):
@@ -129,3 +131,19 @@ class CoV:
             request.lifetime = context.lifetime
 
         return request
+
+    def context_callback(self, elements, callback=None):
+        self._log.info("Receive COV Notification for {}".format(elements))
+        if callback:
+            callback()
+        for device in self.registered_devices:
+            if str(device.properties.address) == str(elements["source"]):
+                device[elements["object_changed"]].cov_registered = True
+                for prop, value in elements["properties"].items():
+                    if prop == "presentValue":
+                        device[elements["object_changed"]]._trend(value)
+                    else:
+                        device[elements["object_changed"]].properties.bacnet_properties[
+                            prop
+                        ] = value
+                break

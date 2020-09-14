@@ -147,6 +147,7 @@ class Base:
 
         self.firmwareRevision = firmwareRevision
         self._ric = {}
+        self.subscription_contexts = {}
 
         try:
             self.startApp()
@@ -186,6 +187,7 @@ class Base:
                     self.localIPAddr,
                     bdtable=self.bdtable,
                     iam_req=self._iam_request(),
+                    subscription_contexts=self.subscription_contexts,
                 )
                 app_type = "BBMD Device"
             elif self.bbmdAddress and self.bbmdTTL > 0:
@@ -196,11 +198,15 @@ class Base:
                     bbmdAddress=self.bbmdAddress,
                     bbmdTTL=self.bbmdTTL,
                     iam_req=self._iam_request(),
+                    subscription_contexts=self.subscription_contexts,
                 )
                 app_type = "Foreign Device"
             else:
                 self.this_application = BAC0Application(
-                    self.this_device, self.localIPAddr, iam_req=self._iam_request()
+                    self.this_device,
+                    self.localIPAddr,
+                    iam_req=self._iam_request(),
+                    subscription_contexts=self.subscription_contexts,
                 )
                 app_type = "Simple BACnet/IP App"
             self._log.debug("Starting")

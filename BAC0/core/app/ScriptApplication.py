@@ -51,6 +51,11 @@ from ..functions.Discover import NetworkServiceElementWithRequests
 
 
 class common_mixin:
+    """
+    They take message coming from the network that are not generated from 
+    a request we made.
+    """
+
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
         self._log.debug("do_IAmRequest {!r}".format(apdu))
@@ -115,7 +120,8 @@ class common_mixin:
 
         # return the result
         self.response(response)
-        print(elements)
+        self._log.debug("Confirmed COV Notification: {}".format(elements))
+        self.subscription_contexts["context_callback"](elements)
 
     def do_UnconfirmedCOVNotificationRequest(self, apdu):
         # look up the process identifier
@@ -125,7 +131,8 @@ class common_mixin:
 
         # now tell the context object
         elements = context.cov_notification(apdu)
-        print(elements)
+        self._log.debug("Unconfirmed COV Notification: {}".format(elements))
+        self.subscription_contexts["context_callback"](elements)
 
 
 @note_and_log
@@ -155,6 +162,7 @@ class BAC0Application(
         deviceInfoCache=None,
         aseID=None,
         iam_req=None,
+        subscription_contexts=None,
     ):
 
         ApplicationIOController.__init__(
@@ -211,7 +219,7 @@ class BAC0Application(
         self._last_i_have_received = []
 
         # to support CoV
-        self.subscription_contexts = {}
+        self.subscription_contexts = subscription_contexts
 
     def close_socket(self):
         # pass to the multiplexer, then down to the sockets
@@ -252,6 +260,7 @@ class BAC0ForeignDeviceApplication(
         deviceInfoCache=None,
         aseID=None,
         iam_req=None,
+        subscription_contexts=None,
     ):
 
         ApplicationIOController.__init__(
@@ -307,7 +316,7 @@ class BAC0ForeignDeviceApplication(
         self._last_i_have_received = []
 
         # to support CoV
-        self.subscription_contexts = {}
+        self.subscription_contexts = subscription_contexts
 
     def close_socket(self):
         # pass to the multiplexer, then down to the sockets
@@ -350,6 +359,7 @@ class BAC0BBMDDeviceApplication(
         deviceInfoCache=None,
         aseID=None,
         iam_req=None,
+        subscription_contexts=None,
     ):
 
         self.bdtable = bdtable
@@ -414,7 +424,7 @@ class BAC0BBMDDeviceApplication(
         self._last_i_have_received = []
 
         # to support CoV
-        self.subscription_contexts = {}
+        self.subscription_contexts = subscription_contexts
 
     def add_peer(self, address):
         try:

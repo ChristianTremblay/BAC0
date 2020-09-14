@@ -549,6 +549,13 @@ class DeviceConnected(Device):
         try:
             if isinstance(point_name, list):
                 return self.df(point_name, force_read=False)
+            elif isinstance(point_name, tuple):
+                _type, _address = point_name
+                for point in self.points:
+                    if point.properties.type == _type and str(
+                        point.properties.address
+                    ) == str(_address):
+                        return point
             else:
                 try:
                     return self._findPoint(point_name, force_read=False)

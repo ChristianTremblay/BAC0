@@ -127,6 +127,8 @@ class Point:
         self.properties.simulated = (False, 0)
         self.properties.overridden = (False, 0)
 
+        self.cov_registered = False
+
     @property
     def value(self):
         """
@@ -570,6 +572,13 @@ class Point:
         """
         return len(self.history)
 
+    def subscribe_cov(self, confirmed=True, lifetime=None):
+        address = self.properties.device.properties.address
+        obj_tuple = (self.properties.type, int(self.properties.address))
+        self.properties.device.properties.network.cov(
+            address, obj_tuple, confirmed=confirmed, lifetime=lifetime
+        )
+
 
 # ------------------------------------------------------------------------------
 
@@ -630,7 +639,7 @@ class NumericPoint(Point):
 
     def __repr__(self):
         polling = self.properties.device.properties.pollDelay
-        if polling < 60 and polling > 0:
+        if (polling < 60 and polling > 0) or self.cov_registered:
             val = float(self.lastValue)
         else:
             val = float(self.value)
@@ -726,7 +735,11 @@ class BooleanPoint(Point):
         """
         returns : (boolean) Value
         """
-        if self.lastValue in [1, "active"]:
+        if ":" in self.lastValue:
+            _val = int(self.lastValue.split(":")[0])
+        else:
+            _val = self.lastValue
+        if _val in [1, "active"]:
             self._key = 1
             self._boolKey = True
         else:
@@ -757,6 +770,10 @@ class BooleanPoint(Point):
             raise WritePropertyException("Problem writing to device : {}".format(error))
 
     def __repr__(self):
+        polling = self.properties.device.properties.pollDelay
+        if (polling >= 60 or polling <= 0) and not self.cov_registered:
+            # Force reading
+            self.value
         return "{}/{} : {}".format(
             self.properties.device.properties.name, self.properties.name, self.boolValue
         )
@@ -813,8 +830,8 @@ class EnumPoint(Point):
     @property
     def value(self):
         res = super().value
-        self._log.info("Value : {}".format(res))
-        self._log.info("EnumValue : {}".format(self.get_state(res)))
+        # self._log.info("Value : {}".format(res))
+        # self._log.info("EnumValue : {}".format(self.get_state(res)))
         self._trend(res)
         return res
 
@@ -827,7 +844,11 @@ class EnumPoint(Point):
         returns: (str) Enum state value
         """
         try:
-            return self.get_state(int(self.lastValue))
+            if ":" in self.lastValue:
+                _val = int(self.lastValue.split(":")[0])
+            else:
+                _val = self.lastValue
+            return self.get_state(_val)
         except TypeError:
             # polling probably off, no last value
             v = self.value
@@ -863,6 +884,10 @@ class EnumPoint(Point):
             raise WritePropertyException("Problem writing to device : {}".format(error))
 
     def __repr__(self):
+        polling = self.properties.device.properties.pollDelay
+        if (polling >= 60 or polling <= 0) and not self.cov_registered:
+            # Force reading
+            self.value
         return "{}/{} : {}".format(
             self.properties.device.properties.name, self.properties.name, self.enumValue
         )
