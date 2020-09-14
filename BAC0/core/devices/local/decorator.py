@@ -106,6 +106,7 @@ def make_commandable():
             base_cls = obj.__class__
             base_cls_name = obj.__class__.__name__ + "Cmd"
             new_type = type(base_cls_name, (_commando, base_cls), {})
+            new_type.__name__ = base_cls_name
             register_object_type(new_type, vendor_id=0)
             objectType, instance, objectName, presentValue, description = args
             new_object = new_type(
