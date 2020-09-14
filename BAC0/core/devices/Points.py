@@ -638,11 +638,16 @@ class NumericPoint(Point):
                 )
 
     def __repr__(self):
-        polling = self.properties.device.properties.pollDelay
-        if (polling < 60 and polling > 0) or self.cov_registered:
-            val = float(self.lastValue)
-        else:
-            val = float(self.value)
+        try:
+            polling = self.properties.device.properties.pollDelay
+            if (polling < 60 and polling > 0) or self.cov_registered:
+                val = float(self.lastValue)
+            else:
+                val = float(self.value)
+        except ValueError:
+            self._log.error('Cannot convert value {}. Device probably disconnected'.format(self.value))
+            # Probably disconnected
+            val = None
         return "{}/{} : {:.2f} {}".format(
             self.properties.device.properties.name,
             self.properties.name,
