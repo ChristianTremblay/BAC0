@@ -38,9 +38,9 @@ try:
     from .scripts.Lite import Lite as lite
 
     if _COMPLETE:
-        from .scripts.Complete import Complete as web
+        from .scripts.Complete import Complete as gui
 
-        connect = web
+        connect = gui
     else:
         connect = lite
         web = lambda: print(
