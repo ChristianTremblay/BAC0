@@ -46,15 +46,12 @@ def _create(definition, **kwargs):
         "is_commandable": False,
         "relinquish_default": None,
     }
-    print('_definition : ', _definition)
     _definition.update(definition)
-    print('_definition update : ', _definition)
     for k, v in kwargs.items():
         if k == "properties":
             for _k, _v in v.items():
                 _definition[k][_k] = _v
         _definition[k] = v
-    print('Final : ', _definition)
     return ObjectFactory.from_dict(_definition)
 
 
@@ -76,7 +73,11 @@ def analog(**kwargs):
     definition = {
         "instance": 0,
         "description": "No description",
-        "properties": {"units": "percent", "eventState": EventState(), "covIncrement": 0.15,},
+        "properties": {
+            "units": "percent",
+            "eventState": EventState(),
+            "covIncrement": 0.15,
+        },
         "presentValue": 0,
         "is_commandable": False,
         "relinquish_default": 0,

@@ -645,7 +645,11 @@ class NumericPoint(Point):
             else:
                 val = float(self.value)
         except ValueError:
-            self._log.error('Cannot convert value {}. Device probably disconnected'.format(self.value))
+            self._log.error(
+                "Cannot convert value {}. Device probably disconnected".format(
+                    self.value
+                )
+            )
             # Probably disconnected
             val = None
         return "{}/{} : {:.2f} {}".format(
