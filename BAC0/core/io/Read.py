@@ -183,10 +183,19 @@ class ReadProperty:
             else:
                 if reason == "unknownProperty":
                     if "description" in args:
-                        return "Not Implemented"
+                        self._log.warning(
+                            "The description property is not implemented in the device. Using a default value for internal needs."
+                        )
+                        return "Property Not Implemented"
                     elif "inactiveText" in args:
+                        self._log.warning(
+                            "The inactiveText property is not implemented in the device. Using a default value of Off for internal needs."
+                        )
                         return "Off"
                     elif "activeText" in args:
+                        self._log.warning(
+                            "The activeText property is not implemented in the device. Using a default value of On for internal needs."
+                        )
                         return "On"
                     else:
                         raise UnknownPropertyError("Unknown property {}".format(args))
