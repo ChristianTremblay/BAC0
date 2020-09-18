@@ -393,3 +393,9 @@ class Lite(
         return "Bacnet Network using ip {} with device id {}".format(
             self.localIPAddr, self.Boid
         )
+
+    def __getitem__(self, boid):
+        for device in self._registered_devices:
+            if str(device.properties.device_id) == str(boid):
+                return device
+        self._log.error("Device not found")

@@ -37,12 +37,17 @@ class Match(Task):
             name = "Match on " + status.properties.name
         self.command = command
         self.status = status
-        Task.__init__(self, delay=delay, daemon=True, name=name)
+        Task.__init__(self, delay=delay, name=name)
 
     def task(self):
         try:
             if self.status.history[-1] != self.command.history[-1]:
-                self.status._setitem(self.command.history[-1])
+                _val = (
+                    self.command.history[-1].split(":")[1]
+                    if ":" in self.command.history[-1]
+                    else self.command.history[-1]
+                )
+                self.status._setitem(_val)
         except Exception:
             self._log.error(
                 "Something wrong matching {} and {}... try again next time...".format(
@@ -52,7 +57,7 @@ class Match(Task):
 
     def stop(self):
         self.status._setitem("auto")
-        self.exitFlag = True
+        super().stop()
 
 
 @note_and_log
@@ -73,7 +78,7 @@ class Match_Value(Task):
         self.point = point
         if not name:
             name = "Match_Value on " + point.properties.name
-        Task.__init__(self, delay=delay, daemon=True, name=name)
+        Task.__init__(self, delay=delay, name=name)
 
     def task(self):
         try:
@@ -89,4 +94,4 @@ class Match_Value(Task):
 
     def stop(self):
         self.point._set("auto")
-        self.exitFlag = True
+        super().stop()

@@ -75,10 +75,10 @@ class CoV:
     """
 
     def send_cov_subscription(self, request):
-        self._log.info("Request : {}".format(request))
+        self._log.debug("Request : {}".format(request))
         iocb = IOCB(request)
         # iocb.add_callback(self.subscription_acknowledged)
-        self._log.info("IOCB : {}".format(iocb))
+        self._log.debug("IOCB : {}".format(iocb))
 
         iocb.add_callback(self.subscription_acknowledged)
 

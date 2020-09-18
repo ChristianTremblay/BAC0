@@ -71,7 +71,7 @@ class DevicePoll(Task):
         :returns: Nothing
         """
         self._device = weakref.ref(device)
-        Task.__init__(self, name="{}_{}".format(prefix, name), delay=delay, daemon=True)
+        Task.__init__(self, name="{}_{}".format(prefix, name), delay=delay)
         self._counter = 0
 
     @property

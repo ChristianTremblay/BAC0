@@ -149,6 +149,10 @@ def add_feature(cls):
 
 
 def bacnet_property(property_name, value, *, force_mutable=None):
+    """
+    Given a property, add it to the object
+    """
+
     def decorate(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -182,6 +186,10 @@ def bacnet_property(property_name, value, *, force_mutable=None):
 
 
 def bacnet_properties(properties):
+    """
+    Given a dict of properties, add them to the object
+    """
+
     def decorate(func):
         @wraps(func)
         def wrapper(*args, **kwargs):

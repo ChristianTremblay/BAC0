@@ -21,6 +21,7 @@ try:
     from .core.devices.Trends import TrendLog as TrendLog
     from .tasks.Poll import SimplePoll as poll
     from .tasks.Match import Match as match
+    from .tasks.Devices import AddDevice as add_device
     from .core.utils.notes import update_log_level as log_level
     from .infos import __version__ as version
 
