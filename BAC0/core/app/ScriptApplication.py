@@ -110,18 +110,21 @@ class common_mixin:
         context = self.subscription_contexts.get(apdu.subscriberProcessIdentifier, None)
         if not context or apdu.pduSource != context.address:
             # this is turned into an ErrorPDU and sent back to the client
-            raise RuntimeError("services", "unknownSubscription")
+            self._log.error(
+                "Unsollicited COV Notification received. Have you restarted the application recently ?"
+            )
+            # raise RuntimeError("services", "unknownSubscription")
+        else:
+            # now tell the context object
+            elements = context.cov_notification(apdu)
 
-        # now tell the context object
-        elements = context.cov_notification(apdu)
+            # success
+            response = SimpleAckPDU(context=apdu)
 
-        # success
-        response = SimpleAckPDU(context=apdu)
-
-        # return the result
-        self.response(response)
-        self._log.debug("Confirmed COV Notification: {}".format(elements))
-        self.subscription_contexts["context_callback"](elements)
+            # return the result
+            self.response(response)
+            self._log.debug("Confirmed COV Notification: {}".format(elements))
+            self.subscription_contexts["context_callback"](elements)
 
     def do_UnconfirmedCOVNotificationRequest(self, apdu):
         # look up the process identifier
