@@ -41,6 +41,7 @@ from collections import deque
 
 from ..tasks.RecurringTask import RecurringTask
 from ..core.utils.notes import note_and_log
+from ..core.devices.Virtuals import VirtualPoint
 
 
 @note_and_log
@@ -49,6 +50,7 @@ class DynamicPlotHandler(Handler):
     analog_queue = Queue()
     binary_queue = Queue()
     multistates_queue = Queue()
+    virtuals_queue = Queue()
 
     def __init__(self, network):
         super().__init__()
@@ -68,6 +70,7 @@ class DynamicPlotHandler(Handler):
         self._analog_name = ["A{}".format(each) for each in range(20)]
         self._binary_name = ["B{}".format(each) for each in range(20)]
         self._multistates_name = ["M{}".format(each) for each in range(20)]
+        self._virtuals_name = ["V{}".format(each) for each in range(20)]
         self.color_mappers = self.create_color_mappers()
 
         self._cds_struct = {}
@@ -120,15 +123,18 @@ class DynamicPlotHandler(Handler):
         return df
 
     def make_glyph_invisible(self):
-        for k, v in self.glyphs["analog"].items():
+        for _, v in self.glyphs["analog"].items():
             v.visible = False
-        for k, v in self.glyphs["binary"].items():
+        for _, v in self.glyphs["binary"].items():
             v.visible = False
-        for k, v in self.glyphs["multistates"].items():
+        for _, v in self.glyphs["multistates"].items():
+            v.visible = False
+        for _, v in self.glyphs["virtual"].items():
             v.visible = False
 
     def update_glyphs(self):
         self._log.debug("Updating Glyphs")
+        enumerated_axis_needed = True
         for point in self.network.trends:
             name = "{}/{}".format(
                 point.properties.device.properties.name, point.properties.name
@@ -141,18 +147,33 @@ class DynamicPlotHandler(Handler):
                 self.binary_queue.put(
                     (name, point.properties.description, point.properties.units_state)
                 )
-            else:
+            elif "multi" in point.properties.type:
+                enumerated_axis_needed = True
                 self.multistates_queue.put(
                     (name, point.properties.description, point.properties.units_state)
                 )
+            elif "virtual" in point.properties.type:
+                self.virtuals_queue.put(
+                    (name, point.properties.description, point.properties.units_state)
+                )
+
+        #for each in self.figure.right:
+        #    try:
+        #        if each.axis_label == "Enumerated":
+        #            each.visible = enumerated_axis_needed
+        #    except AttributeError:
+        #        pass
         for each in [
             (self.analog_queue, "analog"),
             (self.binary_queue, "binary"),
             (self.multistates_queue, "multistates"),
+            (self.virtuals_queue, "virtual"),
         ]:
             i = 0
             process_queue, key = each
+
             while not process_queue.empty():
+
                 index = "{}{}".format(key[0].upper(), i)
                 name, description, units = process_queue.get()
                 self._log.debug("Processing {} on index {}".format(name, index))
@@ -173,7 +194,13 @@ class DynamicPlotHandler(Handler):
             analog_name = "A{}".format(each)
             binary_name = "B{}".format(each)
             multistates_name = "M{}".format(each)
-            _temp = {analog_name: None, binary_name: None, multistates_name: None}
+            virtuals_name = "V{}".format(each)
+            _temp = {
+                analog_name: None,
+                binary_name: None,
+                multistates_name: None,
+                virtuals_name: None,
+            }
             self._cds_struct.update(_temp)
 
         self._cds_struct.update({"index": "index", "time_s": "time_s"})
@@ -248,7 +275,7 @@ class DynamicPlotHandler(Handler):
             _trend_name = "{}/{}".format(
                 point.properties.device.properties.name, point.properties.name
             )
-            if _trend_name not in self._all_points_selected:
+            if _trend_name not in self._all_points_selected and not isinstance(point, VirtualPoint):
                 self._log.info("Removing {} from trends".format(_trend_name))
                 self.network.remove_trend(point)
                 for k, v in self._cds_struct.items():
@@ -273,6 +300,7 @@ class DynamicPlotHandler(Handler):
         analog_glyphs = {}
         binary_glyphs = {}
         multistates_glyphs = {}
+        virtuals_glyphs = {}
 
         self._log.debug("Creating figure")
 
@@ -301,8 +329,8 @@ class DynamicPlotHandler(Handler):
             LinearAxis(
                 y_range_name="enum",
                 axis_label="Enumerated",
-                visible=True,
-                ticker=list(range(11)),
+                visible=False,
+                # ticker=list(range(11)),
             ),
             "right",
         )
@@ -357,10 +385,23 @@ class DynamicPlotHandler(Handler):
                 tags=["unit", "description"],
             )
 
+        for name in self._virtuals_name:
+            virtuals_glyphs[name] = p.line(
+                x="index",
+                y=name,
+                source=self.cds,
+                name=name,
+                color=self.color_mappers["virtual"][name],
+                line_width=2,
+                visible=False,
+                tags=["unit", "description"],
+            )
+
         self.glyphs = {
             "analog": analog_glyphs,
             "binary": binary_glyphs,
             "multistates": multistates_glyphs,
+            "virtual": virtuals_glyphs,
         }
         legend = Legend(items=[])
         legend.click_policy = "mute"
@@ -370,7 +411,7 @@ class DynamicPlotHandler(Handler):
     @staticmethod
     def _type(k):
         try:
-            t = {"A": "analog", "B": "binary", "M": "multistates"}
+            t = {"A": "analog", "B": "binary", "M": "multistates", "V": "virtual"}
             _k = t[k[0]]
         except KeyError:
             _k = k
@@ -412,10 +453,15 @@ class DynamicPlotHandler(Handler):
         keys = [each for each in self._multistates_name]
         multistates_color_mapper = dict(zip(keys, palette))
 
+        palette = rotate_palette(palette)
+        keys = [each for each in self._virtuals_name]
+        virtual_color_mapper = dict(zip(keys, palette))
+
         return {
             "analog": analog_color_mapper,
             "binary": binary_color_mapper,
             "multistates": multistates_color_mapper,
+            "virtual": virtual_color_mapper,
         }
 
     def modify_document(self, doc):

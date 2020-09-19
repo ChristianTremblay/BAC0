@@ -42,6 +42,7 @@ from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
 from ..core.devices.Trends import TrendLog
+from ..core.devices.Virtuals import VirtualPoint
 from ..core.utils.notes import note_and_log
 from ..core.io.IOExceptions import (
     NoResponseFromController,
@@ -321,7 +322,7 @@ class Lite(
         Argument provided must be of type Point or TrendLog
         ex. bacnet.add_trend(controller['point_name'])
         """
-        if isinstance(point_to_trend, Point) or isinstance(point_to_trend, TrendLog):
+        if isinstance(point_to_trend, Point) or isinstance(point_to_trend, TrendLog) or (isinstance(point_to_trend, VirtualPoint)):
             oid = id(point_to_trend)
             self._points_to_trend[oid] = point_to_trend
         else:
