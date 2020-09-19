@@ -59,7 +59,8 @@ class Manager:
                 cls._log.info("Task Manager waiting for tasks...")
                 time.sleep(1)
             except Exception as error:
-                cls._log.error('Fucking big error {}'.format(error))
+                cls._log.error("Super Mega Giga big error {}. Removing task.".format(error))
+                cls.tasks.remove(task.id)
             else:
                 if not cls.manager.is_alive() and cls.enable:
                     cls._log.error(
