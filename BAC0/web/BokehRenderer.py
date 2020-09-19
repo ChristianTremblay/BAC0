@@ -157,7 +157,7 @@ class DynamicPlotHandler(Handler):
                     (name, point.properties.description, point.properties.units_state)
                 )
 
-        #for each in self.figure.right:
+        # for each in self.figure.right:
         #    try:
         #        if each.axis_label == "Enumerated":
         #            each.visible = enumerated_axis_needed
@@ -275,7 +275,9 @@ class DynamicPlotHandler(Handler):
             _trend_name = "{}/{}".format(
                 point.properties.device.properties.name, point.properties.name
             )
-            if _trend_name not in self._all_points_selected and not isinstance(point, VirtualPoint):
+            if _trend_name not in self._all_points_selected and not isinstance(
+                point, VirtualPoint
+            ):
                 self._log.info("Removing {} from trends".format(_trend_name))
                 self.network.remove_trend(point)
                 for k, v in self._cds_struct.items():

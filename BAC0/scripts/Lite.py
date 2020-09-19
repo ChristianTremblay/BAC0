@@ -322,7 +322,11 @@ class Lite(
         Argument provided must be of type Point or TrendLog
         ex. bacnet.add_trend(controller['point_name'])
         """
-        if isinstance(point_to_trend, Point) or isinstance(point_to_trend, TrendLog) or (isinstance(point_to_trend, VirtualPoint)):
+        if (
+            isinstance(point_to_trend, Point)
+            or isinstance(point_to_trend, TrendLog)
+            or (isinstance(point_to_trend, VirtualPoint))
+        ):
             oid = id(point_to_trend)
             self._points_to_trend[oid] = point_to_trend
         else:
@@ -335,7 +339,11 @@ class Lite(
         Argument provided must be of type Point or TrendLog
         ex. bacnet.remove_trend(controller['point_name'])
         """
-        if isinstance(point_to_remove, Point) or isinstance(point_to_remove, TrendLog):
+        if (
+            isinstance(point_to_remove, Point)
+            or isinstance(point_to_remove, TrendLog)
+            or isinstance(point_to_remove, VirtualPoint)
+        ):
             oid = id(point_to_remove)
         else:
             raise TypeError("Please provide point or trendLog containing history")

@@ -38,7 +38,6 @@ from ..utils.notes import note_and_log
 # ------------------------------------------------------------------------------
 
 
-
 class VirtualDeviceProperties(object):
     """
     This serves as a container for device properties
@@ -65,9 +64,11 @@ class VirtualDeviceProperties(object):
     def asdict(self):
         return self.__dict__
 
+
 class VirtualDevice(object):
     def __init__(self):
         self.properties = VirtualDeviceProperties()
+
 
 class VirtualPointProperties(object):
     """
@@ -117,7 +118,7 @@ class VirtualPoint(VirtualPointProperties):
         """
         Add point to the bacnet trending list
         """
-        self._log.warning('Use bacnet.add_trend() instead')
+        self._log.warning("Use bacnet.add_trend() instead")
 
     def __repr__(self):
         return self.properties.__repr__()
