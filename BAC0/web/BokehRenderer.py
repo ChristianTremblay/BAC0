@@ -123,9 +123,8 @@ class DynamicPlotHandler(Handler):
                 _duplicate = name + "_duplicate"
                 r[_name] = point.history.apply(lambda x: _add_mv_states(x))
                 r[_duplicate] = r[name].eq(r[name].shift())
-                r[_name].loc[r[_duplicate]]=""
+                r[_name].loc[r[_duplicate]] = ""
                 del r[_duplicate]
-
 
         df = pd.DataFrame(r)
         df = df.reset_index()
@@ -173,7 +172,11 @@ class DynamicPlotHandler(Handler):
                     (name, point.properties.description, point.properties.units_state)
                 )
                 self.multistates_label_queue.put(
-                    (name + "_state", point.properties.description, point.properties.units_state)
+                    (
+                        name + "_state",
+                        point.properties.description,
+                        point.properties.units_state,
+                    )
                 )
             elif "virtual" in point.properties.type:
                 self.virtuals_queue.put(
@@ -200,7 +203,7 @@ class DynamicPlotHandler(Handler):
 
                 index = "{}{}".format(key[0].upper(), i)
                 if "labels" in key:
-                    index = index+"_state"
+                    index = index + "_state"
                 name, description, units = process_queue.get()
                 self._log.debug("Processing {} on index {}".format(name, index))
                 self._cds_struct[index] = name
@@ -366,16 +369,21 @@ class DynamicPlotHandler(Handler):
             "right",
         )
 
-        hover = HoverTool(
+        hover_common = HoverTool(
             tooltips=[
                 ("name", "$name"),
                 ("value", "$data_y"),
+                # ('state', "@$name_state"),
                 # ("units", "$tags"),
                 ("time", "@time_s"),
             ],
+            renderers=[],
+            toggleable=False,
             mode="vline",
         )
-        p.add_tools(hover)
+        hover_multi = {}
+
+        p.add_tools(hover_common)
 
         for name in self._binary_name:
             binary_glyphs[name] = p.step(
@@ -390,6 +398,9 @@ class DynamicPlotHandler(Handler):
                 visible=False,
                 tags=["unit", "description"],
             )
+            #binary_glyphs[name].add_tool(hover_common)
+            hover_common.renderers.append(binary_glyphs[name])
+
         for name in self._multistates_name:
             multistates_glyphs[name] = p.step(
                 x="index",
@@ -403,10 +414,28 @@ class DynamicPlotHandler(Handler):
                 visible=False,
                 tags=["unit", "description"],
             )
+
+        #        for name in self._multistates_labels:
+        #            multistates_labels[name] = LabelSet(x="index", y=name.split('_')[0], text=name, level='glyph',
+        #              x_offset=0, y_offset=1, source=self.cds, render_mode='canvas', visible=False)
+        #            p.add_layout(multistates_labels[name])
         for name in self._multistates_labels:
-            multistates_labels[name] = LabelSet(x="index", y=name.split('_')[0], text=name, level='glyph',
-              x_offset=0, y_offset=1, source=self.cds, render_mode='canvas', visible=False)
-            p.add_layout(multistates_labels[name])
+            _msname = name.split("_")[0]
+            multistates_labels[name] = p.circle(
+                x="index",
+                y=name,
+                source=self.cds,
+                color=self.color_mappers["multistates"][_msname],
+                size=10,
+                alpha=0.5,
+                y_range_name="enum",
+                visible=False,
+            )
+            hover_multi[name] = HoverTool(
+                tooltips=[("name", "@"+_msname), ("value", "@"+name), ("time", "@time_s")],
+                mode="vline",renderers=[multistates_labels[name]],toggleable=False,
+            )
+            p.add_tools(hover_multi[name])
 
         for name in self._analog_name:
             analog_glyphs[name] = p.line(
@@ -419,6 +448,8 @@ class DynamicPlotHandler(Handler):
                 visible=False,
                 tags=["unit", "description"],
             )
+            #analog_glyphs[name].add_tool(hover_common)
+            hover_common.renderers.append(analog_glyphs[name])
 
         for name in self._virtuals_name:
             virtuals_glyphs[name] = p.line(
@@ -431,12 +462,14 @@ class DynamicPlotHandler(Handler):
                 visible=False,
                 tags=["unit", "description"],
             )
+            #virtuals_glyphs[name].add_tool(hover_common)
+            hover_common.renderers.append(virtuals_glyphs[name])
 
         self.glyphs = {
             "analog": analog_glyphs,
             "binary": binary_glyphs,
             "multistates": multistates_glyphs,
-            'multistates_labels': multistates_labels,
+            "multistates_labels": multistates_labels,
             "virtual": virtuals_glyphs,
         }
         legend = Legend(items=[])
