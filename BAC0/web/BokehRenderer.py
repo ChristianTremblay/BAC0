@@ -123,7 +123,7 @@ class DynamicPlotHandler(Handler):
                 _duplicate = name + "_duplicate"
                 r[_name] = point.history.apply(lambda x: _add_mv_states(x))
                 r[_duplicate] = r[name].eq(r[name].shift())
-                r[_name].loc[r[_duplicate]] = ""
+                #r[_name].loc[r[_duplicate]] = ""
                 del r[_duplicate]
 
         df = pd.DataFrame(r)
@@ -394,7 +394,7 @@ class DynamicPlotHandler(Handler):
                 color=self.color_mappers["binary"][name],
                 y_range_name="bool",
                 mode="after",
-                line_width=4,
+                line_width=8,
                 visible=False,
                 tags=["unit", "description"],
             )
@@ -423,7 +423,7 @@ class DynamicPlotHandler(Handler):
             _msname = name.split("_")[0]
             multistates_labels[name] = p.circle(
                 x="index",
-                y=name,
+                y=_msname,
                 source=self.cds,
                 color=self.color_mappers["multistates"][_msname],
                 size=10,
@@ -432,7 +432,7 @@ class DynamicPlotHandler(Handler):
                 visible=False,
             )
             hover_multi[name] = HoverTool(
-                tooltips=[("name", "@"+_msname), ("value", "@"+name), ("time", "@time_s")],
+                tooltips=[("name", _msname), ("value", "@"+name), ("time", "@time_s")],
                 mode="vline",renderers=[multistates_labels[name]],toggleable=False,
             )
             p.add_tools(hover_multi[name])
