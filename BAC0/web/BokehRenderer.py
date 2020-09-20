@@ -50,6 +50,7 @@ class DynamicPlotHandler(Handler):
     analog_queue = Queue()
     binary_queue = Queue()
     multistates_queue = Queue()
+    multistates_label_queue = Queue()
     virtuals_queue = Queue()
 
     def __init__(self, network):
@@ -70,6 +71,7 @@ class DynamicPlotHandler(Handler):
         self._analog_name = ["A{}".format(each) for each in range(20)]
         self._binary_name = ["B{}".format(each) for each in range(20)]
         self._multistates_name = ["M{}".format(each) for each in range(20)]
+        self._multistates_labels = ["M{}_state".format(each) for each in range(20)]
         self._virtuals_name = ["V{}".format(each) for each in range(20)]
         self.color_mappers = self.create_color_mappers()
 
@@ -98,6 +100,12 @@ class DynamicPlotHandler(Handler):
             else:
                 return val
 
+        def _add_mv_states(val):
+            try:
+                return val.split(":")[1]
+            except AttributeError:
+                return val
+
         self._log.debug("Building dataframe")
         r = {}
         for point in self.network.trends:
@@ -108,6 +116,16 @@ class DynamicPlotHandler(Handler):
                 r[name] = point.history.apply(lambda x: _translate_binary_values(x))
             else:
                 r[name] = point.history
+            if "multi" in point.properties.type:
+                # Create a series but keep only the first time the value change
+                # Because I don't want to fill the trend with labels...
+                _name = name + "_state"
+                _duplicate = name + "_duplicate"
+                r[_name] = point.history.apply(lambda x: _add_mv_states(x))
+                r[_duplicate] = r[name].eq(r[name].shift())
+                r[_name].loc[r[_duplicate]]=""
+                del r[_duplicate]
+
 
         df = pd.DataFrame(r)
         df = df.reset_index()
@@ -128,6 +146,8 @@ class DynamicPlotHandler(Handler):
         for _, v in self.glyphs["binary"].items():
             v.visible = False
         for _, v in self.glyphs["multistates"].items():
+            v.visible = False
+        for _, v in self.glyphs["multistates_labels"].items():
             v.visible = False
         for _, v in self.glyphs["virtual"].items():
             v.visible = False
@@ -152,6 +172,9 @@ class DynamicPlotHandler(Handler):
                 self.multistates_queue.put(
                     (name, point.properties.description, point.properties.units_state)
                 )
+                self.multistates_label_queue.put(
+                    (name + "_state", point.properties.description, point.properties.units_state)
+                )
             elif "virtual" in point.properties.type:
                 self.virtuals_queue.put(
                     (name, point.properties.description, point.properties.units_state)
@@ -167,6 +190,7 @@ class DynamicPlotHandler(Handler):
             (self.analog_queue, "analog"),
             (self.binary_queue, "binary"),
             (self.multistates_queue, "multistates"),
+            (self.multistates_label_queue, "multistates_labels"),
             (self.virtuals_queue, "virtual"),
         ]:
             i = 0
@@ -175,6 +199,8 @@ class DynamicPlotHandler(Handler):
             while not process_queue.empty():
 
                 index = "{}{}".format(key[0].upper(), i)
+                if "labels" in key:
+                    index = index+"_state"
                 name, description, units = process_queue.get()
                 self._log.debug("Processing {} on index {}".format(name, index))
                 self._cds_struct[index] = name
@@ -194,11 +220,13 @@ class DynamicPlotHandler(Handler):
             analog_name = "A{}".format(each)
             binary_name = "B{}".format(each)
             multistates_name = "M{}".format(each)
+            multistates_states = "M{}_state".format(each)
             virtuals_name = "V{}".format(each)
             _temp = {
                 analog_name: None,
                 binary_name: None,
                 multistates_name: None,
+                multistates_states: None,
                 virtuals_name: None,
             }
             self._cds_struct.update(_temp)
@@ -302,6 +330,7 @@ class DynamicPlotHandler(Handler):
         analog_glyphs = {}
         binary_glyphs = {}
         multistates_glyphs = {}
+        multistates_labels = {}
         virtuals_glyphs = {}
 
         self._log.debug("Creating figure")
@@ -374,6 +403,10 @@ class DynamicPlotHandler(Handler):
                 visible=False,
                 tags=["unit", "description"],
             )
+        for name in self._multistates_labels:
+            multistates_labels[name] = LabelSet(x="index", y=name.split('_')[0], text=name, level='glyph',
+              x_offset=0, y_offset=1, source=self.cds, render_mode='canvas', visible=False)
+            p.add_layout(multistates_labels[name])
 
         for name in self._analog_name:
             analog_glyphs[name] = p.line(
@@ -403,10 +436,11 @@ class DynamicPlotHandler(Handler):
             "analog": analog_glyphs,
             "binary": binary_glyphs,
             "multistates": multistates_glyphs,
+            'multistates_labels': multistates_labels,
             "virtual": virtuals_glyphs,
         }
         legend = Legend(items=[])
-        legend.click_policy = "mute"
+        legend.click_policy = "hide"
         p.add_layout(legend, "below")
         return p
 
@@ -422,7 +456,7 @@ class DynamicPlotHandler(Handler):
     def update_legend(self):
         lst_of_items = []
         for k, v in self._cds_struct.items():
-            if not v:
+            if not v or "_state" in k:
                 continue
             try:
                 glyph = self.glyphs[DynamicPlotHandler._type(k)][k]
