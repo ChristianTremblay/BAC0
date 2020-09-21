@@ -79,9 +79,10 @@ class Manager:
     @classmethod
     def stopAllTasks(cls):
         cls._log.info("Stopping all tasks")
+        cls.enable = False
         while cls.manager.is_alive():
             pass
-        cls.enable = False
+        #cls.enable = False
         cls.clean_tasklist()
         return True
 
@@ -96,8 +97,8 @@ class Manager:
     def stop_service(cls):
         cls._log.info("Stopping TaskManager")
         cls.enable = False
-        time.sleep(1)
-        cls.manager.join()
+        #time.sleep(1)
+        #cls.manager.join()
 
     @classmethod
     def clean_tasklist(cls):

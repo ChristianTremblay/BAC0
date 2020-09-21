@@ -21,7 +21,7 @@ def test_bac0_web_ok():
     fake_vendor_id = 999
     fake_vendor_name = "Innotrode"
 
-    bacnet = BAC0.gui(
+    bacnet = BAC0.connect(
         ip="127.0.2.1",
         localObjName=fake_bac0_obj,
         deviceId=fake_device_id,
