@@ -89,6 +89,41 @@ class DynamicPlotHandler(Handler):
     def document(self):
         return curdoc()
 
+    def clean_trend_list(self):
+        a = []
+        b = []
+        m = []
+        v = []
+        for trend in self.network.trends:
+            if "analog" in trend.properties.type:
+                a.append(trend)
+            elif "binary" in trend.properties.type:
+                b.append(trend)
+            elif "multi" in trend.properties.type:
+                m.append(trend)
+            else:
+                v.append(trend)
+        for each in a[19:]:
+            self.warning(
+                "Too many analog trends, removing {}".format(each.properties.name)
+            )
+            self.network.remove_trend(each)
+        for each in b[19:]:
+            self.warning(
+                "Too many binary trends, removing {}".format(each.properties.name)
+            )
+            self.network.remove_trend(each)
+        for each in m[19:]:
+            self.warning(
+                "Too many mutlistates trends, removing {}".format(each.properties.name)
+            )
+            self.network.remove_trend(each)
+        for each in v[19:]:
+            self.warning(
+                "Too many virtual trends, removing {}".format(each.properties.name)
+            )
+            self.network.remove_trend(each)
+
     def build_dataframe(self):
         def _translate_binary_values(val):
             if val == "active:":
@@ -123,10 +158,15 @@ class DynamicPlotHandler(Handler):
                 _duplicate = name + "_duplicate"
                 r[_name] = point.history.apply(lambda x: _add_mv_states(x))
                 r[_duplicate] = r[name].eq(r[name].shift())
-                #r[_name].loc[r[_duplicate]] = ""
+                r[_name].loc[r[_duplicate]] = ""
                 del r[_duplicate]
 
-        df = pd.DataFrame(r)
+        try:
+            df = pd.DataFrame(r)
+        except ValueError:
+            self._log.error("Problem with dataframe creation. {}".format(r.keys()))
+            self.trouble_r = r
+            raise
         df = df.reset_index()
         df["time_s"] = df["index"].apply(str)
         try:
@@ -342,13 +382,21 @@ class DynamicPlotHandler(Handler):
         p = Figure(
             x_axis_type="datetime",
             x_axis_label="Time",
-            y_axis_label="Numeric Value",
-            title="BAC0 Trends",
+            y_axis_label="Value",
+            title="Live trends",
             tools=TOOLS,
             plot_width=1200,
             plot_height=800,
             toolbar_location="right",
         )
+
+        p.title.text_font_size = "24pt"
+        p.xaxis.axis_label_text_font_size = "18pt"
+        p.yaxis.axis_label_text_font_size = "18pt"
+        p.xaxis.axis_label_text_font_style = "normal"
+        p.yaxis.axis_label_text_font_style = "normal"
+        p.xaxis.major_label_text_font_size = "12pt"
+        p.yaxis.major_label_text_font_size = "12pt"
 
         p.background_fill_color = "#f4f3ef"
         p.border_fill_color = "#f4f3ef"
@@ -379,7 +427,8 @@ class DynamicPlotHandler(Handler):
             ],
             renderers=[],
             toggleable=False,
-            mode="vline",
+            formatters={"@time_s": "datetime"},
+            mode="mouse",
         )
         hover_multi = {}
 
@@ -398,7 +447,7 @@ class DynamicPlotHandler(Handler):
                 visible=False,
                 tags=["unit", "description"],
             )
-            #binary_glyphs[name].add_tool(hover_common)
+            # binary_glyphs[name].add_tool(hover_common)
             hover_common.renderers.append(binary_glyphs[name])
 
         for name in self._multistates_name:
@@ -413,27 +462,60 @@ class DynamicPlotHandler(Handler):
                 line_width=7,
                 visible=False,
                 tags=["unit", "description"],
+                mode="after",
             )
 
         #        for name in self._multistates_labels:
         #            multistates_labels[name] = LabelSet(x="index", y=name.split('_')[0], text=name, level='glyph',
         #              x_offset=0, y_offset=1, source=self.cds, render_mode='canvas', visible=False)
         #            p.add_layout(multistates_labels[name])
+        #        for name in self._multistates_labels:
+        #            _msname = name.split("_")[0]
+        #            multistates_labels[name] = p.circle(
+        #                x="index",
+        #                y=_msname,
+        #                source=self.cds,
+        #                color=self.color_mappers["multistates"][_msname],
+        #                size=10,
+        #                alpha=0.1,
+        #                y_range_name="enum",
+        #                visible=False,
+        #            )
+        #            hover_multi[name] = HoverTool(
+        #                tooltips=[
+        #                    ("name", "$name"),
+        #                    ("value", "@" + name),
+        #                    ("time", "@time_s"),
+        #                ],
+        #                mode="mouse",
+        #                renderers=[multistates_labels[name]],
+        #                toggleable=False,
+        #            )
+        #            p.add_tools(hover_multi[name])
+
         for name in self._multistates_labels:
             _msname = name.split("_")[0]
-            multistates_labels[name] = p.circle(
+            multistates_labels[name] = p.text(
                 x="index",
                 y=_msname,
+                text=name,
                 source=self.cds,
-                color=self.color_mappers["multistates"][_msname],
-                size=10,
-                alpha=0.5,
+                text_color=self.color_mappers["multistates"][_msname],
+                angle=0.7835,
+                # size=10,
+                # alpha=0.1,
                 y_range_name="enum",
                 visible=False,
             )
             hover_multi[name] = HoverTool(
-                tooltips=[("name", _msname), ("value", "@"+name), ("time", "@time_s")],
-                mode="vline",renderers=[multistates_labels[name]],toggleable=False,
+                tooltips=[
+                    ("name", "$name"),
+                    ("value", "@" + name),
+                    ("time", "@time_s"),
+                ],
+                mode="mouse",
+                renderers=[multistates_labels[name]],
+                toggleable=False,
             )
             p.add_tools(hover_multi[name])
 
@@ -448,7 +530,7 @@ class DynamicPlotHandler(Handler):
                 visible=False,
                 tags=["unit", "description"],
             )
-            #analog_glyphs[name].add_tool(hover_common)
+            # analog_glyphs[name].add_tool(hover_common)
             hover_common.renderers.append(analog_glyphs[name])
 
         for name in self._virtuals_name:
@@ -462,7 +544,7 @@ class DynamicPlotHandler(Handler):
                 visible=False,
                 tags=["unit", "description"],
             )
-            #virtuals_glyphs[name].add_tool(hover_common)
+            # virtuals_glyphs[name].add_tool(hover_common)
             hover_common.renderers.append(virtuals_glyphs[name])
 
         self.glyphs = {
@@ -492,9 +574,16 @@ class DynamicPlotHandler(Handler):
             if not v or "_state" in k:
                 continue
             try:
-                glyph = self.glyphs[DynamicPlotHandler._type(k)][k]
+                _t = DynamicPlotHandler._type(k)
+                glyph = self.glyphs[_t][k]
                 label = "{} | {} ({})".format(glyph.name, glyph.tags[1], glyph.tags[0])
-                lst_of_items.append(LegendItem(label=label, renderers=[glyph]))
+                if _t != "M":
+                    lst_of_items.append(LegendItem(label=label, renderers=[glyph]))
+                else:
+                    glyph_text = self.glyphs["multistates_labels"][k]
+                    lst_of_items.append(
+                        LegendItem(label=label, renderers=[glyph, glyph_text])
+                    )
             except KeyError:
                 pass
 
@@ -551,6 +640,7 @@ class DynamicPlotHandler(Handler):
         return doc
 
     def verify_if_document_needs_to_be_modified(self):
+        # self.clean_trend_list()
         if (
             self._last_time_list != self.network.trends
             or self._last_time_devices != self.network.registered_devices
