@@ -170,4 +170,5 @@ def tec_short_point_list():
         ("analogOutput", 86914),
         ("analogOutput", 86915),
         ("multiStateValue", 6),
+        ("trendLog", 101010),
     ]

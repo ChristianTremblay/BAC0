@@ -12,6 +12,8 @@ Points.py - Definition of points so operations on Read results are more convenie
 from datetime import datetime
 from collections import namedtuple
 import time
+from itertools import islice
+
 
 # --- 3rd party modules ---
 try:
@@ -27,6 +29,7 @@ except ImportError:
     _PANDAS = False
 
 from bacpypes.object import TrendLogObject
+from bacpypes.primitivedata import Date, Time
 
 # --- this application's modules ---
 from ...tasks.Poll import SimplePoll as Poll
@@ -52,6 +55,7 @@ class TrendLogProperties(object):
         self.buffer_size = 0
         self.record_count = 0
         self.total_record_count = 0
+        self.log_interval = 0
         self.description = None
         self.statusFlags = None
         self.status_flags = {
@@ -60,13 +64,19 @@ class TrendLogProperties(object):
             "overridden": False,
             "out_of_service": False,
         }
-
+        self._history_components = {"index": [], "logdatum": [], "status": []}
         self._df = None
+        self.type = "TrendLog"
+        self.units_state = "None"
 
     def __repr__(self):
         return "{} | Descr : {} | Record count : {}".format(
             self.object_name, self.description, self.record_count
         )
+
+    @property
+    def name(self):
+        return self.object_name
 
 
 @note_and_log
@@ -81,39 +91,64 @@ class TrendLog(TrendLogProperties):
         self.properties = TrendLogProperties()
         self.properties.device = device
         self.properties.oid = OID
+        self.update_properties()
+
+        if read_log_on_creation:
+            self.read_log_buffer()
+        self._last_index = 0
+
+    def update_properties(self):
         try:
-            self.properties.object_name, self.properties.description, self.properties.record_count, self.properties.buffer_size, self.properties.total_record_count, self.properties.log_device_object_property, self.properties.statusFlags = self.properties.device.properties.network.readMultiple(
-                "{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount logDeviceObjectProperty statusFlags".format(
+            self.properties.object_name, self.properties.description, self.properties.record_count, self.properties.buffer_size, self.properties.total_record_count, self.properties.log_device_object_property, self.properties.statusFlags, self.properties.log_interval = self.properties.device.properties.network.readMultiple(
+                "{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount logDeviceObjectProperty statusFlags logInterval".format(
                     addr=self.properties.device.properties.address,
                     oid=str(self.properties.oid),
                 )
             )
-
-            if read_log_on_creation:
-                self.read_log_buffer()
         except Exception as error:
             raise Exception("Problem reading trendLog informations: {}".format(error))
 
+    def _total_record_count(self):
+        self.properties.total_record_count = self.properties.device.properties.network.read(
+            "{addr} trendLog {oid} totalRecordCount".format(
+                addr=self.properties.device.properties.address,
+                oid=str(self.properties.oid),
+            )
+        )
+        return self.properties.total_record_count
+
     def read_log_buffer(self):
-        try:
-            _log_buffer = self.properties.device.properties.network.readRange(
+        RECORDS = 10
+        log_buffer = set()
+        _actual_index = self._total_record_count()
+        start = max(_actual_index - self.properties.record_count, self._last_index) + 1
+        _count = _actual_index - start
+        steps = int(_count / 10) + int(_count % 10)
+
+        self._log.debug("Reading log : {} {} {}".format(start, _count, steps))
+
+        _from = start
+        for each in range(steps):
+            range_params = ("s", _from, Date("1979-01-01"), Time("00:00"), RECORDS)
+            _chunk = self.properties.device.properties.network.readRange(
                 "{} trendLog {} logBuffer".format(
                     self.properties.device.properties.address, str(self.properties.oid)
-                )
+                ),
+                range_params=range_params,
             )
-            self.create_dataframe(_log_buffer)
-        except Exception as error:
-            raise Exception("Problem reading buffer: {}".format(error))
+            _from += len(_chunk)
+            for chunk in _chunk:
+                log_buffer.add(chunk)
+
+        self._last_index = _from
+        self.create_dataframe(log_buffer)
 
     def create_dataframe(self, log_buffer):
-        index = []
-        logdatum = []
-        status = []
         for each in log_buffer:
             year, month, day, dow = each.timestamp.date
             year = year + 1900
             hours, minutes, seconds, ms = each.timestamp.time
-            index.append(
+            self.properties._history_components["index"].append(
                 pd.to_datetime(
                     "{}-{}-{} {}:{}:{}.{}".format(
                         year, month, day, hours, minutes, seconds, ms
@@ -121,11 +156,19 @@ class TrendLog(TrendLogProperties):
                     format="%Y-%m-%d %H:%M:%S.%f",
                 )
             )
-            logdatum.append(each.logDatum.dict_contents())
-            status.append(each.statusFlags)
+            self.properties._history_components["logdatum"].append(
+                each.logDatum.dict_contents()
+            )
+            self.properties._history_components["status"].append(each.statusFlags)
 
         if _PANDAS:
-            df = pd.DataFrame({"index": index, "logdatum": logdatum, "status": status})
+            df = pd.DataFrame(
+                {
+                    "index": self.properties._history_components["index"],
+                    "logdatum": self.properties._history_components["logdatum"],
+                    "status": self.properties._history_components["status"],
+                }
+            )
             df = df.set_index("index")
             df["choice"] = df["logdatum"].apply(lambda x: list(x.keys())[0])
             df[self.properties.object_name] = df["logdatum"].apply(
@@ -134,18 +177,19 @@ class TrendLog(TrendLogProperties):
 
             self.properties._df = df
         else:
-            self.properties._history_components = (index, logdatum, status)
+            # self.properties._history_components = (self.index, self.logdatum, self.status)
             self._log.warning(
                 "Pandas not installed. Treating histories as simple list."
             )
 
     @property
     def history(self):
+        self.read_log_buffer()
         if not _PANDAS:
             return dict(
                 zip(
-                    self.properties._history_components[0],
-                    self.properties._history_components[1],
+                    self.properties._history_components["index"],
+                    self.properties._history_components["logdatum"],
                 )
             )
         objectType, objectAddress = (
@@ -171,7 +215,7 @@ class TrendLog(TrendLogProperties):
                 serie.states = "analog"
         serie.description = self.properties.description
         serie.datatype = objectType
-        return serie
+        return serie.sort_index()
 
     def chart(self, remove=False):
         """

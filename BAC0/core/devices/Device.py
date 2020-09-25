@@ -674,9 +674,13 @@ class DeviceConnected(Device):
             yield trendlog
 
     @property
-    def trendlogs(self):
+    def trendlogs_names(self):
         for each in self._trendlogs():
             yield each.properties.object_name
+
+    @property
+    def trendlogs(self):
+        return list(self._trendlogs())
 
     def _findTrend(self, name):
         for trend in self._trendlogs():

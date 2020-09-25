@@ -38,14 +38,18 @@ from bacpypes.apdu import (
     AbortPDU,
 )
 
-from bacpypes.basetypes import PropertyIdentifier
+from bacpypes.basetypes import PropertyIdentifier, DateTime
 from bacpypes.apdu import (
     ReadPropertyMultipleACK,
     ReadPropertyACK,
     ReadRangeRequest,
     ReadRangeACK,
+    Range,
+    RangeByPosition,
+    RangeBySequenceNumber,
+    RangeByTime,
 )
-from bacpypes.primitivedata import Tag, ObjectIdentifier, Unsigned
+from bacpypes.primitivedata import Tag, ObjectIdentifier, Unsigned, Date, Time
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB, TimeoutError
 from bacpypes.core import deferred
@@ -506,8 +510,11 @@ class ReadProperty:
         request.pduDestination = Address(addr)
         return request
 
-    def build_rrange_request(self, args, arr_index=None, vendor_id=0, bacoid=None):
+    def build_rrange_request(
+        self, args, range_params=None, arr_index=None, vendor_id=0, bacoid=None
+    ):
         addr, obj_type, obj_inst, prop_id = args[:4]
+
         vendor_id = vendor_id
         bacoid = bacoid
 
@@ -529,13 +536,44 @@ class ReadProperty:
             objectIdentifier=(obj_type, obj_inst), propertyIdentifier=prop_id
         )
         request.pduDestination = Address(addr)
+        if range_params is not None:
+            range_type, first, date, time, count = range_params
+            if range_type == "p":
+                rbp = RangeByPosition(referenceIndex=int(first), count=int(count))
+                request.range = Range(byPosition=rbp)
+            elif range_type == "s":
+                rbs = RangeBySequenceNumber(
+                    referenceSequenceNumber=int(first), count=int(count)
+                )
+                request.range = Range(bySequenceNumber=rbs)
+            elif range_type == "t":
+                rbt = RangeByTime(
+                    referenceTime=DateTime(
+                        date=Date(date).value, time=Time(time).value
+                    ),
+                    count=int(count),
+                )
+                request.range = Range(byTime=rbt)
+            elif range_type == "x":
+                # should be missing required parameter
+                request.range = Range()
+            else:
+                raise ValueError("unknown range type: %r" % (range_type,))
 
         if len(args) == 5:
             request.propertyArrayIndex = int(args[4])
         self._log.debug("{:<20} {!r}".format("REQUEST", request))
         return request
 
-    def readRange(self, args, arr_index=None, vendor_id=0, bacoid=None, timeout=10):
+    def readRange(
+        self,
+        args,
+        range_params=None,
+        arr_index=None,
+        vendor_id=0,
+        bacoid=None,
+        timeout=10,
+    ):
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -557,18 +595,21 @@ class ReadProperty:
 
         args_split = args.split()
 
-        self.log_title("Read range", args_split)
+        self.log_title("Read range ", args_split)
 
         vendor_id = vendor_id
         bacoid = bacoid
 
         try:
             # build ReadProperty request
-            iocb = IOCB(
-                self.build_rrange_request(
-                    args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid
-                )
+            request = self.build_rrange_request(
+                args_split,
+                range_params=range_params,
+                arr_index=arr_index,
+                vendor_id=vendor_id,
+                bacoid=bacoid,
             )
+            iocb = IOCB(request)
             iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
@@ -602,7 +643,15 @@ class ReadProperty:
                     apdu.propertyIdentifier,
                 )
 
-            value = apdu.itemData[0].cast_out(datatype)
+            try:
+                value = apdu.itemData.cast_out(datatype)
+            except TypeError as error:
+                self._log.error(
+                    "Problem casting value : {} | Datatype : {} | error : {}".format(
+                        apdu.itemData, datatype, error
+                    )
+                )
+                return apdu
 
             self._log.debug("{:<20} {:<20}".format("value", "datatype"))
             self._log.debug("{!r:<20} {!r:<20}".format(value, datatype))

@@ -42,6 +42,7 @@ from collections import deque
 from ..tasks.RecurringTask import RecurringTask
 from ..core.utils.notes import note_and_log
 from ..core.devices.Virtuals import VirtualPoint
+from ..core.devices.Trends import TrendLog
 
 
 @note_and_log
@@ -198,7 +199,7 @@ class DynamicPlotHandler(Handler):
             name = "{}/{}".format(
                 point.properties.device.properties.name, point.properties.name
             )
-            if "analog" in point.properties.type:
+            if "analog" in point.properties.type or "TrendLog" in point.properties.type:
                 self.analog_queue.put(
                     (name, point.properties.description, point.properties.units_state)
                 )
@@ -676,6 +677,7 @@ class DynamicPlotHandler(Handler):
             except KeyError:
                 pass
             options = list(device.points_name)
+            options.extend(list(device.trendlogs_names))
             mc = MultiChoice(
                 value=_cache, options=options, title=device.properties.name
             )
