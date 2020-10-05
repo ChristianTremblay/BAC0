@@ -209,6 +209,6 @@ def create_object_list(objects_dict):
 def deprecate_msg():
     print("*" * 80)
     print("create_xx functions are deprecated and will disappear from a future release")
-    print("BAC0.core.device.local.object will be the new way to define objects")
+    print("BAC0.core.device.local.object using the ObjectFactory will be the new way to define objects")
     print("Refer to the doc for details")
     print("*" * 80)

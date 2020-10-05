@@ -107,7 +107,7 @@ def make_commandable():
             base_cls_name = obj.__class__.__name__ + "Cmd"
             new_type = type(base_cls_name, (_commando, base_cls), {})
             new_type.__name__ = base_cls_name
-            register_object_type(new_type, vendor_id=0)
+            register_object_type(new_type, vendor_id=842)
             objectType, instance, objectName, presentValue, description = args
             new_object = new_type(
                 objectIdentifier=(base_cls.objectType, instance),
@@ -133,7 +133,7 @@ def add_feature(cls):
             base_cls = obj.__class__
             base_cls_name = obj.__class__.__name__ + cls.__name__
             new_type = type(base_cls_name, (cls, base_cls), {})
-            register_object_type(new_type, vendor_id=0)
+            register_object_type(new_type, vendor_id=842)
             instance, objectName, presentValue, description = args
             new_object = new_type(
                 objectIdentifier=(base_cls.objectType, instance),
