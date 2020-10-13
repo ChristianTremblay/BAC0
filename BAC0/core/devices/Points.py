@@ -845,7 +845,10 @@ class EnumPoint(Point):
         return res
 
     def get_state(self, v):
-        return self.properties.units_state[v - 1]
+        try:
+            return self.properties.units_state[v - 1]
+        except TypeError:
+            return "n/a"
 
     @property
     def enumValue(self):
