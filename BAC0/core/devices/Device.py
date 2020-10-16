@@ -315,10 +315,9 @@ class Device(SQLMixin):
         for point in self.points:
             point.clear_history()
 
-    def update_history_size(self, size):
-        self.properties.history_size = size
+    def update_history_size(self):
         for point in self.points:
-            point.properties.history_size = size
+            point.properties.history_size = self.properties.history_size
 
     @property
     def analog_units(self):
@@ -530,6 +529,9 @@ class DeviceConnected(Device):
             )
             if self.properties.pollDelay > 0:
                 self.poll(delay=self.properties.pollDelay)
+            if self.properties.history_size is not None:
+                self.update_history_size()
+                self.clear_histories()
         except NoResponseFromController as error:
             self._log.error("Cannot retrieve object list, disconnecting...")
             self.segmentation_supported = False
