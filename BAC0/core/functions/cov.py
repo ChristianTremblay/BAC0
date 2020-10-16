@@ -26,7 +26,6 @@ class SubscriptionContext:
         self.address = address
         self.subscriberProcessIdentifier = self.next_proc_id
         self.next_proc_id += 1
-        # subscription_contexts[self.subscriberProcessIdentifier] = self
         self.monitoredObjectIdentifier = objectID
         self.issueConfirmedNotifications = confirmed
         self.lifetime = lifetime
@@ -48,7 +47,6 @@ class SubscriptionContext:
             value = element.value
 
             if not datatype:
-                # raise TypeError("unknown datatype")
                 value = cast_datatype_from_tag(
                     element.value, object_changed[0], prop_id
                 )
@@ -77,16 +75,12 @@ class CoV:
     def send_cov_subscription(self, request):
         self._log.debug("Request : {}".format(request))
         iocb = IOCB(request)
-        # iocb.add_callback(self.subscription_acknowledged)
         self._log.debug("IOCB : {}".format(iocb))
 
         iocb.add_callback(self.subscription_acknowledged)
 
         # pass to the BACnet stack
         deferred(self.this_application.request_io, iocb)
-
-        # Unconfirmed request...so wait until complete
-        # iocb.wait()  # Wait for BACnet response
 
     def subscription_acknowledged(self, iocb):
         if iocb.ioResponse:

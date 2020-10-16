@@ -113,7 +113,6 @@ class common_mixin:
             self._log.error(
                 "Unsollicited COV Notification received. Have you restarted the application recently ?"
             )
-            # raise RuntimeError("services", "unknownSubscription")
         else:
             # now tell the context object
             elements = context.cov_notification(apdu)
@@ -121,7 +120,7 @@ class common_mixin:
             # success
             response = SimpleAckPDU(context=apdu)
 
-            # return the result
+            # send a confirmation
             self.response(response)
             self._log.debug("Confirmed COV Notification: {}".format(elements))
             self.subscription_contexts["context_callback"](elements)
