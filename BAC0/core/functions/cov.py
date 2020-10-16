@@ -124,7 +124,7 @@ class CoV:
         return request
 
     def context_callback(self, elements, callback=None):
-        self._log.info("Receive COV Notification for {}".format(elements))
+        self._log.info("Received COV Notification for {}".format(elements))
         if callback:
             callback()
         for device in self.registered_devices:
