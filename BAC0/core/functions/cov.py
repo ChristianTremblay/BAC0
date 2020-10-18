@@ -22,13 +22,14 @@ and we'll get the answer
 class SubscriptionContext:
     next_proc_id = 1
 
-    def __init__(self, address, objectID, confirmed=None, lifetime=None):
+    def __init__(self, address, objectID, confirmed=None, lifetime=None, callback=None):
         self.address = address
         self.subscriberProcessIdentifier = self.next_proc_id
         self.next_proc_id += 1
         self.monitoredObjectIdentifier = objectID
         self.issueConfirmedNotifications = confirmed
         self.lifetime = lifetime
+        self.callback = callback
 
     def cov_notification(self, apdu):
         # make a rash assumption that the property value is going to be
@@ -89,18 +90,18 @@ class CoV:
         if iocb.ioError:
             self._log.error("Subscription failed. {}".format(iocb.ioError))
 
-    def cov(self, address, objectID, confirmed=True, lifetime=None):
+    def cov(self, address, objectID, confirmed=True, lifetime=None, callback=None):
         address = Address(address)
         context = self._build_cov_context(
-            address, objectID, confirmed=confirmed, lifetime=lifetime
+            address, objectID, confirmed=confirmed, lifetime=lifetime, callback=callback
         )
         request = self._build_cov_request(context)
 
         self.send_cov_subscription(request)
 
-    def _build_cov_context(self, address, objectID, confirmed=True, lifetime=None):
+    def _build_cov_context(self, address, objectID, confirmed=True, lifetime=None, callback=None):
         context = SubscriptionContext(
-            address=address, objectID=objectID, confirmed=confirmed, lifetime=lifetime
+            address=address, objectID=objectID, confirmed=confirmed, lifetime=lifetime, callback=callback
         )
         self.subscription_contexts[context.subscriberProcessIdentifier] = context
 
@@ -123,10 +124,11 @@ class CoV:
 
         return request
 
-    def context_callback(self, elements, callback=None):
+    #def context_callback(self, elements, callback=None):
+    def context_callback(self, elements):
         self._log.info("Received COV Notification for {}".format(elements))
-        if callback:
-            callback()
+        #if callback:
+        #    callback()
         for device in self.registered_devices:
             if str(device.properties.address) == str(elements["source"]):
                 device[elements["object_changed"]].cov_registered = True

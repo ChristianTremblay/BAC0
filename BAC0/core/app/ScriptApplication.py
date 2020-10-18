@@ -125,6 +125,10 @@ class common_mixin:
             self._log.debug("Confirmed COV Notification: {}".format(elements))
             self.subscription_contexts["context_callback"](elements)
 
+            # execute callback
+            if context.callback is not None:
+                context.callback()
+
     def do_UnconfirmedCOVNotificationRequest(self, apdu):
         # look up the process identifier
         context = self.subscription_contexts.get(apdu.subscriberProcessIdentifier, None)
@@ -135,6 +139,10 @@ class common_mixin:
         elements = context.cov_notification(apdu)
         self._log.debug("Unconfirmed COV Notification: {}".format(elements))
         self.subscription_contexts["context_callback"](elements)
+
+        # execute callback
+        if context.callback is not None:
+            context.callback()
 
 
 @note_and_log

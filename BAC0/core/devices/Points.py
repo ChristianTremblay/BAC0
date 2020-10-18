@@ -572,11 +572,11 @@ class Point:
         """
         return len(self.history)
 
-    def subscribe_cov(self, confirmed=True, lifetime=None):
+    def subscribe_cov(self, confirmed=True, lifetime=None, callback=None):
         address = self.properties.device.properties.address
         obj_tuple = (self.properties.type, int(self.properties.address))
         self.properties.device.properties.network.cov(
-            address, obj_tuple, confirmed=confirmed, lifetime=lifetime
+            address, obj_tuple, confirmed=confirmed, lifetime=lifetime, callback=callback
         )
 
 
