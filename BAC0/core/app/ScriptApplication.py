@@ -127,7 +127,7 @@ class common_mixin:
 
             # execute callback
             if context.callback is not None:
-                context.callback()
+                context.callback(elements=elements)
 
     def do_UnconfirmedCOVNotificationRequest(self, apdu):
         # look up the process identifier
@@ -142,7 +142,7 @@ class common_mixin:
 
         # execute callback
         if context.callback is not None:
-            context.callback()
+            context.callback(elements=elements)
 
 
 @note_and_log
