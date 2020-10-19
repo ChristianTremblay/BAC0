@@ -115,7 +115,8 @@ class Point:
         self._history.timestamp = []
         self._history.value = [presentValue]
         self._history.timestamp.append(datetime.now())
-        self.history_size = history_size
+        
+        self.properties.history_size = history_size
 
         self.properties.device = device
         self.properties.name = pointName
