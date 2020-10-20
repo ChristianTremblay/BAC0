@@ -237,7 +237,7 @@ class WriteProperty:
         return request
 
     def writeMultiple(self, addr=None, args=None, vendor_id=0, timeout=10):
-        """ Build a WritePropertyMultiple request, wait for an answer, and return status [True if ok, False if not].
+        """ Build a WritePropertyMultiple request, wait for an answer
 
         :param addr: destination of request (ex. '2:3' or '192.168.1.2')
         :param args: list of String with <type> <inst> <prop> <value> [ <indx> ] - [ <priority> ]
@@ -317,7 +317,10 @@ class WriteProperty:
                 obj_type, prop_id, indx, vendor_id, value
             )
 
-            existingObject = next((obj for obj in was if obj.objectIdentifier == (obj_type, obj_inst)), None)
+            existingObject = next(
+                (obj for obj in was if obj.objectIdentifier == (obj_type, obj_inst)),
+                None,
+            )
 
             if existingObject == None:
                 property_values.append(
@@ -336,12 +339,14 @@ class WriteProperty:
                     )
                 )
             else:
-                existingObject.listOfProperties.append(PropertyValue(
+                existingObject.listOfProperties.append(
+                    PropertyValue(
                         propertyIdentifier=prop_id,
                         propertyArrayIndex=indx,
                         value=value,
                         priority=priority,
-                    ))
+                    )
+                )
 
             datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
 

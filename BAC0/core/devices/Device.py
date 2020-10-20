@@ -530,7 +530,7 @@ class DeviceConnected(Device):
             if self.properties.pollDelay > 0:
                 self.poll(delay=self.properties.pollDelay)
             self.update_history_size(size=self.properties.default_history_size)
-            #self.clear_histories()
+            # self.clear_histories()
         except NoResponseFromController as error:
             self._log.error("Cannot retrieve object list, disconnecting...")
             self.segmentation_supported = False

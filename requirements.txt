@@ -1,2 +1,2 @@
-bacpypes>=0.18
+bacpypes>=0.18.3
 netifaces

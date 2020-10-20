@@ -115,7 +115,7 @@ class Point:
         self._history.timestamp = []
         self._history.value = [presentValue]
         self._history.timestamp.append(datetime.now())
-        
+
         self.properties.history_size = history_size
 
         self.properties.device = device
@@ -577,7 +577,11 @@ class Point:
         address = self.properties.device.properties.address
         obj_tuple = (self.properties.type, int(self.properties.address))
         self.properties.device.properties.network.cov(
-            address, obj_tuple, confirmed=confirmed, lifetime=lifetime, callback=callback
+            address,
+            obj_tuple,
+            confirmed=confirmed,
+            lifetime=lifetime,
+            callback=callback,
         )
 
 

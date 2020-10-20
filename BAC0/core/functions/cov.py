@@ -99,9 +99,15 @@ class CoV:
 
         self.send_cov_subscription(request)
 
-    def _build_cov_context(self, address, objectID, confirmed=True, lifetime=None, callback=None):
+    def _build_cov_context(
+        self, address, objectID, confirmed=True, lifetime=None, callback=None
+    ):
         context = SubscriptionContext(
-            address=address, objectID=objectID, confirmed=confirmed, lifetime=lifetime, callback=callback
+            address=address,
+            objectID=objectID,
+            confirmed=confirmed,
+            lifetime=lifetime,
+            callback=callback,
         )
         self.subscription_contexts[context.subscriberProcessIdentifier] = context
 
@@ -124,10 +130,10 @@ class CoV:
 
         return request
 
-    #def context_callback(self, elements, callback=None):
+    # def context_callback(self, elements, callback=None):
     def context_callback(self, elements):
         self._log.info("Received COV Notification for {}".format(elements))
-        #if callback:
+        # if callback:
         #    callback()
         for device in self.registered_devices:
             if str(device.properties.address) == str(elements["source"]):
