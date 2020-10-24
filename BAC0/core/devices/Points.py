@@ -915,7 +915,7 @@ class EnumPoint(Point):
 
 class StringPoint(Point):
     """
-    Representation of an Enumerated (multiState) value
+    Representation of CharacterString value
     """
 
     def __init__(
@@ -960,8 +960,22 @@ class StringPoint(Point):
             raise WritePropertyException("Problem writing to device : {}".format(error))
 
     def __repr__(self):
+        try:
+            polling = self.properties.device.properties.pollDelay
+            if (polling < 60 and polling > 0) or self.cov_registered:
+                val = str(self.lastValue)
+            else:
+                val = str(self.value)
+        except ValueError:
+            self._log.error(
+                "Cannot convert value. Device probably disconnected"
+            )
+            # Probably disconnected
+            val = None
         return "{}/{} : {}".format(
-            self.properties.device.properties.name, self.properties.name, self.value
+            self.properties.device.properties.name,
+            self.properties.name,
+            val
         )
 
     def __eq__(self, other):

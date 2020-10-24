@@ -139,7 +139,7 @@ class ObjectFactory(object):
         if name_must_be_changed:
             objectName = "{}-{}".format(objectName, instance)
             self._log.warning(
-                "Name alreaday taken, using {} instead".format(objectName)
+                "Name already taken, using {} instead".format(objectName)
             )
 
         return (objectName, instance)
@@ -175,6 +175,11 @@ class ObjectFactory(object):
             if prop.identifier == "presentValue":
                 return prop.datatype
         raise KeyError("Unknown")
+
+    @staticmethod
+    def clear_objects():
+        ObjectFactory.objects = {}
+        ObjectFactory.instances = {}
 
     def add_objects_to_application(self, app):
         if isinstance(app, Base):
