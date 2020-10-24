@@ -569,11 +569,13 @@ class DeviceConnected(Device):
                         try:
                             if "@prop_" in point_name:
                                 point_name = point_name.split("prop_")[1]
-                            return self.read_property(
-                                ("device", self.properties.device_id, point_name)
-                            )
-                        except Exception as e:
-                            raise ValueError(e)
+                                return self.read_property(
+                                    ("device", self.properties.device_id, point_name)
+                                )
+                            else:
+                                raise ValueError()
+                        except ValueError as ve:
+                            raise ValueError()
         except ValueError as ve:
             self._log.error("{}".format(ve))
 
