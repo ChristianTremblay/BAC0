@@ -1,10 +1,3 @@
-#!/usr/bin/env python
-# -*- coding utf-8 -*-
-
-"""
-Test Bacnet communication with another device
-"""
-
 import pytest
 from collections import namedtuple
 import time
@@ -74,11 +67,7 @@ def add_points(qty_per_type, device):
 
     _new_objects.add_objects_to_application(device)
 
-@pytest.fixture(scope="session")
-def network_and_devices():
-
-    # This is the BACnet network and the "client" instance used to interact with
-    # devices that will be created.
+def main():
     bacnet = BAC0.lite()
 
     # We'll use 3 devices with our first instance
@@ -101,26 +90,10 @@ def network_and_devices():
 
     # Connect to test device using main network
     test_device = BAC0.device("{}:47809".format(ip), boid, bacnet, poll=10)
-    test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
-    test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
+    #test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
+    #test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
+    while True:
+        time.sleep(0.01)
 
-    params = namedtuple(
-        "devices",
-        ["bacnet", "device_app", "test_device", "test_device_30", "test_device_300"],
-    )
-    params.bacnet = bacnet
-    params.device_app = device_app
-    params.test_device = test_device
-    params.test_device_30 = test_device_30
-    params.test_device_300 = test_device_300
-
-    yield params
-
-    # Close when done
-    params.test_device.disconnect()
-    params.test_device_30.disconnect()
-    params.test_device_300.disconnect()
-
-    params.bacnet.disconnect()
-    # If too quick, we may encounter socket issues...
-    time.sleep(1)
+if __name__ == "__main__":
+    main()
