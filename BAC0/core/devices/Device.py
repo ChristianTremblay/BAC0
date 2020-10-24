@@ -132,6 +132,7 @@ class Device(SQLMixin):
         segmentation_supported=True,
         object_list=None,
         auto_save=False,
+        save_resampling='1s',
         clear_history_on_save=False,
         history_size=None
     ):
@@ -149,6 +150,7 @@ class Device(SQLMixin):
         self.properties.pss = ServicesSupported()
         self.properties.multistates = {}
         self.properties.auto_save = auto_save
+        self.properties.save_resampling = save_resampling
         self.properties.clear_history_on_save = clear_history_on_save
         self.properties.default_history_size = history_size
 

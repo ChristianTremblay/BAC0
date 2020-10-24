@@ -85,7 +85,7 @@ class DevicePoll(Task):
             )
             self._counter += 1
             if self._counter == self.device.properties.auto_save:
-                self.device.save()
+                self.device.save(resampling=self.device.properties.save_resampling)
                 if self.device.properties.clear_history_on_save:
                     self.device.clear_histories()
                 self._counter = 0

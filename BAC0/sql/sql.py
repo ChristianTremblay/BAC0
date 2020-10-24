@@ -143,7 +143,7 @@ class SQLMixin(object):
         else:
             return df
 
-    def save(self, filename=None, resampling="1s"):
+    def save(self, filename=None, resampling=None):
         """
         Save the point histories to sqlite3 database.  
         Save the device object properties to a pickle file so the device can be reloaded.
@@ -156,6 +156,9 @@ class SQLMixin(object):
             self.properties.db_name = filename
         else:
             self.properties.db_name = "{}".format(self.properties.name)
+
+        if resampling is None:
+            resampling = self.properties.save_resampling
 
         # Does file exist? If so, append data
         if os.path.isfile("{}.db".format(self.properties.db_name)):
@@ -197,6 +200,9 @@ class SQLMixin(object):
         prop_backup["points"] = self.points_properties_df()
         with open("{}.bin".format(self.properties.db_name), "wb") as file:
             pickle.dump(prop_backup, file)
+
+        if self.properties.clear_history_on_save:
+            self.device.clear_histories()
 
         self._log.info("Device saved to {}.db".format(self.properties.db_name))
 
