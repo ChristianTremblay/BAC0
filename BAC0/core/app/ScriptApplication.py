@@ -110,8 +110,8 @@ class common_mixin:
         context = self.subscription_contexts.get(apdu.subscriberProcessIdentifier, None)
         if not context or apdu.pduSource != context.address:
             # this is turned into an ErrorPDU and sent back to the client
-            self._log.error(
-                "Unsollicited COV Notification received. Have you restarted the application recently ?"
+            self._log.warning(
+                "Unsollicited COV Notification received from {}. Have you restarted the application recently ?".format(apdu.pduSource)
             )
         else:
             # now tell the context object
