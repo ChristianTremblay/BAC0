@@ -662,7 +662,7 @@ class DeviceConnected(Device):
                 us.append(each.properties.units_state)
         return dict(zip(bs, us))
 
-    def _findPoint(self, name, force_read=True):
+    def _findPoint(self, name, force_read=False):
         """
         Used by getter and setter functions
         """

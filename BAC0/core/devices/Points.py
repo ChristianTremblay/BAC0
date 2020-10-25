@@ -645,7 +645,7 @@ class NumericPoint(Point):
     def __repr__(self):
         try:
             polling = self.properties.device.properties.pollDelay
-            if (polling < 60 and polling > 0) or self.cov_registered:
+            if (polling < 90 and polling > 0) or self.cov_registered:
                 val = float(self.lastValue)
             else:
                 val = float(self.value)
@@ -785,7 +785,7 @@ class BooleanPoint(Point):
 
     def __repr__(self):
         polling = self.properties.device.properties.pollDelay
-        if (polling >= 60 or polling <= 0) and not self.cov_registered:
+        if (polling >= 90 or polling <= 0) and not self.cov_registered:
             # Force reading
             self.value
         return "{}/{} : {}".format(
@@ -863,13 +863,10 @@ class EnumPoint(Point):
         try:
             if ":" in self.lastValue:
                 _val = int(self.lastValue.split(":")[0])
-            else:
-                _val = self.lastValue
-            return self.get_state(_val)
+                return self.get_state(_val)
         except TypeError:
-            # polling probably off, no last value
-            v = self.value
-            return self.get_state(v)
+            # probably first occurence of history... retry
+            return self.get_state(self.lastValue)
         except IndexError:
             value = "unknown"
         except ValueError:
@@ -902,8 +899,9 @@ class EnumPoint(Point):
 
     def __repr__(self):
         polling = self.properties.device.properties.pollDelay
-        if (polling >= 60 or polling <= 0) and not self.cov_registered:
+        if (polling >= 90 or polling <= 0) and not self.cov_registered:
             # Force reading
+            self._log.warning('HERE 1')
             self.value
         return "{}/{} : {}".format(
             self.properties.device.properties.name, self.properties.name, self.enumValue
@@ -962,7 +960,7 @@ class StringPoint(Point):
     def __repr__(self):
         try:
             polling = self.properties.device.properties.pollDelay
-            if (polling < 60 and polling > 0) or self.cov_registered:
+            if (polling < 90 and polling > 0) or self.cov_registered:
                 val = str(self.lastValue)
             else:
                 val = str(self.value)
