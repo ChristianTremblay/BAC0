@@ -90,7 +90,7 @@ class CoV:
         if iocb.ioError:
             self._log.error("Subscription failed. {}".format(iocb.ioError))
 
-    def cov(self, address, objectID, confirmed=True, lifetime=None, callback=None):
+    def cov(self, address, objectID, confirmed=True, lifetime=0, callback=None):
         address = Address(address)
         context = self._build_cov_context(
             address, objectID, confirmed=confirmed, lifetime=lifetime, callback=callback

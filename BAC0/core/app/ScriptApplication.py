@@ -144,6 +144,27 @@ class common_mixin:
         if context.callback is not None:
             context.callback(elements=elements)
 
+    def do_trigger(self, args):
+        """Used by COV service for local objects"""
+        args = args.split()
+
+        if not args:
+            self._log.error("object name required")
+            return
+
+        obj = self.get_object_name(args[0])
+        if not obj:
+            self._log.debug("no such object")
+            return
+
+        # get the detection algorithm object
+        cov_detection = self.cov_detections.get(obj, None)
+        if (not cov_detection) or (len(cov_detection.cov_subscriptions) == 0):
+            self._log.debug("no subscriptions for that object")
+            return
+
+        # tell it to send out notifications
+        cov_detection.send_cov_notifications()
 
 @note_and_log
 class BAC0Application(
