@@ -450,7 +450,10 @@ class Point:
         AnalogValue are written to
         AnalogOutput are overridden
         """
-        if "Value" in self.properties.type:
+        if 'characterstring' in self.properties.type:
+            self.write(value)
+            
+        elif "Value" in self.properties.type:
             if str(value).lower() == "auto":
                 raise ValueError(
                     "Value was not simulated or overridden, cannot release to auto"
@@ -945,6 +948,15 @@ class StringPoint(Point):
         Characterstring value do not have units or state text
         """
         return None
+
+    def _trend(self, res):
+        super()._trend(res)
+
+    @property
+    def value(self):
+        res = super().value
+        self._trend(res)
+        return res
 
     def _set(self, value):
         try:
