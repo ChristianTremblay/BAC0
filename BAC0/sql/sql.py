@@ -202,7 +202,7 @@ class SQLMixin(object):
             pickle.dump(prop_backup, file)
 
         if self.properties.clear_history_on_save:
-            self.device.clear_histories()
+            self.clear_histories()
 
         self._log.info("Device saved to {}.db".format(self.properties.db_name))
 
