@@ -70,7 +70,7 @@ def add_points(qty_per_type, device):
         _new_objects = multistate_output()
         _new_objects = date_value()
         _new_objects = datetime_value()
-        _new_objects = character_string(presentValue="test")
+        _new_objects = character_string(presentValue="test", is_commandable=True)
 
     _new_objects.add_objects_to_application(device)
 
@@ -85,11 +85,11 @@ def network_and_devices():
     # We'll use 3 devices with our first instance
     device_app = BAC0.lite(port=47809, deviceId=101)
     device30_app = BAC0.lite(port=47810, deviceId=102)
-    device300_app = BAC0.lite(port=47811, deviceId=103)
+    # device300_app = BAC0.lite(port=47811, deviceId=103)
 
     add_points(2, device_app)
-    add_points(10, device30_app)
-    add_points(30, device300_app)
+    add_points(5, device30_app)
+    # add_points(10, device300_app)
 
     ip = device_app.localIPAddr.addrTuple[0]
     boid = device_app.Boid
@@ -97,13 +97,13 @@ def network_and_devices():
     ip_30 = device30_app.localIPAddr.addrTuple[0]
     boid_30 = device30_app.Boid
 
-    ip_300 = device300_app.localIPAddr.addrTuple[0]
-    boid_300 = device300_app.Boid
+    # ip_300 = device300_app.localIPAddr.addrTuple[0]
+    # boid_300 = device300_app.Boid
 
     # Connect to test device using main network
     test_device = BAC0.device("{}:47809".format(ip), boid, bacnet, poll=10)
     test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
-    test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
+    # test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
 
     params = namedtuple(
         "devices",
@@ -113,14 +113,14 @@ def network_and_devices():
     params.device_app = device_app
     params.test_device = test_device
     params.test_device_30 = test_device_30
-    params.test_device_300 = test_device_300
+    # params.test_device_300 = test_device_300
 
     yield params
 
     # Close when done
     params.test_device.disconnect()
     params.test_device_30.disconnect()
-    params.test_device_300.disconnect()
+    # params.test_device_300.disconnect()
 
     params.bacnet.disconnect()
     # If too quick, we may encounter socket issues...

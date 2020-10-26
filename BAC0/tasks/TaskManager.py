@@ -19,6 +19,7 @@ from random import random
 # --- 3rd party modules ---
 # --- this application's modules ---
 from ..core.utils.notes import note_and_log
+from ..core.io.IOExceptions import DeviceNotConnected
 
 # ------------------------------------------------------------------------------
 
@@ -37,6 +38,7 @@ class Manager:
 
     @classmethod
     def process(cls):
+        task = None
         while cls.enable:
             try:
                 if cls.tasks == []:
@@ -58,6 +60,11 @@ class Manager:
             except IndexError:
                 cls._log.info("Task Manager waiting for tasks...")
                 time.sleep(1)
+            except DeviceNotConnected as error:
+                cls._log.warning(
+                    "Device disconnected. Removing task ({}).".format(error, task)
+                )
+                cls.tasks.remove(task.id)
             except Exception as error:
                 cls._log.error(
                     "Super Mega Giga big error {}. Removing task.".format(error)
@@ -81,8 +88,9 @@ class Manager:
         cls._log.info("Stopping all tasks")
         cls.enable = False
         while cls.manager.is_alive():
-            pass
-        # cls.enable = False
+            time.sleep(0.01)
+
+        cls._log.info("Ok all tasks stopped")
         cls.clean_tasklist()
         return True
 

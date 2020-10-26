@@ -44,6 +44,8 @@ from ..io.IOExceptions import (
     BadDeviceDefinition,
     RemovedPointException,
     WritePropertyException,
+    WrongParameter,
+    DeviceNotConnected,
 )
 
 # from ...bokeh.BokehRenderer import BokehPlot
@@ -1073,12 +1075,3 @@ class DeviceLoad(DeviceFromDB):
             Device.__init__(self, None, None, None, from_backup=filename)
         else:
             raise Exception("Please provide backup file as argument")
-
-
-# Some exceptions
-class DeviceNotConnected(Exception):
-    pass
-
-
-class WrongParameter(Exception):
-    pass

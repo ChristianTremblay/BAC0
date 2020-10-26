@@ -904,7 +904,6 @@ class EnumPoint(Point):
         polling = self.properties.device.properties.pollDelay
         if (polling >= 90 or polling <= 0) and not self.cov_registered:
             # Force reading
-            self._log.warning("HERE 1")
             self.value
         return "{}/{} : {}".format(
             self.properties.device.properties.name, self.properties.name, self.enumValue

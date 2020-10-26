@@ -4,11 +4,11 @@
 """
 Test Bacnet communication with another device
 """
-
+import pytest
 from bacpypes.primitivedata import CharacterString
 import time
 
-NEWCSVALUE = CharacterString("New_Test")
+NEWCSVALUE = "New_Test"
 
 
 def test_WriteAV(network_and_devices):
@@ -34,12 +34,15 @@ def test_RelinquishDefault(network_and_devices):
 def test_WriteCharStr(network_and_devices):
     # Write to an object and validate new value is correct
     test_device = network_and_devices.test_device
-    test_device["CS_VALUE"] = NEWCSVALUE.value
+    test_device["CS_VALUE"] = NEWCSVALUE
     # time.sleep(1)
     new_value = test_device["CS_VALUE"].value
-    assert new_value == NEWCSVALUE.value
+    assert new_value == NEWCSVALUE
 
 
+@pytest.mark.skip(
+    "Not ready yet as BAC0 do not support out_of_service write -> unlocking PV"
+)
 def test_SimulateAI(network_and_devices):
     # Write to an object and validate new value is correct
     test_device = network_and_devices.test_device
@@ -51,6 +54,9 @@ def test_SimulateAI(network_and_devices):
     # assert new_value == 1
 
 
+@pytest.mark.skip(
+    "Not ready yet as BAC0 do not support out_of_service write -> unlocking PV"
+)
 def test_RevertSimulation(network_and_devices):
     # Write to an object and validate new value is correct
     test_device = network_and_devices.test_device

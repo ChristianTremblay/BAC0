@@ -158,3 +158,12 @@ class BufferOverflow(Exception):
     """
 
     pass
+
+
+# For devices
+class DeviceNotConnected(Exception):
+    pass
+
+
+class WrongParameter(Exception):
+    pass
