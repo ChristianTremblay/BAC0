@@ -32,23 +32,23 @@ from BAC0.core.devices.local.models import (
 from BAC0.core.devices.local.object import ObjectFactory
 from BAC0.core.devices.local.models import make_state_text
 
+
 def add_points(qty_per_type, device):
     # Start from fresh
     ObjectFactory.clear_objects()
-    basic_qty = qty_per_type -1
+    basic_qty = qty_per_type - 1
     # Analog Inputs
-    # Default... percent 
+    # Default... percent
     for _ in range(basic_qty):
         _new_objects = analog_input(presentValue=99.9)
         _new_objects = multistate_value(presentValue=1)
 
-
     # Supplemental with more details, for demonstration
     _new_objects = analog_input(
-        name='ZN-T',
-        properties={"units": 'degreesCelsius'},
+        name="ZN-T",
+        properties={"units": "degreesCelsius"},
         description="Zone Temperature",
-        presentValue=21
+        presentValue=21,
     )
 
     states = make_state_text(["Normal", "Alarm", "Super Emergency"])
@@ -73,6 +73,7 @@ def add_points(qty_per_type, device):
         _new_objects = character_string(presentValue="test")
 
     _new_objects.add_objects_to_application(device)
+
 
 @pytest.fixture(scope="session")
 def network_and_devices():

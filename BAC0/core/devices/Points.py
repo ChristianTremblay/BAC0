@@ -450,9 +450,9 @@ class Point:
         AnalogValue are written to
         AnalogOutput are overridden
         """
-        if 'characterstring' in self.properties.type:
+        if "characterstring" in self.properties.type:
             self.write(value)
-            
+
         elif "Value" in self.properties.type:
             if str(value).lower() == "auto":
                 raise ValueError(
@@ -904,7 +904,7 @@ class EnumPoint(Point):
         polling = self.properties.device.properties.pollDelay
         if (polling >= 90 or polling <= 0) and not self.cov_registered:
             # Force reading
-            self._log.warning('HERE 1')
+            self._log.warning("HERE 1")
             self.value
         return "{}/{} : {}".format(
             self.properties.device.properties.name, self.properties.name, self.enumValue
@@ -977,15 +977,11 @@ class StringPoint(Point):
             else:
                 val = str(self.value)
         except ValueError:
-            self._log.error(
-                "Cannot convert value. Device probably disconnected"
-            )
+            self._log.error("Cannot convert value. Device probably disconnected")
             # Probably disconnected
             val = None
         return "{}/{} : {}".format(
-            self.properties.device.properties.name,
-            self.properties.name,
-            val
+            self.properties.device.properties.name, self.properties.name, val
         )
 
     def __eq__(self, other):

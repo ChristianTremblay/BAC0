@@ -15,7 +15,6 @@ CHARACTERSTRINGVALUE = "test"
 
 def test_ReadAV(network_and_devices):
     test_device = network_and_devices.test_device
-    print('here')
     assert (test_device["AV"] - CHANGE_DELTA_AV) < TOLERANCE
 
 

@@ -132,7 +132,7 @@ class Device(SQLMixin):
         segmentation_supported=True,
         object_list=None,
         auto_save=False,
-        save_resampling='1s',
+        save_resampling="1s",
         clear_history_on_save=False,
         history_size=None
     ):

@@ -138,9 +138,7 @@ class ObjectFactory(object):
         instance = self.validate_instance(objectType, instance)
         if name_must_be_changed:
             objectName = "{}-{}".format(objectName, instance)
-            self._log.warning(
-                "Name already taken, using {} instead".format(objectName)
-            )
+            self._log.warning("Name already taken, using {} instead".format(objectName))
 
         return (objectName, instance)
 

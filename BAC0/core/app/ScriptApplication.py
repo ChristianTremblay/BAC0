@@ -111,7 +111,9 @@ class common_mixin:
         if not context or apdu.pduSource != context.address:
             # this is turned into an ErrorPDU and sent back to the client
             self._log.warning(
-                "Unsollicited COV Notification received from {}. Have you restarted the application recently ?".format(apdu.pduSource)
+                "Unsollicited COV Notification received from {}. Have you restarted the application recently ?".format(
+                    apdu.pduSource
+                )
             )
         else:
             # now tell the context object
@@ -165,6 +167,7 @@ class common_mixin:
 
         # tell it to send out notifications
         cov_detection.send_cov_notifications()
+
 
 @note_and_log
 class BAC0Application(
