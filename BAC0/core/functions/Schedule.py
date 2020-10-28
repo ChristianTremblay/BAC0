@@ -69,7 +69,10 @@ class Schedule:
     }
 
     def create_weeklySchedule(self, dict_schedule, object_reference=None):
-
+        """
+        From a structured dict (see schedule_example), create a WeeklySchedule
+        an ArrayOf(DailySchedule)
+        """
         object_reference = object_reference
         ds = dict_schedule
         if object_reference is not None:
@@ -135,6 +138,12 @@ class Schedule:
         self.send_weeklyschedule_request(request)
 
     def read_weeklySchedule(self, address, schedule_instance):
+        """
+        This function will turn the weeklySchedule received into a 
+        human readable dict. 
+        This dict can then be modified and used to write back to controller
+        using bacnet.write_weeklySchedule
+        """
         try:
             _schedule, object_references = self.readMultiple(
                 "{} schedule {} weeklySchedule listOfObjectPropertyReferences".format(
@@ -202,5 +211,3 @@ class Schedule:
             _value = states[int(each.value.value) - 1]
             events.append((_time, _value))
         return events
-
-
