@@ -99,6 +99,15 @@ class CoV:
 
         self.send_cov_subscription(request)
 
+    def cancel_cov(self, address, objectID, callback=None):
+        address = Address(address)
+        context = self._build_cov_context(
+            address, objectID, confirmed=None, lifetime=None, callback=callback
+        )
+        request = self._build_cov_request(context)
+
+        self.send_cov_subscription(request)
+
     def _build_cov_context(
         self, address, objectID, confirmed=True, lifetime=None, callback=None
     ):

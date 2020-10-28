@@ -587,6 +587,13 @@ class Point:
             callback=callback,
         )
 
+    def cancel_cov(self, callback=None):
+        address = self.properties.device.properties.address
+        obj_tuple = (self.properties.type, int(self.properties.address))
+        self.properties.device.properties.network.cancel_cov(
+            address, obj_tuple, callback=callback
+        )
+
 
 # ------------------------------------------------------------------------------
 

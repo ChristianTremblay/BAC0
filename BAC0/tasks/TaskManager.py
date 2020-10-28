@@ -58,7 +58,7 @@ class Manager:
                         "Task {} | {} executed. {}".format(task.id, task.name, task)
                     )
             except IndexError:
-                cls._log.info("Task Manager waiting for tasks...")
+                cls._log.debug("Task Manager waiting for tasks...")
                 time.sleep(1)
             except DeviceNotConnected as error:
                 cls._log.warning(
