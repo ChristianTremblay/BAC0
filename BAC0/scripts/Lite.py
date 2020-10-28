@@ -25,6 +25,7 @@ Once the class is created, create the local object and use it::
 import time
 from datetime import datetime
 import weakref
+from collections import namedtuple
 
 
 # --- this application's modules ---
@@ -38,6 +39,7 @@ from ..core.functions.TimeSync import TimeSync
 from ..core.functions.Reinitialize import Reinitialize
 from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
 from ..core.functions.cov import CoV
+from ..core.functions.Schedule import Schedule
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
@@ -50,6 +52,7 @@ from ..core.io.IOExceptions import (
     Timeout,
 )
 from ..tasks.RecurringTask import RecurringTask
+from ..tasks.UpdateCOV import Update_local_COV
 
 from ..infos import __version__ as version
 
@@ -69,6 +72,7 @@ class Lite(
     Reinitialize,
     DeviceCommunicationControl,
     CoV,
+    Schedule,
 ):
     """
     Build a BACnet application to accept read and write requests.
@@ -144,6 +148,17 @@ class Lite(
 
         # Announce yourself
         self.iam()
+
+        # Do what's needed to support COV
+        self._update_local_cov_task = namedtuple(
+            "_update_local_cov_task", ["task", "running"]
+        )
+        self._update_local_cov_task.task = Update_local_COV(
+            self, delay=1, name="Update Local COV Task"
+        )
+        self._update_local_cov_task.task.start()
+        self._update_local_cov_task.running = True
+        self._log.info("Update Local COV Task started")
 
     @property
     def known_network_numbers(self):
