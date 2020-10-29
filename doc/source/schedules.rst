@@ -69,7 +69,7 @@ The dict was simple enough to hold all the information and the chosen format is 
         },
     }
 
-..notes::
+.. note::
     Those examples are all available by calling `bacnet.schedule_example_analog` or `bacnet.schedule_example_binary` or
     `bacnet.schedule_example_multistate`. This make a quick way to get access to a template.
 
@@ -121,7 +121,9 @@ know the meaning of the integer values inside the schedule itself. "Occupied" is
 than "1".
 
 When using an **analog** schedule. States are useless as the value will consists on a floating value.
-If using an analog schedule, states = 'analog'.
+If using an analog schedule, `states = 'analog'`.
+
+When using **binary** schedules, BAC0 will consider fixed states (standard binary terms) `['inactive': 0, 'active' : 1]`
 
 reliability
 ************
