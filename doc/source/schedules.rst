@@ -1,7 +1,7 @@
 Schedules in BAC0
 ====================
 
-Schedules object in BAC0 are supported by using two specific functions :
+Schedules object in BAC0 are supported by using two specific functions ::
 
     bacnet.read_weeklySchedule(address, instance)
     # and
@@ -11,7 +11,8 @@ This is required by the complexity of the object itself which is composed of
 multiple elements.
 
 First, as you notice, actually, BAC0 support the "weeklySchedule" which is a property
-of the bacnet object ScheduleObject. 
+of the bacnet object ScheduleObject. The exceptionSchedule is not yet supported. Neither 
+the calendar.
 
 The weeklySchedule property is generally used locally inside the controller and is
 often synchronized from a supervisory controller if required.
