@@ -20,6 +20,7 @@ Table of contents
    proprietary_objects
    histories
    trending
+   schedules
    cov
    savedevice
    local_objects
