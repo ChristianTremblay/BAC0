@@ -14,7 +14,8 @@ This variable will also be passed to some functions when you will define a devic
 When creating the connection to the network, BAC0 needs to know the ip network of the interface on which it will work. It also needs to know the subnet mask (as BACnet operations often use broadcast messages).If you don't provide one, BAC0 will try to detect the interface for you.
 
 .. note::
-    If you use ios, you will need to provide a ip manually. The script is unable to detect the subnet mask yet.
+    If you use ios, you will need to provide a ip manually. The script is unable to detect the subnet mask yet. You will also have to modify bacpypes and allow 'ios' so it
+    can be installed on pythonista.
 
 By default, if Bokeh, Pandas and Flask are installed, using the connect script will launch the complete version. But you can also use the lite version if you want something simple.
     
@@ -166,16 +167,6 @@ sent directly to the router as unicast messages. For example ::
     # will send the request to 192.168.1.2, even if by default, a local broadcast would sent the request
     # to 192.168.1.255 (typically with a subnet 255.255.255.0 or /24)
 
-Time Sync
-****************
-You can use BAC0 to send time synchronisation requests to the network ::
-
-    bacnet.time_sync()
-    # or
-    bacnet.time_sync('2:5') # <- Providing an address
-    
-BAC0 will not accept requests from other devices.
-
 Ping devices (monitoring feature)
 **********************************
 BAC0 includes a way to ping constantly the devices that have been registered. 
@@ -193,40 +184,20 @@ new points will be available. Old one will not.
 ..note::
     WARNING. When BAC0 disconnects a device, it will try to save the device to SQL.
 
-Read and write (Using the BACnet instance)
-*******************************************
-BAC0 typically use the concept of controller that we'll see later. But At its core, read and write
-operation will be done throught the BACnet instance (`bacnet = BAC0.lite()` for example).
+Routing Table
+***************
+BACnet communication trough different networks is made possible by the different 
+routers creating "routes" between the subnet where BAC0 live and the other networks.
+When a network discovery is made by BAC0, informations about the detected routes will
+be saved (actually by the bacpypes stack itself) and for reference, BAC0 offers a way 
+to extract the information ::
 
-Read property
-........................
-Once you know the device you need to read from, you can use ::
+    bacnet.routing_table
 
-    bacnet.read('address object object_instance property')
+This will return a dict with all the available information about the routes in this form : 
 
-Read properties
-........................
-Read property multiple can also be used ::
-
-    bacnet.readMultiple('address object object_instance property_1 property_2') #or
-    bacnet.readMultiple('address object object_instance all')
-
-Write to property
-........................
-To write to a single property ::
-
-    bacnet.write('address object object_instance property value - priority')
-
-Write to multiple properties
-....................................
-Write property multiple is also implemented. You will need to build a list for your requets ::
-
-    r = ['analogValue 1 presentValue 100','analogValue 2 presentValue 100','analogValue 3 presentValue 100 - 8','@obj_142 1 @prop_1042 True']
-    bacnet.writeMultiple(addr='2:5',args=r,vendor_id=842)
-    
-..note::
-    WARNING. See the section on Proprietary objects and properties for details about vendor_id and @obj_142.
-
+bacnet.routing_table
+Out[5]: {'192.168.211.3': Source Network: None | Address: 192.168.211.3 | Destination Networks: {303: 0} | Path: (1, 303)}
 
 .. _berryconda : https://github.com/jjhelmus/berryconda  
 .. _RaspberryPi : http://www.raspberrypi.org

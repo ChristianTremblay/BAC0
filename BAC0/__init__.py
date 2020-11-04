@@ -21,6 +21,7 @@ try:
     from .core.devices.Trends import TrendLog as TrendLog
     from .tasks.Poll import SimplePoll as poll
     from .tasks.Match import Match as match
+    from .tasks.Devices import AddDevice as add_device
     from .core.utils.notes import update_log_level as log_level
     from .infos import __version__ as version
 
@@ -35,14 +36,17 @@ try:
     except ImportError:
         _COMPLETE = False
 
-    if _COMPLETE:
-        from .scripts.Complete import Complete as connect
-        from .scripts.Lite import Lite as lite
-    else:
-        from .scripts.Lite import Lite as connect
+    from .scripts.Lite import Lite as lite
 
-        lite = connect
-        # print('All features not available as some modules are missing (flask, flask-bootstrap, bokeh, pandas). See docs for details')
+    if _COMPLETE:
+        from .scripts.Complete import Complete as gui
+
+        connect = gui
+    else:
+        connect = lite
+        web = lambda: print(
+            "All features not available to run BAC0.web(). Some modules are missing (flask, flask-bootstrap, bokeh, pandas). See docs for details. To start BAC0, use BAC0.lite()"
+        )
 
     # Import proprietary classes
     from .core.proprietary_objects import jci

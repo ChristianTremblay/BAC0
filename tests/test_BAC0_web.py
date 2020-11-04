@@ -10,7 +10,7 @@ import time
 import BAC0
 
 
-def test_bac0_connect_ok():
+def test_bac0_web_ok():
     fake_bac0_obj = "my_test_bac0"
     fake_device_id = 666
     fake_firmware_revision = "0.1.0"

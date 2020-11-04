@@ -71,7 +71,7 @@ class DevicePoll(Task):
         :returns: Nothing
         """
         self._device = weakref.ref(device)
-        Task.__init__(self, name="{}_{}".format(prefix, name), delay=delay, daemon=True)
+        Task.__init__(self, name="{}_{}".format(prefix, name), delay=delay)
         self._counter = 0
 
     @property
@@ -85,7 +85,7 @@ class DevicePoll(Task):
             )
             self._counter += 1
             if self._counter == self.device.properties.auto_save:
-                self.device.save()
+                self.device.save(resampling=self.device.properties.save_resampling)
                 if self.device.properties.clear_history_on_save:
                     self.device.clear_histories()
                 self._counter = 0

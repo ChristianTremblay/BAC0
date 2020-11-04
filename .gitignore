@@ -9,7 +9,6 @@
 /BAC0/scripts/__pycache__
 /BAC0/__pycache__
 /BAC0Script.egg-info
-/doc
 /.coverage
 /doc/build
 /__pycache__
@@ -36,3 +35,9 @@ obj30.bin
 obj30.db
 obj300.bin
 /.vscode
+*.bin
+*.db
+*.log
+wily-report.html
+make_doc.bat
+tests/manual_test_bokeh.py

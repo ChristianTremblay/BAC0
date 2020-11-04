@@ -5,6 +5,7 @@ Subpackages
 -----------
 
 .. toctree::
+   :maxdepth: 7
 
    BAC0.core.app
    BAC0.core.devices

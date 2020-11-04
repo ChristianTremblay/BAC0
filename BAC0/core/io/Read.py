@@ -38,14 +38,18 @@ from bacpypes.apdu import (
     AbortPDU,
 )
 
-from bacpypes.basetypes import PropertyIdentifier
+from bacpypes.basetypes import PropertyIdentifier, DateTime
 from bacpypes.apdu import (
     ReadPropertyMultipleACK,
     ReadPropertyACK,
     ReadRangeRequest,
     ReadRangeACK,
+    Range,
+    RangeByPosition,
+    RangeBySequenceNumber,
+    RangeByTime,
 )
-from bacpypes.primitivedata import Tag, ObjectIdentifier, Unsigned
+from bacpypes.primitivedata import Tag, ObjectIdentifier, Unsigned, Date, Time
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB, TimeoutError
 from bacpypes.core import deferred
@@ -61,6 +65,7 @@ from .IOExceptions import (
     SegmentationNotSupported,
     UnknownPropertyError,
     UnknownObjectError,
+    BufferOverflow,
 )
 
 from ..utils.notes import note_and_log
@@ -182,16 +187,30 @@ class ReadProperty:
             else:
                 if reason == "unknownProperty":
                     if "description" in args:
-                        return "Not Implemented"
+                        self._log.warning(
+                            "The description property is not implemented in the device. Using a default value for internal needs."
+                        )
+                        return "Property Not Implemented"
                     elif "inactiveText" in args:
+                        self._log.warning(
+                            "The inactiveText property is not implemented in the device. Using a default value of Off for internal needs."
+                        )
                         return "Off"
                     elif "activeText" in args:
+                        self._log.warning(
+                            "The activeText property is not implemented in the device. Using a default value of On for internal needs."
+                        )
                         return "On"
                     else:
                         raise UnknownPropertyError("Unknown property {}".format(args))
                 elif reason == "unknownObject":
                     self._log.warning("Unknown object {}".format(args))
                     raise UnknownObjectError("Unknown object {}".format(args))
+                elif reason == "bufferOverflow":
+                    self._log.warning(
+                        "Buffer capacity exceeded in device {}".format(args)
+                    )
+                    return self._split_the_read_request(args, arr_index)
                 else:
                     # Other error... consider NoResponseFromController (65)
                     # even if the real reason is another one
@@ -203,18 +222,15 @@ class ReadProperty:
         """
         When a device doesn't support segmentation, this function
         will split the request according to the length of the
-        predicted result which can be known when readin the array_index
+        predicted result which can be known when reading the array_index
         number 0.
 
         This can be a very long process as some devices count a large
         number of properties without supporting segmentation
         (FieldServers are a good example)
         """
-        objlist = []
         nmbr_obj = self.read(args, arr_index=0)
-        for i in range(1, nmbr_obj + 1):
-            objlist.append(self.read(args, arr_index=i))
-        return objlist
+        return [self.read(args, arr_index=i) for i in range(1, nmbr_obj + 1)]
 
     def readMultiple(self, args, vendor_id=0, timeout=10, prop_id_required=False):
         """ Build a ReadPropertyMultiple request, wait for the answer and return the values
@@ -445,7 +461,7 @@ class ReadProperty:
                     except:
                         break
 
-                elif prop_id in (
+                elif prop_id not in (
                     "all",
                     "required",
                     "optional",
@@ -454,8 +470,6 @@ class ReadProperty:
                     "objectIdentifier",
                     "polarity",
                 ):
-                    pass
-                else:
                     datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
                     if not datatype:
                         raise ValueError(
@@ -496,8 +510,11 @@ class ReadProperty:
         request.pduDestination = Address(addr)
         return request
 
-    def build_rrange_request(self, args, arr_index=None, vendor_id=0, bacoid=None):
+    def build_rrange_request(
+        self, args, range_params=None, arr_index=None, vendor_id=0, bacoid=None
+    ):
         addr, obj_type, obj_inst, prop_id = args[:4]
+
         vendor_id = vendor_id
         bacoid = bacoid
 
@@ -519,13 +536,44 @@ class ReadProperty:
             objectIdentifier=(obj_type, obj_inst), propertyIdentifier=prop_id
         )
         request.pduDestination = Address(addr)
+        if range_params is not None:
+            range_type, first, date, time, count = range_params
+            if range_type == "p":
+                rbp = RangeByPosition(referenceIndex=int(first), count=int(count))
+                request.range = Range(byPosition=rbp)
+            elif range_type == "s":
+                rbs = RangeBySequenceNumber(
+                    referenceSequenceNumber=int(first), count=int(count)
+                )
+                request.range = Range(bySequenceNumber=rbs)
+            elif range_type == "t":
+                rbt = RangeByTime(
+                    referenceTime=DateTime(
+                        date=Date(date).value, time=Time(time).value
+                    ),
+                    count=int(count),
+                )
+                request.range = Range(byTime=rbt)
+            elif range_type == "x":
+                # should be missing required parameter
+                request.range = Range()
+            else:
+                raise ValueError("unknown range type: %r" % (range_type,))
 
         if len(args) == 5:
             request.propertyArrayIndex = int(args[4])
         self._log.debug("{:<20} {!r}".format("REQUEST", request))
         return request
 
-    def readRange(self, args, arr_index=None, vendor_id=0, bacoid=None, timeout=10):
+    def readRange(
+        self,
+        args,
+        range_params=None,
+        arr_index=None,
+        vendor_id=0,
+        bacoid=None,
+        timeout=10,
+    ):
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -547,18 +595,21 @@ class ReadProperty:
 
         args_split = args.split()
 
-        self.log_title("Read range", args_split)
+        self.log_title("Read range ", args_split)
 
         vendor_id = vendor_id
         bacoid = bacoid
 
         try:
             # build ReadProperty request
-            iocb = IOCB(
-                self.build_rrange_request(
-                    args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid
-                )
+            request = self.build_rrange_request(
+                args_split,
+                range_params=range_params,
+                arr_index=arr_index,
+                vendor_id=vendor_id,
+                bacoid=bacoid,
             )
+            iocb = IOCB(request)
             iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
@@ -592,7 +643,15 @@ class ReadProperty:
                     apdu.propertyIdentifier,
                 )
 
-            value = apdu.itemData[0].cast_out(datatype)
+            try:
+                value = apdu.itemData.cast_out(datatype)
+            except TypeError as error:
+                self._log.error(
+                    "Problem casting value : {} | Datatype : {} | error : {}".format(
+                        apdu.itemData, datatype, error
+                    )
+                )
+                return apdu
 
             self._log.debug("{:<20} {:<20}".format("value", "datatype"))
             self._log.debug("{!r:<20} {!r:<20}".format(value, datatype))
@@ -632,6 +691,16 @@ class ReadProperty:
                         "APDU Abort Reason : {}".format(reason)
                     )
 
+    def read_priority_array(self, addr, obj, obj_instance):
+        pa = self.read("{} {} {} priorityArray".format(addr, obj, obj_instance))
+        res = [pa]
+        for each in range(1, 17):
+            _pa = pa[each]
+            for k, v in _pa.__dict__.items():
+                if v != None:
+                    res.append(v)
+        return res
+
 
 def find_reason(apdu):
     try:
@@ -662,14 +731,12 @@ def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
             tag = tag_list[0].tagNumber
 
             datatype = Tag._app_tag_class[tag]
-            value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
         else:
             from bacpypes.constructeddata import ArrayOf
 
             subtype_tag = propertyValue.tagList.tagList[0].tagList[0].tagNumber
             datatype = ArrayOf(Tag._app_tag_class[subtype_tag])
-            value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
-
+        value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
     except:
         value = {"{}_{}".format(obj_id, prop_id): propertyValue}
     return value

@@ -12,28 +12,34 @@ Welcome to BACØ - BACnet Test Tool
 Table of contents
 ==================
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
    
    getstarted
    connect
+   read
+   write
+   timesync
    controller
    proprietary_objects
    histories
    trending
+   schedules
+   cov
    savedevice
+   local_objects
    webinterface
    jupyter
    tests
    pytest
    logging
-
+   
 
 Developer documentation
 =======================
 .. toctree::
-   :maxdepth: 6
+   :maxdepth: 5
 
-    BAC0
+   modules
 
 
 Index and search tool

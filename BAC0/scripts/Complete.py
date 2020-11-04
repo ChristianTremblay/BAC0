@@ -90,7 +90,7 @@ class Stats_Mixin:
     def print_list(self, lst):
         s = ""
         try:
-            s = s + lst[0]
+            s += lst[0]
         except IndexError:
             return s
         try:

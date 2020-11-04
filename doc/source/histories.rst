@@ -45,7 +45,7 @@ Example ::
 
 History Size
 --------------
-By default, BAC0 doesn't provide a history_size per points (number of records). But it could be 
+By default, BAC0 provides an unlimited history_size per points (number of records). But it could be 
 useful in certain cases when the script will run for a long period of time and you want to keep
 control over memory ::
 

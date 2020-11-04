@@ -46,9 +46,7 @@ def _build_datetime(UTC=False):
     else:
         _date = Date().now().value
         _time = Time().now().value
-    _datetime = DateTime(date=_date, time=_time)
-
-    return _datetime
+    return DateTime(date=_date, time=_time)
 
 
 @note_and_log

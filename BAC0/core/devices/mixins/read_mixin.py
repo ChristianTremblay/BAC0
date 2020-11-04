@@ -17,6 +17,7 @@ from ...io.IOExceptions import (
     ReadPropertyMultipleException,
     NoResponseFromController,
     SegmentationNotSupported,
+    BufferOverflow,
 )
 from ..Points import NumericPoint, BooleanPoint, EnumPoint, StringPoint, OfflinePoint
 from ..Trends import TrendLog
@@ -239,7 +240,7 @@ class ReadPropertyMultiple:
                 )
                 objList = []
 
-            except SegmentationNotSupported:
+            except (SegmentationNotSupported, BufferOverflow):
                 objList = []
                 number_of_objects = self.properties.network.read(
                     "{} device {} objectList".format(
@@ -421,7 +422,7 @@ class ReadPropertyMultiple:
             self.properties.fast_polling = False
             _poll_cls = DeviceNormalPoll
 
-        if not str(command).lower() in ["stop", "start", "0", "False"]:
+        if str(command).lower() not in ["stop", "start", "0", "False"]:
             self._log.error(
                 'Bad argument for function. Needs "stop", "start", "0" or "False" or provide keyword arg (command or delay)'
             )

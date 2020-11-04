@@ -25,6 +25,7 @@ Once the class is created, create the local object and use it::
 import time
 from datetime import datetime
 import weakref
+from collections import namedtuple
 
 
 # --- this application's modules ---
@@ -36,10 +37,14 @@ from ..core.functions.GetIPAddr import HostIP
 from ..core.functions.Discover import Discover
 from ..core.functions.TimeSync import TimeSync
 from ..core.functions.Reinitialize import Reinitialize
+from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
+from ..core.functions.cov import CoV
+from ..core.functions.Schedule import Schedule
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
 from ..core.devices.Trends import TrendLog
+from ..core.devices.Virtuals import VirtualPoint
 from ..core.utils.notes import note_and_log
 from ..core.io.IOExceptions import (
     NoResponseFromController,
@@ -47,6 +52,7 @@ from ..core.io.IOExceptions import (
     Timeout,
 )
 from ..tasks.RecurringTask import RecurringTask
+from ..tasks.UpdateCOV import Update_local_COV
 
 from ..infos import __version__ as version
 
@@ -57,7 +63,16 @@ from bacpypes.pdu import Address
 
 @note_and_log
 class Lite(
-    Base, Discover, ReadProperty, WriteProperty, Simulation, TimeSync, Reinitialize
+    Base,
+    Discover,
+    ReadProperty,
+    WriteProperty,
+    Simulation,
+    TimeSync,
+    Reinitialize,
+    DeviceCommunicationControl,
+    CoV,
+    Schedule,
 ):
     """
     Build a BACnet application to accept read and write requests.
@@ -68,9 +83,6 @@ class Lite(
     :param ip='127.0.0.1': Address must be in the same subnet as the BACnet network
         [BBMD and Foreign Device - not supported]
 
-    :param bokeh_server: (boolean) If set to false, will prevent Bokeh server
-        from being started. Can help troubleshoot issues with Bokeh. By default,
-        set to True.
     """
 
     def __init__(
@@ -80,6 +92,7 @@ class Lite(
         mask=None,
         bbmdAddress=None,
         bbmdTTL=0,
+        bdtable=None,
         ping=True,
         **params
     ):
@@ -126,6 +139,7 @@ class Lite(
             localIPAddr=ip_addr,
             bbmdAddress=bbmdAddress,
             bbmdTTL=bbmdTTL,
+            bdtable=bdtable,
             **params
         )
 
@@ -134,6 +148,17 @@ class Lite(
 
         # Announce yourself
         self.iam()
+
+        # Do what's needed to support COV
+        self._update_local_cov_task = namedtuple(
+            "_update_local_cov_task", ["task", "running"]
+        )
+        self._update_local_cov_task.task = Update_local_COV(
+            self, delay=1, name="Update Local COV Task"
+        )
+        self._update_local_cov_task.task.start()
+        self._update_local_cov_task.running = True
+        self._log.info("Update Local COV Task started")
 
     @property
     def known_network_numbers(self):
@@ -201,13 +226,15 @@ class Lite(
             if isinstance(networks, list):
                 # we'll make multiple whois...
                 for network in networks:
-                    _networks.append(network)
+                    if network < 65535:
+                        _networks.append(network)
             elif networks == "known":
                 _networks = self.known_network_numbers
             else:
                 if networks < 65535:
                     _networks.append(networks)
 
+        if _networks:
             for network in _networks:
                 self._log.info("Discovering network {}".format(network))
                 _res = self.whois(
@@ -222,6 +249,11 @@ class Lite(
                     found.append(each)
 
         else:
+            self._log.info(
+                "No BACnet network found, attempting a simple whois using provided device instances limits ({} - {})".format(
+                    deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
+                )
+            )
             _res = self.whois(
                 "{} {}".format(
                     deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
@@ -280,8 +312,6 @@ class Lite(
                     )
                 )
                 each.connect(network=self)
-            else:
-                pass
 
     @property
     def registered_devices(self):
@@ -307,10 +337,11 @@ class Lite(
         Argument provided must be of type Point or TrendLog
         ex. bacnet.add_trend(controller['point_name'])
         """
-        if isinstance(point_to_trend, Point):
-            oid = id(point_to_trend)
-            self._points_to_trend[oid] = point_to_trend
-        elif isinstance(point_to_trend, TrendLog):
+        if (
+            isinstance(point_to_trend, Point)
+            or isinstance(point_to_trend, TrendLog)
+            or (isinstance(point_to_trend, VirtualPoint))
+        ):
             oid = id(point_to_trend)
             self._points_to_trend[oid] = point_to_trend
         else:
@@ -323,9 +354,11 @@ class Lite(
         Argument provided must be of type Point or TrendLog
         ex. bacnet.remove_trend(controller['point_name'])
         """
-        if isinstance(point_to_remove, Point):
-            oid = id(point_to_remove)
-        elif isinstance(point_to_remove, TrendLog):
+        if (
+            isinstance(point_to_remove, Point)
+            or isinstance(point_to_remove, TrendLog)
+            or isinstance(point_to_remove, VirtualPoint)
+        ):
             oid = id(point_to_remove)
         else:
             raise TypeError("Please provide point or trendLog containing history")
@@ -384,3 +417,13 @@ class Lite(
         return "Bacnet Network using ip {} with device id {}".format(
             self.localIPAddr, self.Boid
         )
+
+    def __getitem__(self, boid_or_localobject):
+        item = self.this_application.objectName[boid_or_localobject]
+        if item is None:
+            for device in self._registered_devices:
+                if str(device.properties.device_id) == str(boid_or_localobject):
+                    return device
+            self._log.error("{} not found".format(boid_or_localobject))
+        else:
+            return item

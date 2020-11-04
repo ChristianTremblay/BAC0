@@ -12,7 +12,6 @@ BAC0.core.app.ScriptApplication module
    :undoc-members:
    :show-inheritance:
 
-
 Module contents
 ---------------
 

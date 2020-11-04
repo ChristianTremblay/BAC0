@@ -85,6 +85,7 @@ def update_log_level(
     update_stdout_lvl = False
 
     if level:
+        logging.getLogger("BAC0_Root.BAC0.scripts.Base.Base").disabled = False
         if level.lower() == "silence":
             log_file_lvl = logging.CRITICAL
             stderr_lvl = logging.CRITICAL
@@ -92,6 +93,7 @@ def update_log_level(
             update_log_file_lvl = True
             update_stderr_lvl = True
             update_stdout_lvl = True
+            logging.getLogger("BAC0_Root.BAC0.scripts.Base.Base").disabled = True
         elif level.lower() == "default":
             log_file_lvl = logging.WARNING
             stderr_lvl = logging.CRITICAL
@@ -110,6 +112,7 @@ def update_log_level(
             stdout_lvl = level
             update_log_file_lvl = True
             update_stdout_lvl = True
+
     else:
         if log_file:
             log_file_lvl = convert_level(log_file)

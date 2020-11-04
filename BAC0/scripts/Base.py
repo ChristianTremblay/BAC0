@@ -34,9 +34,13 @@ from bacpypes.basetypes import ServicesSupported, DeviceStatus
 from bacpypes.primitivedata import CharacterString
 
 # --- this application's modules ---
-from ..core.app.ScriptApplication import BAC0Application, BAC0ForeignDeviceApplication
+from ..core.app.ScriptApplication import (
+    BAC0Application,
+    BAC0ForeignDeviceApplication,
+    BAC0BBMDDeviceApplication,
+)
 from .. import infos
-from ..core.io.IOExceptions import InitializationError
+from ..core.io.IOExceptions import InitializationError, UnknownObjectError
 from ..core.functions.GetIPAddr import validate_ip_address
 from ..tasks.TaskManager import stopAllTasks
 
@@ -53,6 +57,25 @@ except ImportError:
     _COMPLETE = False
 
 # ------------------------------------------------------------------------------
+
+
+@note_and_log
+class LocalObjects(object):
+    def __init__(self, device):
+        self.device = device
+
+    def __getitem__(self, obj):
+        item = None
+        if isinstance(obj, tuple):
+            obj_type, instance = obj
+            item = self.device.this_application.get_object_id((obj_type, instance))
+        elif isinstance(obj, str):
+            name = obj
+            item = self.device.this_application.get_object_name(name)
+        if item is None:
+            raise UnknownObjectError("Can't find {} in local device".format(obj))
+        else:
+            return item
 
 
 @note_and_log
@@ -82,9 +105,11 @@ class Base:
         segmentationSupported="segmentedBoth",
         bbmdAddress=None,
         bbmdTTL=0,
+        bdtable=None,
         modelName=CharacterString("BAC0 Scripting Tool"),
         vendorId=842,
         vendorName=CharacterString("SERVISYS inc."),
+        description=CharacterString("http://christiantremblay.github.io/BAC0/"),
     ):
 
         self._log.debug("Configurating app")
@@ -125,24 +150,31 @@ class Base:
         self.segmentationSupported = segmentationSupported
         self.maxSegmentsAccepted = maxSegmentsAccepted
         self.localObjName = localObjName
+        self.local_objects = LocalObjects(device=self)
 
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
         self.vendorId = vendorId
         self.vendorName = vendorName
         self.modelName = modelName
+        self.description = description
 
         self.discoveredDevices = None
         self.systemStatus = DeviceStatus(1)
 
         self.bbmdAddress = bbmdAddress
         self.bbmdTTL = bbmdTTL
+        self.bdtable = bdtable
 
         self.firmwareRevision = firmwareRevision
+        self._ric = {}
+        self.subscription_contexts = {}
 
         try:
             self.startApp()
         except InitializationError as error:
-            raise InitializationError("Gros probleme : {}".format(error))
+            raise InitializationError(
+                "Gros probleme : {}. Address requested : {}".format(error, localIPAddr)
+            )
 
     def startApp(self):
         """
@@ -161,7 +193,7 @@ class Base:
                 vendorName=self.vendorName,
                 modelName=self.modelName,
                 systemStatus=self.systemStatus,
-                description="http://christiantremblay.github.io/BAC0/",
+                description=self.description,
                 firmwareRevision=self.firmwareRevision,
                 applicationSoftwareVersion=infos.__version__,
                 protocolVersion=1,
@@ -169,7 +201,16 @@ class Base:
             )
 
             # make an application
-            if self.bbmdAddress and self.bbmdTTL > 0:
+            if self.bdtable:
+                self.this_application = BAC0BBMDDeviceApplication(
+                    self.this_device,
+                    self.localIPAddr,
+                    bdtable=self.bdtable,
+                    iam_req=self._iam_request(),
+                    subscription_contexts=self.subscription_contexts,
+                )
+                app_type = "BBMD Device"
+            elif self.bbmdAddress and self.bbmdTTL > 0:
 
                 self.this_application = BAC0ForeignDeviceApplication(
                     self.this_device,
@@ -177,11 +218,15 @@ class Base:
                     bbmdAddress=self.bbmdAddress,
                     bbmdTTL=self.bbmdTTL,
                     iam_req=self._iam_request(),
+                    subscription_contexts=self.subscription_contexts,
                 )
                 app_type = "Foreign Device"
             else:
                 self.this_application = BAC0Application(
-                    self.this_device, self.localIPAddr, iam_req=self._iam_request()
+                    self.this_device,
+                    self.localIPAddr,
+                    iam_req=self._iam_request(),
+                    subscription_contexts=self.subscription_contexts,
                 )
                 app_type = "Simple BACnet/IP App"
             self._log.debug("Starting")
@@ -247,3 +292,51 @@ class Base:
             stopBacnetIPApp()
             self.t.join()
             raise
+
+    @property
+    def discoveredNetworks(self):
+        return self.this_application.nse._learnedNetworks or set()
+
+    #    @property
+    #    def routing_table(self):
+    #        return self.this_application.nse._routing_table or {}
+
+    @property
+    def routing_table(self):
+        """
+        Routing Table will give all the details about routers and how they
+        connect BACnet networks together.
+
+        It's a decoded presentation of what bacpypes.router_info_cache contains.
+
+        Returns a dict with the address of routers as key.
+        """
+
+        class Router:
+            def __init__(self, router_info, index=None, path=None):
+                self.source_network = router_info.snet
+                self.address = router_info.address
+                self.destination_networks = router_info.dnets
+                self.index = index
+                self.path = path
+
+            def __repr__(self):
+                return "Source Network: {} | Address: {} | Destination Networks: {} | Path: {}".format(
+                    self.source_network,
+                    self.address,
+                    self.destination_networks,
+                    self.path,
+                )
+
+        self._routers = {}
+
+        self._ric = {}
+        ric = self.this_application.nsap.router_info_cache
+
+        for networks, routers in ric.routers.items():
+            for address, router in routers.items():
+                self._routers[str(address)] = Router(router, index=networks)
+        for path, router in ric.path_info.items():
+            self._routers[str(router.address)].path = path
+
+        return self._routers

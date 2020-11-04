@@ -72,7 +72,7 @@ Let's say you want to poll a point every 5 seconds to see how the point reacted.
     mycontroller['point_name'].poll(delay=5)
 
 Note: by default, polling is enabled on all points at a 10 second frequency. But you could 
-    define a controller without polling and do specific point polling.::
+    define a controller without polling and do specific point polling. ::
 
     mycontroller = BAC0.device('2:5',5,bacnet,poll=0)
     mycontroller['point_name'].poll(delay=5)

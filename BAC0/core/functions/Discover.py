@@ -14,10 +14,16 @@ Classes needed to make discovering functions on a BACnet network
 import time
 
 # --- 3rd party modules ---
-from bacpypes.apdu import WhoIsRequest, IAmRequest
+from bacpypes.apdu import (
+    WhoIsRequest,
+    IAmRequest,
+    WhoHasRequest,
+    WhoHasLimits,
+    WhoHasObject,
+)
 from bacpypes.core import deferred
 from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
-from bacpypes.primitivedata import Unsigned
+from bacpypes.primitivedata import Unsigned, ObjectIdentifier, CharacterString
 from bacpypes.constructeddata import Array
 from bacpypes.object import get_object_class, get_datatype
 from bacpypes.iocb import IOCB, SieveQueue, IOController
@@ -62,6 +68,7 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
         self._iartn = []
         self._learnedNetworks = set()
         self.queue_by_address = {}
+        self._routing_table = {}
 
     def process_io(self, iocb):
         # get the destination address from the pdu
@@ -118,11 +125,10 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
     def indication(self, adapter, npdu):
         if isinstance(npdu, IAmRouterToNetwork):
             if isinstance(self._request, WhoIsRouterToNetwork):
-                self._log.info(
-                    "{} router to {}".format(npdu.pduSource, npdu.iartnNetworkList)
-                )
-                address = str(npdu.pduSource)
+                address, netlist = str(npdu.pduSource), npdu.iartnNetworkList
+                self._log.info("{} router to {}".format(address, netlist))
                 self._iartn.append(address)
+                self._routing_table[address] = netlist
             for each in npdu.iartnNetworkList:
                 self._learnedNetworks.add(int(each))
 
@@ -233,11 +239,7 @@ class Discover:
         try:
             # build a response
             request = IAmRequest()
-            if destination:
-                request.pduDestination = destination
-            else:
-                request.pduDestination = GlobalBroadcast()
-
+            request.pduDestination = destination if destination else GlobalBroadcast()
             # fill the response with details about us (from our device object)
             request.iAmDeviceIdentifier = self.this_device.objectIdentifier
             request.maxAPDULengthAccepted = self.this_device.maxApduLengthAccepted
@@ -344,6 +346,62 @@ class Discover:
         iocb.set_timeout(2)
         deferred(self.this_application.nse.request_io, iocb)
         iocb.wait()
+
+    def whohas(
+        self,
+        object_id=None,
+        object_name=None,
+        instance_range_low_limit=0,
+        instance_range_high_limit=4194303,
+        destination=None,
+        global_broadcast=False,
+    ):
+        """
+        Object ID : analogInput:1
+        Object Name : string
+        Instance Range Low Limit : 0
+        Instance Range High Limit : 4194303
+        destination (optional) : If empty, local broadcast will be used.
+        global_broadcast : False
+
+        """
+        obj_id = ObjectIdentifier(object_id)
+        if object_name and not object_id:
+            obj_name = CharacterString(object_name)
+            obj = WhoHasObject(objectName=obj_name)
+        elif object_id and not object_name:
+            obj = WhoHasObject(objectIdentifier=obj_id)
+        else:
+            obj = WhoHasObject(objectIdentifier=obj_id, objectName=obj_name)
+        limits = WhoHasLimits(
+            deviceInstanceRangeLowLimit=instance_range_low_limit,
+            deviceInstanceRangeHighLimit=instance_range_high_limit,
+        )
+        request = WhoHasRequest(object=obj, limits=limits)
+        if destination:
+            request.pduDestination = Address(destination)
+        else:
+            if global_broadcast:
+                request.pduDestination = GlobalBroadcast()
+            else:
+                request.pduDestination = LocalBroadcast()
+        iocb = IOCB(request)  # make an IOCB
+        iocb.set_timeout(2)
+        deferred(self.this_application.request_io, iocb)
+        iocb.wait()
+
+        iocb = IOCB(request)  # make an IOCB
+        self.this_application._last_i_have_received = []
+
+        if iocb.ioResponse:  # successful response
+            apdu = iocb.ioResponse
+
+        if iocb.ioError:  # unsuccessful: error/reject/abort
+            pass
+
+        time.sleep(3)
+        # self.discoveredObjects = self.this_application.i_am_counter
+        return self.this_application._last_i_have_received
 
 
 rejectMessageToNetworkReasons = [

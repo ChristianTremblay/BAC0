@@ -5,6 +5,7 @@ Subpackages
 -----------
 
 .. toctree::
+   :maxdepth: 7
 
    BAC0.core
    BAC0.scripts
@@ -22,7 +23,6 @@ BAC0.infos module
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 Module contents
 ---------------

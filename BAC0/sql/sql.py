@@ -69,42 +69,86 @@ class SQLMixin(object):
             p.pop("overridden", None)
             pprops[each.properties.name] = p
 
-        df = pd.DataFrame(pprops)
-        return df
+        return pd.DataFrame(pprops)
 
-    def backup_histories_df(self):
+    def backup_histories_df(self, resampling="1s"):
         """
         Build a dataframe of the point histories
+        By default, dataframe will be resampled for 1sec intervals,
+        NaN will be forward filled then backward filled. This way, no
+        NaN values will remains and analytics will be easier.
+
+        Please note that this can be disabled using resampling=False
+
+        In the process of building the dataframe, analog values are
+        resampled using the mean() function. So we have intermediate 
+        results between to records.
+
+        For binary values, we'll use .last() so we won't get a 0.5 value
+        which means nothing in this context. 
+
+        If saving a DB that already exists, previous resampling will survive
+        the merge of old data and new data.
         """
         backup = {}
+        if isinstance(resampling, str):
+            resampling_needed = True
+            resampling_freq = resampling
+        elif resampling in [0, False]:
+            resampling_needed = False
+
+        # print(resampling, resampling_freq, resampling_needed)
         for point in self.points:
             try:
-                if point.history.dtypes == object:
+                if resampling_needed and "binary" in point.properties.type:
                     backup[point.properties.name] = (
                         point.history.replace(["inactive", "active"], [0, 1])
-                        .resample("1s")
-                        .mean()
+                        .resample(resampling_freq)
+                        .last()
                     )
-            except:
-                # probably not enough points...
-                if point.history.dtypes == object:
+                elif resampling_needed and "analog" in point.properties.type:
+                    backup[point.properties.name] = point.history.resample(
+                        resampling_freq
+                    ).mean()
+                else:
+                    backup[point.properties.name] = point.history.resample(
+                        resampling_freq
+                    ).last()
+
+            except Exception as error:
+                self._log.error(
+                    "Error in resampling {} | {} (probably not enough points)".format(
+                        point, error
+                    )
+                )
+                if "binary" in point.properties.type:
                     backup[point.properties.name] = point.history.replace(
                         ["inactive", "active"], [0, 1]
                     )
-            else:
-                try:
-                    backup[point.properties.name] = point.history.resample("1s").mean()
-                except:
-                    # probably not enough point...
+                elif "analog" in point.properties.type:
+                    backup[point.properties.name] = point.history.resample(
+                        resampling_freq
+                    ).mean()
+                else:
                     backup[point.properties.name] = point.history
 
         df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in backup.items()]))
-        return df.fillna(method="ffill")
+        if resampling_needed:
+            return (
+                df.resample(resampling_freq)
+                .last()
+                .fillna(method="ffill")
+                .fillna(method="bfill")
+            )
+        else:
+            return df
 
-    def save(self, filename=None):
+    def save(self, filename=None, resampling=None):
         """
         Save the point histories to sqlite3 database.  
         Save the device object properties to a pickle file so the device can be reloaded.
+
+        Resampling : valid Pandas resampling frequency. If 0 or False, dataframe will not be resampled on save.
         """
         if filename:
             if ".db" in filename:
@@ -112,6 +156,9 @@ class SQLMixin(object):
             self.properties.db_name = filename
         else:
             self.properties.db_name = "{}".format(self.properties.name)
+
+        if resampling is None:
+            resampling = self.properties.save_resampling
 
         # Does file exist? If so, append data
         if os.path.isfile("{}.db".format(self.properties.db_name)):
@@ -121,13 +168,13 @@ class SQLMixin(object):
             his.index = his["index"].apply(Timestamp)
             try:
                 last = his.index[-1]
-                df_to_backup = self.backup_histories_df()[last:]
+                df_to_backup = self.backup_histories_df(resampling=resampling)[last:]
             except IndexError:
-                df_to_backup = self.backup_histories_df()
+                df_to_backup = self.backup_histories_df(resampling=resampling)
 
         else:
             self._log.debug("Creating a new backup database")
-            df_to_backup = self.backup_histories_df()
+            df_to_backup = self.backup_histories_df(resampling=resampling)
 
         # DataFrames that will be saved to SQL
         with contextlib.closing(
@@ -149,11 +196,13 @@ class SQLMixin(object):
             )
 
         # Saving other properties to a pickle file...
-        prop_backup = {}
-        prop_backup["device"] = self.dev_properties_df()
+        prop_backup = {"device": self.dev_properties_df()}
         prop_backup["points"] = self.points_properties_df()
         with open("{}.bin".format(self.properties.db_name), "wb") as file:
             pickle.dump(prop_backup, file)
+
+        if self.properties.clear_history_on_save:
+            self.clear_histories()
 
         self._log.info("Device saved to {}.db".format(self.properties.db_name))
 

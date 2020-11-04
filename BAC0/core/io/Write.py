@@ -100,7 +100,7 @@ class WriteProperty:
         if iocb.ioResponse:  # successful response
             apdu = iocb.ioResponse
 
-            if not isinstance(iocb.ioResponse, SimpleAckPDU):  # expect an ACK
+            if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
                 self._log.debug(
                     "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))
@@ -127,14 +127,13 @@ class WriteProperty:
         obj_inst = int(obj_inst)
         value = args[3]
         indx = None
-        if len(args) >= 5:
-            if args[4] != "-":
-                indx = int(args[4])
+        if len(args) >= 5 and args[4] != "-":
+            indx = int(args[4])
         priority = None
         if len(args) >= 6:
             priority = int(args[5])
         if "@prop_" in prop_id:
-            prop_id = int(prop_id.split("_")[1])
+            prop_id = prop_id.split("_")[1]
         if prop_id.isdigit():
             prop_id = int(prop_id)
 
@@ -151,16 +150,21 @@ class WriteProperty:
         if value == "null":
             value = Null()
         elif issubclass(datatype, Atomic):
-            if datatype is Integer:
+            if (
+                datatype is Integer
+                # or datatype is not Real
+                or datatype is Unsigned
+                or datatype is Enumerated
+            ):
                 value = int(value)
             elif datatype is Real:
                 value = float(value)
-            elif datatype is Unsigned:
-                value = int(value)
-            elif datatype is Enumerated:
-                value = int(value)
-            value = datatype(value)
+                # value = datatype(value)
+            else:
+                # value = float(value)
+                value = datatype(value)
 
+            value = datatype(value)
         elif issubclass(datatype, Array) and (indx is not None):
             if indx == 0:
                 value = Integer(value)
@@ -177,6 +181,7 @@ class WriteProperty:
             raise TypeError(
                 "invalid result datatype, expecting {}".format((datatype.__name__,))
             )
+
         self._log.debug("{:<20} {!r} {}".format("Encodeable value", value, type(value)))
 
         _value = Any()
@@ -232,7 +237,7 @@ class WriteProperty:
         return request
 
     def writeMultiple(self, addr=None, args=None, vendor_id=0, timeout=10):
-        """ Build a WritePropertyMultiple request, wait for an answer, and return status [True if ok, False if not].
+        """ Build a WritePropertyMultiple request, wait for an answer
 
         :param addr: destination of request (ex. '2:3' or '192.168.1.2')
         :param args: list of String with <type> <inst> <prop> <value> [ <indx> ] - [ <priority> ]
@@ -272,7 +277,7 @@ class WriteProperty:
         if iocb.ioResponse:  # successful response
             apdu = iocb.ioResponse
 
-            if not isinstance(iocb.ioResponse, SimpleAckPDU):  # expect an ACK
+            if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
                 self._log.debug(
                     "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))
@@ -295,9 +300,9 @@ class WriteProperty:
             )
         )
 
+        was = []
         for each in args:
             property_values = []
-            was = []
             if isinstance(each, str):
                 obj_type, obj_inst, prop_id, value, priority, indx = self._parse_wp_args(
                     each
@@ -312,21 +317,36 @@ class WriteProperty:
                 obj_type, prop_id, indx, vendor_id, value
             )
 
-            property_values.append(
-                PropertyValue(
-                    propertyIdentifier=prop_id,
-                    propertyArrayIndex=indx,
-                    value=value,
-                    priority=priority,
-                )
+            existingObject = next(
+                (obj for obj in was if obj.objectIdentifier == (obj_type, obj_inst)),
+                None,
             )
 
-            was.append(
-                WriteAccessSpecification(
-                    objectIdentifier=(obj_type, obj_inst),
-                    listOfProperties=property_values,
+            if existingObject == None:
+                property_values.append(
+                    PropertyValue(
+                        propertyIdentifier=prop_id,
+                        propertyArrayIndex=indx,
+                        value=value,
+                        priority=priority,
+                    )
                 )
-            )
+
+                was.append(
+                    WriteAccessSpecification(
+                        objectIdentifier=(obj_type, obj_inst),
+                        listOfProperties=property_values,
+                    )
+                )
+            else:
+                existingObject.listOfProperties.append(
+                    PropertyValue(
+                        propertyIdentifier=prop_id,
+                        propertyArrayIndex=indx,
+                        value=value,
+                        priority=priority,
+                    )
+                )
 
             datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
 
