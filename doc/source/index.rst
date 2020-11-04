@@ -16,6 +16,9 @@ Table of contents
    
    getstarted
    connect
+   read
+   write
+   timesync
    controller
    proprietary_objects
    histories
