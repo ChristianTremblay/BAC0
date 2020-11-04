@@ -418,8 +418,12 @@ class Lite(
             self.localIPAddr, self.Boid
         )
 
-    def __getitem__(self, boid):
-        for device in self._registered_devices:
-            if str(device.properties.device_id) == str(boid):
-                return device
-        self._log.error("Device not found")
+    def __getitem__(self, boid_or_localobject):
+        item = self.this_application.objectName[boid_or_localobject]
+        if item is None:
+            for device in self._registered_devices:
+                if str(device.properties.device_id) == str(boid_or_localobject):
+                    return device
+            self._log.error("{} not found".format(boid_or_localobject))
+        else:
+            return item

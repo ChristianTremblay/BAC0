@@ -40,7 +40,7 @@ from ..core.app.ScriptApplication import (
     BAC0BBMDDeviceApplication,
 )
 from .. import infos
-from ..core.io.IOExceptions import InitializationError
+from ..core.io.IOExceptions import InitializationError, UnknownObjectError
 from ..core.functions.GetIPAddr import validate_ip_address
 from ..tasks.TaskManager import stopAllTasks
 
@@ -57,6 +57,25 @@ except ImportError:
     _COMPLETE = False
 
 # ------------------------------------------------------------------------------
+
+
+@note_and_log
+class LocalObjects(object):
+    def __init__(self, device):
+        self.device = device
+
+    def __getitem__(self, obj):
+        item = None
+        if isinstance(obj, tuple):
+            obj_type, instance = obj
+            item = self.device.this_application.get_object_id((obj_type, instance))
+        elif isinstance(obj, str):
+            name = obj
+            item = self.device.this_application.get_object_name(name)
+        if item is None:
+            raise UnknownObjectError("Can't find {} in local device".format(obj))
+        else:
+            return item
 
 
 @note_and_log
@@ -131,6 +150,7 @@ class Base:
         self.segmentationSupported = segmentationSupported
         self.maxSegmentsAccepted = maxSegmentsAccepted
         self.localObjName = localObjName
+        self.local_objects = LocalObjects(device=self)
 
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
         self.vendorId = vendorId

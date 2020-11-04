@@ -244,11 +244,13 @@ class Schedule:
             )
         elif _state_text != "analog":
             for i, each in enumerate(_state_text):
-                schedule["states"][each] = i + offset_MV            
+                schedule["states"][each] = i + offset_MV
             try:
                 presentValue = "{} ({})".format(
-                list(schedule["states"].keys())[int(presentValue.value) - offset_MV],
-                presentValue.value,
+                    list(schedule["states"].keys())[
+                        int(presentValue.value) - offset_MV
+                    ],
+                    presentValue.value,
                 )
             except TypeError:
                 presentValue = presentValue.value
