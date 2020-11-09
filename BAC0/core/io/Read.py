@@ -232,7 +232,9 @@ class ReadProperty:
         nmbr_obj = self.read(args, arr_index=0)
         return [self.read(args, arr_index=i) for i in range(1, nmbr_obj + 1)]
 
-    def readMultiple(self, args, vendor_id=0, timeout=10, prop_id_required=False):
+    def readMultiple(
+        self, args, request_dict=None, vendor_id=0, timeout=10, prop_id_required=False
+    ):
         """ Build a ReadPropertyMultiple request, wait for the answer and return the values
 
         :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
@@ -251,15 +253,19 @@ class ReadProperty:
         if not self._started:
             raise ApplicationNotStarted("BACnet stack not running - use startApp()")
 
-        args = args.split()
-        vendor_id = vendor_id
-        values = []
+        if request_dict is not None:
+            request = self.build_rpm_request_from_dict(request_dict, vendor_id)
+        else:
+            args = args.split()
+            request = self.build_rpm_request(args, vendor_id=vendor_id)
+            self.log_title("Read Multiple", args)
 
-        self.log_title("Read Multiple", args)
+        values = []
+        dict_values = {}
 
         try:
             # build an ReadPropertyMultiple request
-            iocb = IOCB(self.build_rpm_request(args, vendor_id=vendor_id))
+            iocb = IOCB(request)
             iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
@@ -296,7 +302,7 @@ class ReadProperty:
                     )
                 )
                 self._log.debug("-" * 114)
-
+                dict_values[objectIdentifier] = []
                 # now come the property values per object
                 for element in result.listOfResults:
                     # get the property and array index
@@ -305,6 +311,13 @@ class ReadProperty:
 
                     readResult = element.readResult
 
+                    if propertyArrayIndex is not None:
+                        _prop_id = "{}@idx:{}".format(
+                            propertyIdentifier, propertyArrayIndex
+                        )
+                    else:
+                        _prop_id = propertyIdentifier
+
                     if readResult.propertyAccessError is not None:
                         self._log.debug(
                             "Property Access Error for {}".format(
@@ -312,6 +325,7 @@ class ReadProperty:
                             )
                         )
                         values.append(None)
+                        dict_values[objectIdentifier].append((_prop_id, None))
                     else:
                         # here is the value
                         propertyValue = readResult.propertyValue
@@ -353,10 +367,17 @@ class ReadProperty:
                             except ValueError:
                                 prop_id = propertyIdentifier
                             values.append((value, prop_id))
+                            dict_values[objectIdentifier].append(
+                                (_prop_id, (value, prop_id))
+                            )
                         else:
                             values.append(value)
+                            dict_values[objectIdentifier].append((_prop_id, value))
 
-            return values
+            if request_dict is not None:
+                return dict_values
+            else:
+                return values
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
@@ -508,6 +529,53 @@ class ReadProperty:
             listOfReadAccessSpecs=read_access_spec_list
         )
         request.pduDestination = Address(addr)
+        return request
+
+    def build_rpm_request_from_dict(self, request_dict, vendor_id):
+        """
+        Read property multiple allow to read a lot of properties with only one request
+        The existing RPM function is made using a string that must be created using bacpypes 
+        console style and is hard to automate.
+
+        This new version will be an attempt to improve that::
+
+            _rpm = {'address': '11:2',
+                'objects': {'analogInput:1': ['presentValue', 'description', 'unit', 'objectList@idx:0'],
+                            'analogInput:2': ['presentValue', 'description', 'unit', 'objectList@idx:0'],
+                },
+                vendor_id: 842
+                }
+
+        """
+        vendor_id = 842
+        addr = request_dict["address"]
+        objects = request_dict["objects"]
+        if "vendor_id" in request_dict.keys():
+            vendor_id = int(request_dict["vendor_id"])
+
+        read_access_spec_list = []
+
+        for obj, list_of_properties in objects.items():
+            obj_type, obj_instance = obj.split(":")
+            obj_type = validate_object_type(obj_type, vendor_id=vendor_id)
+            obj_instance = int(obj_instance)
+            property_reference_list = build_property_reference_list(
+                obj_type, list_of_properties
+            )
+            read_acces_spec = build_read_access_spec(
+                obj_type, obj_instance, property_reference_list
+            )
+            read_access_spec_list.append(read_acces_spec)
+
+        if not read_access_spec_list:
+            raise RuntimeError("at least one read access specification required")
+
+        # build the request
+        request = ReadPropertyMultipleRequest(
+            listOfReadAccessSpecs=read_access_spec_list
+        )
+        request.pduDestination = Address(addr)
+
         return request
 
     def build_rrange_request(
@@ -740,3 +808,63 @@ def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
     except:
         value = {"{}_{}".format(obj_id, prop_id): propertyValue}
     return value
+
+
+def validate_object_type(obj_type, vendor_id=842):
+    if obj_type.isdigit():
+        obj_type = int(obj_type)
+    elif "@obj_" in obj_type:
+        obj_type = int(obj_type.split("_")[1])
+    elif not get_object_class(obj_type, vendor_id=vendor_id):
+        raise ValueError("Unknown object type : {}".format(obj_type))
+    return obj_type
+
+
+def build_read_access_spec(obj_type, obj_instance, property_reference_list):
+    return ReadAccessSpecification(
+        objectIdentifier=(obj_type, obj_instance),
+        listOfPropertyReferences=property_reference_list,
+    )
+
+
+def build_property_reference_list(obj_type, list_of_properties):
+    property_reference_list = []
+    for prop in list_of_properties:
+        idx = None
+        if "@idx:" in prop:
+            prop, idx = prop.split("@idx:")
+        prop_id = validate_property_id(obj_type, prop)
+        prop_reference = PropertyReference(propertyIdentifier=prop_id)
+        if idx:
+            prop_reference.propertyArrayIndex = int(idx)
+        property_reference_list.append(prop_reference)
+    return property_reference_list
+
+
+def validate_property_id(obj_type, prop_id):
+    if prop_id in PropertyIdentifier.enumerations:
+        if prop_id in (
+            "all",
+            "required",
+            "optional",
+            "objectName",
+            "objectType",
+            "objectIdentifier",
+            "polarity",
+        ):
+            return prop_id
+        elif validate_datatype(obj_type, prop_id) is not None:
+            return prop_id
+        else:
+            raise ValueError(
+                "invalid property for object type : {} | {}".format(obj_type, prop_id)
+            )
+    elif "@prop_" in prop_id:
+        return int(prop_id.split("_")[1])
+    # elif "@obj_" in prop_id:
+    else:
+        raise ValueError("{} is an invalid property for {}".format(prop_id, obj_type))
+
+
+def validate_datatype(obj_type, prop_id, vendor_id=842):
+    return get_datatype(obj_type, prop_id, vendor_id=vendor_id) if not None else False
