@@ -8,6 +8,7 @@ bundler_args: "--retry 3"
 install:
 - pip install -r requirements.txt
 - pip install coveralls
+- pip install colorama
 - pip install pytest
 - pip install pytest-cov
 - pip install pandas
