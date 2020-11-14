@@ -229,6 +229,6 @@ def create(object_type, instance, objectName, presentValue, description):
         objectIdentifier=(object_type.objectType, instance),
         objectName="{}".format(objectName),
         presentValue=presentValue,
-        description=CharacterString("{}".format(presentValue)),
+        description=CharacterString("{}".format(description)),
     )
     return new_object
