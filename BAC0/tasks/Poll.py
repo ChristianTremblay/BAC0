@@ -94,9 +94,10 @@ class DevicePoll(Task):
             # When creation fail, polling is created and fail the first time...
             # So kill the task
             self.stop()
-        except ValueError:
+        except ValueError as e:
             self.device._log.error(
-                "Something is wrong with polling...stopping. Try setting off segmentation"
+                "Something is wrong with polling...stopping. Try setting off "
+                "segmentation. Error: {}".format(e)
             )
             self.stop()
 
