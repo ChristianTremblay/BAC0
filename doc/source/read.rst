@@ -88,6 +88,60 @@ Read property multiple can also be used ::
     bacnet.readMultiple('address object object_instance property_1 property_2') #or
     bacnet.readMultiple('address object object_instance all')
 
+Read multiple
+..................
+Using simple read is a costly way of retrieving data. If you need to read a lot of data from a controller, 
+and this controller supports read multiple, you should use that feature.
+
+When defining `BAC0.devices`, all polling requests will use readMultiple to retrive the information on the network.
+
+There is actually two way of defining a read multiple request. The first one inherit from bacpypes console examples 
+and is based on a string composed from a list of properties to be read on the network. This is the example I showed 
+previously.
+
+Recently, a more flexible way of creating those requests have been added using a dict to create the requests. 
+The results are then provided as a dict for clarity. Because the old way just give all the result in order of the request, 
+which can lead to some errors and is very hard to interact with on the REPL.
+
+The `request_dict` must be created like this ::
+
+    _rpm = {'address': '303:9', 
+            'objects': {
+                'analogInput:1094': ['objectName', 'presentValue', 'statusFlags', 'units','description'], 
+                'analogValue:4410': ['objectName', 'presentValue', 'statusFlags', 'units', 'description']
+                }
+            }
+
+If an array index needs to be used, the following syntax can be used in the property name ::
+
+    # Array index 1 of propertyName
+    'propertyName@idx:1' 
+
+This dict must be used with the already exsiting function `bacnet.readMultiple()` and passed
+via the argument named **request_dict**. ::
+
+    bacnet.readMultiple('303:9', request_dict=_rpm)
+
+The result will be a dict containing all the information requested. ::
+
+    # result of request
+    {
+        ('analogInput', 1094): [
+            ('objectName', 'DA-VP'),
+            ('presentValue', 4.233697891235352),
+            ('statusFlags', [0, 0, 0, 0]),
+            ('units', 'pascals'),
+            ('description', 'Discharge Air Velocity Pressure')
+            ],
+        ('analogValue', 4410): [
+            ('objectName', 'SAFLOW-ABSEFFORT'),
+            ('presentValue', 0.005016503389924765),
+            ('statusFlags', [0, 0, 1, 0]),
+            ('units', 'percent'),
+            ('description', '')
+            ]
+    }
+
 Write to property
 ........................
 To write to a single property ::
