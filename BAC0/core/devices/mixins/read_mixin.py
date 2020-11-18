@@ -529,11 +529,13 @@ class ReadProperty:
         device.read_multiple(['point1', 'point2', 'point3'], points_per_request = 10)
         """
         if isinstance(points_list, list):
-            (requests, _) = self._rpm_request_by_name(points_list)
-            for each in requests:
-                self.read_single(
-                    each, points_per_request=1, discover_request=discover_request
+            (requests, points) = self._rpm_request_by_name(points_list)
+            for (i, req) in enumerate(requests):
+                val = self.read_single(
+                    req, points_per_request=1, discover_request=discover_request
                 )
+                if val is not None and val != "":
+                    points[i]._trend(val)
         else:
             self.read_single(
                 points_list, points_per_request=1, discover_request=discover_request
