@@ -195,7 +195,7 @@ def create_object_list(objects_dict):
     """
     obj_list = []
     for obj_id, v in objects_dict.items():
-        name, oid, description, presentValue, commandable = v
+        object_class, name, oid, description, presentValue, commandable = v
         description = CharacterString(description)
         new_obj = create_object(
             object_class, name, oid, description, commandable=commandable
