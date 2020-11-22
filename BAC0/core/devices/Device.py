@@ -717,7 +717,9 @@ class DeviceConnected(Device):
             raise Exception("Unknown property : {}".format(error))
         return val
 
-    def write_property(self, prop, value, priority=16):
+    def write_property(self, prop, value, priority=None):
+        if priority is not None:
+            priority = "- {}".format(priority)
         if isinstance(prop, tuple):
             _obj, _instance, _prop = prop
         else:
@@ -725,7 +727,7 @@ class DeviceConnected(Device):
                 "Please provide property using tuple with object, instance and property"
             )
         try:
-            request = "{} {} {} {} {} - {}".format(
+            request = "{} {} {} {} {} {}".format(
                 self.properties.address, _obj, _instance, _prop, value, priority
             )
             val = self.properties.network.write(

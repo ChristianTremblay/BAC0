@@ -529,7 +529,8 @@ class ReadProperty:
         device.read_multiple(['point1', 'point2', 'point3'], points_per_request = 10)
         """
         if isinstance(points_list, list):
-            for each in points_list:
+            (requests, _) = self._rpm_request_by_name(points_list)
+            for each in requests:
                 self.read_single(
                     each, points_per_request=1, discover_request=discover_request
                 )

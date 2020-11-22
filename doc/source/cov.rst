@@ -12,6 +12,9 @@ or from the network itself ::
 
     bacnet.cov(address, objectID)
 
+.. note:: 
+    objectID is a tuple created with the object type as a string and the instance. For example
+    analog input 1 would be : `("analogInput", 1)`
 
 Confirmed COV
 --------------
