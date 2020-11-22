@@ -77,6 +77,7 @@ class Manager:
                     )
                     cls.stop_service()
                     cls.start_service()
+            time.sleep(0.01)
         cls.stop_service()
 
     @classmethod
