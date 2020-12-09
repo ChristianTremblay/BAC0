@@ -202,6 +202,8 @@ class Point:
                 prop_id_required=True,
             )
             for each in res:
+                if not each:
+                    continue
                 v, prop = each
                 self.properties.bacnet_properties[prop] = v
 
