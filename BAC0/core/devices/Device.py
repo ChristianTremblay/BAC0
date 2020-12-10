@@ -136,7 +136,8 @@ class Device(SQLMixin):
         auto_save=False,
         save_resampling="1s",
         clear_history_on_save=False,
-        history_size=None
+        history_size=None,
+        reconnect_on_failure=True,
     ):
 
         self.properties = DeviceProperties()
@@ -155,6 +156,7 @@ class Device(SQLMixin):
         self.properties.save_resampling = save_resampling
         self.properties.clear_history_on_save = clear_history_on_save
         self.properties.default_history_size = history_size
+        self._reconnect_on_failure = reconnect_on_failure
 
         self.segmentation_supported = segmentation_supported
         self.custom_object_list = object_list
@@ -540,8 +542,11 @@ class DeviceConnected(Device):
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
         except IndexError as error:
-            self._log.error("Device creation failed... disconnecting")
-            self.new_state(DeviceDisconnected)
+            if self._reconnect_on_failure:
+                self._log.error("Device creation failed... re-connecting")
+                self.new_state(DeviceDisconnected)
+            else:
+                self._log.error("Device creation failed... disconnecting")
 
     def __getitem__(self, point_name):
         """
@@ -751,6 +756,8 @@ class DeviceConnected(Device):
                 prop_id_required=True,
             )
             for each in res:
+                if not each:
+                    continue
                 v, prop = each
                 self.properties.bacnet_properties[prop] = v
 
