@@ -394,7 +394,7 @@ class ReadPropertyMultiple:
                 tl,
             )
 
-        self._log.debug("RPM Mixin : {} | {} | {}".format(objList, points, trendlogs))
+        self._log.debug("RPM Mixin : %s | %s | %s", objList, points, trendlogs)
         self._log.info("Ready!")
         return (objList, points, trendlogs)
 
