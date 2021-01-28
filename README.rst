@@ -47,7 +47,7 @@ But also a really good tool to assist your startup, test and balancing. Using Ju
 even be able to create nice looking report right from your code.
 
 
-.. |build-status| image:: https://github.com/ChristianTremblay/BAC0/.github/workflows/test/badge.svg?branch=master
+.. |build-status| image:: https://github.com/ChristianTremblay/BAC0/workflows/Python%20package/badge.svg?branch=master
    :target: https://github.com/ChristianTremblay/BAC0/actions
    :alt: Build status
      
