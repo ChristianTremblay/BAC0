@@ -9,7 +9,7 @@ import pytest
 import time
 import BAC0
 
-@pytest.mark.skip("Test for Github actions")
+
 def test_bac0_lite_ok():
     fake_bac0_obj = "my_test_bac0"
     fake_device_id = 666
