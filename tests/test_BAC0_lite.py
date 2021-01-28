@@ -32,6 +32,7 @@ def test_bac0_lite_ok():
         modelName=fake_model_name,
         vendorId=fake_vendor_id,
         vendorName=fake_vendor_name,
+        port=47811,
     )
 
     assert bacnet.localObjName == fake_bac0_obj
@@ -45,4 +46,4 @@ def test_bac0_lite_ok():
     assert bacnet.vendorName == fake_vendor_name
 
     bacnet.disconnect()
-    time.sleep(1)
+    time.sleep(2)
