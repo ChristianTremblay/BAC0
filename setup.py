@@ -4,7 +4,7 @@ Setup.py
 from setuptools import setup
 from BAC0 import infos
 
-requirements = ["bacpypes", "netifaces", "colorama"]
+requirements = ["bacpypes", "colorama"]
 
 setup(
     name="BAC0",
