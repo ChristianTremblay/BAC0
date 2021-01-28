@@ -48,7 +48,6 @@ jobs:
       run: |
         coverage run --source BAC0 -m pytest -v
         coverage report
-        coveralls
     - name: Coveralls Python
       uses: AndreMiras/coveralls-python-action@v20201129
       with:
