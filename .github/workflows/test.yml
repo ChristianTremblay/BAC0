@@ -56,7 +56,7 @@ jobs:
         github-token: ${{ secrets.COVERALLS_TOKEN }}
 
   coveralls_finish:
-    needs: test
+    needs: build
     runs-on: ubuntu-latest
     steps:
     - name: Coveralls Finished
