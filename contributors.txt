@@ -1,6 +1,6 @@
 Contributors:
 
 Christian Tremblay        christian.tremblay@servisys.com
-Ken J. LoSee https://github.com/ChristianTremblay/BAC0/graphs/contributors
+And https://github.com/ChristianTremblay/BAC0/graphs/contributors
 
 Thanks !
