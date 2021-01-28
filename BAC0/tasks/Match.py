@@ -72,18 +72,25 @@ class Match_Value(Task):
     i.e. Does Fan value = On after 5 seconds. 
     """
 
-    def __init__(self, value=None, point=None, delay=5, name=None):
+    def __init__(
+        self, value=None, point=None, delay=5, name=None, use_last_value=False
+    ):
         self._log.debug("Creating MatchValue task for {} and {}".format(value, point))
         self.value = value
         self.point = point
+        self.use_last_value = use_last_value
         if not name:
             name = "Match_Value on " + point.properties.name
         Task.__init__(self, delay=delay, name=name)
 
     def task(self):
         try:
+            if self.use_last_value:
+                _point = self.point.lastValue
+            else:
+                _point = self.point.value
             value = self.value() if hasattr(self.value, "__call__") else self.value
-            if value != self.point.value:
+            if value != _point:
                 self.point._set(value)
         except Exception:
             self._log.error(
