@@ -48,19 +48,23 @@ jobs:
       run: |
         coverage run --source BAC0 -m pytest -v
         coverage report
-    - name: Coveralls Python
-      uses: AndreMiras/coveralls-python-action@v20201129
-      with:
-        github-token: ${{ secrets.COVERALLS_TOKEN }}
-        parallel: true
+    - name: Upload coverage data to coveralls.io
+      run: coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+        COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
+        COVERALLS_PARALLEL: true
         
-  coveralls_finish:
+  coveralls:
+    name: Indicate completion to coveralls.io
     needs: build
     runs-on: ubuntu-latest
+    container: python:3-slim
     steps:
-    - name: Coveralls Finished
-      uses: AndreMiras/coveralls-python-action@v20201129
-      with:
-        github-token: ${{ secrets.COVERALLS_TOKEN }}  
-        parallel-finished: true
+    - name: Finished
+      run: |
+        pip3 install --upgrade coveralls
+        coveralls --finish
+      env:
+        GITHUB_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         
