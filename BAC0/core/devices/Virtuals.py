@@ -81,10 +81,11 @@ class VirtualPointProperties(object):
         self.description = ""
         self.units_state = ""
         self.type = "virtual"
+        self.history_size = None
         self._df = None
 
     def __repr__(self):
-        return "{} | Descr : {}".format(self.name, self.description)
+        return "VIRTUAL POINT-- {} | Descr : {}".format(self.name, self.description)
 
 
 @note_and_log
@@ -94,7 +95,14 @@ class VirtualPoint(VirtualPointProperties):
     A function is passed at creation time and this function must return a pandas Serie
     """
 
-    def __init__(self, name, fn, description=None, units="No Units"):
+    def __init__(
+        self,
+        name,
+        initial_value=None,
+        history_fn=None,
+        description=None,
+        units="No Units",
+    ):
         if description is None:
             raise ValueError("Please provide description")
         if not _PANDAS:
@@ -104,21 +112,155 @@ class VirtualPoint(VirtualPointProperties):
         self.properties.name = name
         self.properties.description = description
         self.properties.units_state = units
-        self._history = fn
+        self._history_fn = history_fn
 
-    @property
-    def history(self):
-        _result = self._history()
-        if not isinstance(_result, pd.Series):
-            raise ValueError("Function of virtual point must return a Series")
-        else:
-            return _result
+        self._history = namedtuple("_history", ["timestamp", "value"])
+        self._history.timestamp = []
+        self._history.value = []
+
+        self._match_task = namedtuple("_match_task", ["task", "running"])
+        self._match_task.task = None
+        self._match_task.running = False
+
+        self.fake_pv = None
+        if initial_value:
+            self._set(initial_value)
 
     def chart(self, remove=False):
         """
         Add point to the bacnet trending list
         """
-        self._log.warning("Use bacnet.add_trend() instead")
+        self._log.warning("Use bacnet.add_trend(point) instead")
+
+    def _set(self, value):
+        if self._history_fn is None:
+            self.fake_pv = value
+            self._trend(value)
+        else:
+            self._log.warning(
+                "Point is configured as a function of other points. You can't set a new value"
+            )
+
+    def _trend(self, res):
+        self._history.timestamp.append(datetime.now())
+        self._history.value.append(res)
+        if self.properties.history_size is None:
+            return
+        else:
+            if self.properties.history_size < 1:
+                self.properties.history_size = 1
+            if len(self._history.timestamp) >= self.properties.history_size:
+                try:
+                    self._history.timestamp = self._history.timestamp[
+                        -self.properties.history_size :
+                    ]
+                    self._history.value = self._history.value[
+                        -self.properties.history_size :
+                    ]
+                    assert len(self._history.timestamp) == len(self._history.value)
+                except Exception as e:
+                    self._log.exception("Can't append to history")
+
+    @property
+    def value(self):
+        """
+        Retrieve value of the point
+        """
+        return self.lastValue
+
+    @property
+    def lastValue(self):
+        """
+        returns: last value read
+        """
+        if _PANDAS:
+            return self.history.dropna().iloc[-1]
+        else:
+            return self._history.value[-1]
+
+    @property
+    def history(self):
+        """
+        returns : (pd.Series) containing timestamp and value of all readings
+        """
+        if self._history_fn is not None:
+            return self._history_fn()
+        else:
+            if not _PANDAS:
+                return dict(zip(self._history.timestamp, self._history.value))
+            idx = self._history.timestamp.copy()
+            his_table = pd.Series(index=idx, data=self._history.value[: len(idx)])
+            del idx
+            his_table.name = ("{}/{}").format(
+                self.properties.device.properties.name, self.properties.name
+            )
+            his_table.units = self.properties.units_state
+            his_table.states = "virtual"
+
+            his_table.description = self.properties.description
+
+            his_table.datatype = self.properties.type
+            return his_table
+
+    def match_value(self, value, *, delay=5):
+        """
+        This allow functions like :
+            device['point'].match('value')
+
+        A sensor will follow a calculation...
+        """
+        if self._match_task.task is None:
+            self._match_task.task = Match_Value(value=value, point=self, delay=delay)
+            self._match_task.task.start()
+            self._match_task.running = True
+
+        elif self._match_task.running and delay > 0:
+            self._match_task.task.stop()
+            self._match_task.running = False
+            time.sleep(1)
+
+            self._match_task.task = Match_Value(value=value, point=self, delay=delay)
+            self._match_task.task.start()
+            self._match_task.running = True
+
+        elif self._match_task.running and delay == 0:
+            self._match_task.task.stop()
+            self._match_task.running = False
+
+        else:
+            raise RuntimeError("Stop task before redefining it")
 
     def __repr__(self):
-        return self.properties.__repr__()
+        return "{}/{} : {:.2f} {}".format(
+            self.properties.device.properties.name,
+            self.properties.name,
+            self.value,
+            self.properties.units_state,
+        )
+
+    def __add__(self, other):
+        return self.value + other
+
+    def __sub__(self, other):
+        return self.value - other
+
+    def __mul__(self, other):
+        return self.value * other
+
+    def __truediv__(self, other):
+        return self.value / other
+
+    def __lt__(self, other):
+        return self.value < other
+
+    def __le__(self, other):
+        return self.value <= other
+
+    def __eq__(self, other):
+        return self.value == other
+
+    def __gt__(self, other):
+        return self.value > other
+
+    def __ge__(self, other):
+        return self.value >= other

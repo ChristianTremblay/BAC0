@@ -202,6 +202,8 @@ class Point:
                 prop_id_required=True,
             )
             for each in res:
+                if not each:
+                    continue
                 v, prop = each
                 self.properties.bacnet_properties[prop] = v
 
@@ -542,7 +544,7 @@ class Point:
         else:
             raise RuntimeError("Stop task before redefining it")
 
-    def match_value(self, value, *, delay=5):
+    def match_value(self, value, *, delay=5, use_last_value=False):
         """
         This allow functions like :
             device['point'].match('value')
@@ -550,7 +552,9 @@ class Point:
         A sensor will follow a calculation...
         """
         if self._match_task.task is None:
-            self._match_task.task = Match_Value(value=value, point=self, delay=delay)
+            self._match_task.task = Match_Value(
+                value=value, point=self, delay=delay, use_last_value=use_last_value
+            )
             self._match_task.task.start()
             self._match_task.running = True
 
