@@ -110,6 +110,7 @@ class HostIP:
         """
         try:
             import netifaces
+
             interfaces = netifaces.interfaces()
             for nic in interfaces:
                 addresses = netifaces.ifaddresses(nic)
@@ -119,10 +120,12 @@ class HostIP:
                             return address["netmask"]
                 except KeyError:
                     pass
-            
+
             return "255.255.255.255"
         except ImportError:
-            self._log.warning("Netifaces not installed on your system. BAC0 can't detect the subnet.\nPlease provide subnet for now, we'll consider 255.255.255.0 (/24).\nYou can install netifaces using 'pip install netifaces'.")
+            self._log.warning(
+                "Netifaces not installed on your system. BAC0 can't detect the subnet.\nPlease provide subnet for now, we'll consider 255.255.255.0 (/24).\nYou can install netifaces using 'pip install netifaces'."
+            )
             return "255.255.255.0"
 
 
