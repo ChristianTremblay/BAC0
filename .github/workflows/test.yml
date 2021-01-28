@@ -52,9 +52,9 @@ jobs:
     - name: Coveralls Python
       uses: AndreMiras/coveralls-python-action@v20201129
       with:
-        parallel: true
         github-token: ${{ secrets.COVERALLS_TOKEN }}
-
+        parallel: true
+        
   coveralls_finish:
     needs: build
     runs-on: ubuntu-latest
@@ -62,4 +62,6 @@ jobs:
     - name: Coveralls Finished
       uses: AndreMiras/coveralls-python-action@v20201129
       with:
+        github-token: ${{ secrets.COVERALLS_TOKEN }}  
         parallel-finished: true
+        
