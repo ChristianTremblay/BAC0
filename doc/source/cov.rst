@@ -39,7 +39,7 @@ the function as a callback to the subscription ::
 
     # elements is a dict containing all the information of the COV 
     def my_callback(elements):
-        print("Present value is : {}".format(elements['properties']['presentValue'])
+        print("Present value is : {}".format(elements['properties']['presentValue']))
 
 .. note:: 
     Here you can find a typical COV notification and the content of elements.
