@@ -24,8 +24,8 @@ class SubscriptionContext:
 
     def __init__(self, address, objectID, confirmed=None, lifetime=None, callback=None):
         self.address = address
-        self.subscriberProcessIdentifier = self.next_proc_id
-        self.next_proc_id += 1
+        self.subscriberProcessIdentifier = SubscriptionContext.next_proc_id
+        SubscriptionContext.next_proc_id += 1
         self.monitoredObjectIdentifier = objectID
         self.issueConfirmedNotifications = confirmed
         self.lifetime = lifetime
