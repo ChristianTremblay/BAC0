@@ -385,6 +385,8 @@ class ReadPropertyMultiple:
         for each in retrieve_type(objList, "trendLog"):
             point_address = str(each[1])
             tl = TrendLog(point_address, self, read_log_on_creation=False)
+            if tl.properties.log_device_object_property is None:
+                continue
             ldop_type, ldop_addr = (
                 tl.properties.log_device_object_property.objectIdentifier
             )
