@@ -5,7 +5,7 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device 
+read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device
 """
 # --- standard Python modules ---
 
@@ -45,7 +45,7 @@ class ReadPropertyMultiple:
 
     def _batches(self, request, points_per_request):
         """
-        Generator for creating 'request batches'.  Each batch contains a maximum of "points_per_request" 
+        Generator for creating 'request batches'.  Each batch contains a maximum of "points_per_request"
         points to read.
         :params: request a list of point_name as a list
         :params: (int) points_per_request
@@ -384,8 +384,13 @@ class ReadPropertyMultiple:
         # TrendLogs
         for each in retrieve_type(objList, "trendLog"):
             point_address = str(each[1])
-            tl = TrendLog(point_address, self, read_log_on_creation=False)
-            if tl.properties.log_device_object_property is None:
+            try:
+                tl = TrendLog(point_address, self, read_log_on_creation=False)
+                if tl.properties.log_device_object_property is None:
+                    self._log.error("Problem creating trendLog {}".format(each))
+                    continue
+            except Exception as e:
+                self._log.error("Problem creating trendLog {}: {}".format(each, e))
                 continue
             ldop_type, ldop_addr = (
                 tl.properties.log_device_object_property.objectIdentifier
@@ -655,6 +660,8 @@ class ReadProperty:
             point_address = str(each[1])
             try:
                 tl = TrendLog(point_address, self)
+                if tl.properties.log_device_object_property is None:
+                    continue
             except Exception:
                 self._log.error("Problem creating {}".format(each))
                 continue
