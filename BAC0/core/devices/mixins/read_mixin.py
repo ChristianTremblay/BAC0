@@ -89,12 +89,15 @@ class ReadUtilsMixin:
         points = []
         requests = []
         for each in point_list:
-            prop_type, prop_addr = each
             str_list = []
             point = self._findPoint(each, force_read=False)
             points.append(point)
 
-            str_list.append(" {} {} presentValue".format(prop_type, prop_addr))
+            str_list.append(
+                " {} {} presentValue".format(
+                    point.properties.type, point.properties.address
+                )
+            )
             rpm_param = "".join(str_list)
             requests.append(rpm_param)
 
@@ -439,6 +442,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                 return values
 
             else:
+                self._log.debug("Read Multiple")
                 big_request = self._rpm_request_by_name(points_list)
                 i = 0
                 for request in batch_requests(big_request[0], points_per_request):
@@ -446,6 +450,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                         request = "{} {}".format(
                             self.properties.address, "".join(request)
                         )
+                        self._log.debug(request)
                         val = self.properties.network.readMultiple(
                             request, vendor_id=self.properties.vendor_id
                         )
