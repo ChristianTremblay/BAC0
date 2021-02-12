@@ -40,6 +40,7 @@ from ..core.functions.Reinitialize import Reinitialize
 from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
 from ..core.functions.cov import CoV
 from ..core.functions.Schedule import Schedule
+from ..core.functions.Text import TextMixin
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
@@ -73,6 +74,7 @@ class Lite(
     DeviceCommunicationControl,
     CoV,
     Schedule,
+    TextMixin,
 ):
     """
     Build a BACnet application to accept read and write requests.

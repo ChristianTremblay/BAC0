@@ -723,24 +723,27 @@ class DeviceConnected(Device):
         return val
 
     def write_property(self, prop, value, priority=None):
-        if priority is not None:
-            priority = "- {}".format(priority)
-        if isinstance(prop, tuple):
-            _obj, _instance, _prop = prop
+        if prop == "description":
+            self.update_description(value)
         else:
-            raise ValueError(
-                "Please provide property using tuple with object, instance and property"
-            )
-        try:
-            request = "{} {} {} {} {} {}".format(
-                self.properties.address, _obj, _instance, _prop, value, priority
-            )
-            val = self.properties.network.write(
-                request, vendor_id=self.properties.vendor_id
-            )
-        except KeyError as error:
-            raise Exception("Unknown property : {}".format(error))
-        return val
+            if priority is not None:
+                priority = "- {}".format(priority)
+            if isinstance(prop, tuple):
+                _obj, _instance, _prop = prop
+            else:
+                raise ValueError(
+                    "Please provide property using tuple with object, instance and property"
+                )
+            try:
+                request = "{} {} {} {} {} {}".format(
+                    self.properties.address, _obj, _instance, _prop, value, priority
+                )
+                val = self.properties.network.write(
+                    request, vendor_id=self.properties.vendor_id
+                )
+            except KeyError as error:
+                raise Exception("Unknown property : {}".format(error))
+            return val
 
     def update_bacnet_properties(self):
         """
@@ -772,6 +775,16 @@ class DeviceConnected(Device):
     @property
     def bacnet_properties(self):
         return self._bacnet_properties(update=True)
+
+    def update_description(self, value):
+        self.properties.network.send_text_write_request(
+            addr=self.properties.address,
+            obj_type="device",
+            obj_inst=int(self.device_id),
+            value=value,
+            prop_id="description",
+        )
+        self.properties.description = self.read_property("description")
 
     def __repr__(self):
         return "{} / Connected".format(self.properties.name)

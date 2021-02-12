@@ -351,33 +351,36 @@ class Point:
         :param priority: (int) priority to which write.
 
         """
-        if priority != "":
-            if (
-                isinstance(float(priority), float)
-                and float(priority) >= 1
-                and float(priority) <= 16
-            ):
-                priority = "- {}".format(priority)
-            else:
-                raise ValueError("Priority must be a number between 1 and 16")
+        if prop == "description":
+            self.update_description(value)
+        else:
+            if priority != "":
+                if (
+                    isinstance(float(priority), float)
+                    and float(priority) >= 1
+                    and float(priority) <= 16
+                ):
+                    priority = "- {}".format(priority)
+                else:
+                    raise ValueError("Priority must be a number between 1 and 16")
 
-        try:
-            self.properties.device.properties.network.write(
-                "{} {} {} {} {} {}".format(
-                    self.properties.device.properties.address,
-                    self.properties.type,
-                    self.properties.address,
-                    prop,
-                    value,
-                    priority,
-                ),
-                vendor_id=self.properties.device.properties.vendor_id,
-            )
-        except NoResponseFromController:
-            raise
+            try:
+                self.properties.device.properties.network.write(
+                    "{} {} {} {} {} {}".format(
+                        self.properties.device.properties.address,
+                        self.properties.type,
+                        self.properties.address,
+                        prop,
+                        value,
+                        priority,
+                    ),
+                    vendor_id=self.properties.device.properties.vendor_id,
+                )
+            except NoResponseFromController:
+                raise
 
-        # Read after the write so history gets updated.
-        self.value
+            # Read after the write so history gets updated.
+            self.value
 
     def default(self, value):
         self.write(value, prop="relinquishDefault")
@@ -597,6 +600,16 @@ class Point:
         self.properties.device.properties.network.cancel_cov(
             address, obj_tuple, callback=callback
         )
+
+    def update_description(self, value):
+        self.properties.device.properties.network.send_text_write_request(
+            addr=self.properties.device.properties.address,
+            obj_type=self.properties.type,
+            obj_inst=int(self.properties.address),
+            value=value,
+            prop_id="description",
+        )
+        self.properties.description = self.read_property("description")
 
 
 # ------------------------------------------------------------------------------
