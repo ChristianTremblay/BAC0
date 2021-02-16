@@ -137,7 +137,7 @@ class Device(SQLMixin):
         save_resampling="1s",
         clear_history_on_save=False,
         history_size=None,
-        reconnect_on_failure=True,
+        reconnect_on_failure=True
     ):
 
         self.properties = DeviceProperties()
