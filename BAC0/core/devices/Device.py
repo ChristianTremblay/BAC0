@@ -52,6 +52,7 @@ from ..io.IOExceptions import (
 from ...sql.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
 from .mixins.read_mixin import ReadPropertyMultiple, ReadProperty
+from .Virtuals import VirtualPoint
 
 from ..utils.notes import note_and_log
 
@@ -595,6 +596,14 @@ class DeviceConnected(Device):
             if "point_name" in device:
         """
         return value in self.points_name
+
+    @property
+    def pollable_points_name(self):
+        for each in self.points:
+            if not isinstance(each, VirtualPoint):
+                yield each.properties.name
+            else:
+                continue
 
     @property
     def points_name(self):

@@ -125,6 +125,7 @@ class Manager:
 @note_and_log
 class Task(object):
     _tasks = []
+    high_latency = 60
 
     def __init__(self, fn=None, name=None, delay=0):
         if not Manager.enable:
@@ -177,7 +178,7 @@ class Task(object):
             self.average_execution_delay = self.delay
 
         # self._log.info('Stat for task {}'.format(self))
-        if self.average_latency > 5:
+        if self.average_latency > Task.high_latency:
             self._log.warning("High latency for {}".format(self.name))
             self._log.warning("Stats : {}".format(self))
 

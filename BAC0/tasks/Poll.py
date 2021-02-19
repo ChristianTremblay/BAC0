@@ -81,7 +81,7 @@ class DevicePoll(Task):
     def task(self):
         try:
             self.device.read_multiple(
-                list(self.device.points_name), points_per_request=25
+                list(self.device.pollable_points_name), points_per_request=25
             )
             self._counter += 1
             if self._counter == self.device.properties.auto_save:

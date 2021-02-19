@@ -9,7 +9,7 @@ Points.py - Definition of points so operations on Read results are more convenie
 """
 
 # --- standard Python modules ---
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import namedtuple
 import time
 
@@ -89,6 +89,8 @@ class Point:
     is added to a history table. Histories capture the changes to point values over time.
     """
 
+    _cache_delta = timedelta(seconds=1)
+
     def __init__(
         self,
         device=None,
@@ -130,11 +132,19 @@ class Point:
 
         self.cov_registered = False
 
+        self._cache = {"_previous_read": (None, None)}
+
     @property
     def value(self):
         """
         Retrieve value of the point
         """
+        if (
+            self._cache["_previous_read"][0]
+            and datetime.now() - self._cache["_previous_read"][0] < Point._cache_delta
+        ):
+            return self._cache["_previous_read"][1]
+
         try:
             res = self.properties.device.properties.network.read(
                 "{} {} {} presentValue".format(
@@ -147,7 +157,7 @@ class Point:
             # self._trend(res)
         except Exception as e:
             raise
-
+        self._cache["_previous_read"] = (datetime.now(), res)
         return res
 
     def read_priority_array(self):
@@ -566,7 +576,9 @@ class Point:
             self._match_task.running = False
             time.sleep(1)
 
-            self._match_task.task = Match_Value(value=value, point=self, delay=delay)
+            self._match_task.task = Match_Value(
+                value=value, point=self, delay=delay, use_last_value=use_last_value
+            )
             self._match_task.task.start()
             self._match_task.running = True
 
@@ -694,14 +706,24 @@ class NumericPoint(Point):
     def __add__(self, other):
         return self.value + other
 
+    __radd__ = __add__
+
     def __sub__(self, other):
         return self.value - other
+
+    def __rsub__(self, other):
+        return other - self.value
 
     def __mul__(self, other):
         return self.value * other
 
+    __rmul__ = __mul__
+
     def __truediv__(self, other):
         return self.value / other
+
+    def __rtruediv__(self, other):
+        return other / self.value
 
     def __lt__(self, other):
         return self.value < other
