@@ -17,14 +17,16 @@ Example::
     # which could be blocked in some cases.
     # You can also use :
     # bacnet = BAC0.lite() to force the script to load only minimum features.
-    # Please note that if Bokeh, Pandas or Flask are not installed, using connect() will in fact call the lite version.
+    # Please note that if Bokeh, Pandas or Flask are not installed, using connect()
+    # will in fact call the lite version.
 
-    # Get the list of devices seen on the network
+    # Query and display the list of devices seen on the network
+    bacnet.whois()
     bacnet.devices
 
     # Define a controller (this one is on MSTP #3, MAC addr 4, device ID 5504)    
     mycontroller = BAC0.device('3:4', 5504, bacnet)
-    
+
     # Get the list of "registered" devices 
     bacnet.registered_devices
     
@@ -258,9 +260,28 @@ You can read simple properties using ::
     device.read_property(prop)
     # this will return the priority array of AI1 
 
-Write to property
+Write property
 ...........................
 You can write to a property using ::
 
     prop = ('analogValue',1,'presentValue')
-    bacnet.write_property(prop,value=98,priority=7)
+    device.write_property(prop,value=98,priority=7)
+
+
+Write description
+...........................
+
+The **write_property** method will not work
+to update a description if it contains a space.
+
+Instead, use **update_description** against a point::
+
+    device['AI_3'].update_description('Hello, World!')
+
+You can then read the description back, as a property::
+
+    device['AI_3'].read_property('description')
+
+or going back to the device::
+
+    device.read_property(('analogInput',3,'description'))

@@ -133,7 +133,9 @@ class VirtualPoint(VirtualPointProperties):
         self._log.warning("Use bacnet.add_trend(point) instead")
 
     def _set(self, value):
-        if self._history_fn is None:
+        if value == "auto":
+            pass
+        elif self._history_fn is None:
             self.fake_pv = value
             self._trend(value)
         else:
@@ -202,15 +204,17 @@ class VirtualPoint(VirtualPointProperties):
             his_table.datatype = self.properties.type
             return his_table
 
-    def match_value(self, value, *, delay=5):
+    def match_value(self, value, *, delay=5, use_last_value=False):
         """
         This allow functions like :
             device['point'].match('value')
 
         A sensor will follow a calculation...
         """
-        if self._match_task.task is None:
-            self._match_task.task = Match_Value(value=value, point=self, delay=delay)
+        if self._match_task.task is None or not self._match_task.running:
+            self._match_task.task = Match_Value(
+                value=value, point=self, delay=delay, use_last_value=use_last_value
+            )
             self._match_task.task.start()
             self._match_task.running = True
 
@@ -219,7 +223,9 @@ class VirtualPoint(VirtualPointProperties):
             self._match_task.running = False
             time.sleep(1)
 
-            self._match_task.task = Match_Value(value=value, point=self, delay=delay)
+            self._match_task.task = Match_Value(
+                value=value, point=self, delay=delay, use_last_value=use_last_value
+            )
             self._match_task.task.start()
             self._match_task.running = True
 
@@ -234,21 +240,31 @@ class VirtualPoint(VirtualPointProperties):
         return "{}/{} : {:.2f} {}".format(
             self.properties.device.properties.name,
             self.properties.name,
-            self.value,
+            float(self.value),
             self.properties.units_state,
         )
 
     def __add__(self, other):
         return self.value + other
 
+    __radd__ = __add__
+
     def __sub__(self, other):
         return self.value - other
+
+    def __rsub__(self, other):
+        return other - self.value
 
     def __mul__(self, other):
         return self.value * other
 
+    __rmul__ = __mul__
+
     def __truediv__(self, other):
         return self.value / other
+
+    def __rtruediv__(self, other):
+        return other / self.value
 
     def __lt__(self, other):
         return self.value < other
