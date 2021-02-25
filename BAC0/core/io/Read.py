@@ -167,17 +167,16 @@ class ReadProperty:
 
                 self._log.debug("{:<20} {:<20}".format("value", "datatype"))
                 self._log.debug("{!r:<20} {!r:<20}".format(value, datatype))
-            if prop_id_required:
-                try:
-                    int(apdu.propertyIdentifier)
-                    prop_id = "@prop_{}".format(apdu.propertyIdentifier)
-                    value = list(value.items())[0][1]
-                except ValueError:
-                    prop_id = apdu.propertyIdentifier
-                return (value, prop_id)
-            else:
+            if not prop_id_required:
                 return value
 
+            try:
+                int(apdu.propertyIdentifier)
+                prop_id = "@prop_{}".format(apdu.propertyIdentifier)
+                value = list(value.items())[0][1]
+            except ValueError:
+                prop_id = apdu.propertyIdentifier
+            return (value, prop_id)
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
@@ -863,7 +862,6 @@ def validate_property_id(obj_type, prop_id):
             )
     elif "@prop_" in prop_id:
         return int(prop_id.split("_")[1])
-    # elif "@obj_" in prop_id:
     else:
         raise ValueError("{} is an invalid property for {}".format(prop_id, obj_type))
 
