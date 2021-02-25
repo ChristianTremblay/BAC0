@@ -155,7 +155,7 @@ class SQLMixin(object):
                 filename = filename.split(".")[0]
             self.properties.db_name = filename
         else:
-            self.properties.db_name = "dev_{}".format(self.properties.device_id)
+            self.properties.db_name = "Device_{}".format(self.properties.device_id)
 
         if resampling is None:
             resampling = self.properties.save_resampling

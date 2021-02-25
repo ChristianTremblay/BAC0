@@ -25,23 +25,23 @@ from BAC0.core.devices.local.models import (
 from BAC0.core.devices.local.object import ObjectFactory
 from BAC0.core.devices.local.models import make_state_text
 
+
 def add_points(qty_per_type, device):
     # Start from fresh
     ObjectFactory.clear_objects()
-    basic_qty = qty_per_type -1
+    basic_qty = qty_per_type - 1
     # Analog Inputs
-    # Default... percent 
+    # Default... percent
     for _ in range(basic_qty):
         _new_objects = analog_input(presentValue=99.9)
         _new_objects = multistate_value(presentValue=1)
 
-
     # Supplemental with more details, for demonstration
     _new_objects = analog_input(
-        name='ZN-T',
-        properties={"units": 'degreesCelsius'},
+        name="ZN-T",
+        properties={"units": "degreesCelsius"},
         description="Zone Temperature",
-        presentValue=21
+        presentValue=21,
     )
 
     states = make_state_text(["Normal", "Alarm", "Super Emergency"])
@@ -67,6 +67,7 @@ def add_points(qty_per_type, device):
 
     _new_objects.add_objects_to_application(device)
 
+
 def main():
     bacnet = BAC0.lite()
 
@@ -90,10 +91,11 @@ def main():
 
     # Connect to test device using main network
     test_device = BAC0.device("{}:47809".format(ip), boid, bacnet, poll=10)
-    #test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
-    #test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
+    # test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
+    # test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
     while True:
         time.sleep(0.01)
+
 
 if __name__ == "__main__":
     main()
