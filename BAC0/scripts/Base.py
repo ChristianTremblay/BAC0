@@ -268,7 +268,7 @@ class Base:
         self._stopped = True  # Stop stack thread
         self.t.join()
         self._started = False
-        Base._used_ips.remove(self.localIPAddr)
+        Base._used_ips.discard(self.localIPAddr)
         self._log.info("BACnet stopped")
 
     def _startAppThread(self):
