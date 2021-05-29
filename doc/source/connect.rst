@@ -53,6 +53,11 @@ On a device without all the module sufficient to run the "complete" mode, using
 this syntax will also run BAC0 in "Lite" mode::
 
     bacnet = BAC0.connect()
+
+> Device ID 
+> 
+> It's possible to define the device ID you want in your BAC0 instance by
+> using the `deviceId` argument
     
 Complete
 ............
