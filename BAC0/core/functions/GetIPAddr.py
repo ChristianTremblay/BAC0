@@ -105,7 +105,7 @@ class HostIP:
         a default IP address when defining Script
 
         :param ip: (str) optionnal IP address. If not provided, default to getIPAddr()
-        
+
         :returns: broadcast IP Adress as String
         """
         try:

@@ -40,7 +40,7 @@ def to_float_if_possible(val):
 
 def batch_requests(request, points_per_request):
     """
-    Generator for creating 'request batches'.  Each batch contains a maximum of "points_per_request" 
+    Generator for creating 'request batches'.  Each batch contains a maximum of "points_per_request"
     points to read.
     :params: request a list of point_name as a list
     :params: (int) points_per_request
@@ -62,9 +62,10 @@ def create_trendlogs(objList, device):
             tl = TrendLog(point_address, device, read_log_on_creation=False)
             if tl.properties.log_device_object_property is None:
                 raise TrendLogCreationException
-            ldop_type, ldop_addr = (
-                tl.properties.log_device_object_property.objectIdentifier
-            )
+            (
+                ldop_type,
+                ldop_addr,
+            ) = tl.properties.log_device_object_property.objectIdentifier
             ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
             trendlogs["{}_{}_{}".format(ldop_type, ldop_addr, ldop_prop)] = (
                 tl.properties.object_name,

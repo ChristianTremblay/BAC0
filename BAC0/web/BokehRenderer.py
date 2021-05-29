@@ -695,7 +695,7 @@ class DynamicPlotHandler(Handler):
 
 
 class DevicesTableHandler(Handler):
-    """ 
+    """
     This handler will poll the network and show devices.
 
     """
@@ -726,7 +726,7 @@ class DevicesTableHandler(Handler):
 
 
 class NetworkPieChartHandler(Handler):
-    """ 
+    """
     This handler will poll the network and show devices.
 
     """
@@ -757,7 +757,7 @@ class NetworkPieChartHandler(Handler):
 
 
 class NotesTableHandler(Handler):
-    """ 
+    """
     This handler will poll the network and show devices.
 
     """

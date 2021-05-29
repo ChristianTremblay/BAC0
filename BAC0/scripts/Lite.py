@@ -40,6 +40,7 @@ from ..core.functions.Reinitialize import Reinitialize
 from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
 from ..core.functions.cov import CoV
 from ..core.functions.Schedule import Schedule
+from ..core.functions.Calendar import Calendar
 from ..core.functions.Text import TextMixin
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
@@ -74,6 +75,7 @@ class Lite(
     DeviceCommunicationControl,
     CoV,
     Schedule,
+    Calendar,
     TextMixin,
 ):
     """
@@ -165,7 +167,7 @@ class Lite(
     @property
     def known_network_numbers(self):
         """
-        This function will read the table of known network numbers gathered by the 
+        This function will read the table of known network numbers gathered by the
         NetworkServiceElement. It will also look into the discoveredDevices property
         and add any network number that would not be in the NSE table.
         """
@@ -184,10 +186,10 @@ class Lite(
         """
         Discover is meant to be the function used to explore the network when we
         connect.
-        It will trigger whois request using the different options provided with 
+        It will trigger whois request using the different options provided with
         parameters.
 
-        By default, a local broadcast will be used. This is required as in big 
+        By default, a local broadcast will be used. This is required as in big
         BACnet network, global broadcast can lead to network flood and loss of data.
 
         If not parameters are given, BAC0 will try to :
@@ -272,13 +274,13 @@ class Lite(
 
     def ping_registered_devices(self):
         """
-        Registered device on a network (self) are kept in a list (registered_devices). 
+        Registered device on a network (self) are kept in a list (registered_devices).
         This function will allow pinging thoses device regularly to monitor them. In case
-        of disconnected devices, we will disconnect the device (which will save it). Then 
+        of disconnected devices, we will disconnect the device (which will save it). Then
         we'll ping again until reconnection, where the device will be bring back online.
 
         To permanently disconnect a device, an explicit device.disconnect(unregister=True [default value])
-        will be needed. This way, the device won't be in the registered_devices list and 
+        will be needed. This way, the device won't be in the registered_devices list and
         BAC0 won't try to ping it.
         """
         for each in self.registered_devices:
@@ -371,9 +373,9 @@ class Lite(
     def devices(self):
         """
         This property will create a good looking table of all the discovered devices
-        seen on the network. 
+        seen on the network.
 
-        For that, some requests will be sent over the network to look for name, 
+        For that, some requests will be sent over the network to look for name,
         manufacturer, etc and in big network, this could be a long process.
         """
         lst = []
