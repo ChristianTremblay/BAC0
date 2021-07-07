@@ -204,16 +204,16 @@ def note_and_log(cls):
     logSaveFilePath = join(logUserPath, ".BAC0")
 
     logFile = join(logSaveFilePath, "BAC0.log")
-    if not os.path.exists(logSaveFilePath):
-        try:
-            os.makedirs(logSaveFilePath)
-        except:
-            _PERMISSION_TO_WRITE = False
-    if _PERMISSION_TO_WRITE:
+    try:
+        if not os.path.exists(logSaveFilePath):
+                os.makedirs(logSaveFilePath)
         fh = FileHandler(logFile)
         fh.set_name("file_handler")
         fh.setLevel(file_level)
         fh.setFormatter(formatter)
+
+    except OSError:
+        _PERMISSION_TO_WRITE = False
 
     ch.setFormatter(formatter)
     ch2.setFormatter(formatter)
