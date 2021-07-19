@@ -228,12 +228,12 @@ class Lite(
             if isinstance(networks, list):
                 # we'll make multiple whois...
                 for network in networks:
-                    if network < 65535:
+                    if int(network) < 65535:
                         _networks.append(network)
             elif networks == "known":
                 _networks = self.known_network_numbers
             else:
-                if networks < 65535:
+                if int(networks) < 65535:
                     _networks.append(networks)
 
         if _networks:
