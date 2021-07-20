@@ -5,7 +5,7 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device 
+read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device
 """
 # --- standard Python modules ---
 
@@ -262,7 +262,7 @@ class RPMObjectsProcessing:
                     presentValue = float(presentValue)
                 elif obj_type == "multi":
                     presentValue = int(presentValue)
-            except TypeError:
+            except (TypeError, ValueError):
                 presentValue = None
             try:
                 point_description = point_infos[_find_propid_index("description")]
