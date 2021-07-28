@@ -9,7 +9,8 @@ Points.py - Definition of points so operations on Read results are more convenie
 """
 
 # --- standard Python modules ---
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+import pytz
 from collections import namedtuple
 import time
 
@@ -116,7 +117,7 @@ class Point:
 
         self._history.timestamp = []
         self._history.value = [presentValue]
-        self._history.timestamp.append(datetime.now())
+        self._history.timestamp.append(datetime.now().astimezone())
 
         self.properties.history_size = history_size
 
@@ -141,7 +142,8 @@ class Point:
         """
         if (
             self._cache["_previous_read"][0]
-            and datetime.now() - self._cache["_previous_read"][0] < Point._cache_delta
+            and datetime.now().astimezone() - self._cache["_previous_read"][0]
+            < Point._cache_delta
         ):
             return self._cache["_previous_read"][1]
 
@@ -157,7 +159,7 @@ class Point:
             # self._trend(res)
         except Exception as e:
             raise
-        self._cache["_previous_read"] = (datetime.now(), res)
+        self._cache["_previous_read"] = (datetime.now().astimezone(), res)
         return res
 
     def read_priority_array(self):
@@ -259,7 +261,9 @@ class Point:
                 return None
 
     def _trend(self, res):
-        self._history.timestamp.append(datetime.now())
+        # now = datetime.now(tz=pytz.UTC)
+        now = datetime.now().astimezone()
+        self._history.timestamp.append(now)
         self._history.value.append(res)
         if self.properties.history_size is None:
             return
@@ -275,6 +279,10 @@ class Point:
                         -self.properties.history_size :
                     ]
                     assert len(self._history.timestamp) == len(self._history.value)
+                    if self.properties.device.properties.network.database:
+                        self.properties.device.properties.network.database.write_points_lastvalue_to_db(
+                            [self]
+                        )
                 except Exception as e:
                     self._log.exception("Can't append to history")
 
@@ -294,6 +302,16 @@ class Point:
             return self.history.dropna().iloc[-1]
         else:
             return self._history.value[-1]
+
+    @property
+    def lastTimestamp(self):
+        """
+        returns: last value read
+        """
+        if _PANDAS:
+            return self.history.dropna().index[-1]
+        else:
+            return self._history.timestamp[-1]
 
     @property
     def history(self):

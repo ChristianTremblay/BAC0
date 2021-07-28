@@ -264,7 +264,7 @@ def note_and_log(cls):
         if not note:
             raise ValueError("Provide something to log")
         note = "{} | {}".format(cls.logname, note)
-        cls._notes.timestamp.append(datetime.now())
+        cls._notes.timestamp.append(datetime.now().astimezone())
         cls._notes.notes.append(note)
         if log:
             cls.log(level, note)
