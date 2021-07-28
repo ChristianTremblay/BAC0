@@ -15,9 +15,6 @@ import weakref
 
 import os.path
 
-# --- 3rd party modules ---
-import sqlite3
-
 try:
     import pandas as pd
 
@@ -49,7 +46,7 @@ from ..io.IOExceptions import (
 )
 
 # from ...bokeh.BokehRenderer import BokehPlot
-from ...sql.sql import SQLMixin
+from ...db.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
 from .mixins.read_mixin import ReadPropertyMultiple, ReadProperty
 from .Virtuals import VirtualPoint
