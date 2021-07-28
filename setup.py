@@ -29,7 +29,7 @@ setup(
         "BAC0.scripts",
         "BAC0.tasks",
         "BAC0.web",
-        "BAC0.sql",
+        "BAC0.db",
     ],
     include_package_data=True,
     requires=requirements,
