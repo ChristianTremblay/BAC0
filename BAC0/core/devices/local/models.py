@@ -88,7 +88,7 @@ def analog(**kwargs):
 def analog_input(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "AI", **kwargs)
     kwargs["objectType"] = AnalogInputObject
-    kwargs["instance"] = 0
+    kwargs["instance"] = set_default_if_not_provided("instance", 0, **kwargs)
     # kwargs['is_commandable'] = True # Futur
 
     return analog(**kwargs)
@@ -97,7 +97,7 @@ def analog_input(**kwargs):
 def analog_output(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "AO", **kwargs)
     kwargs["objectType"] = AnalogOutputObject
-    kwargs["instance"] = 0
+    kwargs["instance"] = set_default_if_not_provided("instance", 0, **kwargs)
     kwargs["is_commandable"] = True
 
     return analog(**kwargs)
@@ -106,7 +106,7 @@ def analog_output(**kwargs):
 def analog_value(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "AV", **kwargs)
     kwargs["objectType"] = AnalogValueObject
-    kwargs["instance"] = 0
+    kwargs["instance"] = set_default_if_not_provided("instance", 0, **kwargs)
     kwargs["is_commandable"] = True
     return analog(**kwargs)
 
