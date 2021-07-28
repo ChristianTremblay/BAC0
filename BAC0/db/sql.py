@@ -103,7 +103,7 @@ class SQLMixin(object):
                 if resampling_needed and "binary" in point.properties.type:
                     backup[point.properties.name] = (
                         point.history.replace(["inactive", "active"], [0, 1])
-                        .replace(["0: inactive", "1: active"], [0, 1])
+                        #.replace(["0: inactive", "1: active"], [0, 1])
                         .resample(resampling_freq)
                         .last()
                     )
