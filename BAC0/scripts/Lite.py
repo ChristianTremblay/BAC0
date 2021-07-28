@@ -53,11 +53,18 @@ from ..core.io.IOExceptions import (
     UnrecognizedService,
     Timeout,
 )
-from ..db.influxdb import InfluxDB
+
 from ..tasks.RecurringTask import RecurringTask
 from ..tasks.UpdateCOV import Update_local_COV
 
 from ..infos import __version__ as version
+
+try:
+    from ..db.influxdb import InfluxDB
+
+    INFLUXDB = True
+except ImportError:
+    INFLUXDB = False
 
 from bacpypes.pdu import Address
 
@@ -168,7 +175,7 @@ class Lite(
         self._log.info("Update Local COV Task started")
 
         # Activate InfluxDB if params are available
-        if db_params:
+        if db_params and INFLUXDB:
             self.database = (
                 InfluxDB(db_params) if db_params["name"].lower() == "influxdb" else None
             )
