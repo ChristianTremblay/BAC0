@@ -53,6 +53,7 @@ from ..core.io.IOExceptions import (
     UnrecognizedService,
     Timeout,
 )
+from ..db.influxdb import InfluxDB
 from ..tasks.RecurringTask import RecurringTask
 from ..tasks.UpdateCOV import Update_local_COV
 
@@ -98,6 +99,8 @@ class Lite(
         bbmdTTL=0,
         bdtable=None,
         ping=True,
+        ping_delay=300,
+        db_params=None,
         **params
     ):
         self._log.info(
@@ -114,7 +117,7 @@ class Lite(
         # Ping task will deal with all registered device and disconnect them if they do not respond.
 
         self._ping_task = RecurringTask(
-            self.ping_registered_devices, delay=10, name="Ping Task"
+            self.ping_registered_devices, delay=ping_delay, name="Ping Task"
         )
         if ping:
             self._ping_task.start()
@@ -163,6 +166,12 @@ class Lite(
         self._update_local_cov_task.task.start()
         self._update_local_cov_task.running = True
         self._log.info("Update Local COV Task started")
+
+        # Activate InfluxDB if params are available
+        if db_params:
+            self.database = (
+                InfluxDB(db_params) if db_params["name"].lower() == "influxdb" else None
+            )
 
     @property
     def known_network_numbers(self):
