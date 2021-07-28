@@ -74,6 +74,8 @@ class DeviceProperties(object):
         self.db_name = None
         self.segmentation_supported = True
         self.history_size = None
+        self.save_resampling = "1s"
+        self.clear_history_on_save = None
         self.bacnet_properties = {}
 
     def __repr__(self):
@@ -153,7 +155,7 @@ class Device(SQLMixin):
         self.properties.auto_save = auto_save
         self.properties.save_resampling = save_resampling
         self.properties.clear_history_on_save = clear_history_on_save
-        self.properties.default_history_size = history_size
+        self.properties.history_size = history_size
         self._reconnect_on_failure = reconnect_on_failure
 
         self.segmentation_supported = segmentation_supported
@@ -535,7 +537,7 @@ class DeviceConnected(Device):
             ) = self._discoverPoints(self.custom_object_list)
             if self.properties.pollDelay > 0:
                 self.poll(delay=self.properties.pollDelay)
-            self.update_history_size(size=self.properties.default_history_size)
+            self.update_history_size(size=self.properties.history_size)
             # self.clear_histories()
         except NoResponseFromController as error:
             self._log.error("Cannot retrieve object list, disconnecting...")

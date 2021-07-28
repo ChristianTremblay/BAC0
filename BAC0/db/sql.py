@@ -97,13 +97,32 @@ class SQLMixin(object):
         elif resampling in [0, False]:
             resampling_needed = False
 
+        def extract_value_and_string(val):
+            if isinstance(val, str):
+                if ":" in val:
+                    _v, _s = val.split(":")
+                    return (int(_v), _s)
+                elif val == "active":
+                    val = 1
+                elif val == "inactive":
+                    val = 0
+            return (int(val), "unknown")
+
         # print(resampling, resampling_freq, resampling_needed)
         for point in self.points:
+            _name = point.properties.name
             try:
-                if resampling_needed and "binary" in point.properties.type:
-                    backup[point.properties.name] = (
-                        point.history.replace(["inactive", "active"], [0, 1])
-                        #.replace(["0: inactive", "1: active"], [0, 1])
+                if (
+                    "binary" in point.properties.type
+                    or "multi" in point.properties.type
+                ):
+                    backup["{}_str".format(_name)] = (
+                        point.history.apply(lambda x: extract_value_and_string(x)[1])
+                        .resample(resampling_freq)
+                        .last()
+                    )
+                    backup[_name] = (
+                        point.history.apply(lambda x: extract_value_and_string(x)[0])
                         .resample(resampling_freq)
                         .last()
                     )
@@ -122,10 +141,21 @@ class SQLMixin(object):
                         point, error
                     )
                 )
-                if "binary" in point.properties.type:
-                    backup[point.properties.name] = point.history.replace(
-                        ["inactive", "active"], [0, 1]
-                    ).replace(["0: inactive", "1: active"], [0, 1])
+                if (
+                    "binary" in point.properties.type
+                    or "multi" in point.properties.type
+                ):
+                    backup["{}.str".format(_name)] = (
+                        point.history.apply(lambda x: extract_value_and_string(x)[1])
+                        .resample(resampling_freq)
+                        .last()
+                    )
+                    backup["{}.val".format(_name)] = (
+                        point.history.apply(lambda x: extract_value_and_string(x)[0])
+                        .resample(resampling_freq)
+                        .last()
+                    )
+                    backup[_name] = point.history.resample(resampling_freq).last()
                 elif "analog" in point.properties.type:
                     backup[point.properties.name] = point.history.resample(
                         resampling_freq
