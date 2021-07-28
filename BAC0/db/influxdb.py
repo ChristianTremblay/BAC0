@@ -5,6 +5,7 @@ except ImportError:
     raise ImportError("Install influxdb to use this feature")
 
 import pytz
+from datetime import datetime
 
 
 class InfluxDB:
@@ -47,6 +48,7 @@ class InfluxDB:
                 exponential_base=getattr(self, "exponential_base", 2),
             )
         )
+        self.query_api = self.client.query_api()
 
     def clean_value(self, object_type, val, units_state):
         if "analog" in object_type:
@@ -73,16 +75,18 @@ class InfluxDB:
             _object_name = point.properties.name
             _devicename = point.properties.device.properties.name
             _device_id = point.properties.device.properties.device_id
-            _name = "{}/{}".format(_devicename, _object_name)
             _units_state = "{}".format(point.properties.units_state)
             _description = point.properties.description
             _object = "{}:{}".format(point.properties.type, point.properties.address)
             _value, _string_value = self.clean_value(
                 point.properties.type, point.lastValue, point.properties.units_state
             )
+            _name = "{}/{}".format(_devicename, _object_name)
+            _id = "Device_{}/{}".format(_device_id, _object)
             _point = (
-                Point(_name)
+                Point(_id)
                 .tag("object_name", _object_name)
+                .tag("name", _name)
                 .tag("description", _description)
                 .tag("units_state", _units_state)
                 .tag("object", _object)
@@ -97,6 +101,7 @@ class InfluxDB:
         self.write_api.write(self.bucket, self.org, _points)
 
     def write_all_to_db(self, device):
+        # This is probably not useful... keeping that here in case
         try:
             import pandas as pd
         except ImportError:
@@ -152,5 +157,32 @@ class InfluxDB:
                 # print('Oups', _name, error)
                 continue
 
-    def read_last_value_from_db(self, value):
+    def read_last_value_from_db(self, id=None):
+        # example id : Device_5004/analogInput:1
+        # maybe use device name and object name ?
+        # This must be easy
+        pass
+
+
+
+#    def example(self, device_name, object_name):
+#        p = {"_bucket": self.bucket,
+#             "_start": datetime.timedelta(hours=-1),
+#             "_location": "Prague",
+#             "_desc": True,
+#             "_floatParam": 25.1,
+#             "_every": datetime.timedelta(minutes=5)
+#            }
+#
+#        tables = self.query_api.query('''
+#            from(bucket:_bucket) |> range(start: _start)
+#                |> filter(fn: (r) => r["_measurement"] == "my_measurement")
+#                |> filter(fn: (r) => r["_field"] == "temperature")
+#                |> filter(fn: (r) => r["location"] == _location and r["_value"] > _floatParam)
+#                |> aggregateWindow(every: _every, fn: mean, createEmpty: true)
+#                |> sort(columns: ["_time"], desc: _desc)
+#        ''', params=p)
+#        return tables
+
+    def read_flux(self, request, params):
         pass

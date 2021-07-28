@@ -30,7 +30,7 @@ which is also installed on the same RaspberryPi. (ex. http://ip_of_rpi:3000)
 Connection 
 ............
 For BAC0 to connect to the inlfuxDB server, it needs to know where to send the data.
-This information can be given by using a dict : 
+This information can be given by using a dict ::
 
     _params = {"name": "InfluxDB",
                "url" : "http://ip_of_rpi",
@@ -45,7 +45,7 @@ Then you pass this information when you instanciate `bacnet`
     bacnet = BAC0.lite(db_params=_params)
 
 The information can also be provided as environment variables. In that
-case, you must still provide name and bucket :
+case, you must still provide name and bucket ::
 
     _params = {"name": "InfluxDB",
                "bucket" : "BAC0"
@@ -54,7 +54,7 @@ case, you must still provide name and bucket :
 To use environment variables, BAC0 will count on python-dotenv to 
 load a .env file in the folder when BAC0 is used.
 
-The .env file must contain : 
+The .env file must contain ::
 
     # InfluxDB Params Example .env file
     INFLUXDB_V2_URL=http://192.168.1.10:8086
@@ -129,13 +129,21 @@ constantly.
 
 Write to the database
 ........................
-Each call to `_trend` (which add a record in memory) will call a write request to the API.
+Each call to `_trend` (which add a record in memory) will call a write request to the API if the
+database is defined.
 
 ID of the record
 .................
-The ID of the record will be 
+The ID of the record will be ::
 
-    controller_name / point_name
+    Device_{device_id} / {object} 
+
+For example ::
+
+    Device_5004/analogInput:1
+
+This choice was made to make sure all records ID were unique as using name could lead to errors. As name, 
+device name, etc are provided as tags, I suggest using them in the Flux requests. 
 
 Tags and fields
 ..................
