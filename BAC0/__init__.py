@@ -39,11 +39,13 @@ try:
     try:
         #
         import os
+
         if os.path.isfile("./.env"):
             from dotenv import load_dotenv
+
             load_dotenv()
     except ImportError:
-        print('You need to pip install python-dotenv to use your .env file')
+        print("You need to pip install python-dotenv to use your .env file")
 
     from .scripts.Lite import Lite as lite
 

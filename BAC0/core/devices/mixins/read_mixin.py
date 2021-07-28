@@ -257,7 +257,7 @@ class RPMObjectsProcessing:
 
             pointName = point_infos[_find_propid_index("objectName")]
             presentValue = point_infos[_find_propid_index("presentValue")]
-            if presentValue!=None:
+            if presentValue != None:
                 if obj_type == "analog":
                     presentValue = float(presentValue)
                 elif obj_type == "multi":

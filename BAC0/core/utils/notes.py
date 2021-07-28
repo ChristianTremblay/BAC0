@@ -206,7 +206,7 @@ def note_and_log(cls):
     logFile = join(logSaveFilePath, "BAC0.log")
     try:
         if not os.path.exists(logSaveFilePath):
-                os.makedirs(logSaveFilePath)
+            os.makedirs(logSaveFilePath)
         fh = FileHandler(logFile)
         fh.set_name("file_handler")
         fh.setLevel(file_level)
