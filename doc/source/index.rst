@@ -26,6 +26,7 @@ Table of contents
    schedules
    cov
    savedevice
+   database
    local_objects
    webinterface
    jupyter
