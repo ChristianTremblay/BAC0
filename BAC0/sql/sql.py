@@ -37,9 +37,9 @@ from ..core.io.IOExceptions import RemovedPointException
 
 class SQLMixin(object):
     """
-    Use SQL to persist a device's contents.  By saving the device contents to an SQL 
-    database, you can work with the device's data while offline, or while the device 
-    is not available. 
+    Use SQL to persist a device's contents.  By saving the device contents to an SQL
+    database, you can work with the device's data while offline, or while the device
+    is not available.
     """
 
     def _read_from_sql(self, request, db_name):
@@ -81,11 +81,11 @@ class SQLMixin(object):
         Please note that this can be disabled using resampling=False
 
         In the process of building the dataframe, analog values are
-        resampled using the mean() function. So we have intermediate 
+        resampled using the mean() function. So we have intermediate
         results between to records.
 
         For binary values, we'll use .last() so we won't get a 0.5 value
-        which means nothing in this context. 
+        which means nothing in this context.
 
         If saving a DB that already exists, previous resampling will survive
         the merge of old data and new data.
@@ -103,6 +103,7 @@ class SQLMixin(object):
                 if resampling_needed and "binary" in point.properties.type:
                     backup[point.properties.name] = (
                         point.history.replace(["inactive", "active"], [0, 1])
+                        .replace(["0: inactive", "1: active"], [0, 1])
                         .resample(resampling_freq)
                         .last()
                     )
@@ -122,8 +123,9 @@ class SQLMixin(object):
                     )
                 )
                 if "binary" in point.properties.type:
-                    backup[point.properties.name] = point.history.replace(
-                        ["inactive", "active"], [0, 1]
+                    backup[point.properties.name] = (
+                        point.history.replace(["inactive", "active"], [0, 1])
+                        .replace(["0: inactive", "1: active"], [0, 1])
                     )
                 elif "analog" in point.properties.type:
                     backup[point.properties.name] = point.history.resample(
@@ -145,7 +147,7 @@ class SQLMixin(object):
 
     def save(self, filename=None, resampling=None):
         """
-        Save the point histories to sqlite3 database.  
+        Save the point histories to sqlite3 database.
         Save the device object properties to a pickle file so the device can be reloaded.
 
         Resampling : valid Pandas resampling frequency. If 0 or False, dataframe will not be resampled on save.

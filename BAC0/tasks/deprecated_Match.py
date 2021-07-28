@@ -61,10 +61,10 @@ class Match_Value(Task):
     Verify a point's Present_Value equals the given value after a delay of X seconds.
     Thus giving the BACnet controller (and connected equipment) time to respond to the
     command.
-    
+
         Match_Value(On, <AI:1>, 5)
-        
-    i.e. Does Fan value = On after 5 seconds. 
+
+    i.e. Does Fan value = On after 5 seconds.
     """
 
     def __init__(self, value=None, point=None, delay=5, name=None):

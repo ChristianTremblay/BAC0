@@ -901,7 +901,7 @@ class EnumPoint(Point):
     def get_state(self, v):
         try:
             return self.properties.units_state[v - 1]
-        except TypeError:
+        except (TypeError, IndexError):
             return "n/a"
 
     @property

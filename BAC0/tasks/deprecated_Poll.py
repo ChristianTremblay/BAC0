@@ -33,10 +33,10 @@ class SimplePoll(Task):
         """
         :param point: (BAC0.core.device.Points.Point) name of the point to read
         :param delay: (int) Delay between reads in seconds, defaults = 10sec
-        
+
         A delay cannot be < 1sec
         This task is meant for single points, so BAC0 will allow short delays.
-        This way, a fast polling is available for some points in a device that 
+        This way, a fast polling is available for some points in a device that
         would not support segmentation.
 
         :returns: Nothing
@@ -56,7 +56,7 @@ class SimplePoll(Task):
 @note_and_log
 class DevicePoll(Task):
     """
-    Start a polling task to repeatedly read a list of points from a device using 
+    Start a polling task to repeatedly read a list of points from a device using
     ReadPropertyMultiple requests.
     """
 
@@ -64,8 +64,8 @@ class DevicePoll(Task):
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
         :param delay: (int) Delay between polls in seconds, defaults = 10sec
-        
-        A delay cannot be < 10sec 
+
+        A delay cannot be < 10sec
         For delays under 10s, use DeviceFastPoll class.
 
         :returns: Nothing
@@ -104,9 +104,9 @@ class DevicePoll(Task):
 @note_and_log
 class DeviceNormalPoll(DevicePoll):
     """
-    Start a normal polling task to repeatedly read a list of points from a device using 
+    Start a normal polling task to repeatedly read a list of points from a device using
     ReadPropertyMultiple requests.
-    
+
     Normal polling will limit the polling speed to 10 second minimum
 
     """
@@ -115,7 +115,7 @@ class DeviceNormalPoll(DevicePoll):
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
         :param delay: (int) Delay between polls in seconds, defaults = 10sec
-        
+
         :returns: Nothing
         """
         if delay < 10:
@@ -131,7 +131,7 @@ class DeviceNormalPoll(DevicePoll):
 @note_and_log
 class DeviceFastPoll(DevicePoll):
     """
-    Start a fast polling task to repeatedly read a list of points from a device using 
+    Start a fast polling task to repeatedly read a list of points from a device using
     ReadPropertyMultiple requests.
     Delay allowed will be 0 to 10 seconds
     Normal polling will limit the polling speed to 10 second minimum
@@ -144,7 +144,7 @@ class DeviceFastPoll(DevicePoll):
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
         :param delay: (int) Delay between polls in seconds, defaults = 1sec
-        
+
         :returns: Nothing
         """
         if delay < 0:

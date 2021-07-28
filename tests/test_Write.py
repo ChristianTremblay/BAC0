@@ -16,7 +16,7 @@ def test_WriteAV(network_and_devices):
     test_device = network_and_devices.test_device
     old_value = test_device["AV"].value
     test_device["AV"] = 11.2
-    time.sleep(1.5) # or cache will play a trick on you
+    time.sleep(1.5)  # or cache will play a trick on you
     new_value = test_device["AV"].value
     assert (new_value - 11.2) < 0.01
 

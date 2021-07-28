@@ -27,7 +27,7 @@ from .mixins.CommandableMixin import LocalBinaryOutputObjectCmd
 
 
 def _make_mutable(obj, identifier="presentValue", mutable=True):
-    """ 
+    """
     This function is not the way to go as it changes the class
     property...As bacpypes issue #224, it will need a lot of work
     """

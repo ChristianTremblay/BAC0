@@ -97,7 +97,6 @@ class Schedule:
         From a structured dict (see schedule_example), create a WeeklySchedule
         an ArrayOf(DailySchedule)
         """
-        object_reference = object_reference
         ds = dict_schedule
         if object_reference is not None:
             self.schedules[object_reference] = ds
@@ -135,9 +134,9 @@ class Schedule:
         request.priority = 15
         return request
 
-    def send_weeklyschedule_request(self, request):
+    def send_weeklyschedule_request(self, request, timeout=10):
         iocb = IOCB(request)
-        iocb.set_timeout(10)
+        iocb.set_timeout(timeout)
         deferred(self.this_application.request_io, iocb)
 
         iocb.wait()
@@ -171,20 +170,26 @@ class Schedule:
 
     def read_weeklySchedule(self, address, schedule_instance):
         """
-        This function will turn the weeklySchedule received into a 
-        human readable dict. 
+        This function will turn the weeklySchedule received into a
+        human readable dict.
         This dict can then be modified and used to write back to controller
         using bacnet.write_weeklySchedule
         """
         try:
-            _schedule, object_references, reliability, priority, presentValue = self.readMultiple(
+            (
+                _schedule,
+                object_references,
+                reliability,
+                priority,
+                presentValue,
+            ) = self.readMultiple(
                 "{} schedule {} weeklySchedule listOfObjectPropertyReferences reliability priorityForWriting presentValue".format(
                     address, schedule_instance
                 )
             )
 
         except Exception:
-            # Rwad Multiple not supported... try single prop read
+            # Read Multiple not supported... try single prop read
             def _read(prop):
                 return self.read(
                     "{} schedule {} {}".format(address, schedule_instance, prop)

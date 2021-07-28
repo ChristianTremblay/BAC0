@@ -531,9 +531,11 @@ class DeviceConnected(Device):
             )
         )
         try:
-            self.properties.objects_list, self.points, self._list_of_trendlogs = self._discoverPoints(
-                self.custom_object_list
-            )
+            (
+                self.properties.objects_list,
+                self.points,
+                self._list_of_trendlogs,
+            ) = self._discoverPoints(self.custom_object_list)
             if self.properties.pollDelay > 0:
                 self.poll(delay=self.properties.pollDelay)
             self.update_history_size(size=self.properties.default_history_size)
