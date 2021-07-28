@@ -52,7 +52,7 @@ from ..functions.Discover import NetworkServiceElementWithRequests
 
 class common_mixin:
     """
-    They take message coming from the network that are not generated from 
+    They take message coming from the network that are not generated from
     a request we made.
     """
 

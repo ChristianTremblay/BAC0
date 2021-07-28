@@ -234,7 +234,7 @@ class ReadProperty:
     def readMultiple(
         self, args, request_dict=None, vendor_id=0, timeout=10, prop_id_required=False
     ):
-        """ Build a ReadPropertyMultiple request, wait for the answer and return the values
+        """Build a ReadPropertyMultiple request, wait for the answer and return the values
 
         :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
         :returns: data read from device (str representing data like 10 or True)
@@ -535,7 +535,7 @@ class ReadProperty:
     def build_rpm_request_from_dict(self, request_dict, vendor_id):
         """
         Read property multiple allow to read a lot of properties with only one request
-        The existing RPM function is made using a string that must be created using bacpypes 
+        The existing RPM function is made using a string that must be created using bacpypes
         console style and is hard to automate.
 
         This new version will be an attempt to improve that::

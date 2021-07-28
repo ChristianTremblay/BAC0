@@ -69,16 +69,16 @@ def update_log_level(
         BAC0.log_level(file='warning', stdout='info', stderr='critical')
         # Debug in file and console... this is a bad idea as the console will be filled
         BAC0.log_level(file='debug', stdout='debug', stderr='critical')
-           
+
         # Preferably, debug in the file, keep console limited to info
         BAC0.log_level('debug')
         # OR
-        BAC0.log_level(file='debug', stdout='info', stderr='critical')   
-        
+        BAC0.log_level(file='debug', stdout='info', stderr='critical')
+
 
     Giving only one parameter will set file and console to the same level.
     I tend to keep stderr CRITICAL
-     
+
     """
     update_log_file_lvl = False
     update_stderr_lvl = False
