@@ -168,6 +168,7 @@ class Base:
         self.firmwareRevision = firmwareRevision
         self._ric = {}
         self.subscription_contexts = {}
+        self.database = None
 
         try:
             self.startApp()

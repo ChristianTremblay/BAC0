@@ -85,7 +85,7 @@ Other options can be provided in the db_parmas dict to fine tune the configurati
 
 Please refer to InfluxDB documentation for all the details regarding those parameters.
 
-ex. : 
+ex. ::
 
         _params = {"name": "InfluxDB",
                 "bucket" : "BAC0",               
@@ -136,7 +136,7 @@ ID of the record
 .................
 The ID of the record will be ::
 
-    Device_{device_id} / {object} 
+    Device_{device_id}/{object} 
 
 For example ::
 

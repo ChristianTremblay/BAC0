@@ -265,6 +265,10 @@ class Point:
         now = datetime.now().astimezone()
         self._history.timestamp.append(now)
         self._history.value.append(res)
+        if self.properties.device.properties.network.database:
+            self.properties.device.properties.network.database.write_points_lastvalue_to_db(
+                [self]
+            )
         if self.properties.history_size is None:
             return
         else:
@@ -279,10 +283,7 @@ class Point:
                         -self.properties.history_size :
                     ]
                     assert len(self._history.timestamp) == len(self._history.value)
-                    if self.properties.device.properties.network.database:
-                        self.properties.device.properties.network.database.write_points_lastvalue_to_db(
-                            [self]
-                        )
+
                 except Exception as e:
                     self._log.exception("Can't append to history")
 
