@@ -27,6 +27,10 @@ in the InfluxDB web interface (ex. http://ip_of_rpi:8086)
 To create the dashbpard, I use [Grafana](https://grafana.com/oss/)
 which is also installed on the same RaspberryPi. (ex. http://ip_of_rpi:3000)
 
+.. note:: 
+    The python client used works also for InfluxDB v1.8+. Connecting to this version
+    is supported and you must pass a username and a password in db_params
+
 Connection 
 ............
 For BAC0 to connect to the inlfuxDB server, it needs to know where to send the data.
@@ -38,6 +42,8 @@ This information can be given by using a dict ::
                "token" : "token_created in influxDB web interface",
                "org" : "the organization you created",
                "bucket" : "BAC0"
+               # (V1.8) "user" : " ",
+               # (v1.8) "password" : "",
                }
 
 Then you pass this information when you instanciate `bacnet`

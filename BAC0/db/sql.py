@@ -90,6 +90,9 @@ class SQLMixin(object):
         If saving a DB that already exists, previous resampling will survive
         the merge of old data and new data.
         """
+        if not _PANDAS:
+            self._log.error("Pandas is required to create dataframe.")
+            return
         backup = {}
         if isinstance(resampling, str):
             resampling_needed = True
@@ -181,6 +184,10 @@ class SQLMixin(object):
 
         Resampling : valid Pandas resampling frequency. If 0 or False, dataframe will not be resampled on save.
         """
+        if not _PANDAS:
+            self._log.error("Pandas is required to save to SQLite.")
+            return
+
         if filename:
             if ".db" in filename:
                 filename = filename.split(".")[0]
