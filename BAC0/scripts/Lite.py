@@ -60,7 +60,7 @@ from ..tasks.UpdateCOV import Update_local_COV
 from ..infos import __version__ as version
 
 try:
-    from ..db.influxdb import InfluxDB
+    from ..db.influxdb import InfluxDB, ConnectionError
 
     INFLUXDB = True
 except ImportError:
@@ -176,9 +176,15 @@ class Lite(
 
         # Activate InfluxDB if params are available
         if db_params and INFLUXDB:
-            self.database = (
-                InfluxDB(db_params) if db_params["name"].lower() == "influxdb" else None
-            )
+            try:
+                self.database = (
+                    InfluxDB(db_params)
+                    if db_params["name"].lower() == "influxdb"
+                    else None
+                )
+                self._log.info("Connection made to InfluxDB bucket : {}".format(self.database.bucket))
+            except ConnectionError:
+                self._log.error("Unable to connect to InfluxDB. Please validate parameters")
 
     @property
     def known_network_numbers(self):

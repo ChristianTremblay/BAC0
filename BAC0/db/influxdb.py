@@ -19,6 +19,9 @@ class InfluxDB:
     org = None
     bucket = None
     tags_file = None
+    username = None
+    password = None
+    client = None
 
     def __init__(self, params):
         # params should be a dict with name=InfluxDB and bucket=valid_bucket_to_use.
@@ -30,12 +33,7 @@ class InfluxDB:
             setattr(self, k, v)
         if self.bucket is None:
             raise ValueError("Missing bucket name, please provide one in db_params")
-        if self.url is None:
-            # Will try environment variables
-            self.client = InfluxDBClient.from_env_properties()
-        else:
-            _url = "{}:{}".format(self.url, self.port)
-            self.client = InfluxDBClient(url=_url, token=self.token)
+        self.connect_to_db()    
 
         self.write_api = self.client.write_api(
             write_options=WriteOptions(
@@ -49,6 +47,32 @@ class InfluxDB:
             )
         )
         self.query_api = self.client.query_api()
+
+    def connect_to_db(self):
+        if self.url is None:
+            # Will try environment variables
+            self.client = InfluxDBClient.from_env_properties()
+        else:
+            _url = "{}:{}".format(self.url, self.port)
+            if self.token:
+                self.client = InfluxDBClient(url=_url, token=self.token)
+            else:
+                self.client = InfluxDBClient(
+                    url=_url,
+                    token="{}:{}".format(self.username, self.password),
+                    bucket=self.bucket,
+                    org="-",
+                )
+        try:
+            self.health
+        except:
+            raise ConnectionError("Error connecting to InfluxDB")
+
+
+    @property
+    def health(self):
+        return self.client.health()
+
 
     def clean_value(self, object_type, val, units_state):
         if "analog" in object_type:
@@ -161,28 +185,41 @@ class InfluxDB:
         # example id : Device_5004/analogInput:1
         # maybe use device name and object name ?
         # This must be easy
+
+        """
+        from(bucket: {}")
+        |> range(start: -100y)
+        |> filter(fn: (r) => r["description"] == "DA-T")
+        |> filter(fn: (r) => r["_field"] == "value")
+        |> last()
+        |> yield(name: "last")
+        """.format(
+            self.bucket,
+        )
         pass
 
-
-
-#    def example(self, device_name, object_name):
-#        p = {"_bucket": self.bucket,
-#             "_start": datetime.timedelta(hours=-1),
-#             "_location": "Prague",
-#             "_desc": True,
-#             "_floatParam": 25.1,
-#             "_every": datetime.timedelta(minutes=5)
-#            }
-#
-#        tables = self.query_api.query('''
-#            from(bucket:_bucket) |> range(start: _start)
-#                |> filter(fn: (r) => r["_measurement"] == "my_measurement")
-#                |> filter(fn: (r) => r["_field"] == "temperature")
-#                |> filter(fn: (r) => r["location"] == _location and r["_value"] > _floatParam)
-#                |> aggregateWindow(every: _every, fn: mean, createEmpty: true)
-#                |> sort(columns: ["_time"], desc: _desc)
-#        ''', params=p)
-#        return tables
+    #    def example(self, device_name, object_name):
+    #        p = {"_bucket": self.bucket,
+    #             "_start": datetime.timedelta(hours=-1),
+    #             "_location": "Prague",
+    #             "_desc": True,
+    #             "_floatParam": 25.1,
+    #             "_every": datetime.timedelta(minutes=5)
+    #            }
+    #
+    #        tables = self.query_api.query('''
+    #            from(bucket:_bucket) |> range(start: _start)
+    #                |> filter(fn: (r) => r["_measurement"] == "my_measurement")
+    #                |> filter(fn: (r) => r["_field"] == "temperature")
+    #                |> filter(fn: (r) => r["location"] == _location and r["_value"] > _floatParam)
+    #                |> aggregateWindow(every: _every, fn: mean, createEmpty: true)
+    #                |> sort(columns: ["_time"], desc: _desc)
+    #        ''', params=p)
+    #        return tables
 
     def read_flux(self, request, params):
         pass
+
+
+class ConnectionError(Exception):
+    pass
