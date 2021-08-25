@@ -19,6 +19,7 @@ import contextlib
 try:
     import pandas as pd
     from pandas.io import sql
+    from pandas.core.base import DataError
 
     try:
         from pandas import Timestamp
@@ -28,7 +29,7 @@ try:
 except ImportError:
     _PANDAS = False
 
-from ..core.io.IOExceptions import RemovedPointException
+from ..core.io.IOExceptions import RemovedPointException, NoResponseFromController
 
 # --- this application's modules ---
 
@@ -141,7 +142,7 @@ class SQLMixin(object):
             except Exception as error:
                 self._log.error(
                     "Error in resampling {} | {} (probably not enough points)".format(
-                        point, error
+                        point.properties.name, error
                     )
                 )
                 if (
@@ -199,6 +200,14 @@ class SQLMixin(object):
             resampling = self.properties.save_resampling
 
         # Does file exist? If so, append data
+
+        def _df_to_backup():
+            try:
+                return self.backup_histories_df(resampling=resampling)
+            except (DataError, NoResponseFromController):
+                self._log.error("Impossible to save right now, error in data")
+                return None
+
         if os.path.isfile("{}.db".format(self.properties.db_name)):
             his = self._read_from_sql(
                 'select * from "{}"'.format("history"), self.properties.db_name
@@ -206,14 +215,16 @@ class SQLMixin(object):
             his.index = his["index"].apply(Timestamp)
             try:
                 last = his.index[-1]
-                df_to_backup = self.backup_histories_df(resampling=resampling)[last:]
-            except IndexError:
-                df_to_backup = self.backup_histories_df(resampling=resampling)
+                df_to_backup = _df_to_backup()[last:]
+            except (IndexError, TypeError):
+                df_to_backup = _df_to_backup()
 
         else:
             self._log.debug("Creating a new backup database")
-            df_to_backup = self.backup_histories_df(resampling=resampling)
+            df_to_backup = _df_to_backup()
 
+        if df_to_backup is None:
+            return
         # DataFrames that will be saved to SQL
         with contextlib.closing(
             sqlite3.connect("{}.db".format(self.properties.db_name))
