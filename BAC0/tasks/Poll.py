@@ -19,6 +19,8 @@ from .TaskManager import Task
 from ..core.utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
+class MultiplePollingFailures(Exception):
+    pass
 
 
 @note_and_log
@@ -70,6 +72,8 @@ class DevicePoll(Task):
 
         :returns: Nothing
         """
+        self.failures = 0
+        self.MAX_FAILURES = 3
         self._device = weakref.ref(device)
         Task.__init__(self, name="{}_{}".format(prefix, name), delay=delay)
         self._counter = 0
@@ -80,6 +84,10 @@ class DevicePoll(Task):
 
     def task(self):
         try:
+            if self.failures >= self.MAX_FAILURES:
+                raise MultiplePollingFailures(
+                    "Polling failed numerous times in a row... let see what we can do"
+                )
             self.device.read_multiple(
                 list(self.device.pollable_points_name), points_per_request=25
             )
@@ -89,17 +97,32 @@ class DevicePoll(Task):
                 if self.device.properties.clear_history_on_save:
                     self.device.clear_histories()
                 self._counter = 0
-        except AttributeError:
+            self.failures = 0
+        except AttributeError as e:
             # This error can be seen when defining a controller on a busy network...
             # When creation fail, polling is created and fail the first time...
             # So kill the task
-            self.stop()
-        except ValueError as e:
             self.device._log.error(
-                "Something is wrong with polling...stopping. Try setting off "
-                "segmentation. Error: {}".format(e)
+                "Something is wrong while creating the polling task."
+                "Error: {}".format(e)
             )
-            self.stop()
+            # self.stop()
+            self.failures += 1
+        except ValueError as e:
+            self.failures += 1
+            self.device._log.error(
+                "Something is wrong with polling...stopping. Will pass this time"
+                "Error: {}".format(e)
+            )
+            pass
+
+        except MultiplePollingFailures as e:
+            self.device._log.warning(
+                "Trying to ping device then we'll reset the number of failures and get back with polling"
+                "Error: {}".format(e)
+            )
+            if self.device.ping():
+                self.failures = 0
 
 
 @note_and_log

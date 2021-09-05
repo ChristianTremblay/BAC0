@@ -182,9 +182,15 @@ class Lite(
                     if db_params["name"].lower() == "influxdb"
                     else None
                 )
-                self._log.info("Connection made to InfluxDB bucket : {}".format(self.database.bucket))
+                self._log.info(
+                    "Connection made to InfluxDB bucket : {}".format(
+                        self.database.bucket
+                    )
+                )
             except ConnectionError:
-                self._log.error("Unable to connect to InfluxDB. Please validate parameters")
+                self._log.error(
+                    "Unable to connect to InfluxDB. Please validate parameters"
+                )
 
     @property
     def known_network_numbers(self):

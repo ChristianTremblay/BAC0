@@ -796,6 +796,16 @@ class DeviceConnected(Device):
         )
         self.properties.description = self.read_property("description")
 
+    def ping(self):
+        try:
+            if self.read_property("objectName"):
+                return True
+            else:
+                return False
+        except Exception as e:
+            self._log_error("Error in ping")
+            return False
+
     def __repr__(self):
         return "{} / Connected".format(self.properties.name)
 

@@ -33,7 +33,7 @@ class InfluxDB:
             setattr(self, k, v)
         if self.bucket is None:
             raise ValueError("Missing bucket name, please provide one in db_params")
-        self.connect_to_db()    
+        self.connect_to_db()
 
         self.write_api = self.client.write_api(
             write_options=WriteOptions(
@@ -68,11 +68,9 @@ class InfluxDB:
         except:
             raise ConnectionError("Error connecting to InfluxDB")
 
-
     @property
     def health(self):
         return self.client.health()
-
 
     def clean_value(self, object_type, val, units_state):
         if "analog" in object_type:
