@@ -77,6 +77,10 @@ class DeviceProperties(object):
         self.save_resampling = "1s"
         self.clear_history_on_save = None
         self.bacnet_properties = {}
+        self.auto_save = None
+        self.fast_polling = False
+        self.vendor_id = 0
+
 
     def __repr__(self):
         return "{}".format(self.asdict)

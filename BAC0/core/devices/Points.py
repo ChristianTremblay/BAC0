@@ -709,7 +709,7 @@ class NumericPoint(Point):
                 val = float(self.value)
         except ValueError:
             self._log.error(
-                "Cannot convert value {}. Device probably disconnected".format(
+                "Cannot convert value {}. Device probably disconnected or the response is inconsistent".format(
                     self.value
                 )
             )
