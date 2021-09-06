@@ -40,7 +40,7 @@ try:
         #
         import os
 
-        if os.path.isfile("./.env"):
+        if os.path.isfile("{}/.env".format(os.getcwd())):
             from dotenv import load_dotenv
 
             load_dotenv()
