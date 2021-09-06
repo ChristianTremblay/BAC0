@@ -344,6 +344,7 @@ class Lite(
                     )
                 )
                 each.connect(network=self)
+                each.poll(delay=each.properties.pollDelay)
 
     @property
     def registered_devices(self):
