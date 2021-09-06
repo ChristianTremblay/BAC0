@@ -39,7 +39,7 @@ try:
     try:
         #
         import os
-
+        print('CWD : ', os.getcwd())
         if os.path.isfile("{}/.env".format(os.getcwd())):
             from dotenv import load_dotenv
 
