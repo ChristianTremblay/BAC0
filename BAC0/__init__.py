@@ -39,11 +39,11 @@ try:
     try:
         #
         import os
-        print('CWD : ', os.getcwd())
+
         if os.path.isfile("{}/.env".format(os.getcwd())):
             from dotenv import load_dotenv
 
-            load_dotenv()
+            load_dotenv(os.path.join(os.getcwd(), ".env"))
     except ImportError:
         print("You need to pip install python-dotenv to use your .env file")
 
