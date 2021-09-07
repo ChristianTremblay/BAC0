@@ -323,7 +323,7 @@ class Lite(
                         )
                     )
                     each.ping()
-                    if each.properties.ping_failed > 3:
+                    if each.properties.ping_failures > 3:
                         raise NumerousPingFailures
 
                 except NumerousPingFailures:
@@ -339,7 +339,7 @@ class Lite(
                 addr = each.properties.address
                 name = self.read("{} device {} objectName".format(addr, device_id))
                 if name == each.properties.name:
-                    each.properties.ping_failed = 0
+                    each.properties.ping_failures = 0
                     self._log.info(
                         "{}|{} is back online, reconnecting.".format(
                             each.properties.name, each.properties.address

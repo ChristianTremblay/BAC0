@@ -84,9 +84,11 @@ class DevicePoll(Task):
 
     def task(self):
         if self.device.properties.ping_failures > 0:
-           self.device._log.warning("Ping failed, skipping polling for now. Resending a ping to speed up things")
-           self.device.ping()
-           return 
+            self.device._log.warning(
+                "Ping failed, skipping polling for now. Resending a ping to speed up things"
+            )
+            self.device.ping()
+            return
         try:
             if self.failures >= self.MAX_FAILURES:
                 raise MultiplePollingFailures(
