@@ -52,6 +52,7 @@ from ..core.io.IOExceptions import (
     NoResponseFromController,
     UnrecognizedService,
     Timeout,
+    NumerousPingFailures,
 )
 
 from ..tasks.RecurringTask import RecurringTask
@@ -315,36 +316,37 @@ class Lite(
             if isinstance(each, RPDeviceConnected) or isinstance(
                 each, RPMDeviceConnected
             ):
-                device_connected = True
-            else:
-                device_connected = False
+                try:
+                    self._log.debug(
+                        "Ping {}|{}".format(
+                            each.properties.name, each.properties.address
+                        )
+                    )
+                    each.ping()
+                    if each.properties.ping_failed > 3:
+                        raise NumerousPingFailures
 
-            respond_to_ping = True
-            try:
-                self._log.debug(
-                    "Ping {}|{}".format(each.properties.name, each.properties.address)
-                )
+                except NumerousPingFailures:
+                    self._log.warning(
+                        "{}|{} is offline, disconnecting it.".format(
+                            each.properties.name, each.properties.address
+                        )
+                    )
+                    each.disconnect(unregister=False)
+
+            else:
                 device_id = each.properties.device_id
                 addr = each.properties.address
-                self.read("{} device {} objectName".format(addr, device_id))
-            except NoResponseFromController:
-                respond_to_ping = False
-
-            if not respond_to_ping and device_connected:
-                self._log.warning(
-                    "{}|{} is offline, disconnecting it.".format(
-                        each.properties.name, each.properties.address
+                name = self.read("{} device {} objectName".format(addr, device_id))
+                if name == each.properties.name:
+                    each.properties.ping_failed = 0
+                    self._log.info(
+                        "{}|{} is back online, reconnecting.".format(
+                            each.properties.name, each.properties.address
+                        )
                     )
-                )
-                each.disconnect(unregister=False)
-            elif not device_connected and respond_to_ping:
-                self._log.info(
-                    "{}|{} is back online, reconnecting.".format(
-                        each.properties.name, each.properties.address
-                    )
-                )
-                each.connect(network=self)
-                each.poll(delay=each.properties.pollDelay)
+                    each.connect(network=self)
+                    each.poll(delay=each.properties.pollDelay)
 
     @property
     def registered_devices(self):

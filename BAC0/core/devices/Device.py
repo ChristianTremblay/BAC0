@@ -80,7 +80,7 @@ class DeviceProperties(object):
         self.auto_save = None
         self.fast_polling = False
         self.vendor_id = 0
-
+        self.ping_failed = 0
 
     def __repr__(self):
         return "{}".format(self.asdict)
@@ -802,12 +802,15 @@ class DeviceConnected(Device):
 
     def ping(self):
         try:
-            if self.read_property("objectName"):
+            if self.read_property("objectName") == self.properties.name:
+                self.properties.ping_failed = 0
                 return True
             else:
+                self.properties.ping_failed += 1
                 return False
-        except Exception as e:
-            self._log_error("Error in ping")
+        except NoResponseFromController as e:
+            self._log_error("Error in ping : {}".format(e))
+            self.properties.ping_failed += 1
             return False
 
     def __repr__(self):

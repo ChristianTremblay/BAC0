@@ -167,3 +167,7 @@ class DeviceNotConnected(Exception):
 
 class WrongParameter(Exception):
     pass
+
+
+class NumerousPingFailures(Exception):
+    pass
