@@ -262,7 +262,7 @@ class Lite(
                     if network < 65535:
                         _networks.append(network)
             elif networks == "known":
-                _networks = self.known_network_numbers
+                _networks = self.known_network_numbers.copy()
             else:
                 if networks < 65535:
                     _networks.append(networks)
