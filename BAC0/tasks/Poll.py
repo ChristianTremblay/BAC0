@@ -117,7 +117,7 @@ class DevicePoll(Task):
         except ValueError as e:
             self.failures += 1
             self.device._log.error(
-                "Something is wrong with polling...stopping. Will pass this time\n"
+                "Polling results contains a wrong value. Probably a communication error. Will skip this result and wait for the next cycle.\n"
                 "Error: {} | Type : {}".format(e, type(e))
             )
             pass

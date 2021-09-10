@@ -21,6 +21,7 @@ from ...io.IOExceptions import (
 )
 from ..Points import NumericPoint, BooleanPoint, EnumPoint, StringPoint, OfflinePoint
 from ..Trends import TrendLog
+#from ...functions.Schedule import Schedule
 
 # ------------------------------------------------------------------------------
 
@@ -76,6 +77,27 @@ def create_trendlogs(objList, device):
             continue
     return trendlogs
 
+#def create_schedules(objList, device):
+#    schedules = {}
+#    for each in retrieve_type(objList, "schedule"):
+#        point_address = str(each[1])
+#        try:
+#            tl = Schedule(point_address, device, read_log_on_creation=False)
+#            if tl.properties.log_device_object_property is None:
+#                raise TrendLogCreationException
+#            (
+#                ldop_type,
+#                ldop_addr,
+#            ) = tl.properties.log_device_object_property.objectIdentifier
+#            ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
+#            trendlogs["{}_{}_{}".format(ldop_type, ldop_addr, ldop_prop)] = (
+#                tl.properties.object_name,
+#                tl,
+#            )
+#        except TrendLogCreationException:
+#            device._log.error("Problem creating {}".format(each))
+#            continue
+#    return schedules
 
 class ReadUtilsMixin:
     """
