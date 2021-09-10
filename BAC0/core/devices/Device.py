@@ -809,7 +809,7 @@ class DeviceConnected(Device):
                 self.properties.ping_failures += 1
                 return False
         except NoResponseFromController as e:
-            self._log_error("Error in ping : {}".format(e))
+            self._log.error("Error in ping : {}".format(e))
             self.properties.ping_failures += 1
             return False
 
