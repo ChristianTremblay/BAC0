@@ -1079,6 +1079,10 @@ class DeviceFromDB(DeviceConnected):
         self.properties.serving_chart = {}
         self.properties.charts = []
         self.properties.multistates = self._props["multistates"]
+        self.properties.auto_save = self._props["auto_save"]
+        self.properties.save_resampling = self._props["save_resampling"]
+        self.properties.clear_history_on_save = self._props["clear_history_on_save"]
+        self.properties.default_history_size = self._props["history_size"]
         self._log.info("Device restored from db")
         self._log.info(
             'You can reconnect to network using : "device.connect(network=bacnet)"'
