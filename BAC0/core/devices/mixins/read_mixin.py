@@ -21,7 +21,8 @@ from ...io.IOExceptions import (
 )
 from ..Points import NumericPoint, BooleanPoint, EnumPoint, StringPoint, OfflinePoint
 from ..Trends import TrendLog
-#from ...functions.Schedule import Schedule
+
+# from ...functions.Schedule import Schedule
 
 # ------------------------------------------------------------------------------
 
@@ -77,7 +78,8 @@ def create_trendlogs(objList, device):
             continue
     return trendlogs
 
-#def create_schedules(objList, device):
+
+# def create_schedules(objList, device):
 #    schedules = {}
 #    for each in retrieve_type(objList, "schedule"):
 #        point_address = str(each[1])
@@ -98,6 +100,7 @@ def create_trendlogs(objList, device):
 #            device._log.error("Problem creating {}".format(each))
 #            continue
 #    return schedules
+
 
 class ReadUtilsMixin:
     """
