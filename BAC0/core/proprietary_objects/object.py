@@ -1,4 +1,9 @@
-from bacpypes.object import Object, Property, register_object_type
+from bacpypes.object import (
+    Object,
+    Property,
+    register_object_type,
+    registered_object_types,
+)
 
 # Prochaine étape : créer une focntion qui va lire "all" et se redéfinir dynamiquement
 def create_proprietary_object(params):
@@ -17,6 +22,10 @@ def create_proprietary_object(params):
         {"objectType": params["objectType"], "properties": props},
     )
     register_object_type(new_class, vendor_id=params["vendor_id"])
+    if "BAC0" not in registered_object_types.keys():
+        registered_object_types["BAC0"] = {}
+
+    registered_object_types["BAC0"][params["name"]] = params["properties"]
 
 
 def _validate_params(params):
