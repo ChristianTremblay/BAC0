@@ -102,6 +102,7 @@ class Point:
         presentValue=None,
         units_state=None,
         history_size=None,
+        tags=None,
     ):
 
         self._history = namedtuple("_history", ["timestamp", "value"])
@@ -132,6 +133,8 @@ class Point:
         self.properties.overridden = (False, 0)
 
         self.cov_registered = False
+
+        self.tags = tags
 
         self._cache = {"_previous_read": (None, None)}
 
@@ -211,7 +214,7 @@ class Point:
                     str(self.properties.address),
                 ),
                 vendor_id=0,
-                prop_id_required=True,
+                show_property_name=True,
             )
             for each in res:
                 if not each:
@@ -633,6 +636,10 @@ class Point:
         )
 
     def update_description(self, value):
+        """
+        This will write to the BACnet point and modify the description
+        of the object
+        """
         self.properties.device.properties.network.send_text_write_request(
             addr=self.properties.device.properties.address,
             obj_type=self.properties.type,
@@ -641,6 +648,19 @@ class Point:
             prop_id="description",
         )
         self.properties.description = self.read_property("description")
+
+    def tag(self, tag_id, tag_value, lst=None):
+        """
+        Add tag to point. Those tags can be used to make queries,
+        add information, etc.
+        They will be included in InfluxDB is used.
+        """
+        if lst is None:
+            self.tag.append((tag_id, tag_value))
+        else:
+            for each in lst:
+                tag_id, tag_value = each
+                self.tag.append((tag_id, tag_value))
 
 
 # ------------------------------------------------------------------------------
