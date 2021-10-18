@@ -118,7 +118,9 @@ class InfluxDB:
                 .field("string_value", _string_value)
                 .time(point.lastTimestamp.astimezone(pytz.UTC))
             )
-            # TODO: At this point, it would be cool to add more tags coming from an external source...
+            for each in point.tags:
+                _tag_id, _tag_value = each
+                _point.tag(_tag_id, _tag_value)
             _points.append(_point)
         self.write_api.write(self.bucket, self.org, _points)
 

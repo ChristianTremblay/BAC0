@@ -731,7 +731,7 @@ class DeviceConnected(Device):
             request = "{} {} {} {}".format(
                 self.properties.address, _obj, _instance, _prop
             )
-            val = self.properties.network.read(request, vendor_id=0)
+            val = self.properties.network.read(request, vendor_id=self.properties.vendor_id)
         except KeyError as error:
             raise Exception("Unknown property : {}".format(error))
         return val
@@ -762,15 +762,15 @@ class DeviceConnected(Device):
     def update_bacnet_properties(self):
         """
         Retrieve bacnet properties for this device
-        To retrieve something general, forcing vendor id 0
+        
         """
         try:
             res = self.properties.network.readMultiple(
                 "{} device {} all".format(
                     self.properties.address, str(self.properties.device_id)
                 ),
-                vendor_id=0,
-                prop_id_required=True,
+                vendor_id=self.properties.vendor_id,
+                show_property_name=True,
             )
             for each in res:
                 if not each:
