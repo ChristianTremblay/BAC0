@@ -19,6 +19,7 @@ from bacpypes.basetypes import (
     Boolean,
     EventState,
     Date,
+    Time,
     DateTime,
     Unsigned,
 )
@@ -256,7 +257,7 @@ def datetime_value(**kwargs):
         "objectType": DateTimeValueObject,
         "instance": 0,
         "description": "No description",
-        "presentValue": DateTime(),
+        "presentValue": DateTime(date=Date().now().value, time=Time().now().value),
         "properties": {},
         "is_commandable": False,
         "relinquish_default": "inactive",
