@@ -42,6 +42,7 @@ from ..core.app.ScriptApplication import (
 from .. import infos
 from ..core.io.IOExceptions import InitializationError, UnknownObjectError
 from ..core.functions.GetIPAddr import validate_ip_address
+from ..core.functions.TimeSync import TimeHandler
 from ..tasks.TaskManager import stopAllTasks
 
 from ..core.utils.notes import note_and_log
@@ -113,6 +114,8 @@ class Base:
     ):
 
         self._log.debug("Configurating app")
+
+        self.timehandler = TimeHandler()
 
         if not _COMPLETE:
             self._log.debug(
@@ -199,6 +202,8 @@ class Base:
                 applicationSoftwareVersion=infos.__version__,
                 protocolVersion=1,
                 protocolRevision=0,
+                utcOffset=self.timehandler.utcOffset(),
+                daylightSavingsStatus=self.timehandler.is_dst(),
             )
 
             # make an application

@@ -28,6 +28,7 @@ from bacpypes.basetypes import DateTime
 from bacpypes.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
+import pytz
 
 
 def _build_datetime(UTC=False):
@@ -128,3 +129,37 @@ class TimeSync:
         hour, minutes, sec, msec = _datetime.time
         d = dt.datetime(year, month, day, hour, minutes, sec, msec)
         self._log.info("Time Sync Request sent to network : {}".format(d.isoformat()))
+
+
+class TimeHandler(object):
+    """
+    This class will deal with Time / Timezone related features
+    To deal with DateTime Value correctly we need to be aware
+    of timezone.
+    """
+
+    def __init__(self, tz="America/Montreal"):
+        self.set_timezone(tz)
+
+    def set_timezone(self, tz):
+        self.timezone = pytz.timezone(tz)
+
+    @property
+    def now(self):
+        return dt.datetime.now()
+
+    def local_time(self):
+        return self.now.time()
+
+    def local_date(self):
+        return self.now.date()
+
+    def utcOffset(self):
+        "Returns UTC offset in minutes"
+        return self.now.astimezone().utcoffset().total_seconds() / 60
+
+    def is_dst(self):
+        return self.timezone.dst(self.now) != dt.timedelta(0)
+
+    def __repr__(self):
+        return "{}".format(self.__dict__)

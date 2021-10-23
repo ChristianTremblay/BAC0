@@ -19,7 +19,14 @@ from ...io.IOExceptions import (
     SegmentationNotSupported,
     BufferOverflow,
 )
-from ..Points import NumericPoint, BooleanPoint, EnumPoint, StringPoint, OfflinePoint
+from ..Points import (
+    NumericPoint,
+    BooleanPoint,
+    EnumPoint,
+    StringPoint,
+    OfflinePoint,
+    DateTimePoint,
+)
 from ..Trends import TrendLog
 
 # from ...functions.Schedule import Schedule
@@ -201,7 +208,11 @@ class DiscoveryUtilsMixin:
                 obj_cls=StringPoint, obj_type="characterstringValue", objList=objList
             )
         )
-
+        points.extend(
+            self._process_new_objects(
+                obj_cls=DateTimePoint, obj_type="datetimeValue", objList=objList
+            )
+        )
         # TrendLogs
         trendlogs = create_trendlogs(objList, self)
 
@@ -249,6 +260,8 @@ class RPMObjectsProcessing:
         elif obj_type == "multi":
             prop_list = "objectName presentValue stateText description"
         elif obj_type == "characterstringValue":
+            prop_list = "objectName presentValue"
+        elif obj_type == "datetimeValue":
             prop_list = "objectName presentValue"
         else:
             raise ValueError("Unsupported objectType")

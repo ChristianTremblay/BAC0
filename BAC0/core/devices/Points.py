@@ -1072,6 +1072,97 @@ class StringPoint(Point):
         return self.value == other.value
 
 
+class DateTimePoint(Point):
+    """
+    Representation of DatetimeValue value
+    """
+
+    def __init__(
+        self,
+        device=None,
+        pointType=None,
+        pointAddress=None,
+        pointName=None,
+        description=None,
+        units_state=None,
+        presentValue=None,
+        history_size=None,
+    ):
+
+        Point.__init__(
+            self,
+            device=device,
+            pointType=pointType,
+            pointAddress=pointAddress,
+            pointName=pointName,
+            description=description,
+            presentValue=presentValue,
+            history_size=history_size,
+        )
+
+    @property
+    def units(self):
+        """
+        Characterstring value do not have units or state text
+        """
+        return None
+
+    def _trend(self, res):
+        # super()._trend(res)
+        return
+
+    @property
+    def value(self):
+        res = super().value
+        # self._trend(res)
+        year, month, day, dayofweek = res.date
+        hour, minutes, seconds, ms = res.time
+        res = datetime(year + 1900, month, day, hour, minutes, seconds)
+        return res
+
+    def _set(self, value):
+        # try:
+        #    if isinstance(value, str):
+        #        self._setitem(value)
+        #    elif isinstance(value, CharacterString):
+        #        self._setitem(value.value)
+        #    else:
+        #        raise ValueError("Value must be string or CharacterString")
+        # except (Exception, ValueError) as error:
+        #    raise WritePropertyException("Problem writing to device : {}".format(error))`
+        raise NotImplementedError("Writing to Datetime is not supported yet")
+
+    def __repr__(self):
+        try:
+            # polling = self.properties.device.properties.pollDelay
+            # if (polling < 90 and polling > 0) or self.cov_registered:
+            #    val = str(self.lastValue)
+            # else:
+            val = self.value
+        except ValueError:
+            self._log.error("Cannot convert value. Device probably disconnected")
+            # Probably disconnected
+            val = None
+        return "{}/{} : {}".format(
+            self.properties.device.properties.name, self.properties.name, val
+        )
+
+    def __eq__(self, other):
+        return self.value == other.value
+
+    def __ge__(self, other):
+        return self.value >= other.value
+
+    def __le__(self, other):
+        return self.value <= other.value
+
+    def __gt__(self, other):
+        return self.value > other.value
+
+    def __lt__(self, other):
+        return self.value < other.value
+
+
 # ------------------------------------------------------------------------------
 
 
