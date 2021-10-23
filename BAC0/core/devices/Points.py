@@ -102,7 +102,7 @@ class Point:
         presentValue=None,
         units_state=None,
         history_size=None,
-        tags=None,
+        tags=[],
     ):
 
         self._history = namedtuple("_history", ["timestamp", "value"])

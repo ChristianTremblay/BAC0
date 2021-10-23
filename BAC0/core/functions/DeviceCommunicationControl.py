@@ -56,9 +56,9 @@ class DeviceCommunicationControl:
 
         # build a request
         request = DeviceCommunicationControlRequest()
-        request.enableDisable = (
-            DeviceCommunicationControlRequestEnableDisable.enumerations[state]
-        )
+        request.enableDisable = DeviceCommunicationControlRequestEnableDisable.enumerations[
+            state
+        ]
         request.pduDestination = Address(address)
         if duration:
             request.duration = Unsigned16(duration)

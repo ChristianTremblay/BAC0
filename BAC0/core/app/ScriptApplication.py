@@ -415,7 +415,7 @@ class BAC0BBMDDeviceApplication(
         # on the UDP multiplexer
         self.bip = BIPBBMD(self.localAddress)
         self.annexj = AnnexJCodec()
-        self.mux = UDPMultiplexer(self.localAddress, noBroadcast=True)
+        self.mux = UDPMultiplexer(self.localAddress, noBroadcast=False)
 
         # bind the bottom layers
         # bind(self.bip, self.annexj, self.mux.annexJ)

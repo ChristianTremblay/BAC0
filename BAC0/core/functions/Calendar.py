@@ -9,9 +9,7 @@ ScheduleWrite.py - creation of ReinitializeDeviceRequest
 
 """
 from ..io.Read import find_reason
-from ..io.IOExceptions import (
-    NoResponseFromController,
-)
+from ..io.IOExceptions import NoResponseFromController
 from ...core.utils.notes import note_and_log
 
 # --- standard Python modules ---
@@ -50,24 +48,12 @@ class Calendar:
     DateList = ArrayOf(CalendarEntry)
     datelist_example = {
         "dates": [
-            {
-                "date": "2021/3/14",
-                "recurring": False,
-            },
-            {
-                "date": "2021/3/10",
-                "recurring": True,
-            },
+            {"date": "2021/3/14", "recurring": False},
+            {"date": "2021/3/10", "recurring": True},
         ],
         "dateRanges": [
-            {
-                "startDate": "2021/3/16",
-                "endDate": "2021/3/21",
-            },
-            {
-                "startDate": "2021/3/5",
-                "endDate": "2021/3/7",
-            },
+            {"startDate": "2021/3/16", "endDate": "2021/3/21"},
+            {"startDate": "2021/3/5", "endDate": "2021/3/7"},
         ],
     }
 
