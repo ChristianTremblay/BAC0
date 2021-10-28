@@ -194,7 +194,7 @@ class InfluxDB:
         |> last()
         |> yield(name: "last")
         """.format(
-            self.bucket,
+            self.bucket
         )
         pass
 
