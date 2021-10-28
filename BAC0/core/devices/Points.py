@@ -196,7 +196,7 @@ class Point:
                     str(self.properties.address),
                     prop,
                 ),
-                vendor_id=0,
+                vendor_id=self.properties.device.properties.vendor_id,
             )
         except Exception as e:
             raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
@@ -213,7 +213,7 @@ class Point:
                     self.properties.type,
                     str(self.properties.address),
                 ),
-                vendor_id=0,
+                vendor_id=self.properties.device.properties.vendor_id,
                 show_property_name=True,
             )
             for each in res:
