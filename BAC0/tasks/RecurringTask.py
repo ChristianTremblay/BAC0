@@ -20,18 +20,23 @@ class RecurringTask(Task):
 
     def __init__(self, fnc, delay=60, name="recurring"):
         """
-        :param point: (BAC0.core.device.Points.Point) name of the point to read
-        :param delay: (int) Delay between reads in seconds, defaults = 10sec
-
-        A delay cannot be < 5sec (there are risks of overloading the device)
+        :param fnc: a function or a tuple (function, args)
+        :param delay: (int) Delay between reads executions
 
         :returns: Nothing
         """
-        if hasattr(fnc, "__call__"):
+        self.fnc_args = None
+        if isinstance(fnc, tuple):
+            self.func, self.fnc_args = fnc
+        elif hasattr(fnc, "__call__") :
             self.func = fnc
-            Task.__init__(self, name=name, delay=delay)
         else:
-            raise ValueError("You must pass a function to this...")
+            raise ValueError("You must pass a function or a tuple (function,args) to this...")
+        Task.__init__(self, name=name, delay=delay)
+        
 
     def task(self):
-        self.func()
+        if self.fnc_args:
+            self.func(self.fnc_args)
+        else:
+            self.func()
