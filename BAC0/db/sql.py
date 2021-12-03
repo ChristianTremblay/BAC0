@@ -19,6 +19,7 @@ import contextlib
 try:
     import pandas as pd
     from pandas.io import sql
+    from pandas.core.base import DataError
 
     try:
         from pandas import Timestamp
@@ -28,7 +29,7 @@ try:
 except ImportError:
     _PANDAS = False
 
-from ..core.io.IOExceptions import RemovedPointException
+from ..core.io.IOExceptions import RemovedPointException, NoResponseFromController
 
 # --- this application's modules ---
 
@@ -37,9 +38,9 @@ from ..core.io.IOExceptions import RemovedPointException
 
 class SQLMixin(object):
     """
-    Use SQL to persist a device's contents.  By saving the device contents to an SQL 
-    database, you can work with the device's data while offline, or while the device 
-    is not available. 
+    Use SQL to persist a device's contents.  By saving the device contents to an SQL
+    database, you can work with the device's data while offline, or while the device
+    is not available.
     """
 
     def _read_from_sql(self, request, db_name):
@@ -81,15 +82,18 @@ class SQLMixin(object):
         Please note that this can be disabled using resampling=False
 
         In the process of building the dataframe, analog values are
-        resampled using the mean() function. So we have intermediate 
+        resampled using the mean() function. So we have intermediate
         results between to records.
 
         For binary values, we'll use .last() so we won't get a 0.5 value
-        which means nothing in this context. 
+        which means nothing in this context.
 
         If saving a DB that already exists, previous resampling will survive
         the merge of old data and new data.
         """
+        if not _PANDAS:
+            self._log.error("Pandas is required to create dataframe.")
+            return
         backup = {}
         if isinstance(resampling, str):
             resampling_needed = True
@@ -97,12 +101,32 @@ class SQLMixin(object):
         elif resampling in [0, False]:
             resampling_needed = False
 
+        def extract_value_and_string(val):
+            if isinstance(val, str):
+                if ":" in val:
+                    _v, _s = val.split(":")
+                    return (int(_v), _s)
+                elif val == "active":
+                    val = 1
+                elif val == "inactive":
+                    val = 0
+            return (int(val), "unknown")
+
         # print(resampling, resampling_freq, resampling_needed)
         for point in self.points:
+            _name = point.properties.name
             try:
-                if resampling_needed and "binary" in point.properties.type:
-                    backup[point.properties.name] = (
-                        point.history.replace(["inactive", "active"], [0, 1])
+                if (
+                    "binary" in point.properties.type
+                    or "multi" in point.properties.type
+                ):
+                    backup["{}_str".format(_name)] = (
+                        point.history.apply(lambda x: extract_value_and_string(x)[1])
+                        .resample(resampling_freq)
+                        .last()
+                    )
+                    backup[_name] = (
+                        point.history.apply(lambda x: extract_value_and_string(x)[0])
                         .resample(resampling_freq)
                         .last()
                     )
@@ -111,26 +135,39 @@ class SQLMixin(object):
                         resampling_freq
                     ).mean()
                 else:
-                    backup[point.properties.name] = point.history.resample(
-                        resampling_freq
-                    ).last()
+                    #backup[point.properties.name] = point.history.resample(
+                    #    resampling_freq
+                    #).last()
+                    continue
 
             except Exception as error:
                 self._log.error(
                     "Error in resampling {} | {} (probably not enough points)".format(
-                        point, error
+                        point.properties.name, error
                     )
                 )
-                if "binary" in point.properties.type:
-                    backup[point.properties.name] = point.history.replace(
-                        ["inactive", "active"], [0, 1]
+                if (
+                    "binary" in point.properties.type
+                    or "multi" in point.properties.type
+                ):
+                    backup["{}.str".format(_name)] = (
+                        point.history.apply(lambda x: extract_value_and_string(x)[1])
+                        .resample(resampling_freq)
+                        .last()
                     )
+                    backup["{}.val".format(_name)] = (
+                        point.history.apply(lambda x: extract_value_and_string(x)[0])
+                        .resample(resampling_freq)
+                        .last()
+                    )
+                    backup[_name] = point.history.resample(resampling_freq).last()
                 elif "analog" in point.properties.type:
                     backup[point.properties.name] = point.history.resample(
                         resampling_freq
                     ).mean()
                 else:
-                    backup[point.properties.name] = point.history
+                    #backup[point.properties.name] = point.history
+                    continue
 
         df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in backup.items()]))
         if resampling_needed:
@@ -145,11 +182,15 @@ class SQLMixin(object):
 
     def save(self, filename=None, resampling=None):
         """
-        Save the point histories to sqlite3 database.  
+        Save the point histories to sqlite3 database.
         Save the device object properties to a pickle file so the device can be reloaded.
 
         Resampling : valid Pandas resampling frequency. If 0 or False, dataframe will not be resampled on save.
         """
+        if not _PANDAS:
+            self._log.error("Pandas is required to save to SQLite.")
+            return
+
         if filename:
             if ".db" in filename:
                 filename = filename.split(".")[0]
@@ -161,6 +202,14 @@ class SQLMixin(object):
             resampling = self.properties.save_resampling
 
         # Does file exist? If so, append data
+
+        def _df_to_backup():
+            try:
+                return self.backup_histories_df(resampling=resampling)
+            except (DataError, NoResponseFromController):
+                self._log.error("Impossible to save right now, error in data")
+                return None
+
         if os.path.isfile("{}.db".format(self.properties.db_name)):
             his = self._read_from_sql(
                 'select * from "{}"'.format("history"), self.properties.db_name
@@ -168,14 +217,16 @@ class SQLMixin(object):
             his.index = his["index"].apply(Timestamp)
             try:
                 last = his.index[-1]
-                df_to_backup = self.backup_histories_df(resampling=resampling)[last:]
-            except IndexError:
-                df_to_backup = self.backup_histories_df(resampling=resampling)
+                df_to_backup = _df_to_backup()[last:]
+            except (IndexError, TypeError):
+                df_to_backup = _df_to_backup()
 
         else:
             self._log.debug("Creating a new backup database")
-            df_to_backup = self.backup_histories_df(resampling=resampling)
+            df_to_backup = _df_to_backup()
 
+        if df_to_backup is None:
+            return
         # DataFrames that will be saved to SQL
         with contextlib.closing(
             sqlite3.connect("{}.db".format(self.properties.db_name))

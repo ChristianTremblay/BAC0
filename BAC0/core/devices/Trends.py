@@ -99,7 +99,16 @@ class TrendLog(TrendLogProperties):
 
     def update_properties(self):
         try:
-            self.properties.object_name, self.properties.description, self.properties.record_count, self.properties.buffer_size, self.properties.total_record_count, self.properties.log_device_object_property, self.properties.statusFlags, self.properties.log_interval = self.properties.device.properties.network.readMultiple(
+            (
+                self.properties.object_name,
+                self.properties.description,
+                self.properties.record_count,
+                self.properties.buffer_size,
+                self.properties.total_record_count,
+                self.properties.log_device_object_property,
+                self.properties.statusFlags,
+                self.properties.log_interval,
+            ) = self.properties.device.properties.network.readMultiple(
                 "{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount logDeviceObjectProperty statusFlags logInterval".format(
                     addr=self.properties.device.properties.address,
                     oid=str(self.properties.oid),
@@ -192,9 +201,10 @@ class TrendLog(TrendLogProperties):
                     self.properties._history_components["logdatum"],
                 )
             )
-        objectType, objectAddress = (
-            self.properties.log_device_object_property.objectIdentifier
-        )
+        (
+            objectType,
+            objectAddress,
+        ) = self.properties.log_device_object_property.objectIdentifier
         try:
             logged_point = self.properties.device.find_point(objectType, objectAddress)
         except ValueError:

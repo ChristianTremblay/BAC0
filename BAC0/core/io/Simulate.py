@@ -29,7 +29,7 @@ class Simulation:
 
     def sim(self, args):
         """
-        Simulate I/O points by setting the Out_Of_Service property, then doing a 
+        Simulate I/O points by setting the Out_Of_Service property, then doing a
         WriteProperty to the point's Present_Value.
 
         :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] [ <priority> ]
@@ -90,7 +90,7 @@ class Simulation:
 
     def release(self, args):
         """
-        Set the Out_Of_Service property to False - to release the I/O point back to 
+        Set the Out_Of_Service property to False - to release the I/O point back to
         the controller's control.
 
         :param args: String with <addr> <type> <inst>

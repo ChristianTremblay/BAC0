@@ -64,7 +64,7 @@ class WriteProperty:
     """
 
     def write(self, args, vendor_id=0, timeout=10):
-        """ Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
+        """Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
 
         :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] - [ <priority> ]
         :returns: return status [True if ok, False if not]
@@ -237,7 +237,7 @@ class WriteProperty:
         return request
 
     def writeMultiple(self, addr=None, args=None, vendor_id=0, timeout=10):
-        """ Build a WritePropertyMultiple request, wait for an answer
+        """Build a WritePropertyMultiple request, wait for an answer
 
         :param addr: destination of request (ex. '2:3' or '192.168.1.2')
         :param args: list of String with <type> <inst> <prop> <value> [ <indx> ] - [ <priority> ]
@@ -251,9 +251,9 @@ class WriteProperty:
             bacnet = BAC0.lite()
             r = ['analogValue 1 presentValue 100','analogValue 2 presentValue 100','analogValue 3 presentValue 100 - 8','@obj_142 1 @prop_1042 True']
             bacnet.writeMultiple(addr='2:5',args=r,vendor_id=842)
-            # or 
+            # or
             # bacnet.writeMultiple('2:5',r)
-            
+
         """
         if not self._started:
             raise ApplicationNotStarted("BACnet stack not running - use startApp()")
@@ -304,9 +304,14 @@ class WriteProperty:
         for each in args:
             property_values = []
             if isinstance(each, str):
-                obj_type, obj_inst, prop_id, value, priority, indx = self._parse_wp_args(
-                    each
-                )
+                (
+                    obj_type,
+                    obj_inst,
+                    prop_id,
+                    value,
+                    priority,
+                    indx,
+                ) = self._parse_wp_args(each)
             elif isinstance(each, tuple):
                 # Supported but not really the best choice as the parser will
                 # catch some edge cases for you

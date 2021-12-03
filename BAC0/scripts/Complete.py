@@ -132,7 +132,7 @@ class Stats_Mixin:
         statistics["ip_devices"] = sorted(ip_devices)
         statistics["bacoids"] = sorted(bacoids)
         statistics["mstp_map"] = mstp_map
-        statistics["timestamp"] = str(datetime.now())
+        statistics["timestamp"] = str(datetime.now().astimezone())
         statistics["number_of_devices"] = self.number_of_devices
         statistics["number_of_registered_devices"] = len(self.registered_devices)
         statistics["print_mstpnetworks"] = self.print_list(mstpnetworks)

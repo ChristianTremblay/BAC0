@@ -67,6 +67,7 @@ from .IOExceptions import (
     UnknownObjectError,
     BufferOverflow,
 )
+from bacpypes.object import registered_object_types
 
 from ..utils.notes import note_and_log
 
@@ -88,7 +89,7 @@ class ReadProperty:
         vendor_id=0,
         bacoid=None,
         timeout=10,
-        prop_id_required=False,
+        show_property_name=False,
     ):
         """
         Build a ReadProperty request, wait for the answer and return the value
@@ -167,11 +168,12 @@ class ReadProperty:
 
                 self._log.debug("{:<20} {:<20}".format("value", "datatype"))
                 self._log.debug("{!r:<20} {!r:<20}".format(value, datatype))
-            if not prop_id_required:
+            if not show_property_name:
                 return value
 
             try:
                 int(apdu.propertyIdentifier)
+                objid = apdu.objectIdentifier
                 prop_id = "@prop_{}".format(apdu.propertyIdentifier)
                 value = list(value.items())[0][1]
             except ValueError:
@@ -232,9 +234,9 @@ class ReadProperty:
         return [self.read(args, arr_index=i) for i in range(1, nmbr_obj + 1)]
 
     def readMultiple(
-        self, args, request_dict=None, vendor_id=0, timeout=10, prop_id_required=False
+        self, args, request_dict=None, vendor_id=0, timeout=10, show_property_name=False
     ):
-        """ Build a ReadPropertyMultiple request, wait for the answer and return the values
+        """Build a ReadPropertyMultiple request, wait for the answer and return the values
 
         :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
         :returns: data read from device (str representing data like 10 or True)
@@ -360,11 +362,26 @@ class ReadProperty:
                                     datatype,
                                 )
                             )
-                        if prop_id_required:
+                        if show_property_name:
                             try:
-                                int(propertyIdentifier)
+                                int(
+                                    propertyIdentifier
+                                )  # else it will be a name like maxMaster
                                 prop_id = "@prop_{}".format(propertyIdentifier)
-                                value = list(value.items())[0][1]
+                                _obj, _id = apdu.listOfReadAccessResults[
+                                    0
+                                ].objectIdentifier
+                                _key = (str(_obj), vendor_id)
+                                if _key in registered_object_types.keys():
+                                    _classname = registered_object_types[_key].__name__
+                                    for k, v in registered_object_types["BAC0"][
+                                        _classname
+                                    ].items():
+                                        if v["obj_id"] == propertyIdentifier:
+                                            prop_id = (k, propertyIdentifier)
+                                if isinstance(value, dict):
+                                    value = list(value.items())[0][1]
+
                             except ValueError:
                                 prop_id = propertyIdentifier
                             values.append((value, prop_id))
@@ -535,7 +552,7 @@ class ReadProperty:
     def build_rpm_request_from_dict(self, request_dict, vendor_id):
         """
         Read property multiple allow to read a lot of properties with only one request
-        The existing RPM function is made using a string that must be created using bacpypes 
+        The existing RPM function is made using a string that must be created using bacpypes
         console style and is hard to automate.
 
         This new version will be an attempt to improve that::

@@ -9,7 +9,8 @@ Points.py - Definition of points so operations on Read results are more convenie
 """
 
 # --- standard Python modules ---
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+import pytz
 from collections import namedtuple
 import time
 
@@ -101,6 +102,7 @@ class Point:
         presentValue=None,
         units_state=None,
         history_size=None,
+        tags=[],
     ):
 
         self._history = namedtuple("_history", ["timestamp", "value"])
@@ -116,7 +118,7 @@ class Point:
 
         self._history.timestamp = []
         self._history.value = [presentValue]
-        self._history.timestamp.append(datetime.now())
+        self._history.timestamp.append(datetime.now().astimezone())
 
         self.properties.history_size = history_size
 
@@ -132,6 +134,8 @@ class Point:
 
         self.cov_registered = False
 
+        self.tags = tags
+
         self._cache = {"_previous_read": (None, None)}
 
     @property
@@ -141,7 +145,8 @@ class Point:
         """
         if (
             self._cache["_previous_read"][0]
-            and datetime.now() - self._cache["_previous_read"][0] < Point._cache_delta
+            and datetime.now().astimezone() - self._cache["_previous_read"][0]
+            < Point._cache_delta
         ):
             return self._cache["_previous_read"][1]
 
@@ -157,7 +162,7 @@ class Point:
             # self._trend(res)
         except Exception as e:
             raise
-        self._cache["_previous_read"] = (datetime.now(), res)
+        self._cache["_previous_read"] = (datetime.now().astimezone(), res)
         return res
 
     def read_priority_array(self):
@@ -191,7 +196,7 @@ class Point:
                     str(self.properties.address),
                     prop,
                 ),
-                vendor_id=0,
+                vendor_id=self.properties.device.properties.vendor_id,
             )
         except Exception as e:
             raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
@@ -208,8 +213,8 @@ class Point:
                     self.properties.type,
                     str(self.properties.address),
                 ),
-                vendor_id=0,
-                prop_id_required=True,
+                vendor_id=self.properties.device.properties.vendor_id,
+                show_property_name=True,
             )
             for each in res:
                 if not each:
@@ -259,8 +264,14 @@ class Point:
                 return None
 
     def _trend(self, res):
-        self._history.timestamp.append(datetime.now())
+        # now = datetime.now(tz=pytz.UTC)
+        now = datetime.now().astimezone()
+        self._history.timestamp.append(now)
         self._history.value.append(res)
+        if self.properties.device.properties.network.database:
+            self.properties.device.properties.network.database.write_points_lastvalue_to_db(
+                [self]
+            )
         if self.properties.history_size is None:
             return
         else:
@@ -275,6 +286,7 @@ class Point:
                         -self.properties.history_size :
                     ]
                     assert len(self._history.timestamp) == len(self._history.value)
+
                 except Exception as e:
                     self._log.exception("Can't append to history")
 
@@ -294,6 +306,16 @@ class Point:
             return self.history.dropna().iloc[-1]
         else:
             return self._history.value[-1]
+
+    @property
+    def lastTimestamp(self):
+        """
+        returns: last value read
+        """
+        if _PANDAS:
+            return self.history.dropna().index[-1]
+        else:
+            return self._history.timestamp[-1]
 
     @property
     def history(self):
@@ -614,6 +636,10 @@ class Point:
         )
 
     def update_description(self, value):
+        """
+        This will write to the BACnet point and modify the description
+        of the object
+        """
         self.properties.device.properties.network.send_text_write_request(
             addr=self.properties.device.properties.address,
             obj_type=self.properties.type,
@@ -622,6 +648,19 @@ class Point:
             prop_id="description",
         )
         self.properties.description = self.read_property("description")
+
+    def tag(self, tag_id, tag_value, lst=None):
+        """
+        Add tag to point. Those tags can be used to make queries,
+        add information, etc.
+        They will be included in InfluxDB is used.
+        """
+        if lst is None:
+            self.tag.append((tag_id, tag_value))
+        else:
+            for each in lst:
+                tag_id, tag_value = each
+                self.tag.append((tag_id, tag_value))
 
 
 # ------------------------------------------------------------------------------
@@ -690,7 +729,7 @@ class NumericPoint(Point):
                 val = float(self.value)
         except ValueError:
             self._log.error(
-                "Cannot convert value {}. Device probably disconnected".format(
+                "Cannot convert value {}. Device probably disconnected or the response is inconsistent".format(
                     self.value
                 )
             )
@@ -901,7 +940,7 @@ class EnumPoint(Point):
     def get_state(self, v):
         try:
             return self.properties.units_state[v - 1]
-        except TypeError:
+        except (TypeError, IndexError):
             return "n/a"
 
     @property
@@ -1031,6 +1070,97 @@ class StringPoint(Point):
 
     def __eq__(self, other):
         return self.value == other.value
+
+
+class DateTimePoint(Point):
+    """
+    Representation of DatetimeValue value
+    """
+
+    def __init__(
+        self,
+        device=None,
+        pointType=None,
+        pointAddress=None,
+        pointName=None,
+        description=None,
+        units_state=None,
+        presentValue=None,
+        history_size=None,
+    ):
+
+        Point.__init__(
+            self,
+            device=device,
+            pointType=pointType,
+            pointAddress=pointAddress,
+            pointName=pointName,
+            description=description,
+            presentValue=presentValue,
+            history_size=history_size,
+        )
+
+    @property
+    def units(self):
+        """
+        Characterstring value do not have units or state text
+        """
+        return None
+
+    def _trend(self, res):
+        # super()._trend(res)
+        return
+
+    @property
+    def value(self):
+        res = super().value
+        # self._trend(res)
+        year, month, day, dayofweek = res.date
+        hour, minutes, seconds, ms = res.time
+        res = datetime(year + 1900, month, day, hour, minutes, seconds)
+        return res
+
+    def _set(self, value):
+        # try:
+        #    if isinstance(value, str):
+        #        self._setitem(value)
+        #    elif isinstance(value, CharacterString):
+        #        self._setitem(value.value)
+        #    else:
+        #        raise ValueError("Value must be string or CharacterString")
+        # except (Exception, ValueError) as error:
+        #    raise WritePropertyException("Problem writing to device : {}".format(error))`
+        raise NotImplementedError("Writing to Datetime is not supported yet")
+
+    def __repr__(self):
+        try:
+            # polling = self.properties.device.properties.pollDelay
+            # if (polling < 90 and polling > 0) or self.cov_registered:
+            #    val = str(self.lastValue)
+            # else:
+            val = self.value
+        except ValueError:
+            self._log.error("Cannot convert value. Device probably disconnected")
+            # Probably disconnected
+            val = None
+        return "{}/{} : {}".format(
+            self.properties.device.properties.name, self.properties.name, val
+        )
+
+    def __eq__(self, other):
+        return self.value == other.value
+
+    def __ge__(self, other):
+        return self.value >= other.value
+
+    def __le__(self, other):
+        return self.value <= other.value
+
+    def __gt__(self, other):
+        return self.value > other.value
+
+    def __lt__(self, other):
+        return self.value < other.value
 
 
 # ------------------------------------------------------------------------------

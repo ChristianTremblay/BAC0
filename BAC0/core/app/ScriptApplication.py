@@ -52,7 +52,7 @@ from ..functions.Discover import NetworkServiceElementWithRequests
 
 class common_mixin:
     """
-    They take message coming from the network that are not generated from 
+    They take message coming from the network that are not generated from
     a request we made.
     """
 
@@ -415,7 +415,7 @@ class BAC0BBMDDeviceApplication(
         # on the UDP multiplexer
         self.bip = BIPBBMD(self.localAddress)
         self.annexj = AnnexJCodec()
-        self.mux = UDPMultiplexer(self.localAddress, noBroadcast=True)
+        self.mux = UDPMultiplexer(self.localAddress, noBroadcast=False)
 
         # bind the bottom layers
         # bind(self.bip, self.annexj, self.mux.annexJ)

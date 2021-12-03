@@ -41,3 +41,6 @@ obj300.bin
 wily-report.html
 make_doc.bat
 tests/manual_test_bokeh.py
+.env
+samples/pascal_stlouis.py
+samples/johnhensen.py

@@ -144,7 +144,7 @@ class VirtualPoint(VirtualPointProperties):
             )
 
     def _trend(self, res):
-        self._history.timestamp.append(datetime.now())
+        self._history.timestamp.append(datetime.now().astimezone())
         self._history.value.append(res)
         if self.properties.history_size is None:
             return

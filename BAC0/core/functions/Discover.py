@@ -124,11 +124,11 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
 
     def indication(self, adapter, npdu):
         if isinstance(npdu, IAmRouterToNetwork):
-            if isinstance(self._request, WhoIsRouterToNetwork):
-                address, netlist = str(npdu.pduSource), npdu.iartnNetworkList
-                self._log.info("{} router to {}".format(address, netlist))
-                self._iartn.append(address)
-                self._routing_table[address] = netlist
+            # if isinstance(self._request, WhoIsRouterToNetwork):
+            address, netlist = str(npdu.pduSource), npdu.iartnNetworkList
+            self._log.info("{} router to {}".format(address, netlist))
+            self._iartn.append(address)
+            self._routing_table[address] = netlist
             for each in npdu.iartnNetworkList:
                 self._learnedNetworks.add(int(each))
 

@@ -19,6 +19,8 @@ from .TaskManager import Task
 from ..core.utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
+class MultiplePollingFailures(Exception):
+    pass
 
 
 @note_and_log
@@ -33,10 +35,10 @@ class SimplePoll(Task):
         """
         :param point: (BAC0.core.device.Points.Point) name of the point to read
         :param delay: (int) Delay between reads in seconds, defaults = 10sec
-        
+
         A delay cannot be < 1sec
         This task is meant for single points, so BAC0 will allow short delays.
-        This way, a fast polling is available for some points in a device that 
+        This way, a fast polling is available for some points in a device that
         would not support segmentation.
 
         :returns: Nothing
@@ -56,7 +58,7 @@ class SimplePoll(Task):
 @note_and_log
 class DevicePoll(Task):
     """
-    Start a polling task to repeatedly read a list of points from a device using 
+    Start a polling task to repeatedly read a list of points from a device using
     ReadPropertyMultiple requests.
     """
 
@@ -64,12 +66,14 @@ class DevicePoll(Task):
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
         :param delay: (int) Delay between polls in seconds, defaults = 10sec
-        
-        A delay cannot be < 10sec 
+
+        A delay cannot be < 10sec
         For delays under 10s, use DeviceFastPoll class.
 
         :returns: Nothing
         """
+        self.failures = 0
+        self.MAX_FAILURES = 3
         self._device = weakref.ref(device)
         Task.__init__(self, name="{}_{}".format(prefix, name), delay=delay)
         self._counter = 0
@@ -79,7 +83,17 @@ class DevicePoll(Task):
         return self._device()
 
     def task(self):
+        if self.device.properties.ping_failures > 0:
+            self.device._log.warning(
+                "Ping failed, skipping polling for now. Resending a ping to speed up things"
+            )
+            self.device.ping()
+            return
         try:
+            if self.failures >= self.MAX_FAILURES:
+                raise MultiplePollingFailures(
+                    "Polling failed numerous times in a row... let see what we can do"
+                )
             self.device.read_multiple(
                 list(self.device.pollable_points_name), points_per_request=25
             )
@@ -89,25 +103,40 @@ class DevicePoll(Task):
                 if self.device.properties.clear_history_on_save:
                     self.device.clear_histories()
                 self._counter = 0
-        except AttributeError:
+            self.failures = 0
+        except AttributeError as e:
             # This error can be seen when defining a controller on a busy network...
             # When creation fail, polling is created and fail the first time...
             # So kill the task
-            self.stop()
-        except ValueError as e:
             self.device._log.error(
-                "Something is wrong with polling...stopping. Try setting off "
-                "segmentation. Error: {}".format(e)
+                "Something is wrong while creating the polling task."
+                "Error: {} | Type : {}".format(e, type(e))
             )
-            self.stop()
+            # self.stop()
+            self.failures += 1
+        except ValueError as e:
+            self.failures += 1
+            self.device._log.error(
+                "Polling results contains a wrong value. Probably a communication error. Will skip this result and wait for the next cycle.\n"
+                "Error: {} | Type : {}".format(e, type(e))
+            )
+            pass
+
+        except MultiplePollingFailures as e:
+            self.device._log.warning(
+                "Trying to ping device then we'll reset the number of failures and get back with polling"
+                "Error: {}| Type : {}".format(e, type(e))
+            )
+            if self.device.ping():
+                self.failures = 0
 
 
 @note_and_log
 class DeviceNormalPoll(DevicePoll):
     """
-    Start a normal polling task to repeatedly read a list of points from a device using 
+    Start a normal polling task to repeatedly read a list of points from a device using
     ReadPropertyMultiple requests.
-    
+
     Normal polling will limit the polling speed to 10 second minimum
 
     """
@@ -116,7 +145,7 @@ class DeviceNormalPoll(DevicePoll):
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
         :param delay: (int) Delay between polls in seconds, defaults = 10sec
-        
+
         :returns: Nothing
         """
         if delay < 10:
@@ -132,7 +161,7 @@ class DeviceNormalPoll(DevicePoll):
 @note_and_log
 class DeviceFastPoll(DevicePoll):
     """
-    Start a fast polling task to repeatedly read a list of points from a device using 
+    Start a fast polling task to repeatedly read a list of points from a device using
     ReadPropertyMultiple requests.
     Delay allowed will be 0 to 10 seconds
     Normal polling will limit the polling speed to 10 second minimum
@@ -145,7 +174,7 @@ class DeviceFastPoll(DevicePoll):
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
         :param delay: (int) Delay between polls in seconds, defaults = 1sec
-        
+
         :returns: Nothing
         """
         if delay < 0:

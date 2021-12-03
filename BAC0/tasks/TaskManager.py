@@ -66,10 +66,15 @@ class Manager:
                 )
                 cls.tasks.remove(task.id)
             except Exception as error:
-                cls._log.error(
-                    "Super Mega Giga big error {}. Removing task.".format(error)
-                )
-                cls.tasks.remove(task.id)
+                if task.name == "Ping Task":
+                    cls._log.warning(
+                        "Ping failed with error {} ({}).".format(error, task)
+                    )
+                else:
+                    cls._log.error(
+                        "Super Mega Giga big error {}. Removing task.".format(error)
+                    )
+                    cls.tasks.remove(task.id)
             else:
                 if not cls.manager.is_alive() and cls.enable:
                     cls._log.error(

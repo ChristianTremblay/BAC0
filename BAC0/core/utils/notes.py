@@ -69,16 +69,16 @@ def update_log_level(
         BAC0.log_level(file='warning', stdout='info', stderr='critical')
         # Debug in file and console... this is a bad idea as the console will be filled
         BAC0.log_level(file='debug', stdout='debug', stderr='critical')
-           
+
         # Preferably, debug in the file, keep console limited to info
         BAC0.log_level('debug')
         # OR
-        BAC0.log_level(file='debug', stdout='info', stderr='critical')   
-        
+        BAC0.log_level(file='debug', stdout='info', stderr='critical')
+
 
     Giving only one parameter will set file and console to the same level.
     I tend to keep stderr CRITICAL
-     
+
     """
     update_log_file_lvl = False
     update_stderr_lvl = False
@@ -204,16 +204,16 @@ def note_and_log(cls):
     logSaveFilePath = join(logUserPath, ".BAC0")
 
     logFile = join(logSaveFilePath, "BAC0.log")
-    if not os.path.exists(logSaveFilePath):
-        try:
+    try:
+        if not os.path.exists(logSaveFilePath):
             os.makedirs(logSaveFilePath)
-        except:
-            _PERMISSION_TO_WRITE = False
-    if _PERMISSION_TO_WRITE:
         fh = FileHandler(logFile)
         fh.set_name("file_handler")
         fh.setLevel(file_level)
         fh.setFormatter(formatter)
+
+    except OSError:
+        _PERMISSION_TO_WRITE = False
 
     ch.setFormatter(formatter)
     ch2.setFormatter(formatter)
@@ -264,7 +264,7 @@ def note_and_log(cls):
         if not note:
             raise ValueError("Provide something to log")
         note = "{} | {}".format(cls.logname, note)
-        cls._notes.timestamp.append(datetime.now())
+        cls._notes.timestamp.append(datetime.now().astimezone())
         cls._notes.notes.append(note)
         if log:
             cls.log(level, note)

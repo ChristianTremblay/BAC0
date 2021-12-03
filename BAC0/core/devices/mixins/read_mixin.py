@@ -19,8 +19,17 @@ from ...io.IOExceptions import (
     SegmentationNotSupported,
     BufferOverflow,
 )
-from ..Points import NumericPoint, BooleanPoint, EnumPoint, StringPoint, OfflinePoint
+from ..Points import (
+    NumericPoint,
+    BooleanPoint,
+    EnumPoint,
+    StringPoint,
+    OfflinePoint,
+    DateTimePoint,
+)
 from ..Trends import TrendLog
+
+# from ...functions.Schedule import Schedule
 
 # ------------------------------------------------------------------------------
 
@@ -40,7 +49,7 @@ def to_float_if_possible(val):
 
 def batch_requests(request, points_per_request):
     """
-    Generator for creating 'request batches'.  Each batch contains a maximum of "points_per_request" 
+    Generator for creating 'request batches'.  Each batch contains a maximum of "points_per_request"
     points to read.
     :params: request a list of point_name as a list
     :params: (int) points_per_request
@@ -62,9 +71,10 @@ def create_trendlogs(objList, device):
             tl = TrendLog(point_address, device, read_log_on_creation=False)
             if tl.properties.log_device_object_property is None:
                 raise TrendLogCreationException
-            ldop_type, ldop_addr = (
-                tl.properties.log_device_object_property.objectIdentifier
-            )
+            (
+                ldop_type,
+                ldop_addr,
+            ) = tl.properties.log_device_object_property.objectIdentifier
             ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
             trendlogs["{}_{}_{}".format(ldop_type, ldop_addr, ldop_prop)] = (
                 tl.properties.object_name,
@@ -74,6 +84,29 @@ def create_trendlogs(objList, device):
             device._log.error("Problem creating {}".format(each))
             continue
     return trendlogs
+
+
+# def create_schedules(objList, device):
+#    schedules = {}
+#    for each in retrieve_type(objList, "schedule"):
+#        point_address = str(each[1])
+#        try:
+#            tl = Schedule(point_address, device, read_log_on_creation=False)
+#            if tl.properties.log_device_object_property is None:
+#                raise TrendLogCreationException
+#            (
+#                ldop_type,
+#                ldop_addr,
+#            ) = tl.properties.log_device_object_property.objectIdentifier
+#            ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
+#            trendlogs["{}_{}_{}".format(ldop_type, ldop_addr, ldop_prop)] = (
+#                tl.properties.object_name,
+#                tl,
+#            )
+#        except TrendLogCreationException:
+#            device._log.error("Problem creating {}".format(each))
+#            continue
+#    return schedules
 
 
 class ReadUtilsMixin:
@@ -175,7 +208,11 @@ class DiscoveryUtilsMixin:
                 obj_cls=StringPoint, obj_type="characterstringValue", objList=objList
             )
         )
-
+        points.extend(
+            self._process_new_objects(
+                obj_cls=DateTimePoint, obj_type="datetimeValue", objList=objList
+            )
+        )
         # TrendLogs
         trendlogs = create_trendlogs(objList, self)
 
@@ -224,6 +261,8 @@ class RPMObjectsProcessing:
             prop_list = "objectName presentValue stateText description"
         elif obj_type == "characterstringValue":
             prop_list = "objectName presentValue"
+        elif obj_type == "datetimeValue":
+            prop_list = "objectName presentValue"
         else:
             raise ValueError("Unsupported objectType")
 
@@ -256,10 +295,11 @@ class RPMObjectsProcessing:
 
             pointName = point_infos[_find_propid_index("objectName")]
             presentValue = point_infos[_find_propid_index("presentValue")]
-            if obj_type == "analog":
-                presentValue = float(presentValue)
-            elif obj_type == "multi":
-                presentValue = int(presentValue)
+            if presentValue != None:
+                if obj_type == "analog":
+                    presentValue = float(presentValue)
+                elif obj_type == "multi":
+                    presentValue = int(presentValue)
             try:
                 point_description = point_infos[_find_propid_index("description")]
             except KeyError:

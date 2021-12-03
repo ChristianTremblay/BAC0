@@ -104,7 +104,7 @@ class OutOfServiceSet(Exception):
 
 class NetworkInterfaceException(Exception):
     """
-    This exception covers different network related exc eption (like finding IP 
+    This exception covers different network related exc eption (like finding IP
     or subnet mask...)
     """
 
@@ -145,7 +145,7 @@ class Timeout(Exception):
 
 class RemovedPointException(Exception):
     """
-    When defining a device from DB it may not be identical to the 
+    When defining a device from DB it may not be identical to the
     actual device.
     """
 
@@ -166,4 +166,8 @@ class DeviceNotConnected(Exception):
 
 
 class WrongParameter(Exception):
+    pass
+
+
+class NumerousPingFailures(Exception):
     pass

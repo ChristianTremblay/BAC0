@@ -15,9 +15,6 @@ import weakref
 
 import os.path
 
-# --- 3rd party modules ---
-import sqlite3
-
 try:
     import pandas as pd
 
@@ -49,7 +46,7 @@ from ..io.IOExceptions import (
 )
 
 # from ...bokeh.BokehRenderer import BokehPlot
-from ...sql.sql import SQLMixin
+from ...db.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
 from .mixins.read_mixin import ReadPropertyMultiple, ReadProperty
 from .Virtuals import VirtualPoint
@@ -77,7 +74,13 @@ class DeviceProperties(object):
         self.db_name = None
         self.segmentation_supported = True
         self.history_size = None
+        self.save_resampling = "1s"
+        self.clear_history_on_save = None
         self.bacnet_properties = {}
+        self.auto_save = None
+        self.fast_polling = False
+        self.vendor_id = 0
+        self.ping_failures = 0
 
     def __repr__(self):
         return "{}".format(self.asdict)
@@ -156,7 +159,7 @@ class Device(SQLMixin):
         self.properties.auto_save = auto_save
         self.properties.save_resampling = save_resampling
         self.properties.clear_history_on_save = clear_history_on_save
-        self.properties.default_history_size = history_size
+        self.properties.history_size = history_size
         self._reconnect_on_failure = reconnect_on_failure
 
         self.segmentation_supported = segmentation_supported
@@ -531,12 +534,14 @@ class DeviceConnected(Device):
             )
         )
         try:
-            self.properties.objects_list, self.points, self._list_of_trendlogs = self._discoverPoints(
-                self.custom_object_list
-            )
+            (
+                self.properties.objects_list,
+                self.points,
+                self._list_of_trendlogs,
+            ) = self._discoverPoints(self.custom_object_list)
             if self.properties.pollDelay > 0:
                 self.poll(delay=self.properties.pollDelay)
-            self.update_history_size(size=self.properties.default_history_size)
+            self.update_history_size(size=self.properties.history_size)
             # self.clear_histories()
         except NoResponseFromController as error:
             self._log.error("Cannot retrieve object list, disconnecting...")
@@ -726,7 +731,9 @@ class DeviceConnected(Device):
             request = "{} {} {} {}".format(
                 self.properties.address, _obj, _instance, _prop
             )
-            val = self.properties.network.read(request, vendor_id=0)
+            val = self.properties.network.read(
+                request, vendor_id=self.properties.vendor_id
+            )
         except KeyError as error:
             raise Exception("Unknown property : {}".format(error))
         return val
@@ -757,15 +764,15 @@ class DeviceConnected(Device):
     def update_bacnet_properties(self):
         """
         Retrieve bacnet properties for this device
-        To retrieve something general, forcing vendor id 0
+
         """
         try:
             res = self.properties.network.readMultiple(
                 "{} device {} all".format(
                     self.properties.address, str(self.properties.device_id)
                 ),
-                vendor_id=0,
-                prop_id_required=True,
+                vendor_id=self.properties.vendor_id,
+                show_property_name=True,
             )
             for each in res:
                 if not each:
@@ -794,6 +801,19 @@ class DeviceConnected(Device):
             prop_id="description",
         )
         self.properties.description = self.read_property("description")
+
+    def ping(self):
+        try:
+            if self.read_property("objectName") == self.properties.name:
+                self.properties.ping_failures = 0
+                return True
+            else:
+                self.properties.ping_failures += 1
+                return False
+        except NoResponseFromController as e:
+            self._log.error("Error in ping : {}".format(e))
+            self.properties.ping_failures += 1
+            return False
 
     def __repr__(self):
         return "{} / Connected".format(self.properties.name)
@@ -1061,6 +1081,10 @@ class DeviceFromDB(DeviceConnected):
         self.properties.serving_chart = {}
         self.properties.charts = []
         self.properties.multistates = self._props["multistates"]
+        self.properties.auto_save = self._props["auto_save"]
+        self.properties.save_resampling = self._props["save_resampling"]
+        self.properties.clear_history_on_save = self._props["clear_history_on_save"]
+        self.properties.default_history_size = self._props["history_size"]
         self._log.info("Device restored from db")
         self._log.info(
             'You can reconnect to network using : "device.connect(network=bacnet)"'

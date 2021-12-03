@@ -12,7 +12,7 @@ from ..core.utils.notes import note_and_log
 @note_and_log
 class Update_local_COV(Task):
     """
-    Start a task to validate each points inside local device and send 
+    Start a task to validate each points inside local device and send
     cov notifications to subscribers.
     """
 
@@ -20,8 +20,8 @@ class Update_local_COV(Task):
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
         :param delay: (int) Delay between polls in seconds, defaults = 10sec
-        
-        A delay cannot be < 10sec 
+
+        A delay cannot be < 10sec
         For delays under 10s, use DeviceFastPoll class.
 
         :returns: Nothing

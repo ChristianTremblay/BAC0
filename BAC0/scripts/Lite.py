@@ -40,6 +40,7 @@ from ..core.functions.Reinitialize import Reinitialize
 from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
 from ..core.functions.cov import CoV
 from ..core.functions.Schedule import Schedule
+from ..core.functions.Calendar import Calendar
 from ..core.functions.Text import TextMixin
 from ..core.io.Simulate import Simulation
 from ..core.devices.Points import Point
@@ -51,11 +52,20 @@ from ..core.io.IOExceptions import (
     NoResponseFromController,
     UnrecognizedService,
     Timeout,
+    NumerousPingFailures,
 )
+
 from ..tasks.RecurringTask import RecurringTask
 from ..tasks.UpdateCOV import Update_local_COV
 
 from ..infos import __version__ as version
+
+try:
+    from ..db.influxdb import InfluxDB, ConnectionError
+
+    INFLUXDB = True
+except ImportError:
+    INFLUXDB = False
 
 from bacpypes.pdu import Address
 
@@ -74,6 +84,7 @@ class Lite(
     DeviceCommunicationControl,
     CoV,
     Schedule,
+    Calendar,
     TextMixin,
 ):
     """
@@ -96,6 +107,8 @@ class Lite(
         bbmdTTL=0,
         bdtable=None,
         ping=True,
+        ping_delay=300,
+        db_params=None,
         **params
     ):
         self._log.info(
@@ -112,7 +125,7 @@ class Lite(
         # Ping task will deal with all registered device and disconnect them if they do not respond.
 
         self._ping_task = RecurringTask(
-            self.ping_registered_devices, delay=10, name="Ping Task"
+            self.ping_registered_devices, delay=ping_delay, name="Ping Task"
         )
         if ping:
             self._ping_task.start()
@@ -162,10 +175,28 @@ class Lite(
         self._update_local_cov_task.running = True
         self._log.info("Update Local COV Task started")
 
+        # Activate InfluxDB if params are available
+        if db_params and INFLUXDB:
+            try:
+                self.database = (
+                    InfluxDB(db_params)
+                    if db_params["name"].lower() == "influxdb"
+                    else None
+                )
+                self._log.info(
+                    "Connection made to InfluxDB bucket : {}".format(
+                        self.database.bucket
+                    )
+                )
+            except ConnectionError:
+                self._log.error(
+                    "Unable to connect to InfluxDB. Please validate parameters"
+                )
+
     @property
     def known_network_numbers(self):
         """
-        This function will read the table of known network numbers gathered by the 
+        This function will read the table of known network numbers gathered by the
         NetworkServiceElement. It will also look into the discoveredDevices property
         and add any network number that would not be in the NSE table.
         """
@@ -184,10 +215,10 @@ class Lite(
         """
         Discover is meant to be the function used to explore the network when we
         connect.
-        It will trigger whois request using the different options provided with 
+        It will trigger whois request using the different options provided with
         parameters.
 
-        By default, a local broadcast will be used. This is required as in big 
+        By default, a local broadcast will be used. This is required as in big
         BACnet network, global broadcast can lead to network flood and loss of data.
 
         If not parameters are given, BAC0 will try to :
@@ -231,7 +262,7 @@ class Lite(
                     if network < 65535:
                         _networks.append(network)
             elif networks == "known":
-                _networks = self.known_network_numbers
+                _networks = self.known_network_numbers.copy()
             else:
                 if networks < 65535:
                     _networks.append(networks)
@@ -272,48 +303,50 @@ class Lite(
 
     def ping_registered_devices(self):
         """
-        Registered device on a network (self) are kept in a list (registered_devices). 
+        Registered device on a network (self) are kept in a list (registered_devices).
         This function will allow pinging thoses device regularly to monitor them. In case
-        of disconnected devices, we will disconnect the device (which will save it). Then 
+        of disconnected devices, we will disconnect the device (which will save it). Then
         we'll ping again until reconnection, where the device will be bring back online.
 
         To permanently disconnect a device, an explicit device.disconnect(unregister=True [default value])
-        will be needed. This way, the device won't be in the registered_devices list and 
+        will be needed. This way, the device won't be in the registered_devices list and
         BAC0 won't try to ping it.
         """
         for each in self.registered_devices:
             if isinstance(each, RPDeviceConnected) or isinstance(
                 each, RPMDeviceConnected
             ):
-                device_connected = True
-            else:
-                device_connected = False
+                try:
+                    self._log.debug(
+                        "Ping {}|{}".format(
+                            each.properties.name, each.properties.address
+                        )
+                    )
+                    each.ping()
+                    if each.properties.ping_failures > 3:
+                        raise NumerousPingFailures
 
-            respond_to_ping = True
-            try:
-                self._log.debug(
-                    "Ping {}|{}".format(each.properties.name, each.properties.address)
-                )
+                except NumerousPingFailures:
+                    self._log.warning(
+                        "{}|{} is offline, disconnecting it.".format(
+                            each.properties.name, each.properties.address
+                        )
+                    )
+                    each.disconnect(unregister=False)
+
+            else:
                 device_id = each.properties.device_id
                 addr = each.properties.address
-                self.read("{} device {} objectName".format(addr, device_id))
-            except NoResponseFromController:
-                respond_to_ping = False
-
-            if not respond_to_ping and device_connected:
-                self._log.warning(
-                    "{}|{} is offline, disconnecting it.".format(
-                        each.properties.name, each.properties.address
+                name = self.read("{} device {} objectName".format(addr, device_id))
+                if name == each.properties.name:
+                    each.properties.ping_failures = 0
+                    self._log.info(
+                        "{}|{} is back online, reconnecting.".format(
+                            each.properties.name, each.properties.address
+                        )
                     )
-                )
-                each.disconnect(unregister=False)
-            elif not device_connected and respond_to_ping:
-                self._log.info(
-                    "{}|{} is back online, reconnecting.".format(
-                        each.properties.name, each.properties.address
-                    )
-                )
-                each.connect(network=self)
+                    each.connect(network=self)
+                    each.poll(delay=each.properties.pollDelay)
 
     @property
     def registered_devices(self):
@@ -371,9 +404,9 @@ class Lite(
     def devices(self):
         """
         This property will create a good looking table of all the discovered devices
-        seen on the network. 
+        seen on the network.
 
-        For that, some requests will be sent over the network to look for name, 
+        For that, some requests will be sent over the network to look for name,
         manufacturer, etc and in big network, this could be a long process.
         """
         lst = []

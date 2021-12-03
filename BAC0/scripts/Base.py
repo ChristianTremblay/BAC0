@@ -42,6 +42,7 @@ from ..core.app.ScriptApplication import (
 from .. import infos
 from ..core.io.IOExceptions import InitializationError, UnknownObjectError
 from ..core.functions.GetIPAddr import validate_ip_address
+from ..core.functions.TimeSync import TimeHandler
 from ..tasks.TaskManager import stopAllTasks
 
 from ..core.utils.notes import note_and_log
@@ -114,6 +115,8 @@ class Base:
 
         self._log.debug("Configurating app")
 
+        self.timehandler = TimeHandler()
+
         if not _COMPLETE:
             self._log.debug(
                 "To be able to run the web server, you must install pandas, bokeh, flask and flask_bootstrap"
@@ -168,6 +171,7 @@ class Base:
         self.firmwareRevision = firmwareRevision
         self._ric = {}
         self.subscription_contexts = {}
+        self.database = None
 
         try:
             self.startApp()
@@ -198,6 +202,8 @@ class Base:
                 applicationSoftwareVersion=infos.__version__,
                 protocolVersion=1,
                 protocolRevision=0,
+                utcOffset=self.timehandler.utcOffset(),
+                daylightSavingsStatus=self.timehandler.is_dst(),
             )
 
             # make an application
@@ -268,7 +274,7 @@ class Base:
         self._stopped = True  # Stop stack thread
         self.t.join()
         self._started = False
-        Base._used_ips.remove(self.localIPAddr)
+        Base._used_ips.discard(self.localIPAddr)
         self._log.info("BACnet stopped")
 
     def _startAppThread(self):
