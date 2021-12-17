@@ -5,7 +5,7 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device 
+read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device
 """
 # --- standard Python modules ---
 
@@ -381,7 +381,7 @@ class RPObjectsProcessing:
             presentValue = self.read_single(
                 "{} {} presentValue ".format(point_type, point_address)
             )
-            if obj_type == "analog":
+            if obj_type == "analog" and presentValue:
                 presentValue = float(presentValue)
 
             _newpoints.append(

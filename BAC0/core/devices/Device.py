@@ -883,11 +883,10 @@ class DeviceDisconnected(Device):
                 else:
                     segmentation_supported = True
 
-                if name:
-                    if segmentation_supported:
-                        self.new_state(RPMDeviceConnected)
-                    else:
-                        self.new_state(RPDeviceConnected)
+                if segmentation_supported:
+                    self.new_state(RPMDeviceConnected)
+                else:
+                    self.new_state(RPDeviceConnected)
 
             except SegmentationNotSupported:
                 self.segmentation_supported = False
