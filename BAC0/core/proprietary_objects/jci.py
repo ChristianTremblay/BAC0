@@ -3,7 +3,7 @@
 """
 Johnson Controls Proprietary Objects for FX/FEC Line
 """
-from bacpypes.datatypedata import (
+from bacpypes.primitivedata import (
     Real,
     Boolean,
     CharacterString,

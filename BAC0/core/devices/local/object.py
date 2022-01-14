@@ -2,7 +2,11 @@ from .decorator import bacnet_properties, make_commandable, create
 
 from ...utils.notes import note_and_log
 from ....scripts.Base import Base
-from ...app.ScriptApplication import BAC0Application, BAC0BBMDDeviceApplication, BAC0ForeignDeviceApplication
+from ...app.ScriptApplication import (
+    BAC0Application,
+    BAC0BBMDDeviceApplication,
+    BAC0ForeignDeviceApplication,
+)
 
 from bacpypes.object import (
     AnalogInputObject,
@@ -182,7 +186,11 @@ class ObjectFactory(object):
     def add_objects_to_application(self, app):
         if isinstance(app, Base):
             app = app.this_application
-        if not (isinstance(app, BAC0Application) or isinstance(app, BAC0ForeignDeviceApplication) or isinstance(app, BAC0BBMDDeviceApplication)):
+        if not (
+            isinstance(app, BAC0Application)
+            or isinstance(app, BAC0ForeignDeviceApplication)
+            or isinstance(app, BAC0BBMDDeviceApplication)
+        ):
             raise TypeError("Provide BAC0Application object or BAC0 Base instance")
         for k, v in self.objects.items():
             try:
