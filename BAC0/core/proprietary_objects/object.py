@@ -12,7 +12,7 @@ def create_proprietary_object(params):
     except:
         raise
     props = [
-        Property(v["obj_id"], v["primitive"], mutable=v["mutable"])
+        Property(v["obj_id"], v["datatype"], mutable=v["mutable"])
         for k, v in params["properties"].items()
     ]
 
