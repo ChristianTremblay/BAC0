@@ -78,13 +78,13 @@ class InfluxDB:
             _value = val
         elif "multi" in object_type:
             _string_value = "{}".format(val.split(":")[1])
-            _value = float(val.split(":")[0])
+            _value = int(val.split(":")[0])
         elif "binary" in object_type:
             try:
                 _string_value = "{}".format(units_state[int(val.split(":"[0]))])
             except:
                 _string_value = "{}".format(val.split(":")[1])
-            _value = float(val.split(":")[0])
+            _value = int(val.split(":")[0])
         else:
             _string_value = "{}".format(val)
             _value = val
