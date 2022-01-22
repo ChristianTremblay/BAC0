@@ -118,10 +118,12 @@ class TrendLog(TrendLogProperties):
             raise Exception("Problem reading trendLog informations: {}".format(error))
 
     def _total_record_count(self):
-        self.properties.total_record_count = self.properties.device.properties.network.read(
-            "{addr} trendLog {oid} totalRecordCount".format(
-                addr=self.properties.device.properties.address,
-                oid=str(self.properties.oid),
+        self.properties.total_record_count = (
+            self.properties.device.properties.network.read(
+                "{addr} trendLog {oid} totalRecordCount".format(
+                    addr=self.properties.device.properties.address,
+                    oid=str(self.properties.oid),
+                )
             )
         )
         return self.properties.total_record_count

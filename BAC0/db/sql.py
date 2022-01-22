@@ -135,15 +135,18 @@ class SQLMixin(object):
                         resampling_freq
                     ).mean()
                 else:
-                    #backup[point.properties.name] = point.history.resample(
+                    # backup[point.properties.name] = point.history.resample(
                     #    resampling_freq
-                    #).last()
+                    # ).last()
                     continue
 
             except Exception as error:
                 self._log.error(
-                    "Error in resampling {} | {} (probably not enough points)".format(
-                        point.properties.name, error
+                    "{} ({}) | Error in resampling {} | {} (probably not enough points)".format(
+                        self.properties.device.properties.name,
+                        self.properties.device.properties.address,
+                        point.properties.name,
+                        error,
                     )
                 )
                 if (
@@ -166,7 +169,7 @@ class SQLMixin(object):
                         resampling_freq
                     ).mean()
                 else:
-                    #backup[point.properties.name] = point.history
+                    # backup[point.properties.name] = point.history
                     continue
 
         df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in backup.items()]))

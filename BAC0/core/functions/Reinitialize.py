@@ -52,9 +52,9 @@ class Reinitialize:
 
         # build a request
         request = ReinitializeDeviceRequest()
-        request.reinitializedStateOfDevice = ReinitializeDeviceRequestReinitializedStateOfDevice.enumerations[
-            state
-        ]
+        request.reinitializedStateOfDevice = (
+            ReinitializeDeviceRequestReinitializedStateOfDevice.enumerations[state]
+        )
         request.pduDestination = Address(address)
         request.password = CharacterString(password)
 

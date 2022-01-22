@@ -811,7 +811,11 @@ class DeviceConnected(Device):
                 self.properties.ping_failures += 1
                 return False
         except NoResponseFromController as e:
-            self._log.error("Error in ping : {}".format(e))
+            self._log.error(
+                "{} ({})| Ping failure ({}).".format(
+                    self.properties.name, self.properties.address, e
+                )
+            )
             self.properties.ping_failures += 1
             return False
 

@@ -85,14 +85,18 @@ class DevicePoll(Task):
     def task(self):
         if self.device.properties.ping_failures > 0:
             self.device._log.warning(
-                "Ping failed, skipping polling for now. Resending a ping to speed up things"
+                "{} ({}) | Ping failed, skipping polling for now. Resending a ping to speed up things".format(
+                    self.device.properties.name, self.device.properties.address
+                )
             )
             self.device.ping()
             return
         try:
             if self.failures >= self.MAX_FAILURES:
                 raise MultiplePollingFailures(
-                    "Polling failed numerous times in a row... let see what we can do"
+                    "{} ({}) | Polling failed numerous times in a row... let see what we can do".format(
+                        self.device.properties.name, self.device.properties.address
+                    )
                 )
             self.device.read_multiple(
                 list(self.device.pollable_points_name), points_per_request=25
@@ -109,23 +113,35 @@ class DevicePoll(Task):
             # When creation fail, polling is created and fail the first time...
             # So kill the task
             self.device._log.error(
-                "Something is wrong while creating the polling task."
-                "Error: {} | Type : {}".format(e, type(e))
+                "{} ({}) | Something is wrong while creating the polling task.\nError: {} | Type : {}".format(
+                    self.device.properties.name,
+                    self.device.properties.address,
+                    e,
+                    type(e),
+                )
             )
             # self.stop()
             self.failures += 1
         except ValueError as e:
             self.failures += 1
             self.device._log.error(
-                "Polling results contains a wrong value. Probably a communication error. Will skip this result and wait for the next cycle.\n"
-                "Error: {} | Type : {}".format(e, type(e))
+                "{} ({}) | Polling results contains a wrong value. Probably a communication error. Will skip this result and wait for the next cycle.\nError: {} | Type : {}".format(
+                    self.device.properties.name,
+                    self.device.properties.address,
+                    e,
+                    type(e),
+                )
             )
             pass
 
         except MultiplePollingFailures as e:
             self.device._log.warning(
-                "Trying to ping device then we'll reset the number of failures and get back with polling"
-                "Error: {}| Type : {}".format(e, type(e))
+                "{} ({}) | Trying to ping device then we'll reset the number of failures and get back with polling\nError: {}| Type : {}".format(
+                    self.device.properties.name,
+                    self.device.properties.address,
+                    e,
+                    type(e),
+                )
             )
             if self.device.ping():
                 self.failures = 0
