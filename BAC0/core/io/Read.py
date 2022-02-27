@@ -178,7 +178,8 @@ class ReadProperty:
                 value = list(value.items())[0][1]
             except ValueError:
                 prop_id = apdu.propertyIdentifier
-            return (value, prop_id)
+            pdu_address = apdu.pduSource.addrAddr
+            return (value, prop_id, apdu.realPduSource.addrTuple, pdu_address)
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
