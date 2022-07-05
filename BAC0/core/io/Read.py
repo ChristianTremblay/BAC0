@@ -70,6 +70,7 @@ from .IOExceptions import (
 from bacpypes.object import registered_object_types
 
 from ..utils.notes import note_and_log
+from typing import List
 
 # ------------------------------------------------------------------------------
 
@@ -84,13 +85,13 @@ class ReadProperty:
 
     def read(
         self,
-        args,
-        arr_index=None,
-        vendor_id=0,
-        bacoid=None,
-        timeout=10,
-        show_property_name=False,
-    ):
+        args: str,
+        arr_index: None=None,
+        vendor_id: int=0,
+        bacoid: None=None,
+        timeout: int=10,
+        show_property_name: bool=False,
+    ) -> float:
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -234,8 +235,8 @@ class ReadProperty:
         return [self.read(args, arr_index=i) for i in range(1, nmbr_obj + 1)]
 
     def readMultiple(
-        self, args, request_dict=None, vendor_id=0, timeout=10, show_property_name=False
-    ):
+        self, args: str, request_dict: None=None, vendor_id: int=0, timeout: int=10, show_property_name: bool=False
+    ) -> List[float]:
         """Build a ReadPropertyMultiple request, wait for the answer and return the values
 
         :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
@@ -422,7 +423,7 @@ class ReadProperty:
                 values.append("")
                 return values
 
-    def build_rp_request(self, args, arr_index=None, vendor_id=0, bacoid=None):
+    def build_rp_request(self, args: List[str], arr_index: None=None, vendor_id: int=0, bacoid: None=None) -> ReadPropertyRequest:
         addr, obj_type, obj_inst, prop_id = args[:4]
         vendor_id = vendor_id
         bacoid = bacoid
@@ -456,7 +457,7 @@ class ReadProperty:
         self._log.debug("{:<20} {!r}".format("REQUEST", request))
         return request
 
-    def build_rpm_request(self, args, vendor_id=0):
+    def build_rpm_request(self, args: List[str], vendor_id: int=0) -> ReadPropertyMultipleRequest:
         """
         Build request from args
         """

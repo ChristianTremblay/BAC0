@@ -5,14 +5,14 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-SimpleApplication 
+SimpleApplication
 =================
 
-A basic BACnet application (bacpypes BIPSimpleApplication) for interacting with 
-the bacpypes BACnet stack.  It enables the base-level BACnet functionality 
+A basic BACnet application (bacpypes BIPSimpleApplication) for interacting with
+the bacpypes BACnet stack.  It enables the base-level BACnet functionality
 (a.k.a. device discovery) - meaning it can send & receive WhoIs & IAm messages.
 
-Additional functionality is enabled by inheriting this application, and then 
+Additional functionality is enabled by inheriting this application, and then
 extending it with more functions. [See BAC0.scripts for more examples of this.]
 
 """
@@ -24,7 +24,7 @@ from bacpypes.app import ApplicationIOController
 from bacpypes.pdu import Address
 from bacpypes.service.object import ReadWritePropertyMultipleServices
 from bacpypes.service.cov import ChangeOfValueServices
-from bacpypes.netservice import NetworkServiceAccessPoint, NetworkServiceElement
+from bacpypes.netservice import NetworkServiceAccessPoint
 from bacpypes.bvllservice import (
     BIPSimple,
     BIPForeign,
@@ -32,10 +32,10 @@ from bacpypes.bvllservice import (
     AnnexJCodec,
     UDPMultiplexer,
 )
-from bacpypes.apdu import SubscribeCOVRequest, SimpleAckPDU, RejectPDU, AbortPDU
+from bacpypes.apdu import IAmRequest, SimpleAckPDU
 
 from bacpypes.appservice import StateMachineAccessPoint, ApplicationServiceAccessPoint
-from bacpypes.comm import ApplicationServiceElement, bind, Client
+from bacpypes.comm import bind, Client
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
 
@@ -46,6 +46,8 @@ from bacpypes.service.object import ReadWritePropertyServices
 # --- this application's modules ---
 from ..utils.notes import note_and_log
 from ..functions.Discover import NetworkServiceElementWithRequests
+from bacpypes.local.device import LocalDeviceObject
+from typing import Any, Dict, Optional
 
 # ------------------------------------------------------------------------------
 
@@ -168,15 +170,15 @@ class BAC0Application(
 
     def __init__(
         self,
-        localDevice,
-        localAddress,
+        localDevice: LocalDeviceObject,
+        localAddress: Address,
         bbmdAddress=None,
-        bbmdTTL=0,
+        bbmdTTL: int = 0,
         deviceInfoCache=None,
         aseID=None,
-        iam_req=None,
-        subscription_contexts=None,
-    ):
+        iam_req: Optional[IAmRequest] = None,
+        subscription_contexts: Optional[Dict[Any, Any]] = None,
+    ) -> None:
 
         ApplicationIOController.__init__(
             self, localDevice, deviceInfoCache, aseID=aseID

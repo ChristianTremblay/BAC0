@@ -29,7 +29,7 @@ class HostIP:
     Special class to identify host IP informations
     """
 
-    def __init__(self, port=47808):
+    def __init__(self, port: int=47808) -> None:
         ip = self._findIPAddr()
         mask = self._findSubnetMask(ip)
         self._port = port
@@ -52,7 +52,7 @@ class HostIP:
         return "{}".format(self.interface.ip.compressed)
 
     @property
-    def address(self):
+    def address(self) -> Address:
         """
         IP Address using bacpypes Address format
         """
@@ -81,7 +81,7 @@ class HostIP:
         """
         return self._port
 
-    def _findIPAddr(self):
+    def _findIPAddr(self) -> str:
         """
         Retrieve the IP address connected to internet... used as
         a default IP address when defining Script
@@ -99,7 +99,7 @@ class HostIP:
             )
         return addr
 
-    def _findSubnetMask(self, ip):
+    def _findSubnetMask(self, ip: str) -> str:
         """
         Retrieve the broadcast IP address connected to internet... used as
         a default IP address when defining Script
@@ -129,7 +129,7 @@ class HostIP:
             return "255.255.255.0"
 
 
-def validate_ip_address(ip):
+def validate_ip_address(ip: Address) -> bool:
     result = True
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:

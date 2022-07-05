@@ -47,6 +47,7 @@ from ..io.IOExceptions import (
     WritePropertyException,
 )
 from ..utils.notes import note_and_log
+from typing import Dict, Union
 
 
 # ------------------------------------------------------------------------------
@@ -263,7 +264,7 @@ class Point:
             except ValueError:
                 return None
 
-    def _trend(self, res):
+    def _trend(self, res: float) -> None:
         # now = datetime.now(tz=pytz.UTC)
         now = datetime.now().astimezone()
         self._history.timestamp.append(now)
@@ -318,7 +319,7 @@ class Point:
             return self._history.timestamp[-1]
 
     @property
-    def history(self):
+    def history(self) -> Dict[datetime, Union[int, float, str]]:
         """
         returns : (pd.Series) containing timestamp and value of all readings
         """
@@ -518,7 +519,7 @@ class Point:
         """
         raise NotImplementedError("Must be overridden")
 
-    def poll(self, command="start", *, delay=10):
+    def poll(self, command="start", *, delay: int = 10) -> None:
         """
         Poll a point every x seconds (delay=x sec)
         Stopped by using point.poll('stop') or .poll(0) or .poll(False)
@@ -526,7 +527,7 @@ class Point:
         """
         if (
             str(command).lower() == "stop"
-            or command == False
+            or command is False
             or command == 0
             or delay == 0
         ):

@@ -10,13 +10,13 @@ Poll.py - create a Polling task to repeatedly read a point.
 
 # --- standard Python modules ---
 import weakref
-
-# --- 3rd party modules ---
-from bacpypes.core import deferred
+from typing import Union
 
 # --- this application's modules ---
 from .TaskManager import Task
 from ..core.utils.notes import note_and_log
+from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
+
 
 # ------------------------------------------------------------------------------
 class MultiplePollingFailures(Exception):
@@ -31,7 +31,7 @@ class SimplePoll(Task):
         device['point_name'].poll(delay=60)
     """
 
-    def __init__(self, point, *, delay=10):
+    def __init__(self, point, *, delay: int = 10) -> None:
         """
         :param point: (BAC0.core.device.Points.Point) name of the point to read
         :param delay: (int) Delay between reads in seconds, defaults = 10sec
@@ -62,7 +62,8 @@ class DevicePoll(Task):
     ReadPropertyMultiple requests.
     """
 
-    def __init__(self, device, delay=10, name="", prefix="basic_poll"):
+    def __init__(self, device: Union[RPMDeviceConnected, RPDeviceConnected],
+                 delay: int = 10, name: str = "", prefix: str = "basic_poll") -> None:
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
         :param delay: (int) Delay between polls in seconds, defaults = 10sec
@@ -79,10 +80,10 @@ class DevicePoll(Task):
         self._counter = 0
 
     @property
-    def device(self):
+    def device(self) -> Union[RPMDeviceConnected, RPDeviceConnected]:
         return self._device()
 
-    def task(self):
+    def task(self) -> None:
         if self.device.properties.ping_failures > 0:
             self.device._log.warning(
                 "{} ({}) | Ping failed, skipping polling for now. Resending a ping to speed up things".format(
