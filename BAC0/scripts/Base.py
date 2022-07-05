@@ -25,16 +25,15 @@ import sys
 # --- standard Python modules ---
 from threading import Thread
 
-from bacpypes.basetypes import DeviceStatus, ServicesSupported
+from bacpypes.basetypes import DeviceStatus
 from bacpypes.core import enable_sleeping
 from bacpypes.core import run as startBacnetIPApp
 from bacpypes.core import stop as stopBacnetIPApp
 from bacpypes.local.device import LocalDeviceObject
 from bacpypes.primitivedata import CharacterString
 
-from .. import infos
-
 # --- this application's modules ---
+from .. import infos
 from ..core.app.ScriptApplication import (
     BAC0Application,
     BAC0BBMDDeviceApplication,
