@@ -295,7 +295,7 @@ class Base:
             kwargs={"sigterm": None, "sigusr1": None}
         self.t = Thread(
             target=startBacnetIPApp,
-            kwargs,
+            kwargs=kwargs,
             daemon=True,
         )
         try:
