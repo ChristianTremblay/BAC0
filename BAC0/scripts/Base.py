@@ -111,6 +111,7 @@ class Base:
         vendorId=842,
         vendorName=CharacterString("SERVISYS inc."),
         description=CharacterString("http://christiantremblay.github.io/BAC0/"),
+        spin=None,
     ):
 
         self._log.debug("Configurating app")
@@ -124,7 +125,8 @@ class Base:
             self._log.debug(
                 "Those are not all installed so BAC0 will work in Lite mode only."
             )
-
+            
+        self._spin=spin
         self.response = None
         self._initialized = False
         self._started = False
@@ -287,7 +289,7 @@ class Base:
         enable_sleeping(0.0005)
         self.t = Thread(
             target=startBacnetIPApp,
-            kwargs={"sigterm": None, "sigusr1": None},
+            kwargs={"sigterm": None, "sigusr1": None, "spin":self._spin},
             daemon=True,
         )
         try:
