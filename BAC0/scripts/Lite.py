@@ -109,7 +109,6 @@ class Lite(
         ping=True,
         ping_delay=300,
         db_params=None,
-        spin=None,
         **params
     ):
         self._log.info(
