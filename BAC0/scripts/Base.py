@@ -128,7 +128,7 @@ class Base:
                 "Those are not all installed so BAC0 will work in Lite mode only."
             )
 
-        self._spin = spin if spin else 1
+        self._spin = spin
         self.response = None
         self._initialized = False
         self._started = False
@@ -289,9 +289,13 @@ class Base:
         """
         self._log.info("Starting app...")
         enable_sleeping(0.0005)
+        if self._spin:
+            kwargs={"sigterm": None, "sigusr1": None, "spin": self._spin}
+        else:
+            kwargs={"sigterm": None, "sigusr1": None}
         self.t = Thread(
             target=startBacnetIPApp,
-            kwargs={"sigterm": None, "sigusr1": None, "spin": self._spin},
+            kwargs=kwargs,
             daemon=True,
         )
         try:
