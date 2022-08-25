@@ -19,39 +19,41 @@ Class::
         def startApp()
         def stopApp()
 """
-# --- standard Python modules ---
-from threading import Thread
 import random
 import sys
 
-# --- 3rd party modules ---
+# --- standard Python modules ---
+from threading import Thread
 
+from bacpypes.basetypes import DeviceStatus, ServicesSupported
+from bacpypes.core import enable_sleeping
 from bacpypes.core import run as startBacnetIPApp
 from bacpypes.core import stop as stopBacnetIPApp
-from bacpypes.core import enable_sleeping
 from bacpypes.local.device import LocalDeviceObject
-from bacpypes.basetypes import ServicesSupported, DeviceStatus
 from bacpypes.primitivedata import CharacterString
+
+from .. import infos
 
 # --- this application's modules ---
 from ..core.app.ScriptApplication import (
     BAC0Application,
-    BAC0ForeignDeviceApplication,
     BAC0BBMDDeviceApplication,
+    BAC0ForeignDeviceApplication,
 )
-from .. import infos
-from ..core.io.IOExceptions import InitializationError, UnknownObjectError
 from ..core.functions.GetIPAddr import validate_ip_address
 from ..core.functions.TimeSync import TimeHandler
+from ..core.io.IOExceptions import InitializationError, UnknownObjectError
+from ..core.utils.notes import note_and_log
 from ..tasks.TaskManager import stopAllTasks
 
-from ..core.utils.notes import note_and_log
+# --- 3rd party modules ---
+
 
 try:
-    import pandas
     import bokeh
     import flask
     import flask_bootstrap
+    import pandas
 
     _COMPLETE = True
 except ImportError:
@@ -125,8 +127,8 @@ class Base:
             self._log.debug(
                 "Those are not all installed so BAC0 will work in Lite mode only."
             )
-            
-        self._spin=spin
+
+        self._spin = spin if spin else 1
         self.response = None
         self._initialized = False
         self._started = False
@@ -289,7 +291,7 @@ class Base:
         enable_sleeping(0.0005)
         self.t = Thread(
             target=startBacnetIPApp,
-            kwargs={"sigterm": None, "sigusr1": None, "spin":self._spin},
+            kwargs={"sigterm": None, "sigusr1": None, "spin": self._spin},
             daemon=True,
         )
         try:
