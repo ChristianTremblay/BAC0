@@ -18,6 +18,7 @@ extending it with more functions. [See BAC0.scripts for more examples of this.]
 """
 # --- standard Python modules ---
 from collections import defaultdict
+import typing as t
 
 # --- 3rd party modules ---
 from bacpypes.app import ApplicationIOController
@@ -224,7 +225,7 @@ class BAC0Application(
         # bind the BIP stack to the network, no network number
         self.nsap.bind(self.bip, address=self.localAddress)
 
-        self.i_am_counter = defaultdict(int)
+        self.i_am_counter: t.Dict[t.Tuple[str, int], int] = defaultdict(int)
         self.i_have_counter = defaultdict(int)
         self.who_is_counter = defaultdict(int)
 

@@ -80,7 +80,7 @@ class DevicePoll(Task):
         self._counter = 0
 
     @property
-    def device(self) -> Union[RPMDeviceConnected, RPDeviceConnected]:
+    def device(self) -> Union[RPMDeviceConnected, RPDeviceConnected, None]:
         return self._device()
 
     def task(self) -> None:

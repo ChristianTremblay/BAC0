@@ -13,36 +13,25 @@ from bokeh.models import (
     ColumnDataSource,
     HoverTool,
     Range1d,
-    Label,
-    LabelSet,
     LinearAxis,
     Legend,
     LegendItem,
-    Dropdown,
     MultiChoice,
     CustomJS,
 )
-from bokeh.models.widgets import DataTable, TableColumn, Div
-from bokeh.layouts import widgetbox, row, column, gridplot, widgetbox
-from bokeh.palettes import d3, viridis
+from bokeh.models.widgets import DataTable, TableColumn
+from bokeh.layouts import row, column
+from bokeh.palettes import d3
 from bokeh.io import curdoc
 from bokeh.application.handlers import Handler
-from bokeh.models.tools import CustomJSHover
 
-from functools import partial
 
-from tornado import gen
-
-import math
 import pandas as pd
 import weakref
 from queue import Queue
-from collections import deque
 
-from ..tasks.RecurringTask import RecurringTask
 from ..core.utils.notes import note_and_log
 from ..core.devices.Virtuals import VirtualPoint
-from ..core.devices.Trends import TrendLog
 
 
 @note_and_log

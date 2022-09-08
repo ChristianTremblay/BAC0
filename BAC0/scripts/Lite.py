@@ -128,16 +128,18 @@ class Lite(
         if ping:
             self._ping_task.start()
 
-        if ip is None:
+        if ip is None and port is not None:
             host = HostIP(port)
             ip_addr = host.address
         else:
             try:
                 ip, subnet_mask_and_port = ip.split("/")
                 try:
-                    mask, port = subnet_mask_and_port.split(":")
+                    mask_s, port_s = subnet_mask_and_port.split(":")
+                    mask = int(mask_s)
+                    port = int(port_s)
                 except ValueError:
-                    mask = subnet_mask_and_port
+                    mask = int(subnet_mask_and_port)
             except ValueError:
                 ip = ip
 
@@ -265,7 +267,7 @@ class Lite(
             elif networks == "known":
                 _networks = self.known_network_numbers.copy()
             else:
-                if networks < 65535:
+                if isinstance(networks, int) and networks < 65535:
                     _networks.append(networks)
 
         if _networks:
@@ -402,7 +404,7 @@ class Lite(
             del self._points_to_trend[oid]
 
     @property
-    def devices(self) -> t.List[t.Tuple[str, str, t.Any, t.Any]]:
+    def devices(self) -> t.List[t.Tuple[float, float, str, int]]:
         """
         This property will create a good looking table of all the discovered devices
         seen on the network.
@@ -411,7 +413,7 @@ class Lite(
         manufacturer, etc and in big network, this could be a long process.
         """
         lst = []
-        for device in list(self.discoveredDevices):
+        for device in list(self.discoveredDevices or {}):
             try:
                 deviceName, vendorName = self.readMultiple(
                     "{} device {} objectName vendorName".format(device[0], device[1])

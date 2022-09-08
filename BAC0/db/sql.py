@@ -5,7 +5,7 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-sql.py - 
+sql.py -
 """
 
 # --- standard Python modules ---
@@ -271,7 +271,7 @@ class SQLMixin(object):
         """
         Retrive point histories from SQL database
         """
-        his = self._read_from_sql('select * from "{}"'.format("history", db_name))
+        his = self._read_from_sql('select * from "{}"'.format("history"), db_name)
         his.index = his["index"].apply(Timestamp)
         return his.set_index("index")[point]
 

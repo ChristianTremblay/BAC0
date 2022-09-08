@@ -157,7 +157,7 @@ class TimeHandler(object):
 
     def utcOffset(self) -> float:
         "Returns UTC offset in minutes"
-        return round(self.now.astimezone().utcoffset().total_seconds() / 60)
+        return round(self.now.astimezone().utcoffset().total_seconds() / 60)  # type: ignore[union-attr]
 
     def is_dst(self) -> bool:
         return self.timezone.dst(self.now) != dt.timedelta(0)
