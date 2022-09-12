@@ -4,39 +4,21 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-"""
-ScheduleWrite.py - creation of ReinitializeDeviceRequest
-
-"""
 from ..io.Read import find_reason
 from ..io.IOExceptions import NoResponseFromController
 from ...core.utils.notes import note_and_log
 
 # --- standard Python modules ---
-import datetime as dt
+import datetime
+import typing as t
 
 # --- 3rd party modules ---
-from bacpypes.pdu import Address, GlobalBroadcast
-from bacpypes.primitivedata import Integer, Date, Time, CharacterString
-from bacpypes.basetypes import DateTime
+from bacpypes.pdu import Address
 from bacpypes.apdu import WritePropertyRequest, SimpleAckPDU
 from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
-from bacpypes.basetypes import (
-    DateTime,
-    DailySchedule,
-    TimeValue,
-    Time,
-    CalendarEntry,
-    DateRange,
-)
+from bacpypes.basetypes import CalendarEntry, DateRange
 from bacpypes.constructeddata import ArrayOf, Any
-from BAC0.core.io.IOExceptions import NoResponseFromController, WritePropertyException
-
-from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real, Enumerated
-
-from datetime import time as dt_time
-from datetime import datetime as dt
 
 
 @note_and_log
@@ -70,7 +52,7 @@ class Calendar:
                 if date_entry["recurring"]:
                     weekday = 255
                 else:
-                    weekday = dt.date(year, month, day).weekday() + 1
+                    weekday = datetime.date(year, month, day).weekday() + 1
                     if weekday > 7:
                         weekday = 1
                 _date = (year - 1900, month, day, weekday)
@@ -81,7 +63,7 @@ class Calendar:
                 year, month, day = (
                     int(x) for x in date_range_entry["startDate"].split("/")
                 )
-                weekday = dt.date(year, month, day).weekday() + 1
+                weekday = datetime.date(year, month, day).weekday() + 1
                 if weekday > 7:
                     weekday = 1
                 start_date = (year - 1900, month, day, weekday)
@@ -89,7 +71,7 @@ class Calendar:
                 year, month, day = (
                     int(x) for x in date_range_entry["endDate"].split("/")
                 )
-                weekday = dt.date(year, month, day).weekday() + 1
+                weekday = datetime.date(year, month, day).weekday() + 1
                 if weekday > 7:
                     weekday = 1
                 end_date = (year - 1900, month, day, weekday)
@@ -125,7 +107,7 @@ class Calendar:
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
                 self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))
+                    "Not an ack. | APDU : {} / {}".format(apdu, type(apdu))
                 )
                 return
 
@@ -164,10 +146,10 @@ class Calendar:
 
         return dict_calendar
 
-    def decode_dateList(self, dateList_object):
+    def decode_dateList(self, dateList_object) -> t.Dict[str, t.List[t.Dict]]:
         dict_calendar = {"dates": [], "dateRanges": []}
         for entry in dateList_object:
-            entry_dict = {}
+            entry_dict: t.Dict[str, t.Union[str, bool]] = {}
             if entry.date:
                 if entry.date[3] == 255:
                     recurring = True

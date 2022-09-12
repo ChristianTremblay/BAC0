@@ -10,8 +10,6 @@ Device.py - describe a BACnet Device
 """
 # --- standard Python modules ---
 from collections import namedtuple
-from datetime import datetime
-import weakref
 
 import os.path
 
@@ -21,10 +19,9 @@ try:
     _PANDAS = True
 except ImportError:
     _PANDAS = False
-import logging
 
 try:
-    from xlwings import Workbook, Sheet, Range, Chart
+    from xlwings import Workbook, Sheet, Range, Chart  # noqa E401
 
     _XLWINGS = True
 except ImportError:
@@ -176,7 +173,9 @@ class Device(SQLMixin):
         self._polling_task.task = None
         self._polling_task.running = False
 
+        self._find_overrides_progress = 0.0
         self._find_overrides_running = False
+        self._release_overrides_progress = 0.0
         self._release_overrides_running = False
 
         self.note("Controller initialized")
@@ -383,7 +382,7 @@ class Device(SQLMixin):
             )
             return
         lst = []
-        self._find_overrides_progress = 0
+        self._find_overrides_progress = 0.0
         self._find_overrides_running = True
         total = len(self.points)
 
@@ -400,11 +399,11 @@ class Device(SQLMixin):
             )
             self.properties.points_overridden = lst
             self._find_overrides_running = False
-            self._find_overrides_progress = 1
+            self._find_overrides_progress = 1.0
 
         self.do(_find_overrides)
 
-    def find_overrides_progress(self):
+    def find_overrides_progress(self) -> float:
         return self._find_overrides_progress
 
     def release_all_overrides(self, force=False):
@@ -416,7 +415,7 @@ class Device(SQLMixin):
             )
             return
         self._release_overrides_running = True
-        self._release_overrides_progress = 0
+        self._release_overrides_progress = 0.0
 
         def _release_all_overrides():
             self.find_overrides()
@@ -539,15 +538,15 @@ class DeviceConnected(Device):
                 self.points,
                 self._list_of_trendlogs,
             ) = self._discoverPoints(self.custom_object_list)
-            if self.properties.pollDelay > 0:
+            if self.properties.pollDelay is not None and self.properties.pollDelay > 0:
                 self.poll(delay=self.properties.pollDelay)
             self.update_history_size(size=self.properties.history_size)
             # self.clear_histories()
-        except NoResponseFromController as error:
+        except NoResponseFromController:
             self._log.error("Cannot retrieve object list, disconnecting...")
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
-        except IndexError as error:
+        except IndexError:
             if self._reconnect_on_failure:
                 self._log.error("Device creation failed... re-connecting")
                 self.new_state(DeviceDisconnected)
