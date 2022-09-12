@@ -13,8 +13,6 @@ from bacpypes.object import (
     MultiStateValueObject,
 )
 from bacpypes.basetypes import (
-    EngineeringUnits,
-    BinaryPV,
     Polarity,
     Boolean,
     EventState,
@@ -24,7 +22,7 @@ from bacpypes.basetypes import (
     Unsigned,
 )
 from bacpypes.constructeddata import ArrayOf
-from bacpypes.primitivedata import CharacterString, Real
+from bacpypes.primitivedata import CharacterString
 from .object import ObjectFactory
 
 """
@@ -51,8 +49,9 @@ def _create(definition, **kwargs):
     for k, v in kwargs.items():
         if k == "properties":
             for _k, _v in v.items():
-                _definition[k][_k] = _v
-        _definition[k] = v
+                _definition["properties"][_k] = _v  # type: ignore[index]
+        else:
+            _definition[k] = v
     return ObjectFactory.from_dict(_definition)
 
 

@@ -1,3 +1,4 @@
+import typing as t
 from . import const
 
 FILE_HEADER = const.FILE_HEADER
@@ -41,17 +42,19 @@ def convert(d, device_name=None):
         "MO": 8,
         "MV": 10,
     }
-    data = {}
+
     for each in d.points:
+        data: t.Dict[str, t.Union[str, int]] = {}
         name = device_name if device_name else d.properties.name
+        obj_type = OBJECT_TYPE[each.properties.type]
         data["name"] = "{}/{}".format(name, each.properties.name)
         data["group"] = ""
-        data["object_type"] = OBJECT_TYPE[each.properties.type]
+        data["object_type"] = obj_type
         data["object_instance"] = each.properties.address
         data["device_id"] = d.properties.device_id
-        data["data_type"] = DATATYPES[data["object_type"]]
+        data["data_type"] = DATATYPES[obj_type]
         data["object_property"] = 85
-        data["write_priority"] = WRITE_PRIORITY[data["object_type"]]
+        data["write_priority"] = WRITE_PRIORITY[obj_type]
         data["cov"] = "false"
         data["refresh_time"] = 1000
         data["access_mode"] = "READ"

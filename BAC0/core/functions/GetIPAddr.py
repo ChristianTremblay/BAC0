@@ -128,7 +128,8 @@ class HostIP:
             return "255.255.255.255"
         except ImportError:
             self._log.warning(
-                "Netifaces not installed on your system. BAC0 can't detect the subnet.\nPlease provide subnet for now, we'll consider 255.255.255.0 (/24).\nYou can install netifaces using 'pip install netifaces'."
+                "Netifaces not installed on your system. BAC0 can't detect the subnet.\nPlease provide subnet for now, "
+                "we'll consider 255.255.255.0 (/24).\nYou can install netifaces using 'pip install netifaces'."
             )
             return "255.255.255.0"
 
@@ -140,7 +141,7 @@ def validate_ip_address(ip: Address) -> bool:
         if not isinstance(ip, Address):
             raise ValueError("Provide Address as bacpypes.Address object")
         s.bind(ip.addrTuple)
-    except OSError as error:
+    except OSError:
         result = False
     finally:
         s.close()
