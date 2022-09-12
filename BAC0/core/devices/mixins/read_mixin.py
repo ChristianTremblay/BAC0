@@ -250,7 +250,7 @@ class DiscoveryUtilsMixin:
 
 class RPMObjectsProcessing:
     def _process_new_objects(
-        self, obj_cls=None, obj_type=None, objList=None, points_per_request=5
+        self, obj_cls=None, obj_type: str = '', objList=None, points_per_request=5
     ):
         """
         Template to generate BAC0 points instances from information coming from the network.
@@ -301,7 +301,7 @@ class RPMObjectsProcessing:
 
             pointName = point_infos[_find_propid_index("objectName")]
             presentValue = point_infos[_find_propid_index("presentValue")]
-            if presentValue != None:
+            if presentValue is not None:
                 if obj_type == "analog" or obj_type == "loop":
                     presentValue = float(presentValue)
                 elif obj_type == "multi":
@@ -353,7 +353,7 @@ class RPMObjectsProcessing:
 
 class RPObjectsProcessing:
     def _process_new_objects(
-        self, obj_cls=NumericPoint, obj_type="analog", objList=None
+        self, obj_cls=NumericPoint, obj_type: str = "analog", objList=None
     ):
         _newpoints = []
         for each in retrieve_type(objList, obj_type):

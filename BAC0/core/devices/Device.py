@@ -249,7 +249,7 @@ class Device(SQLMixin):
         :rtype: BAC0.core.devices.Points.Point
         """
         for each in self.points:
-            if each.properties.simulated:
+            if each.properties.simulated[0]:
                 yield each
 
     def _buildPointList(self):
