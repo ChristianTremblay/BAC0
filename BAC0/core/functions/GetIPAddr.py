@@ -11,16 +11,17 @@ Goal : not use 255.255.255.255 as a broadcast IP address as it is not
 accepted by every devices (>3.8.38.1 bacnet.jar of Tridium Jace for example)
 
 """
+import socket
+import ipaddress
+import typing as t
+
 from bacpypes.pdu import Address
 
 from ..io.IOExceptions import NetworkInterfaceException
-
-import socket
-import subprocess
-import ipaddress
-import sys
-import re
 from ...core.utils.notes import note_and_log
+
+
+DEFAULT_PORT = 47808
 
 
 @note_and_log
@@ -29,10 +30,13 @@ class HostIP:
     Special class to identify host IP informations
     """
 
-    def __init__(self, port: int=47808) -> None:
+    def __init__(self, port: t.Optional[int] = None) -> None:
         ip = self._findIPAddr()
         mask = self._findSubnetMask(ip)
-        self._port = port
+        if port is not None:
+            self._port = port
+        else:
+            self._port = DEFAULT_PORT
         self.interface = ipaddress.IPv4Interface("{}/{}".format(ip, mask))
 
     @property
@@ -90,7 +94,7 @@ class HostIP:
         """
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
-            s.connect(("google.com", 0))
+            s.connect(("google.com", 443))
             addr = s.getsockname()[0]
             s.close()
         except socket.error:

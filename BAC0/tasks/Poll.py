@@ -10,12 +10,14 @@ Poll.py - create a Polling task to repeatedly read a point.
 
 # --- standard Python modules ---
 import weakref
-from typing import Union
+import typing as t
 
 # --- this application's modules ---
 from .TaskManager import Task
 from ..core.utils.notes import note_and_log
-from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
+
+if t.TYPE_CHECKING:
+    from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
 
 
 # ------------------------------------------------------------------------------
@@ -62,7 +64,7 @@ class DevicePoll(Task):
     ReadPropertyMultiple requests.
     """
 
-    def __init__(self, device: Union[RPMDeviceConnected, RPDeviceConnected],
+    def __init__(self, device: t.Union['RPMDeviceConnected', 'RPDeviceConnected'],
                  delay: int = 10, name: str = "", prefix: str = "basic_poll") -> None:
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
@@ -80,7 +82,7 @@ class DevicePoll(Task):
         self._counter = 0
 
     @property
-    def device(self) -> Union[RPMDeviceConnected, RPDeviceConnected, None]:
+    def device(self) -> t.Union['RPMDeviceConnected', 'RPDeviceConnected', None]:
         return self._device()
 
     def task(self) -> None:

@@ -128,7 +128,7 @@ class Lite(
         if ping:
             self._ping_task.start()
 
-        if ip is None and port is not None:
+        if ip is None:
             host = HostIP(port)
             ip_addr = host.address
         else:
@@ -404,7 +404,7 @@ class Lite(
             del self._points_to_trend[oid]
 
     @property
-    def devices(self) -> t.List[t.Tuple[float, float, str, int]]:
+    def devices(self) -> t.List[t.Tuple[str, str, str, int]]:
         """
         This property will create a good looking table of all the discovered devices
         seen on the network.
@@ -436,7 +436,7 @@ class Lite(
                 self._log.warning("No response from {}".format(device))
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
-        return lst
+        return lst  # type: ignore[return-value]
 
     @property
     def trends(self) -> t.List[t.Any]:
