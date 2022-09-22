@@ -811,7 +811,11 @@ class DeviceConnected(Device):
                 self.properties.ping_failures += 1
                 return False
         except NoResponseFromController as e:
-            self._log.error("Error in ping : {}".format(e))
+            self._log.error(
+                "{} ({})| Ping failure ({}).".format(
+                    self.properties.name, self.properties.address, e
+                )
+            )
             self.properties.ping_failures += 1
             return False
 
@@ -883,11 +887,10 @@ class DeviceDisconnected(Device):
                 else:
                     segmentation_supported = True
 
-                if name:
-                    if segmentation_supported:
-                        self.new_state(RPMDeviceConnected)
-                    else:
-                        self.new_state(RPDeviceConnected)
+                if segmentation_supported:
+                    self.new_state(RPMDeviceConnected)
+                else:
+                    self.new_state(RPDeviceConnected)
 
             except SegmentationNotSupported:
                 self.segmentation_supported = False

@@ -165,6 +165,7 @@ class Complete(Lite, Stats_Mixin):
         ping=True,
         bokeh_server=True,
         flask_port=8111,
+        spin=None,
         **params
     ):
         Lite.__init__(
@@ -175,6 +176,7 @@ class Complete(Lite, Stats_Mixin):
             bbmdAddress=bbmdAddress,
             bbmdTTL=bbmdTTL,
             ping=ping,
+            spin=spin,
             **params
         )
         self.flask_port = flask_port

@@ -7,14 +7,22 @@ from bacpypes.object import (
 
 # Prochaine étape : créer une focntion qui va lire "all" et se redéfinir dynamiquement
 def create_proprietary_object(params):
+
     try:
         _validate_params(params)
     except:
         raise
-    props = [
-        Property(v["obj_id"], v["primitive"], mutable=v["mutable"])
-        for k, v in params["properties"].items()
-    ]
+    # Prevent breaking change for existing code, since issue #311
+    try:
+        props = [
+            Property(v["obj_id"], v["datatype"], mutable=v["mutable"])
+            for k, v in params["properties"].items()
+        ]
+    except KeyError:
+        props = [
+            Property(v["obj_id"], v["primitive"], mutable=v["mutable"])
+            for k, v in params["properties"].items()
+        ]
 
     new_class = type(
         params["name"],

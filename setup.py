@@ -2,6 +2,7 @@
 Setup.py
 """
 from setuptools import setup
+
 from BAC0 import infos
 
 requirements = ["bacpypes", "colorama"]
@@ -30,6 +31,7 @@ setup(
         "BAC0.tasks",
         "BAC0.web",
         "BAC0.db",
+        "BAC0.tools",
     ],
     include_package_data=True,
     requires=requirements,

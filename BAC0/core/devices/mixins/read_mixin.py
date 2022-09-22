@@ -5,7 +5,7 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device 
+read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device
 """
 # --- standard Python modules ---
 
@@ -205,6 +205,11 @@ class DiscoveryUtilsMixin:
         )
         points.extend(
             self._process_new_objects(
+                obj_cls=NumericPoint, obj_type="loop", objList=objList
+            )
+        )
+        points.extend(
+            self._process_new_objects(
                 obj_cls=StringPoint, obj_type="characterstringValue", objList=objList
             )
         )
@@ -259,6 +264,8 @@ class RPMObjectsProcessing:
             prop_list = "objectName presentValue inactiveText activeText description"
         elif obj_type == "multi":
             prop_list = "objectName presentValue stateText description"
+        elif obj_type == "loop":
+            prop_list = "objectName presentValue description"
         elif obj_type == "characterstringValue":
             prop_list = "objectName presentValue"
         elif obj_type == "datetimeValue":
@@ -296,7 +303,7 @@ class RPMObjectsProcessing:
             pointName = point_infos[_find_propid_index("objectName")]
             presentValue = point_infos[_find_propid_index("presentValue")]
             if presentValue != None:
-                if obj_type == "analog":
+                if obj_type == "analog" or obj_type == "loop":
                     presentValue = float(presentValue)
                 elif obj_type == "multi":
                     presentValue = int(presentValue)
@@ -362,6 +369,10 @@ class RPObjectsProcessing:
                 units_state = self.read_single(
                     "{} {} stateText ".format(point_type, point_address)
                 )
+            elif obj_type == "loop":
+                units_state = self.read_single(
+                    "{} {} units ".format(point_type, point_address)
+                )
             elif obj_type == "binary":
                 units_state = (
                     (
@@ -381,7 +392,7 @@ class RPObjectsProcessing:
             presentValue = self.read_single(
                 "{} {} presentValue ".format(point_type, point_address)
             )
-            if obj_type == "analog":
+            if (obj_type == "analog" or obj_type == "loop") and presentValue:
                 presentValue = float(presentValue)
 
             _newpoints.append(

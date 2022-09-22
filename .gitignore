@@ -44,3 +44,7 @@ tests/manual_test_bokeh.py
 .env
 samples/pascal_stlouis.py
 samples/johnhensen.py
+/samples/Climatic-chamber-.ipynb
+samples/bartinglmqtt.py
+samples/bartling2.py
+samples/ferkelcode.py

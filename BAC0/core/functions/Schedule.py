@@ -109,7 +109,7 @@ class Schedule:
                 if dict_schedule["states"] == ["inactive", "active"]:
                     return Integer(dict_schedule["states"][v])
                 else:
-                    return Integer(dict_schedule["states"][v] - 1)
+                    return Enumerated(dict_schedule["states"][v] - 1)
 
         daily_schedules = []
         for day in Schedule.days:
@@ -261,7 +261,8 @@ class Schedule:
                 presentValue = presentValue.value
         else:
             schedule["states"] = _state_text
-            presentValue = "{}".format(presentValue.value)
+            if presentValue is not None:
+                presentValue = "{}".format(presentValue.value)
         schedule["reliability"] = reliability
         schedule["priority"] = priority
         schedule["presentValue"] = presentValue
@@ -281,12 +282,14 @@ class Schedule:
             hour, minute, second, hundreth = each.time
             _time = dt_time(hour, minute, second, hundreth).strftime("%H:%M")
             try:
-                if states == ["inactive", "active"]:
-                    _value = states[int(each.value.value)]
-                elif states == "analog":
-                    _value = float(each.value.value)
-                else:
-                    _value = states[int(each.value.value) - offset_MV]
+                _value = None
+                if each.value.value is not None:
+                    if states == ["inactive", "active"]:
+                        _value = states[int(each.value.value)]
+                    elif states == "analog":
+                        _value = float(each.value.value)
+                    else:
+                        _value = states[int(each.value.value) - offset_MV]
                 events.append((_time, _value))
             except IndexError:
                 events.append((_time, "??? ({})".format(each.value.value)))

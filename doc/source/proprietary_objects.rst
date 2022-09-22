@@ -59,7 +59,7 @@ do so, a special dictionary need to be declared in this form ::
         "objectType": "type",
         "bacpypes_type": Object,
         "properties": {
-            "NameOfProprietaryProp": {"obj_id": 1110, "primitive": Boolean, "mutable": True},
+            "NameOfProprietaryProp": {"obj_id": 1110, "datatype": Boolean, "mutable": True},
         },
     }
 
@@ -70,7 +70,7 @@ do so, a special dictionary need to be declared in this form ::
     # properties : list of proprietary properties to add 
     #     name of the property (for reference)
     #     obj_id : instance of the property, usually an integer
-    #     primitive : the kind of data for this property. Refer to `bacpypes.primitivedata`
+    #     datatype : the kind of data for this property. Refer to `bacpypes.primitivedata` or `bacpypes.constructeddata`
     #     mutable : true = writable, default to false
 
 
@@ -147,8 +147,8 @@ them all in the same new class (the example presents 2 new properties).
         "objectType": "device",
         "bacpypes_type": DeviceObject,
         "properties": {
-            "SupervisorOnline": {"obj_id": 3653, "primitive": Boolean, "mutable": True},
-            "Model": {"obj_id": 1320, "primitive": CharacterString, "mutable": False},
+            "SupervisorOnline": {"obj_id": 3653, "datatype": Boolean, "mutable": True},
+            "Model": {"obj_id": 1320, "datatype": CharacterString, "mutable": False},
         },
     }
 

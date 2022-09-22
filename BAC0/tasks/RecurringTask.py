@@ -28,12 +28,13 @@ class RecurringTask(Task):
         self.fnc_args = None
         if isinstance(fnc, tuple):
             self.func, self.fnc_args = fnc
-        elif hasattr(fnc, "__call__") :
+        elif hasattr(fnc, "__call__"):
             self.func = fnc
         else:
-            raise ValueError("You must pass a function or a tuple (function,args) to this...")
+            raise ValueError(
+                "You must pass a function or a tuple (function,args) to this..."
+            )
         Task.__init__(self, name=name, delay=delay)
-        
 
     def task(self):
         if self.fnc_args:
