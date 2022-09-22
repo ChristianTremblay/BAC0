@@ -21,20 +21,21 @@ Class::
 """
 import random
 import sys
+import typing as t
 
 # --- standard Python modules ---
 from threading import Thread
 
-from bacpypes.basetypes import DeviceStatus, ServicesSupported
+from bacpypes.basetypes import DeviceStatus
 from bacpypes.core import enable_sleeping
 from bacpypes.core import run as startBacnetIPApp
 from bacpypes.core import stop as stopBacnetIPApp
 from bacpypes.local.device import LocalDeviceObject
 from bacpypes.primitivedata import CharacterString
-
-from .. import infos
+from bacpypes.pdu import Address
 
 # --- this application's modules ---
+from .. import infos
 from ..core.app.ScriptApplication import (
     BAC0Application,
     BAC0BBMDDeviceApplication,
@@ -95,7 +96,7 @@ class Base:
     :param segmentationSupported='segmentedBoth':
     """
 
-    _used_ips = set()
+    _used_ips: t.Set[Address] = set()
 
     def __init__(
         self,
@@ -165,7 +166,7 @@ class Base:
         self.modelName = modelName
         self.description = description
 
-        self.discoveredDevices = None
+        self.discoveredDevices: t.Optional[t.Dict[t.Tuple[str, int], int]] = None
         self.systemStatus = DeviceStatus(1)
 
         self.bbmdAddress = bbmdAddress

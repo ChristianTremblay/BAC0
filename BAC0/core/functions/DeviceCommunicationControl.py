@@ -9,12 +9,10 @@ Reinitialize.py - creation of ReinitializeDeviceRequest
 
 """
 # --- standard Python modules ---
-import datetime as dt
 
 # --- 3rd party modules ---
-from bacpypes.pdu import Address, GlobalBroadcast
-from bacpypes.primitivedata import Date, Time, CharacterString, Unsigned16
-from bacpypes.basetypes import DateTime
+from bacpypes.pdu import Address
+from bacpypes.primitivedata import CharacterString, Unsigned16
 from bacpypes.apdu import (
     DeviceCommunicationControlRequest,
     DeviceCommunicationControlRequestEnableDisable,
@@ -25,9 +23,6 @@ from bacpypes.core import deferred
 
 from ...core.io.Read import find_reason
 from ..io.IOExceptions import (
-    SegmentationNotSupported,
-    ReadPropertyException,
-    ReadPropertyMultipleException,
     NoResponseFromController,
     ApplicationNotStarted,
 )
@@ -81,7 +76,7 @@ class DeviceCommunicationControl:
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
                 self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))
+                    "Not an ack. | APDU : {} / {}".format(apdu, type(apdu))
                 )
                 return
 

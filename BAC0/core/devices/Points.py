@@ -9,25 +9,16 @@ Points.py - Definition of points so operations on Read results are more convenie
 """
 
 # --- standard Python modules ---
-from datetime import datetime, timedelta, timezone
-import pytz
+from datetime import datetime, timedelta
 from collections import namedtuple
 import time
-
-from bacpypes.primitivedata import (
-    CharacterString,
-    Null,
-    Atomic,
-    Integer,
-    Unsigned,
-    Real,
-    Enumerated,
-)
+import typing as t
 
 # --- 3rd party modules ---
+from bacpypes.primitivedata import CharacterString
 try:
     import pandas as pd
-    from pandas.io import sql
+    from pandas.io import sql  # noqa E401
 
     try:
         from pandas import Timestamp
@@ -60,12 +51,12 @@ class PointProperties(object):
     def __init__(self):
         self.device = None
         self.name = None
-        self.type = None
-        self.address = None
+        self.type = ''
+        self.address = -1
         self.description = None
         self.units_state = None
-        self.simulated = (False, None)
-        self.overridden = (False, None)
+        self.simulated: t.Tuple[bool, t.Optional[int]] = (False, None)
+        self.overridden: t.Tuple[bool, t.Optional[int]] = (False, None)
         self.priority_array = None
         self.history_size = None
         self.bacnet_properties = {}
@@ -136,7 +127,7 @@ class Point:
 
         self.tags = tags
 
-        self._cache = {"_previous_read": (None, None)}
+        self._cache: t.Dict[str, t.Tuple[t.Optional[datetime], t.Any]] = {"_previous_read": (None, None)}
 
     @property
     def value(self):
@@ -160,7 +151,7 @@ class Point:
                 vendor_id=self.properties.device.properties.vendor_id,
             )
             # self._trend(res)
-        except Exception as e:
+        except Exception:
             raise
         self._cache["_previous_read"] = (datetime.now().astimezone(), res)
         return res
@@ -263,8 +254,7 @@ class Point:
             except ValueError:
                 return None
 
-    def _trend(self, res):
-        # now = datetime.now(tz=pytz.UTC)
+    def _trend(self, res: float) -> None:
         now = datetime.now().astimezone()
         self._history.timestamp.append(now)
         self._history.value.append(res)
@@ -280,14 +270,14 @@ class Point:
             if len(self._history.timestamp) >= self.properties.history_size:
                 try:
                     self._history.timestamp = self._history.timestamp[
-                        -self.properties.history_size :
+                        -self.properties.history_size :  # noqa E203
                     ]
                     self._history.value = self._history.value[
-                        -self.properties.history_size :
+                        -self.properties.history_size :  # noqa E203
                     ]
                     assert len(self._history.timestamp) == len(self._history.value)
 
-                except Exception as e:
+                except Exception:
                     self._log.exception("Can't append to history")
 
     @property
@@ -318,7 +308,7 @@ class Point:
             return self._history.timestamp[-1]
 
     @property
-    def history(self):
+    def history(self) -> t.Dict[datetime, t.Union[int, float, str]]:
         """
         returns : (pd.Series) containing timestamp and value of all readings
         """
@@ -428,7 +418,7 @@ class Point:
         if (
             not self.properties.simulated[0]
             or self.properties.simulated[1] != value
-            or force != False
+            or force is not False
         ):
             self.properties.device.properties.network.sim(
                 "{} {} {} presentValue {}".format(
@@ -518,7 +508,7 @@ class Point:
         """
         raise NotImplementedError("Must be overridden")
 
-    def poll(self, command="start", *, delay=10):
+    def poll(self, command="start", *, delay: int = 10) -> None:
         """
         Poll a point every x seconds (delay=x sec)
         Stopped by using point.poll('stop') or .poll(0) or .poll(False)
@@ -526,7 +516,7 @@ class Point:
         """
         if (
             str(command).lower() == "stop"
-            or command == False
+            or command is False
             or command == 0
             or delay == 0
         ):
@@ -734,7 +724,12 @@ class NumericPoint(Point):
                 )
             )
             # Probably disconnected
-            val = None
+            return "{}/{} : (n/a) {}".format(
+                self.properties.device.properties.name,
+                self.properties.name,
+                self.properties.units_state,
+            )
+
         return "{}/{} : {:.2f} {}".format(
             self.properties.device.properties.name,
             self.properties.name,
@@ -939,7 +934,8 @@ class EnumPoint(Point):
 
     def get_state(self, v):
         try:
-            return self.properties.units_state[v - 1]
+            # errors caught below
+            return self.properties.units_state[v - 1]  # type: ignore[index]
         except (TypeError, IndexError):
             return "n/a"
 
@@ -972,7 +968,7 @@ class EnumPoint(Point):
         try:
             if isinstance(value, int):
                 self._setitem(value)
-            elif str(value) in self.properties.units_state:
+            elif str(value) in self.properties.units_state:  # type: ignore[operator]
                 self._setitem(self.properties.units_state.index(value) + 1)
             elif str(value).lower() == "auto":
                 self._setitem("auto")
@@ -1187,8 +1183,8 @@ class OfflinePoint(Point):
 
         self.properties.description = props["description"]
         self.properties.units_state = props["units_state"]
-        self.properties.simulated = "Offline"
-        self.properties.overridden = "Offline"
+        self.properties.simulated = (True, None)
+        self.properties.overridden = (False, None)
 
         if "analog" in self.properties.type:
             self.new_state(NumericPointOffline)
@@ -1311,7 +1307,7 @@ class EnumPointOffline(EnumPoint):
         returns: (str) Enum state value
         """
         try:
-            value = self.properties.units_state[int(self.lastValue) - 1]
+            value = self.properties.units_state[int(self.lastValue) - 1]  # type: ignore[index]
         except IndexError:
             value = "unknown"
         except ValueError:

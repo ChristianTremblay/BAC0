@@ -54,7 +54,7 @@ try:
 
         connect = gui
     else:
-        connect = lite
+        connect = lite  # type: ignore[assignment, misc]
         web = lambda: print(
             "All features not available to run BAC0.web(). Some modules are missing (flask, flask-bootstrap, bokeh, pandas). See docs for details. To start BAC0, use BAC0.lite()"
         )

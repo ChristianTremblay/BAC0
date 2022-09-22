@@ -21,10 +21,9 @@ Read.py - creation of ReadProperty and ReadPropertyMultiple requests
 """
 
 # --- standard Python modules ---
+import typing as t
 
 # --- 3rd party modules ---
-from bacpypes.debugging import bacpypes_debugging
-
 from bacpypes.pdu import Address
 from bacpypes.object import get_object_class, get_datatype
 from bacpypes.apdu import (
@@ -49,7 +48,7 @@ from bacpypes.apdu import (
     RangeBySequenceNumber,
     RangeByTime,
 )
-from bacpypes.primitivedata import Tag, ObjectIdentifier, Unsigned, Date, Time
+from bacpypes.primitivedata import Tag, Unsigned, Date, Time
 from bacpypes.constructeddata import Array
 from bacpypes.iocb import IOCB, TimeoutError
 from bacpypes.core import deferred
@@ -65,13 +64,15 @@ from .IOExceptions import (
     SegmentationNotSupported,
     UnknownPropertyError,
     UnknownObjectError,
-    BufferOverflow,
 )
 from bacpypes.object import registered_object_types
 
 from ..utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
+
+
+ReadValue = t.Union[float, str, t.List]
 
 
 @note_and_log
@@ -84,13 +85,13 @@ class ReadProperty:
 
     def read(
         self,
-        args,
-        arr_index=None,
-        vendor_id=0,
+        args: str,
+        arr_index: t.Optional[int] = None,
+        vendor_id: int = 0,
         bacoid=None,
-        timeout=10,
-        show_property_name=False,
-    ):
+        timeout: int = 10,
+        show_property_name: bool = False,
+    ) -> t.Union[ReadValue, t.Tuple[ReadValue, str], None]:
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -113,9 +114,6 @@ class ReadProperty:
         args_split = args.split()
 
         self.log_title("Read property", args_split)
-
-        vendor_id = vendor_id
-        bacoid = bacoid
 
         try:
             # build ReadProperty request
@@ -141,7 +139,7 @@ class ReadProperty:
             if not isinstance(apdu, ReadPropertyACK):  # expecting an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
                 self._log.debug("Not an ack. | APDU : {}".format(apdu))
-                return
+                return None
 
             # find the datatype
             datatype = get_datatype(
@@ -173,12 +171,12 @@ class ReadProperty:
 
             try:
                 int(apdu.propertyIdentifier)
-                objid = apdu.objectIdentifier
                 prop_id = "@prop_{}".format(apdu.propertyIdentifier)
                 value = list(value.items())[0][1]
             except ValueError:
                 prop_id = apdu.propertyIdentifier
             return (value, prop_id)
+
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
@@ -189,17 +187,20 @@ class ReadProperty:
                 if reason == "unknownProperty":
                     if "description" in args:
                         self._log.warning(
-                            "The description property is not implemented in the device. Using a default value for internal needs."
+                            "The description property is not implemented in the device. "
+                            "Using a default value for internal needs."
                         )
                         return "Property Not Implemented"
                     elif "inactiveText" in args:
                         self._log.warning(
-                            "The inactiveText property is not implemented in the device. Using a default value of Off for internal needs."
+                            "The inactiveText property is not implemented in the device. "
+                            "Using a default value of Off for internal needs."
                         )
                         return "Off"
                     elif "activeText" in args:
                         self._log.warning(
-                            "The activeText property is not implemented in the device. Using a default value of On for internal needs."
+                            "The activeText property is not implemented in the device. "
+                            "Using a default value of On for internal needs."
                         )
                         return "On"
                     else:
@@ -218,6 +219,7 @@ class ReadProperty:
                     raise NoResponseFromController(
                         "APDU Abort Reason : {}".format(reason)
                     )
+        return None
 
     def _split_the_read_request(self, args, arr_index):
         """
@@ -230,12 +232,13 @@ class ReadProperty:
         number of properties without supporting segmentation
         (FieldServers are a good example)
         """
+        # parameter arr_index appears to be unused in this function?
         nmbr_obj = self.read(args, arr_index=0)
-        return [self.read(args, arr_index=i) for i in range(1, nmbr_obj + 1)]
+        return [self.read(args, arr_index=i) for i in range(1, nmbr_obj + 1)]  # type: ignore
 
     def readMultiple(
-        self, args, request_dict=None, vendor_id=0, timeout=10, show_property_name=False
-    ):
+        self, args: str, request_dict=None, vendor_id: int = 0, timeout: int = 10, show_property_name: bool = False
+    ) -> t.Union[t.Dict, t.List[t.Tuple[t.Any, str]]]:
         """Build a ReadPropertyMultiple request, wait for the answer and return the values
 
         :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
@@ -257,9 +260,9 @@ class ReadProperty:
         if request_dict is not None:
             request = self.build_rpm_request_from_dict(request_dict, vendor_id)
         else:
-            args = args.split()
-            request = self.build_rpm_request(args, vendor_id=vendor_id)
-            self.log_title("Read Multiple", args)
+            args_list = args.split()
+            request = self.build_rpm_request(args_list, vendor_id=vendor_id)
+            self.log_title("Read Multiple", args_list)
 
         values = []
         dict_values = {}
@@ -281,12 +284,14 @@ class ReadProperty:
         if iocb.ioResponse:  # successful response
             apdu = iocb.ioResponse
 
+            # note: the return types along this pass don't appear to be consistent
+            # not sure if this is a real problem or not, leaving as-is and ignoring errors
             if not isinstance(apdu, ReadPropertyMultipleACK):  # expecting an ACK
                 self._log.debug("{:<20}".format("not an ack"))
                 self._log.warning(
-                    "Not an Ack. | APDU : {} / {}".format((apdu, type(apdu)))
+                    "Not an Ack. | APDU : {} / {}".format(apdu, type(apdu))
                 )
-                return
+                return  # type: ignore[return-value]
 
             # loop through the results
             for result in apdu.listOfReadAccessResults:
@@ -378,7 +383,7 @@ class ReadProperty:
                                         _classname
                                     ].items():
                                         if v["obj_id"] == propertyIdentifier:
-                                            prop_id = (k, propertyIdentifier)
+                                            prop_id = (k, propertyIdentifier)  # type: ignore
                                 if isinstance(value, dict):
                                     value = list(value.items())[0][1]
 
@@ -397,6 +402,8 @@ class ReadProperty:
             else:
                 return values
 
+        # note: the return types along this pass don't appear to be consistent
+        # not sure if this is a real problem or not, leaving as-is and ignoring errors
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
@@ -414,32 +421,36 @@ class ReadProperty:
                 raise UnknownObjectError("Unknown object {}".format(args))
             elif reason == "unknownProperty":
                 self._log.warning("Unknown property {}".format(args))
-
-                values.append("")
+                values.append("")  # type: ignore[arg-type]
                 return values
             else:
                 self._log.warning("No response from controller {}".format(reason))
-                values.append("")
+                values.append("")  # type: ignore[arg-type]
                 return values
 
-    def build_rp_request(self, args, arr_index=None, vendor_id=0, bacoid=None):
-        addr, obj_type, obj_inst, prop_id = args[:4]
-        vendor_id = vendor_id
-        bacoid = bacoid
+        return values
 
+    def __get_obj_type(self, obj_type: str, vendor_id) -> int:
         if obj_type.isdigit():
-            obj_type = int(obj_type)
+            return int(obj_type)
         elif "@obj_" in obj_type:
-            obj_type = int(obj_type.split("_")[1])
+            return int(obj_type.split("_")[1])
         elif not get_object_class(obj_type, vendor_id=vendor_id):
             raise ValueError("Unknown object type : {}".format(obj_type))
+        return obj_type  # type: ignore
 
-        obj_inst = int(obj_inst)
+    def build_rp_request(self, args: t.List[str], arr_index=None, vendor_id: int = 0, bacoid=None) -> ReadPropertyRequest:
+        addr, obj_type_str, obj_inst_str, prop_id_str = args[:4]
 
-        if prop_id.isdigit():
-            prop_id = int(prop_id)
-        elif "@prop_" in prop_id:
-            prop_id = int(prop_id.split("_")[1])
+        obj_type = self.__get_obj_type(obj_type_str, vendor_id)
+        obj_inst = int(obj_inst_str)
+
+        if prop_id_str.isdigit():
+            prop_id = int(prop_id_str)
+        elif "@prop_" in prop_id_str:
+            prop_id = int(prop_id_str.split("_")[1])
+        else:
+            prop_id = prop_id_str  # type: ignore
 
         # datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
 
@@ -456,7 +467,7 @@ class ReadProperty:
         self._log.debug("{:<20} {!r}".format("REQUEST", request))
         return request
 
-    def build_rpm_request(self, args, vendor_id=0):
+    def build_rpm_request(self, args: t.List[str], vendor_id: int = 0) -> ReadPropertyMultipleRequest:
         """
         Build request from args
         """
@@ -468,16 +479,10 @@ class ReadProperty:
 
         read_access_spec_list = []
         while i < len(args):
-            obj_type = args[i]
+            obj_type_str = args[i]
             i += 1
 
-            if obj_type.isdigit():
-                obj_type = int(obj_type)
-            elif "@obj_" in obj_type:
-                obj_type = int(obj_type.split("_")[1])
-            elif not get_object_class(obj_type, vendor_id=vendor_id):
-                raise ValueError("Unknown object type : {}".format(obj_type))
-
+            obj_type = self.__get_obj_type(obj_type_str, vendor_id)
             obj_inst = int(args[i])
             i += 1
 
@@ -489,7 +494,7 @@ class ReadProperty:
                 if prop_id not in PropertyIdentifier.enumerations:
                     try:
                         if "@prop_" in prop_id:
-                            prop_id = int(prop_id.split("_")[1])
+                            prop_id = int(prop_id.split("_")[1])  # type: ignore[assignment]
                             self._log.debug(
                                 "Proprietary property : {} | {} -> Vendor : {}".format(
                                     obj_type, prop_id, vendor_id
@@ -713,7 +718,7 @@ class ReadProperty:
             if not isinstance(apdu, ReadRangeACK):  # expecting an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
                 self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))
+                    "Not an ack. | APDU : {} / {}".format(apdu, type(apdu))
                 )
                 return
 
@@ -777,13 +782,13 @@ class ReadProperty:
                         "APDU Abort Reason : {}".format(reason)
                     )
 
-    def read_priority_array(self, addr, obj, obj_instance):
+    def read_priority_array(self, addr, obj, obj_instance) -> t.List:
         pa = self.read("{} {} {} priorityArray".format(addr, obj, obj_instance))
         res = [pa]
         for each in range(1, 17):
-            _pa = pa[each]
+            _pa = pa[each]  # type: ignore[index]
             for k, v in _pa.__dict__.items():
-                if v != None:
+                if v is not None:
                     res.append(v)
         return res
 
@@ -807,7 +812,7 @@ def find_reason(apdu):
         except IndexError:
             return code
     except KeyError as err:
-        return "KeyError: {} has no key {0!r}".format(type(apdu), err.args[0])
+        return "KeyError: {} has no key {!r}".format(type(apdu), err.args[0])
 
 
 def cast_datatype_from_tag(propertyValue, obj_id, prop_id):

@@ -5,11 +5,12 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-RecurringTask.py - execute a recurring task 
+RecurringTask.py - execute a recurring task
 """
 
 from .TaskManager import Task
 from ..core.utils.notes import note_and_log
+from typing import Callable, Union, Tuple, Any
 
 
 @note_and_log
@@ -18,7 +19,10 @@ class RecurringTask(Task):
     Start a recurring task (a function passed)
     """
 
-    def __init__(self, fnc, delay=60, name="recurring"):
+    def __init__(self,
+                 fnc: Union[Tuple[Callable, Any], Callable],
+                 delay: int = 60,
+                 name: str = "recurring") -> None:
         """
         :param fnc: a function or a tuple (function, args)
         :param delay: (int) Delay between reads executions
@@ -36,7 +40,7 @@ class RecurringTask(Task):
             )
         Task.__init__(self, name=name, delay=delay)
 
-    def task(self):
+    def task(self) -> None:
         if self.fnc_args:
             self.func(self.fnc_args)
         else:

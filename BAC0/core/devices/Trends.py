@@ -4,37 +4,18 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-"""
-Points.py - Definition of points so operations on Read results are more convenient.
-"""
 
 # --- standard Python modules ---
-from datetime import datetime
-from collections import namedtuple
-import time
-from itertools import islice
-
-
 # --- 3rd party modules ---
 try:
     import pandas as pd
-    from pandas.io import sql
-
-    try:
-        from pandas import Timestamp
-    except ImportError:
-        from pandas.lib import Timestamp
     _PANDAS = True
 except ImportError:
     _PANDAS = False
 
-from bacpypes.object import TrendLogObject
 from bacpypes.primitivedata import Date, Time
 
 # --- this application's modules ---
-from ...tasks.Poll import SimplePoll as Poll
-from ...tasks.Match import Match, Match_Value
-from ..io.IOExceptions import NoResponseFromController, UnknownPropertyError
 from ..utils.notes import note_and_log
 
 
@@ -56,7 +37,6 @@ class TrendLogProperties(object):
         self.record_count = 0
         self.total_record_count = 0
         self.log_interval = 0
-        self.description = None
         self.statusFlags = None
         self.status_flags = {
             "in_alarm": False,
@@ -196,7 +176,7 @@ class TrendLog(TrendLogProperties):
     @property
     def history(self):
         self.read_log_buffer()
-        if not _PANDAS:
+        if not _PANDAS or self.properties._df is None:
             return dict(
                 zip(
                     self.properties._history_components["index"],

@@ -10,8 +10,9 @@ the web interface.
 from collections import namedtuple
 from datetime import datetime
 import logging
-from logging import FileHandler
+from logging import FileHandler, Logger
 import sys
+import typing as t
 
 import os
 from os.path import expanduser, join
@@ -26,7 +27,7 @@ except ImportError:
 
 
 class LogList:
-    LOGGERS = []
+    LOGGERS: t.List[Logger] = []
 
 
 def convert_level(level):

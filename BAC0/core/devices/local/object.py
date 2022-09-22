@@ -7,30 +7,14 @@ from ...app.ScriptApplication import (
     BAC0BBMDDeviceApplication,
     BAC0ForeignDeviceApplication,
 )
-
-from bacpypes.object import (
-    AnalogInputObject,
-    AnalogValueObject,
-    BinaryValueObject,
-    Property,
-    register_object_type,
-    registered_object_types,
-    DatePatternValueObject,
-    ReadableProperty,
-    WritableProperty,
-    OptionalProperty,
-)
 from bacpypes.basetypes import (
-    EngineeringUnits,
-    DateTime,
     PriorityArray,
-    StatusFlags,
     Reliability,
-    Polarity,
 )
 
+import typing as t
 from collections import namedtuple
-from colorama import Fore, Back, Style
+from colorama import Fore
 
 
 @note_and_log
@@ -55,14 +39,14 @@ class ObjectFactory(object):
 
     """
 
-    instances = {}
+    instances: t.Dict[str, t.Set] = {}
 
-    definition = namedtuple(
+    definition = namedtuple(  # type: ignore[name-match]
         "Definition",
         "name, objectType, instance, properties, description, presentValue, is_commandable, relinquish_default",
     )
 
-    objects = {}
+    objects: t.Dict[str, t.Any] = {}
     # In the future... should think about a way to store relinquish default values because on a restart
     # those should be restored.
 
