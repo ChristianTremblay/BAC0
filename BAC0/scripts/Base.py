@@ -291,9 +291,9 @@ class Base:
         self._log.info("Starting app...")
         enable_sleeping(0.0005)
         if self._spin:
-            kwargs={"sigterm": None, "sigusr1": None, "spin": self._spin}
+            kwargs = {"sigterm": None, "sigusr1": None, "spin": self._spin}
         else:
-            kwargs={"sigterm": None, "sigusr1": None}
+            kwargs = {"sigterm": None, "sigusr1": None}
         self.t = Thread(
             target=startBacnetIPApp,
             kwargs=kwargs,
