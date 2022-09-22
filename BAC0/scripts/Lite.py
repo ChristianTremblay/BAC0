@@ -210,10 +210,11 @@ class Lite(
         return self.this_application.nse._learnedNetworks
 
     def discover(
-        self, networks: t.Union[str, t.List[int], int] = "known",
+        self,
+        networks: t.Union[str, t.List[int], int] = "known",
         limits: t.Tuple[int, int] = (0, 4194303),
         global_broadcast: bool = False,
-        reset: bool = False
+        reset: bool = False,
     ):
         """
         Discover is meant to be the function used to explore the network when we
@@ -300,7 +301,9 @@ class Lite(
                 found.append(each)
         return found
 
-    def register_device(self, device: t.Union[RPDeviceConnected, RPMDeviceConnected]) -> None:
+    def register_device(
+        self, device: t.Union[RPDeviceConnected, RPMDeviceConnected]
+    ) -> None:
         oid = id(device)
         self._registered_devices[oid] = device
 
@@ -385,7 +388,9 @@ class Lite(
         else:
             raise TypeError("Please provide point containing history")
 
-    def remove_trend(self, point_to_remove: t.Union[Point, TrendLog, VirtualPoint]) -> None:
+    def remove_trend(
+        self, point_to_remove: t.Union[Point, TrendLog, VirtualPoint]
+    ) -> None:
         """
         Remove point from the list of histories that will be handled by Bokeh
 

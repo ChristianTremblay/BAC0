@@ -19,10 +19,12 @@ class RecurringTask(Task):
     Start a recurring task (a function passed)
     """
 
-    def __init__(self,
-                 fnc: Union[Tuple[Callable, Any], Callable],
-                 delay: int = 60,
-                 name: str = "recurring") -> None:
+    def __init__(
+        self,
+        fnc: Union[Tuple[Callable, Any], Callable],
+        delay: int = 60,
+        name: str = "recurring",
+    ) -> None:
         """
         :param fnc: a function or a tuple (function, args)
         :param delay: (int) Delay between reads executions

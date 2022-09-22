@@ -102,9 +102,7 @@ class WriteProperty:
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format(apdu, type(apdu))
-                )
+                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -279,9 +277,7 @@ class WriteProperty:
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format(apdu, type(apdu))
-                )
+                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort

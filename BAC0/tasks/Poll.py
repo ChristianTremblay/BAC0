@@ -64,8 +64,13 @@ class DevicePoll(Task):
     ReadPropertyMultiple requests.
     """
 
-    def __init__(self, device: t.Union['RPMDeviceConnected', 'RPDeviceConnected'],
-                 delay: int = 10, name: str = "", prefix: str = "basic_poll") -> None:
+    def __init__(
+        self,
+        device: t.Union["RPMDeviceConnected", "RPDeviceConnected"],
+        delay: int = 10,
+        name: str = "",
+        prefix: str = "basic_poll",
+    ) -> None:
         """
         :param device: (BAC0.core.devices.Device.Device) device to poll
         :param delay: (int) Delay between polls in seconds, defaults = 10sec
@@ -82,7 +87,7 @@ class DevicePoll(Task):
         self._counter = 0
 
     @property
-    def device(self) -> t.Union['RPMDeviceConnected', 'RPDeviceConnected', None]:
+    def device(self) -> t.Union["RPMDeviceConnected", "RPDeviceConnected", None]:
         return self._device()
 
     def task(self) -> None:

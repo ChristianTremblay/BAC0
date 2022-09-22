@@ -9,6 +9,7 @@
 # --- 3rd party modules ---
 try:
     import pandas as pd
+
     _PANDAS = True
 except ImportError:
     _PANDAS = False

@@ -139,7 +139,7 @@ class TimeHandler(object):
     of timezone.
     """
 
-    def __init__(self, tz: str="America/Montreal") -> None:
+    def __init__(self, tz: str = "America/Montreal") -> None:
         self.set_timezone(tz)
 
     def set_timezone(self, tz: str) -> None:

@@ -16,6 +16,7 @@ import typing as t
 
 # --- 3rd party modules ---
 from bacpypes.primitivedata import CharacterString
+
 try:
     import pandas as pd
     from pandas.io import sql  # noqa E401
@@ -51,7 +52,7 @@ class PointProperties(object):
     def __init__(self):
         self.device = None
         self.name = None
-        self.type = ''
+        self.type = ""
         self.address = -1
         self.description = None
         self.units_state = None
@@ -127,7 +128,9 @@ class Point:
 
         self.tags = tags
 
-        self._cache: t.Dict[str, t.Tuple[t.Optional[datetime], t.Any]] = {"_previous_read": (None, None)}
+        self._cache: t.Dict[str, t.Tuple[t.Optional[datetime], t.Any]] = {
+            "_previous_read": (None, None)
+        }
 
     @property
     def value(self):

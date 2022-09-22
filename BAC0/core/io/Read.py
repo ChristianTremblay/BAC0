@@ -237,7 +237,12 @@ class ReadProperty:
         return [self.read(args, arr_index=i) for i in range(1, nmbr_obj + 1)]  # type: ignore
 
     def readMultiple(
-        self, args: str, request_dict=None, vendor_id: int = 0, timeout: int = 10, show_property_name: bool = False
+        self,
+        args: str,
+        request_dict=None,
+        vendor_id: int = 0,
+        timeout: int = 10,
+        show_property_name: bool = False,
     ) -> t.Union[t.Dict, t.List[t.Tuple[t.Any, str]]]:
         """Build a ReadPropertyMultiple request, wait for the answer and return the values
 
@@ -439,7 +444,9 @@ class ReadProperty:
             raise ValueError("Unknown object type : {}".format(obj_type))
         return obj_type  # type: ignore
 
-    def build_rp_request(self, args: t.List[str], arr_index=None, vendor_id: int = 0, bacoid=None) -> ReadPropertyRequest:
+    def build_rp_request(
+        self, args: t.List[str], arr_index=None, vendor_id: int = 0, bacoid=None
+    ) -> ReadPropertyRequest:
         addr, obj_type_str, obj_inst_str, prop_id_str = args[:4]
 
         obj_type = self.__get_obj_type(obj_type_str, vendor_id)
@@ -467,7 +474,9 @@ class ReadProperty:
         self._log.debug("{:<20} {!r}".format("REQUEST", request))
         return request
 
-    def build_rpm_request(self, args: t.List[str], vendor_id: int = 0) -> ReadPropertyMultipleRequest:
+    def build_rpm_request(
+        self, args: t.List[str], vendor_id: int = 0
+    ) -> ReadPropertyMultipleRequest:
         """
         Build request from args
         """
@@ -717,9 +726,7 @@ class ReadProperty:
 
             if not isinstance(apdu, ReadRangeACK):  # expecting an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format(apdu, type(apdu))
-                )
+                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
                 return
 
             # find the datatype

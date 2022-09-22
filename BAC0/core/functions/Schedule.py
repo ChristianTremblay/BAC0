@@ -133,9 +133,7 @@ class Schedule:
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format(apdu, type(apdu))
-                )
+                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
                 return
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
@@ -246,9 +244,7 @@ class Schedule:
                 for i, each in enumerate(_state_text):  # type: ignore[arg-type]
                     sched_states[each] = i + offset_MV
                 presentValue = "{} ({})".format(
-                    list(sched_states.keys())[
-                        int(presentValue.value) - offset_MV
-                    ],
+                    list(sched_states.keys())[int(presentValue.value) - offset_MV],
                     presentValue.value,
                 )
             except TypeError:

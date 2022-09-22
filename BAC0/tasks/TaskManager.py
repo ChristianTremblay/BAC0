@@ -62,7 +62,9 @@ class Manager:
                 time.sleep(1)
             except DeviceNotConnected as error:
                 cls._log.warning(
-                    "Device disconnected with error {}. Removing task ({}).".format(error, task)
+                    "Device disconnected with error {}. Removing task ({}).".format(
+                        error, task
+                    )
                 )
                 cls.tasks.remove(task.id)
             except Exception as error:
