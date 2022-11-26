@@ -307,10 +307,8 @@ JCIAnalogOutputObject = {
     "properties": {
         "Offline": {"obj_id": 913, "datatype": Boolean, "mutable": False},
         "SABusAddr": {"obj_id": 3645, "datatype": Unsigned, "mutable": False},
-        "InputRangeLow": {"obj_id": 1293, "datatype": Real, "mutable": True},
-        "InputRangeHigh": {"obj_id": 1294, "datatype": Real, "mutable": True},
-        "OutputRangeLow": {"obj_id": 1295, "datatype": Real, "mutable": True},
-        "OutputRangeHigh": {"obj_id": 1296, "datatype": Real, "mutable": True},
+        "MIN_OUT_VALUE": {"obj_id": 652, "datatype": Real, "mutable": True},
+        "MAX_OUT_VALUE": {"obj_id": 653, "datatype": Real, "mutable": True},
         "polarity": {"obj_id": "polarity", "datatype": Enumerated, "mutable": True},
         "stroketime": {"obj_id": 3478, "datatype": Real, "mutable": True},
     },
