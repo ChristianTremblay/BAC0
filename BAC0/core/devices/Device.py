@@ -131,7 +131,7 @@ class Device(SQLMixin):
         network=None,
         *,
         poll=10,
-        from_backup=None,
+        from_backup=None,  # filename of backup
         segmentation_supported=True,
         object_list=None,
         auto_save=False,
@@ -164,7 +164,7 @@ class Device(SQLMixin):
 
         # self.db = None
         # Todo : find a way to normalize the name of the db
-        self.properties.db_name = ""
+        self.properties.db_name = None
 
         self.points = []
         self._list_of_trendlogs = {}
