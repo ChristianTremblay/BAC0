@@ -460,11 +460,15 @@ class DeviceConnected(Device):
     def disconnect(self, save_on_disconnect=True, unregister=True):
         self._log.info("Wait while stopping polling")
         self.poll(command="stop")
-        if save_on_disconnect:
-            self.save()
         if unregister:
             self.properties.network.unregister_device(self)
-        self.new_state(DeviceFromDB)
+            self.properties.network = None
+        if save_on_disconnect:
+            self.save()
+        if self.properties.db_name:
+            self.new_state(DeviceFromDB)
+        else:
+            self.new_state(DeviceDisconnected)
 
     def connect(self, *, db=None):
         """
@@ -855,14 +859,21 @@ class DeviceDisconnected(Device):
     def _init_state(self):
         self.connect()
 
-    def connect(self, *, db=None):
+    def connect(self, *, db=None, network=None):
         """
         Attempt to connect to device.  If unable, attempt to connect to a controller database
         (so the user can use previously saved data).
         """
+        if network:
+            self.properties.network = network
         if not self.properties.network:
             self._log.debug("No network...calling DeviceFromDB")
-            self.new_state(DeviceFromDB)
+            if db:
+                self.new_state(DeviceFromDB)
+            self._log.info(
+                'You can reconnect to network using : "device.connect(network=bacnet)"'
+            )
+
         else:
             try:
                 name = self.properties.network.read(
