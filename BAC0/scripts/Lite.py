@@ -107,7 +107,7 @@ class Lite(
         ping: bool = True,
         ping_delay: int = 300,
         db_params: t.Optional[t.Dict[str, t.Any]] = None,
-        **params
+        **params,
     ) -> None:
         self._log.info(
             "Starting BAC0 version {} ({})".format(
@@ -148,16 +148,19 @@ class Lite(
             if not port:
                 port = 47808
             ip_addr = Address("{}/{}:{}".format(ip, mask, port))
-        self._log.info("Using ip : {ip_addr}".format(ip_addr=ip_addr))
+        self._log.info(
+            f"Using ip : {ip_addr} on port {ip_addr.addrPort} | broadcast : {ip_addr.addrBroadcastTuple[0]}"
+        )
+
         Base.__init__(
             self,
             localIPAddr=ip_addr,
             bbmdAddress=bbmdAddress,
             bbmdTTL=bbmdTTL,
             bdtable=bdtable,
-            **params
+            **params,
         )
-
+        self._log.info("Device instance (id) : {boid}".format(boid=self.Boid))
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
 
@@ -173,7 +176,7 @@ class Lite(
         )
         self._update_local_cov_task.task.start()
         self._update_local_cov_task.running = True
-        self._log.info("Update Local COV Task started")
+        self._log.info("Update Local COV Task started (required to support COV)")
 
         # Activate InfluxDB if params are available
         if db_params and INFLUXDB:
