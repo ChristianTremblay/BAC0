@@ -82,6 +82,10 @@ class LocalObjects(object):
             return item
 
 
+def charstring(val):
+    return CharacterString(val) if isinstance(val, str) else val
+
+
 @note_and_log
 class Base:
     """
@@ -110,10 +114,11 @@ class Base:
         bbmdAddress=None,
         bbmdTTL=0,
         bdtable=None,
-        modelName=CharacterString("BAC0 Scripting Tool"),
+        modelName="BAC0 Scripting Tool",
         vendorId=842,
-        vendorName=CharacterString("SERVISYS inc."),
-        description=CharacterString("http://christiantremblay.github.io/BAC0/"),
+        vendorName="SERVISYS inc.",
+        description="http://christiantremblay.github.io/BAC0/",
+        location="Bromont, Québec",
         spin=None,
     ):
 
@@ -162,9 +167,10 @@ class Base:
 
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
         self.vendorId = vendorId
-        self.vendorName = vendorName
-        self.modelName = modelName
-        self.description = description
+        self.vendorName = charstring(vendorName)
+        self.modelName = charstring(modelName)
+        self.description = charstring(description)
+        self.location = charstring(location)
 
         self.discoveredDevices: t.Optional[t.Dict[t.Tuple[str, int], int]] = None
         self.systemStatus = DeviceStatus(1)
@@ -203,6 +209,7 @@ class Base:
                 modelName=self.modelName,
                 systemStatus=self.systemStatus,
                 description=self.description,
+                location=self.location,
                 firmwareRevision=self.firmwareRevision,
                 applicationSoftwareVersion=infos.__version__,
                 protocolVersion=1,
