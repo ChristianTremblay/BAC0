@@ -93,7 +93,7 @@ class Schedule:
                 if dict_schedule["states"].lower() == "analog":
                     return Real(v)
             except AttributeError:
-                if dict_schedule["states"] == ["inactive", "active"]:
+                if dict_schedule["states"] == {"inactive": 0, "active": 1}:
                     return Integer(dict_schedule["states"][v])
                 else:
                     return Enumerated(dict_schedule["states"][v] - 1)
