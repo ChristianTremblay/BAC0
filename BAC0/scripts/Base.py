@@ -202,6 +202,7 @@ class Base:
             self.this_device = LocalDeviceObject(
                 objectName=self.localObjName,
                 objectIdentifier=self.Boid,
+                maxSegmentsAccepted=int(self.maxSegmentsAccepted),
                 maxApduLengthAccepted=int(self.maxAPDULengthAccepted),
                 segmentationSupported=self.segmentationSupported,
                 vendorIdentifier=self.vendorId,
