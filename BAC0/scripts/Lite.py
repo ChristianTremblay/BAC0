@@ -248,7 +248,7 @@ class Lite(
             limit. Those are the device instances used in the creation of the
             whois request. Min : 0 ; Max : 4194303
 
-        :param global_broadcast (boolean) : If set to true, a global braodcast
+        :param global_broadcast (boolean) : If set to true, a global broadcast
             will be used for the whois. Use with care.
         """
         if reset:
