@@ -296,17 +296,21 @@ class Point:
         returns: last value read
         """
         if _PANDAS:
-            return self.history.dropna().iloc[-1]
+            last_val = self.history.dropna()
+            last_val_clean = None if len(last_val) == 0 else last_val.iloc[-1]
+            return last_val_clean
         else:
             return self._history.value[-1]
 
     @property
     def lastTimestamp(self):
         """
-        returns: last value read
+        returns: last timestamp read
         """
         if _PANDAS:
-            return self.history.dropna().index[-1]
+            last_val = self.history.dropna()
+            last_val_clean = None if len(last_val) == 0 else last_val.index[-1]
+            return last_val_clean
         else:
             return self._history.timestamp[-1]
 
