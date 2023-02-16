@@ -207,7 +207,10 @@ class Lite(
                 addr, instance = each
                 net = addr.split(":")[0] if ":" in addr else None
                 if net:
-                    self.this_application.nse._learnedNetworks.add(int(net))
+                    try:
+                        self.this_application.nse._learnedNetworks.add(int(net))
+                    except ValueError:
+                        pass # proabbly a IP address with a specified port other than 0xBAC0
 
         return self.this_application.nse._learnedNetworks
 

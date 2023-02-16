@@ -198,6 +198,7 @@ class Discover:
         # build a request
         request = WhoIsRequest()
         if (len(args) == 1) or (len(args) == 3):
+            self._log.info("{:>12} {}".format("- discovered addr:", args))
             request.pduDestination = Address(args[0])
             del args[0]
         else:
