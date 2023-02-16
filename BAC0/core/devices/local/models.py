@@ -1,28 +1,32 @@
+from bacpypes.basetypes import (
+    Boolean,
+    Date,
+    DateTime,
+    DeviceObjectPropertyReference,
+    EventState,
+    LogRecord,
+    Polarity,
+    Time,
+    Unsigned,
+)
+from bacpypes.constructeddata import ArrayOf, ListOf
 from bacpypes.object import (
-    AnalogValueObject,
-    CharacterStringValueObject,
     AnalogInputObject,
     AnalogOutputObject,
+    AnalogValueObject,
     BinaryInputObject,
     BinaryOutputObject,
     BinaryValueObject,
-    DateValueObject,
+    CharacterStringValueObject,
     DateTimeValueObject,
+    DateValueObject,
     MultiStateInputObject,
     MultiStateOutputObject,
     MultiStateValueObject,
+    TrendLogObject,
 )
-from bacpypes.basetypes import (
-    Polarity,
-    Boolean,
-    EventState,
-    Date,
-    Time,
-    DateTime,
-    Unsigned,
-)
-from bacpypes.constructeddata import ArrayOf
-from bacpypes.primitivedata import CharacterString
+from bacpypes.primitivedata import CharacterString, ObjectIdentifier
+
 from .object import ObjectFactory
 
 """
@@ -260,5 +264,21 @@ def datetime_value(**kwargs):
         "properties": {},
         "is_commandable": False,
         "relinquish_default": "inactive",
+    }
+    return _create(definition, **kwargs)
+
+
+def trendlog(**kwargs):
+    definition = {
+        "name": "TREND_LOG",
+        "objectType": TrendLogObject,
+        "instance": 0,
+        "description": "No description",
+        "properties": {
+            # "logDeviceObjectProperty": DeviceObjectPropertyReference(
+            #    objectIdentifier=ObjectIdentifier("trendLog", 0),
+            # )
+        },
+        "logBuffer": ListOf(LogRecord),
     }
     return _create(definition, **kwargs)
