@@ -19,7 +19,6 @@ from bacpypes.primitivedata import Date, Time
 # --- this application's modules ---
 from ..utils.notes import note_and_log
 
-
 # ------------------------------------------------------------------------------
 
 
@@ -86,11 +85,10 @@ class TrendLog(TrendLogProperties):
                 self.properties.record_count,
                 self.properties.buffer_size,
                 self.properties.total_record_count,
-                self.properties.log_device_object_property,
                 self.properties.statusFlags,
                 self.properties.log_interval,
             ) = self.properties.device.properties.network.readMultiple(
-                "{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount logDeviceObjectProperty statusFlags logInterval".format(
+                "{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount statusFlags logInterval".format(
                     addr=self.properties.device.properties.address,
                     oid=str(self.properties.oid),
                 )
@@ -140,6 +138,8 @@ class TrendLog(TrendLogProperties):
             year, month, day, dow = each.timestamp.date
             year = year + 1900
             hours, minutes, seconds, ms = each.timestamp.time
+            seconds = 0 if seconds == 255 else seconds
+            ms = 0 if ms == 255 else ms
             self.properties._history_components["index"].append(
                 pd.to_datetime(
                     "{}-{}-{} {}:{}:{}.{}".format(
@@ -177,6 +177,7 @@ class TrendLog(TrendLogProperties):
     @property
     def history(self):
         self.read_log_buffer()
+
         if not _PANDAS or self.properties._df is None:
             return dict(
                 zip(
@@ -184,14 +185,25 @@ class TrendLog(TrendLogProperties):
                     self.properties._history_components["logdatum"],
                 )
             )
-        (
-            objectType,
-            objectAddress,
-        ) = self.properties.log_device_object_property.objectIdentifier
+
         try:
+            if not self.properties.log_device_object_property:
+                self.properties.log_device_object_property = (
+                    self.properties.device.properties.network.read(
+                        "{addr} trendLog {oid} logDeviceObjectProperty".format(
+                            addr=self.properties.device.properties.address,
+                            oid=str(self.properties.oid),
+                        )
+                    )
+                )
+            (
+                objectType,
+                objectAddress,
+            ) = self.properties.log_device_object_property.objectIdentifier
             logged_point = self.properties.device.find_point(objectType, objectAddress)
-        except ValueError:
+        except (Exception, ValueError):
             logged_point = None
+
         serie = self.properties._df[self.properties.object_name].copy()
         serie.units = logged_point.properties.units_state if logged_point else "n/a"
         serie.name = ("{}/{}").format(
@@ -199,6 +211,7 @@ class TrendLog(TrendLogProperties):
         )
         if not logged_point:
             serie.states = "unknown"
+            serie.datatype = None
         else:
             if logged_point.properties.name in self.properties.device.binary_states:
                 serie.states = "binary"
@@ -206,8 +219,9 @@ class TrendLog(TrendLogProperties):
                 serie.states = "multistates"
             else:
                 serie.states = "analog"
+            serie.datatype = objectType
         serie.description = self.properties.description
-        serie.datatype = objectType
+
         return serie.sort_index()
 
     def chart(self, remove=False):
