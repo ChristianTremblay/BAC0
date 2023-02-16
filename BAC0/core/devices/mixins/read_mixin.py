@@ -10,23 +10,18 @@ read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device
 # --- standard Python modules ---
 import typing as t
 
-# --- 3rd party modules ---
-
 # --- this application's modules ---
-from ....tasks.Poll import DeviceNormalPoll, DeviceFastPoll
+from ....tasks.Poll import DeviceFastPoll, DeviceNormalPoll
 from ...io.IOExceptions import (
+    BufferOverflow,
     NoResponseFromController,
     SegmentationNotSupported,
-    BufferOverflow,
 )
-from ..Points import (
-    NumericPoint,
-    BooleanPoint,
-    EnumPoint,
-    StringPoint,
-    DateTimePoint,
-)
+from ..Points import BooleanPoint, DateTimePoint, EnumPoint, NumericPoint, StringPoint
 from ..Trends import TrendLog
+
+# --- 3rd party modules ---
+
 
 # from ...functions.Schedule import Schedule
 
@@ -69,12 +64,15 @@ def create_trendlogs(objList, device):
         try:
             tl = TrendLog(point_address, device, read_log_on_creation=False)
             if tl.properties.log_device_object_property is None:
-                raise TrendLogCreationException
-            (
-                ldop_type,
-                ldop_addr,
-            ) = tl.properties.log_device_object_property.objectIdentifier
-            ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
+                ldop_type = "trendLog"
+                ldop_addr = point_address
+                ldop_prop = "log"
+            else:
+                (
+                    ldop_type,
+                    ldop_addr,
+                ) = tl.properties.log_device_object_property.objectIdentifier
+                ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
             trendlogs["{}_{}_{}".format(ldop_type, ldop_addr, ldop_prop)] = (
                 tl.properties.object_name,
                 tl,
