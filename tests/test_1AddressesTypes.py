@@ -5,9 +5,10 @@
 Test Bacnet communication with another device
 """
 
-from BAC0.core.functions.GetIPAddr import HostIP
-import BAC0
 import pytest
+
+import BAC0
+from BAC0.core.functions.GetIPAddr import HostIP
 
 VENDOR_ID = 842
 

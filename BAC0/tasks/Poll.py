@@ -8,13 +8,15 @@
 Poll.py - create a Polling task to repeatedly read a point.
 """
 
+import typing as t
+
 # --- standard Python modules ---
 import weakref
-import typing as t
+
+from ..core.utils.notes import note_and_log
 
 # --- this application's modules ---
 from .TaskManager import Task
-from ..core.utils.notes import note_and_log
 
 if t.TYPE_CHECKING:
     from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected

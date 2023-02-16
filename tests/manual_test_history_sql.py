@@ -1,5 +1,6 @@
-import BAC0
 import time
+
+import BAC0
 
 bacnet = BAC0.lite()
 

@@ -8,28 +8,29 @@
 TimeSync.py - creation of time synch requests
 
 """
-from ...core.io.Read import find_reason
-from ..io.IOExceptions import (
-    SegmentationNotSupported,
-    ReadPropertyException,
-    ReadPropertyMultipleException,
-    NoResponseFromController,
-    ApplicationNotStarted,
-)
-from ...core.utils.notes import note_and_log
-
 # --- standard Python modules ---
 import datetime as dt
+from datetime import datetime
+
+import pytz
+from bacpypes.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest
+from bacpypes.basetypes import DateTime
+from bacpypes.core import deferred
+from bacpypes.iocb import IOCB
 
 # --- 3rd party modules ---
 from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
 from bacpypes.primitivedata import Date, Time
-from bacpypes.basetypes import DateTime
-from bacpypes.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest
-from bacpypes.iocb import IOCB
-from bacpypes.core import deferred
-import pytz
-from datetime import datetime
+
+from ...core.io.Read import find_reason
+from ...core.utils.notes import note_and_log
+from ..io.IOExceptions import (
+    ApplicationNotStarted,
+    NoResponseFromController,
+    ReadPropertyException,
+    ReadPropertyMultipleException,
+    SegmentationNotSupported,
+)
 
 
 def _build_datetime(UTC=False):

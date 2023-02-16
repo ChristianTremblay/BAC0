@@ -1,10 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from .jci import (
-    JCIDeviceObject,
-    JCIAnalogValueObject,
     JCIAnalogInputObject,
     JCIAnalogOutputObject,
+    JCIAnalogValueObject,
+    JCIDeviceObject,
 )
 from .object import create_proprietary_object
 

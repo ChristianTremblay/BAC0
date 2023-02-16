@@ -4,24 +4,24 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-from ..io.Read import find_reason
-from ..io.IOExceptions import NoResponseFromController
-from ...core.utils.notes import note_and_log
+import typing as t
 
 # --- standard Python modules ---
 from datetime import time as dt_time
-import typing as t
+
+from bacpypes.apdu import SimpleAckPDU, WritePropertyRequest
+from bacpypes.basetypes import DailySchedule, TimeValue
+from bacpypes.constructeddata import Any, ArrayOf
+from bacpypes.core import deferred
+from bacpypes.iocb import IOCB
 
 # --- 3rd party modules ---
 from bacpypes.pdu import Address
-from bacpypes.primitivedata import Integer
-from bacpypes.apdu import WritePropertyRequest, SimpleAckPDU
-from bacpypes.iocb import IOCB
-from bacpypes.core import deferred
-from bacpypes.basetypes import DailySchedule, TimeValue
-from bacpypes.constructeddata import ArrayOf, Any
+from bacpypes.primitivedata import Enumerated, Integer, Real
 
-from bacpypes.primitivedata import Real, Enumerated
+from ...core.utils.notes import note_and_log
+from ..io.IOExceptions import NoResponseFromController
+from ..io.Read import find_reason
 
 
 @note_and_log

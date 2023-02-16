@@ -13,24 +13,23 @@ except ImportError:
     print("=" * 80)
 
 try:
-    from . import core
-    from . import tasks
-    from .scripts.Base import Base
+    from . import core, tasks
     from .core.devices.Device import Device as device
     from .core.devices.Device import DeviceLoad as load
     from .core.devices.Trends import TrendLog as TrendLog
-    from .tasks.Poll import SimplePoll as poll
-    from .tasks.Match import Match as match
-    from .tasks.Devices import AddDevice as add_device
     from .core.utils.notes import update_log_level as log_level
     from .infos import __version__ as version
+    from .scripts.Base import Base
+    from .tasks.Devices import AddDevice as add_device
+    from .tasks.Match import Match as match
+    from .tasks.Poll import SimplePoll as poll
 
     # To be able to use the complete version pandas, flask and bokeh must be installed.
     try:
-        import pandas
         import bokeh
         import flask
         import flask_bootstrap
+        import pandas
 
         _COMPLETE = True
     except ImportError:

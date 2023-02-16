@@ -3,26 +3,25 @@
 """
 Johnson Controls Proprietary Objects for FX/FEC Line
 """
-from bacpypes.primitivedata import (
-    Real,
-    Boolean,
-    CharacterString,
-    Enumerated,
-    Unsigned,
-    Atomic,
-    Date,
-    Time,
-    #    Signed,
-)
 from bacpypes.object import (
-    Object,
-    DeviceObject,
-    AnalogValueObject,
     AnalogInputObject,
     AnalogOutputObject,
+    AnalogValueObject,
     BinaryValueObject,
+    DeviceObject,
+    Object,
     Property,
     register_object_type,
+)
+from bacpypes.primitivedata import (
+    Atomic,
+    Boolean,  # Signed,
+    CharacterString,
+    Date,
+    Enumerated,
+    Real,
+    Time,
+    Unsigned,
 )
 
 #

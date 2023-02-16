@@ -13,9 +13,9 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
 import os
 import shlex
+import sys
 
 # Magic: allowing sphinx to find the 'current source' vs the installed BAC0 library.
 PACKAGE_PARENT = "../.."

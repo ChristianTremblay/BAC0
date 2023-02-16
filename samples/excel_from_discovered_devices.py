@@ -1,6 +1,8 @@
-import BAC0
 import time
+
 import pandas as pd
+
+import BAC0
 from BAC0.core.proprietary_objects.jci import tec_short_point_list
 
 """

@@ -8,10 +8,10 @@
 Device.py - describe a BACnet Device
 
 """
+import os.path
+
 # --- standard Python modules ---
 from collections import namedtuple
-
-import os.path
 
 try:
     import pandas as pd
@@ -21,7 +21,7 @@ except ImportError:
     _PANDAS = False
 
 try:
-    from xlwings import Workbook, Sheet, Range, Chart  # noqa E401
+    from xlwings import Chart, Range, Sheet, Workbook  # noqa E401
 
     _XLWINGS = True
 except ImportError:
@@ -31,25 +31,22 @@ except ImportError:
 # --- this application's modules ---
 from bacpypes.basetypes import ServicesSupported
 
-from .Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
-from ..io.IOExceptions import (
-    NoResponseFromController,
-    SegmentationNotSupported,
-    BadDeviceDefinition,
-    RemovedPointException,
-    WritePropertyException,
-    WrongParameter,
-    DeviceNotConnected,
-)
-
 # from ...bokeh.BokehRenderer import BokehPlot
 from ...db.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
-from .mixins.read_mixin import ReadPropertyMultiple, ReadProperty
-from .Virtuals import VirtualPoint
-
+from ..io.IOExceptions import (
+    BadDeviceDefinition,
+    DeviceNotConnected,
+    NoResponseFromController,
+    RemovedPointException,
+    SegmentationNotSupported,
+    WritePropertyException,
+    WrongParameter,
+)
 from ..utils.notes import note_and_log
-
+from .mixins.read_mixin import ReadProperty, ReadPropertyMultiple
+from .Points import BooleanPoint, EnumPoint, NumericPoint, OfflinePoint
+from .Virtuals import VirtualPoint
 
 # ------------------------------------------------------------------------------
 

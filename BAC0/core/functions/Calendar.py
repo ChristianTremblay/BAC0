@@ -4,21 +4,22 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-from ..io.Read import find_reason
-from ..io.IOExceptions import NoResponseFromController
-from ...core.utils.notes import note_and_log
-
 # --- standard Python modules ---
 import datetime
 import typing as t
 
+from bacpypes.apdu import SimpleAckPDU, WritePropertyRequest
+from bacpypes.basetypes import CalendarEntry, DateRange
+from bacpypes.constructeddata import Any, ArrayOf
+from bacpypes.core import deferred
+from bacpypes.iocb import IOCB
+
 # --- 3rd party modules ---
 from bacpypes.pdu import Address
-from bacpypes.apdu import WritePropertyRequest, SimpleAckPDU
-from bacpypes.iocb import IOCB
-from bacpypes.core import deferred
-from bacpypes.basetypes import CalendarEntry, DateRange
-from bacpypes.constructeddata import ArrayOf, Any
+
+from ...core.utils.notes import note_and_log
+from ..io.IOExceptions import NoResponseFromController
+from ..io.Read import find_reason
 
 
 @note_and_log

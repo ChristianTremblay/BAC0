@@ -5,6 +5,7 @@
 Test Bacnet communication with another device
 """
 import os.path
+
 import BAC0
 
 

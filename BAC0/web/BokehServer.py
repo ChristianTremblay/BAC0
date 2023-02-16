@@ -7,8 +7,9 @@
 """
 This will start the Bokeh Server
 """
-from threading import Thread
 import weakref
+from threading import Thread
+
 from bokeh.server.server import Server
 from tornado.ioloop import IOLoop
 

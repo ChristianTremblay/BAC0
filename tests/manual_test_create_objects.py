@@ -1,7 +1,7 @@
-import pytest
 import bacpypes
-import BAC0
+import pytest
 
+import BAC0
 from BAC0.core.devices.local import (
     analog_input,
     analog_output,
@@ -9,19 +9,19 @@ from BAC0.core.devices.local import (
     binary_input,
     binary_output,
     binary_value,
+    character_string,
+    date_value,
+    datetime_value,
+    humidity_input,
+    humidity_value,
     multistate_input,
     multistate_output,
     multistate_value,
-    date_value,
-    datetime_value,
     temperature_input,
     temperature_value,
-    humidity_input,
-    humidity_value,
-    character_string,
 )
-from BAC0.core.devices.local.object import ObjectFactory
 from BAC0.core.devices.local.models import make_state_text
+from BAC0.core.devices.local.object import ObjectFactory
 
 
 def build():

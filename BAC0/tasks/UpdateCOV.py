@@ -4,9 +4,10 @@ import weakref
 # --- 3rd party modules ---
 from bacpypes.core import deferred
 
+from ..core.utils.notes import note_and_log
+
 # --- this application's modules ---
 from .TaskManager import Task
-from ..core.utils.notes import note_and_log
 
 
 @note_and_log

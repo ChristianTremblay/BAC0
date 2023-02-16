@@ -8,10 +8,11 @@
 # --- standard Python modules ---
 # --- 3rd party modules ---
 
+from ..core.devices.Device import Device
+from ..core.io.IOExceptions import BadDeviceDefinition
+
 # --- this application's modules ---
 from .TaskManager import Task
-from ..core.io.IOExceptions import BadDeviceDefinition
-from ..core.devices.Device import Device
 
 """
 A way to define a BAC0.device using a task, so it won't block the Notebook or the REPL

@@ -8,30 +8,29 @@
 This module deals with Bokeh Session, Document and Plots
 A connection to the server is mandatory to use update_data
 """
-from bokeh.plotting import Figure
-from bokeh.models import (
-    ColumnDataSource,
-    HoverTool,
-    Range1d,
-    LinearAxis,
-    Legend,
-    LegendItem,
-    MultiChoice,
-    CustomJS,
-)
-from bokeh.models.widgets import DataTable, TableColumn
-from bokeh.layouts import row, column
-from bokeh.palettes import d3
-from bokeh.io import curdoc
-from bokeh.application.handlers import Handler
-
-
-import pandas as pd
 import weakref
 from queue import Queue
 
-from ..core.utils.notes import note_and_log
+import pandas as pd
+from bokeh.application.handlers import Handler
+from bokeh.io import curdoc
+from bokeh.layouts import column, row
+from bokeh.models import (
+    ColumnDataSource,
+    CustomJS,
+    HoverTool,
+    Legend,
+    LegendItem,
+    LinearAxis,
+    MultiChoice,
+    Range1d,
+)
+from bokeh.models.widgets import DataTable, TableColumn
+from bokeh.palettes import d3
+from bokeh.plotting import Figure
+
 from ..core.devices.Virtuals import VirtualPoint
+from ..core.utils.notes import note_and_log
 
 
 @note_and_log

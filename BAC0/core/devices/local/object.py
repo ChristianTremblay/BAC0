@@ -1,20 +1,18 @@
-from .decorator import bacnet_properties, make_commandable, create
+import typing as t
+from collections import namedtuple
 
-from ...utils.notes import note_and_log
+from bacpypes.basetypes import PriorityArray, Reliability
+from bacpypes.object import TrendLogObject
+from colorama import Fore
+
 from ....scripts.Base import Base
 from ...app.ScriptApplication import (
     BAC0Application,
     BAC0BBMDDeviceApplication,
     BAC0ForeignDeviceApplication,
 )
-from bacpypes.basetypes import (
-    PriorityArray,
-    Reliability,
-)
-
-import typing as t
-from collections import namedtuple
-from colorama import Fore
+from ...utils.notes import note_and_log
+from .decorator import bacnet_properties, create, make_commandable
 
 
 @note_and_log
@@ -64,13 +62,17 @@ class ObjectFactory(object):
         self._properties = ObjectFactory.default_properties(
             objectType, properties, is_commandable, relinquish_default
         )
-        pv_datatype = ObjectFactory.get_pv_datatype(objectType)
+        print(f"Obj {objectType} of type {type(objectType)}")
+        if not objectType is TrendLogObject:
+            pv_datatype = ObjectFactory.get_pv_datatype(objectType)
 
-        if not isinstance(presentValue, pv_datatype):
-            try:
-                presentValue = pv_datatype(presentValue)
-            except:
-                raise ValueError("Wrong datatype provided for presentValue")
+            if not isinstance(presentValue, pv_datatype):
+                try:
+                    presentValue = pv_datatype(presentValue)
+                except:
+                    raise ValueError(
+                        f"Wrong datatype provided for presentValue for {objectType} of type {type(objectType)}"
+                    )
 
         @bacnet_properties(self._properties)
         @make_commandable()

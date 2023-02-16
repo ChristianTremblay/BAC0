@@ -8,9 +8,10 @@
 RecurringTask.py - execute a recurring task
 """
 
-from .TaskManager import Task
+from typing import Any, Callable, Tuple, Union
+
 from ..core.utils.notes import note_and_log
-from typing import Callable, Union, Tuple, Any
+from .TaskManager import Task
 
 
 @note_and_log

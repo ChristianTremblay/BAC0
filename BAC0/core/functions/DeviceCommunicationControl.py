@@ -10,24 +10,21 @@ Reinitialize.py - creation of ReinitializeDeviceRequest
 """
 # --- standard Python modules ---
 
-# --- 3rd party modules ---
-from bacpypes.pdu import Address
-from bacpypes.primitivedata import CharacterString, Unsigned16
 from bacpypes.apdu import (
     DeviceCommunicationControlRequest,
     DeviceCommunicationControlRequestEnableDisable,
     SimpleAckPDU,
 )
-from bacpypes.iocb import IOCB
 from bacpypes.core import deferred
+from bacpypes.iocb import IOCB
+
+# --- 3rd party modules ---
+from bacpypes.pdu import Address
+from bacpypes.primitivedata import CharacterString, Unsigned16
 
 from ...core.io.Read import find_reason
-from ..io.IOExceptions import (
-    NoResponseFromController,
-    ApplicationNotStarted,
-)
-
 from ...core.utils.notes import note_and_log
+from ..io.IOExceptions import ApplicationNotStarted, NoResponseFromController
 
 
 @note_and_log

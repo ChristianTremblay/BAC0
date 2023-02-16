@@ -21,45 +21,44 @@ Once the class is created, create the local object and use it::
     bacnet.read('2:5 analogInput 1 presentValue)
 
 """
+import typing as t
+
 # --- standard Python modules ---
 import weakref
 from collections import namedtuple
-import typing as t
+
+from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
+from ..core.devices.Points import Point
+from ..core.devices.Trends import TrendLog
+from ..core.devices.Virtuals import VirtualPoint
+from ..core.functions.Calendar import Calendar
+from ..core.functions.cov import CoV
+from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
+from ..core.functions.Discover import Discover
+from ..core.functions.GetIPAddr import HostIP
+from ..core.functions.Reinitialize import Reinitialize
+from ..core.functions.Schedule import Schedule
+from ..core.functions.Text import TextMixin
+from ..core.functions.TimeSync import TimeSync
+from ..core.io.IOExceptions import (
+    NoResponseFromController,
+    NumerousPingFailures,
+    Timeout,
+    UnrecognizedService,
+)
+from ..core.io.Read import ReadProperty
+from ..core.io.Simulate import Simulation
+from ..core.io.Write import WriteProperty
+from ..core.utils.notes import note_and_log
+from ..infos import __version__ as version
 
 # --- this application's modules ---
 from ..scripts.Base import Base
-
-from ..core.io.Read import ReadProperty
-from ..core.io.Write import WriteProperty
-from ..core.functions.GetIPAddr import HostIP
-from ..core.functions.Discover import Discover
-from ..core.functions.TimeSync import TimeSync
-from ..core.functions.Reinitialize import Reinitialize
-from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
-from ..core.functions.cov import CoV
-from ..core.functions.Schedule import Schedule
-from ..core.functions.Calendar import Calendar
-from ..core.functions.Text import TextMixin
-from ..core.io.Simulate import Simulation
-from ..core.devices.Points import Point
-from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
-from ..core.devices.Trends import TrendLog
-from ..core.devices.Virtuals import VirtualPoint
-from ..core.utils.notes import note_and_log
-from ..core.io.IOExceptions import (
-    NoResponseFromController,
-    UnrecognizedService,
-    Timeout,
-    NumerousPingFailures,
-)
-
 from ..tasks.RecurringTask import RecurringTask
 from ..tasks.UpdateCOV import Update_local_COV
 
-from ..infos import __version__ as version
-
 try:
-    from ..db.influxdb import InfluxDB, ConnectionError
+    from ..db.influxdb import ConnectionError, InfluxDB
 
     INFLUXDB = True
 except ImportError:

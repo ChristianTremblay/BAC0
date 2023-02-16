@@ -1,39 +1,39 @@
 import pytest
-from BAC0.core.proprietary_objects.object import create_proprietary_object
-
-from bacpypes.primitivedata import (
-    Real,
-    Boolean,
-    CharacterString,
-    Enumerated,
-    Unsigned,
-    Atomic,
-    Date,
-    Time,
-    OctetString,
-)
-from bacpypes.object import (
-    Object,
-    DeviceObject,
-    AnalogValueObject,
-    AnalogInputObject,
-    AnalogOutputObject,
-    BinaryValueObject,
-    BinaryInputObject,
-    BinaryOutputObject,
-    Property,
-    register_object_type,
-)
 from bacpypes.constructeddata import (
     Any,
     Array,
     ArrayOf,
-    List,
-    ListOf,
     Choice,
     Element,
+    List,
+    ListOf,
     Sequence,
 )
+from bacpypes.object import (
+    AnalogInputObject,
+    AnalogOutputObject,
+    AnalogValueObject,
+    BinaryInputObject,
+    BinaryOutputObject,
+    BinaryValueObject,
+    DeviceObject,
+    Object,
+    Property,
+    register_object_type,
+)
+from bacpypes.primitivedata import (
+    Atomic,
+    Boolean,
+    CharacterString,
+    Date,
+    Enumerated,
+    OctetString,
+    Real,
+    Time,
+    Unsigned,
+)
+
+from BAC0.core.proprietary_objects.object import create_proprietary_object
 
 MyDeviceProprietaryProperties = {
     "name": "MyDeviceProprietaryProperties",

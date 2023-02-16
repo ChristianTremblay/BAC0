@@ -21,19 +21,17 @@ Once the class is created, create the local object and use it::
     bacnet.read('2:5 analogInput 1 presentValue)
 
 """
-# --- standard Python modules ---
-from datetime import datetime
 import logging
-import pandas as pd
 import time
 import typing as t
 
+# --- standard Python modules ---
+from datetime import datetime
+
+import pandas as pd
 
 # --- 3rd party modules ---
 from bokeh.application import Application
-
-# --- this application's modules ---
-from ..scripts.Lite import Lite
 
 from ..core.io.IOExceptions import (
     BokehServerCantStart,
@@ -42,6 +40,8 @@ from ..core.io.IOExceptions import (
 )
 from ..core.utils.notes import note_and_log, update_log_level
 
+# --- this application's modules ---
+from ..scripts.Lite import Lite
 from ..web.BokehRenderer import (
     DevicesTableHandler,
     DynamicPlotHandler,

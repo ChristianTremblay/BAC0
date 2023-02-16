@@ -15,39 +15,40 @@ import time
 
 # --- 3rd party modules ---
 from bacpypes.apdu import (
-    WhoIsRequest,
     IAmRequest,
-    WhoHasRequest,
     WhoHasLimits,
     WhoHasObject,
+    WhoHasRequest,
+    WhoIsRequest,
 )
-from bacpypes.core import deferred
-from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
-from bacpypes.primitivedata import Unsigned, ObjectIdentifier, CharacterString
 from bacpypes.constructeddata import Array
-from bacpypes.object import get_object_class, get_datatype
-from bacpypes.iocb import IOCB, SieveQueue, IOController
-
+from bacpypes.core import deferred
+from bacpypes.iocb import IOCB, IOController, SieveQueue
 from bacpypes.netservice import NetworkServiceAccessPoint, NetworkServiceElement
 from bacpypes.npdu import (
-    WhoIsRouterToNetwork,
     IAmRouterToNetwork,
     InitializeRoutingTable,
     InitializeRoutingTableAck,
-    WhatIsNetworkNumber,
     NetworkNumberIs,
     RejectMessageToNetwork,
+    WhatIsNetworkNumber,
+    WhoIsRouterToNetwork,
 )
+from bacpypes.object import get_datatype, get_object_class
+from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
+from bacpypes.primitivedata import CharacterString, ObjectIdentifier, Unsigned
+
+from ...core.utils.notes import note_and_log
 
 # --- this application's modules ---
 from ..io.IOExceptions import (
-    SegmentationNotSupported,
+    ApplicationNotStarted,
+    NoResponseFromController,
     ReadPropertyException,
     ReadPropertyMultipleException,
-    NoResponseFromController,
-    ApplicationNotStarted,
+    SegmentationNotSupported,
 )
-from ...core.utils.notes import note_and_log
+
 
 # ------------------------------------------------------------------------------
 @note_and_log

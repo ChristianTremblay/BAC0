@@ -6,15 +6,15 @@ logging feature at the same time.
 Goal is to be able to access quickly to important informations for
 the web interface.
 """
-# --- standard Python modules ---
-from collections import namedtuple
-from datetime import datetime
 import logging
-from logging import FileHandler, Logger
+import os
 import sys
 import typing as t
 
-import os
+# --- standard Python modules ---
+from collections import namedtuple
+from datetime import datetime
+from logging import FileHandler, Logger
 from os.path import expanduser, join
 
 # --- 3rd party modules ---

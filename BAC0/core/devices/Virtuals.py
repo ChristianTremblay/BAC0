@@ -8,10 +8,11 @@
 Points.py - Definition of points so operations on Read results are more convenient.
 """
 
+import time
+from collections import namedtuple
+
 # --- standard Python modules ---
 from datetime import datetime
-from collections import namedtuple
-import time
 
 # --- 3rd party modules ---
 try:
@@ -28,12 +29,12 @@ except ImportError:
 
 from bacpypes.object import TrendLogObject
 
+from ...tasks.Match import Match, Match_Value
+
 # --- this application's modules ---
 from ...tasks.Poll import SimplePoll as Poll
-from ...tasks.Match import Match, Match_Value
 from ..io.IOExceptions import NoResponseFromController, UnknownPropertyError
 from ..utils.notes import note_and_log
-
 
 # ------------------------------------------------------------------------------
 

@@ -8,11 +8,12 @@
 Points.py - Definition of points so operations on Read results are more convenient.
 """
 
-# --- standard Python modules ---
-from datetime import datetime, timedelta
-from collections import namedtuple
 import time
 import typing as t
+from collections import namedtuple
+
+# --- standard Python modules ---
+from datetime import datetime, timedelta
 
 # --- 3rd party modules ---
 from bacpypes.primitivedata import CharacterString
@@ -29,17 +30,17 @@ try:
 except ImportError:
     _PANDAS = False
 
+from ...tasks.Match import Match, Match_Value
+
 # --- this application's modules ---
 from ...tasks.Poll import SimplePoll as Poll
-from ...tasks.Match import Match, Match_Value
 from ..io.IOExceptions import (
     NoResponseFromController,
-    UnknownPropertyError,
     RemovedPointException,
+    UnknownPropertyError,
     WritePropertyException,
 )
 from ..utils.notes import note_and_log
-
 
 # ------------------------------------------------------------------------------
 

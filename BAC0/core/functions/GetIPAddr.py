@@ -11,15 +11,14 @@ Goal : not use 255.255.255.255 as a broadcast IP address as it is not
 accepted by every devices (>3.8.38.1 bacnet.jar of Tridium Jace for example)
 
 """
-import socket
 import ipaddress
+import socket
 import typing as t
 
 from bacpypes.pdu import Address
 
-from ..io.IOExceptions import NetworkInterfaceException
 from ...core.utils.notes import note_and_log
-
+from ..io.IOExceptions import NetworkInterfaceException
 
 DEFAULT_PORT = 47808
 

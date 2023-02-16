@@ -31,8 +31,8 @@ from bacpypes.core import enable_sleeping
 from bacpypes.core import run as startBacnetIPApp
 from bacpypes.core import stop as stopBacnetIPApp
 from bacpypes.local.device import LocalDeviceObject
-from bacpypes.primitivedata import CharacterString
 from bacpypes.pdu import Address
+from bacpypes.primitivedata import CharacterString
 
 # --- this application's modules ---
 from .. import infos

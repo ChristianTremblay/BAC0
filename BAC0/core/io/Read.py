@@ -23,51 +23,48 @@ Read.py - creation of ReadProperty and ReadPropertyMultiple requests
 # --- standard Python modules ---
 import typing as t
 
-# --- 3rd party modules ---
-from bacpypes.pdu import Address
-from bacpypes.object import get_object_class, get_datatype
 from bacpypes.apdu import (
-    PropertyReference,
-    ReadAccessSpecification,
-    ReadPropertyRequest,
-    ReadPropertyMultipleRequest,
-    RejectReason,
-    AbortReason,
-    RejectPDU,
     AbortPDU,
-)
-
-from bacpypes.basetypes import PropertyIdentifier, DateTime
-from bacpypes.apdu import (
-    ReadPropertyMultipleACK,
-    ReadPropertyACK,
-    ReadRangeRequest,
-    ReadRangeACK,
+    AbortReason,
+    PropertyReference,
     Range,
     RangeByPosition,
     RangeBySequenceNumber,
     RangeByTime,
+    ReadAccessSpecification,
+    ReadPropertyACK,
+    ReadPropertyMultipleACK,
+    ReadPropertyMultipleRequest,
+    ReadPropertyRequest,
+    ReadRangeACK,
+    ReadRangeRequest,
+    RejectPDU,
+    RejectReason,
 )
-from bacpypes.primitivedata import Tag, Unsigned, Date, Time
+from bacpypes.basetypes import DateTime, PropertyIdentifier
 from bacpypes.constructeddata import Array
-from bacpypes.iocb import IOCB, TimeoutError
 from bacpypes.core import deferred
+from bacpypes.iocb import IOCB, TimeoutError
+from bacpypes.object import get_datatype, get_object_class, registered_object_types
+
+# --- 3rd party modules ---
+from bacpypes.pdu import Address
+from bacpypes.primitivedata import Date, Tag, Time, Unsigned
+
+from ..utils.notes import note_and_log
 
 # --- this application's modules ---
 from .IOExceptions import (
+    ApplicationNotStarted,
+    NoResponseFromController,
     ReadPropertyException,
     ReadPropertyMultipleException,
     ReadRangeException,
-    NoResponseFromController,
-    ApplicationNotStarted,
-    UnrecognizedService,
     SegmentationNotSupported,
-    UnknownPropertyError,
     UnknownObjectError,
+    UnknownPropertyError,
+    UnrecognizedService,
 )
-from bacpypes.object import registered_object_types
-
-from ..utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
 

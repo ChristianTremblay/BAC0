@@ -9,17 +9,18 @@ TaskManager.py - creation of threads used for repetitive tasks.
 
 A key building block for point simulation.
 """
-# --- standard Python modules ---
-from threading import Thread, Lock
 import time
 from collections import deque
 from random import random
 
+# --- standard Python modules ---
+from threading import Lock, Thread
+
+from ..core.io.IOExceptions import DeviceNotConnected
 
 # --- 3rd party modules ---
 # --- this application's modules ---
 from ..core.utils.notes import note_and_log
-from ..core.io.IOExceptions import DeviceNotConnected
 
 # ------------------------------------------------------------------------------
 
