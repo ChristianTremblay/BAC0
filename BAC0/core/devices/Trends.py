@@ -125,12 +125,12 @@ class TrendLog(TrendLogProperties):
         _actual_index = self._total_record_count()
         start = max(_actual_index - self.properties.record_count, self._last_index)
         _count = max(_actual_index - start, 0)
-        steps = int(_count / RECORDS) + int(_count % RECORDS)
+        steps = int(_count / RECORDS) + int(1 if (_count % RECORDS) > 0 else 0)
 
         self._log.debug("Reading log : {} {} {}".format(start, _count, steps))
 
-        _from = start + 1
-        for each in range(1,steps):
+        _from = start
+        for each in range(steps):
             range_params = ("s", _from, Date("1979-01-01"), Time("00:00"), RECORDS)
             _chunk = self.properties.device.properties.network.readRange(
                 "{} trendLog {} logBuffer".format(
