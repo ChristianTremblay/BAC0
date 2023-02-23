@@ -15,11 +15,15 @@ except ImportError:
     _PANDAS = False
 
 from bacpypes.primitivedata import Date, Time
+from bacpypes.basetypes import StatusFlags
+from collections import namedtuple
 
 # --- this application's modules ---
 from ..utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
+
+HistoryComponent = namedtuple("HistoryComponent", "index logdatum status choice")
 
 
 class TrendLogProperties(object):
@@ -44,7 +48,7 @@ class TrendLogProperties(object):
             "overridden": False,
             "out_of_service": False,
         }
-        self._history_components = {"index": [], "logdatum": [], "status": []}
+        self._history_components = []
         self._df = None
         self.type = "TrendLog"
         self.units_state = "None"
@@ -76,6 +80,14 @@ class TrendLog(TrendLogProperties):
         if read_log_on_creation:
             self.read_log_buffer()
         self._last_index = 0
+
+    @staticmethod
+    def read_logDatum(logDatum):
+        for k, v in logDatum.__dict__.items():
+            if v is None:
+                continue
+            else:
+                return (k, v)
 
     def update_properties(self):
         try:
@@ -111,14 +123,14 @@ class TrendLog(TrendLogProperties):
         RECORDS = 10
         log_buffer = set()
         _actual_index = self._total_record_count()
-        start = max(_actual_index - self.properties.record_count, self._last_index) + 1
-        _count = _actual_index - start
-        steps = int(_count / 10) + int(_count % 10)
+        start = max(_actual_index - self.properties.record_count, self._last_index)
+        _count = max(_actual_index - start, 0)
+        steps = int(_count / RECORDS) + int(_count % RECORDS)
 
         self._log.debug("Reading log : {} {} {}".format(start, _count, steps))
 
-        _from = start
-        for each in range(steps):
+        _from = start + 1
+        for each in range(1,steps):
             range_params = ("s", _from, Date("1979-01-01"), Time("00:00"), RECORDS)
             _chunk = self.properties.device.properties.network.readRange(
                 "{} trendLog {} logBuffer".format(
@@ -140,32 +152,39 @@ class TrendLog(TrendLogProperties):
             hours, minutes, seconds, ms = each.timestamp.time
             seconds = 0 if seconds == 255 else seconds
             ms = 0 if ms == 255 else ms
-            self.properties._history_components["index"].append(
-                pd.to_datetime(
-                    "{}-{}-{} {}:{}:{}.{}".format(
-                        year, month, day, hours, minutes, seconds, ms
-                    ),
-                    format="%Y-%m-%d %H:%M:%S.%f",
-                )
+            _index = pd.to_datetime(
+                "{}-{}-{} {}:{}:{}.{}".format(
+                    year, month, day, hours, minutes, seconds, ms
+                ),
+                format="%Y-%m-%d %H:%M:%S.%f",
             )
-            self.properties._history_components["logdatum"].append(
-                each.logDatum.dict_contents()
-            )
-            self.properties._history_components["status"].append(each.statusFlags)
+            _choice, _logDatum = self.read_logDatum(each.logDatum)
+            _status = each.statusFlags
+            print(_index, _logDatum, _status, _choice)
+            his_component = HistoryComponent(_index, _logDatum, _status, _choice)
+            if not his_component in self.properties._history_components:
+                self.properties._history_components.append(his_component)
 
         if _PANDAS:
             df = pd.DataFrame(
                 {
-                    "index": self.properties._history_components["index"],
-                    "logdatum": self.properties._history_components["logdatum"],
-                    "status": self.properties._history_components["status"],
+                    "index": [
+                        each.index for each in self.properties._history_components
+                    ],
+                    self.properties.object_name: [
+                        each.logdatum for each in self.properties._history_components
+                    ],
+                    "status": [
+                        each.status for each in self.properties._history_components
+                    ],
+                    "choice": [
+                        each.choice for each in self.properties._history_components
+                    ],
                 }
             )
             df = df.set_index("index")
-            df["choice"] = df["logdatum"].apply(lambda x: list(x.keys())[0])
-            df[self.properties.object_name] = df["logdatum"].apply(
-                lambda x: list(x.values())[0]
-            )
+            #df["choice"] = _choice
+            #df[self.properties.object_name] = df['logDatum']
 
             self.properties._df = df
         else:
@@ -181,8 +200,8 @@ class TrendLog(TrendLogProperties):
         if not _PANDAS or self.properties._df is None:
             return dict(
                 zip(
-                    self.properties._history_components["index"],
-                    self.properties._history_components["logdatum"],
+                    [each.index for each in self.properties._history_components],
+                    [each.logDatum for each in self.properties._history_components],
                 )
             )
 
