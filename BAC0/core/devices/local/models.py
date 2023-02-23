@@ -275,10 +275,11 @@ def trendlog(**kwargs):
         "instance": 0,
         "description": "No description",
         "properties": {
+            "enable": True,
+            "logBuffer": ListOf(LogRecord),
             # "logDeviceObjectProperty": DeviceObjectPropertyReference(
             #    objectIdentifier=ObjectIdentifier("trendLog", 0),
             # )
         },
-        "logBuffer": ListOf(LogRecord),
     }
     return _create(definition, **kwargs)

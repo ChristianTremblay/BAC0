@@ -5,6 +5,8 @@ from bacpypes.basetypes import PriorityArray, Reliability
 from bacpypes.object import TrendLogObject
 from colorama import Fore
 
+from BAC0.core.devices.local.trendLogs import LocalTrendLog
+
 from ....scripts.Base import Base
 from ...app.ScriptApplication import (
     BAC0Application,
@@ -97,6 +99,10 @@ class ObjectFactory(object):
             self.objects[objectName] = _create(
                 objectType, instance, objectName, presentValue, description
             )
+        if objectType is TrendLogObject:
+            self.objects[objectName]._local = LocalTrendLog(
+                self.objects[objectName]
+            )  # this will need to be fed by another process.
 
     def validate_instance(self, objectType, instance):
         _warning = True
