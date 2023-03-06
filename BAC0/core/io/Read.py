@@ -806,10 +806,17 @@ def find_reason(apdu):
         elif apdu.pduType == AbortPDU.pduType:
             reasons = AbortReason.enumerations
         else:
-            if apdu.errorCode and apdu.errorClass:
-                return "{}".format(apdu.errorCode)
-            else:
-                raise ValueError("Cannot find reason...")
+            _code = None
+            try:
+                _code = apdu.errorCode
+            except AttributeError:
+                try:
+                    _code = apdu.errorType.errorCode
+                except AttributeError:
+                    raise ValueError("Cannot find reason...")
+
+            if _code:
+                return "{}".format(_code)
         code = apdu.apduAbortRejectReason
         try:
             return [k for k, v in reasons.items() if v == code][0]
