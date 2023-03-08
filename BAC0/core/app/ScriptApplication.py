@@ -19,6 +19,7 @@ extending it with more functions. [See BAC0.scripts for more examples of this.]
 # --- standard Python modules ---
 from collections import defaultdict
 from typing import Any, Dict, Optional
+import typing as t
 
 from bacpypes.apdu import IAmRequest, ReadRangeACK, SimpleAckPDU
 

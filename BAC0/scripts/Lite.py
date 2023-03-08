@@ -210,7 +210,7 @@ class Lite(
                     try:
                         self.this_application.nse._learnedNetworks.add(int(net))
                     except ValueError:
-                        pass # proabbly a IP address with a specified port other than 0xBAC0
+                        pass  # proabbly a IP address with a specified port other than 0xBAC0
 
         return self.this_application.nse._learnedNetworks
 
