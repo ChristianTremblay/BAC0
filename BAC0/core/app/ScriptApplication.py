@@ -16,10 +16,11 @@ Additional functionality is enabled by inheriting this application, and then
 extending it with more functions. [See BAC0.scripts for more examples of this.]
 
 """
+import typing as t
+
 # --- standard Python modules ---
 from collections import defaultdict
 from typing import Any, Dict, Optional
-import typing as t
 
 from bacpypes.apdu import IAmRequest, ReadRangeACK, SimpleAckPDU
 
@@ -264,6 +265,7 @@ class BAC0Application(
         self,
         localDevice: LocalDeviceObject,
         localAddress: Address,
+        networkNumber: int = None,
         bbmdAddress=None,
         bbmdTTL: int = 0,
         deviceInfoCache=None,
@@ -282,7 +284,7 @@ class BAC0Application(
             self.localAddress = localAddress
         else:
             self.localAddress = Address(localAddress)
-
+        self.networkNumber = networkNumber
         # include a application decoder
         self.asap = ApplicationServiceAccessPoint()
 
@@ -314,7 +316,7 @@ class BAC0Application(
         bind(self.bip, self.annexj, self.mux.annexJ)
 
         # bind the BIP stack to the network, no network number
-        self.nsap.bind(self.bip, address=self.localAddress)
+        self.nsap.bind(self.bip, net=self.networkNumber, address=self.localAddress)
 
         self.i_am_counter: t.Dict[t.Tuple[str, int], int] = defaultdict(int)
         self.i_have_counter = defaultdict(int)
@@ -362,6 +364,7 @@ class BAC0ForeignDeviceApplication(
         self,
         localDevice,
         localAddress,
+        networkNumber: int = None,
         bbmdAddress=None,
         bbmdTTL=0,
         deviceInfoCache=None,
@@ -462,6 +465,7 @@ class BAC0BBMDDeviceApplication(
         self,
         localDevice,
         localAddress,
+        networkNumber: int = None,
         bdtable=[],
         deviceInfoCache=None,
         aseID=None,
@@ -521,6 +525,7 @@ class BAC0BBMDDeviceApplication(
 
         # bind the NSAP to the stack, no network number
         self.nsap.bind(self.bip)
+        # self.nsap.bind(self.bip, net=self.networkNumber)
 
         self.i_am_counter = defaultdict(int)
         self.i_have_counter = defaultdict(int)
