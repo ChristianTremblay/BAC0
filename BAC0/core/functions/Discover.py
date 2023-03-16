@@ -21,10 +21,9 @@ from bacpypes.apdu import (
     WhoHasRequest,
     WhoIsRequest,
 )
-from bacpypes.constructeddata import Array
 from bacpypes.core import deferred
 from bacpypes.iocb import IOCB, IOController, SieveQueue
-from bacpypes.netservice import NetworkServiceAccessPoint, NetworkServiceElement
+from bacpypes.netservice import NetworkServiceElement
 from bacpypes.npdu import (
     IAmRouterToNetwork,
     InitializeRoutingTable,
@@ -34,20 +33,13 @@ from bacpypes.npdu import (
     WhatIsNetworkNumber,
     WhoIsRouterToNetwork,
 )
-from bacpypes.object import get_datatype, get_object_class
 from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
-from bacpypes.primitivedata import CharacterString, ObjectIdentifier, Unsigned
+from bacpypes.primitivedata import CharacterString, ObjectIdentifier
 
 from ...core.utils.notes import note_and_log
 
 # --- this application's modules ---
-from ..io.IOExceptions import (
-    ApplicationNotStarted,
-    NoResponseFromController,
-    ReadPropertyException,
-    ReadPropertyMultipleException,
-    SegmentationNotSupported,
-)
+from ..io.IOExceptions import ApplicationNotStarted
 
 
 # ------------------------------------------------------------------------------
@@ -225,12 +217,13 @@ class Discover:
         iocb.wait()  # Wait for BACnet response
 
         if iocb.ioResponse:  # successful response
-            apdu = iocb.ioResponse
+            pass
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
             pass
 
-        time.sleep(3)
+        for each in range(100):
+            time.sleep(1 / 1000)
         self.discoveredDevices = self.this_application.i_am_counter
         return self.this_application._last_i_am_received
 
@@ -396,7 +389,7 @@ class Discover:
         self.this_application._last_i_have_received = []
 
         if iocb.ioResponse:  # successful response
-            apdu = iocb.ioResponse
+            pass
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
             pass
