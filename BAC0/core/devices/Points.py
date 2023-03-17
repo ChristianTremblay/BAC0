@@ -164,7 +164,7 @@ class Point:
         """
         Retrieve priority array of the point
         """
-        if self.properties.priority_array != False:
+        if self.properties.priority_array is not False:
             try:
                 res = self.properties.device.properties.network.read(
                     "{} {} {} priorityArray".format(
@@ -229,7 +229,7 @@ class Point:
     @property
     def is_overridden(self):
         self.read_priority_array()
-        if self.properties.priority_array == False:
+        if self.properties.priority_array is False:
             return False
         if self.priority(8) or self.priority(1):
             self.properties.overridden = (True, self.value)
@@ -238,7 +238,7 @@ class Point:
             return False
 
     def priority(self, priority=None):
-        if self.properties.priority_array == False:
+        if self.properties.priority_array is False:
             return None
 
         self.read_priority_array()
@@ -861,9 +861,9 @@ class BooleanPoint(Point):
 
     def _set(self, value):
         try:
-            if value == True:
+            if value is True:
                 self._setitem("active")
-            elif value == False:
+            elif value is False:
                 self._setitem("inactive")
             elif str(value) in ["inactive", "active"] or str(value).lower() == "auto":
                 self._setitem(value)

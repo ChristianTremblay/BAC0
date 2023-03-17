@@ -25,12 +25,12 @@ from bacpypes.apdu import (
     WritePropertyMultipleRequest,
     WritePropertyRequest,
 )
-from bacpypes.basetypes import PropertyIdentifier, PropertyValue
-from bacpypes.constructeddata import Any, Array, SequenceOf
+from bacpypes.basetypes import PropertyValue
+from bacpypes.constructeddata import Any, Array
 from bacpypes.core import deferred
 
 # --- 3rd party modules ---
-from bacpypes.debugging import ModuleLogger, bacpypes_debugging
+from bacpypes.debugging import ModuleLogger
 from bacpypes.iocb import IOCB
 from bacpypes.object import get_datatype
 from bacpypes.pdu import Address
@@ -42,7 +42,6 @@ from ...core.utils.notes import note_and_log
 from .IOExceptions import (
     ApplicationNotStarted,
     NoResponseFromController,
-    WriteAccessDenied,
     WritePropertyCastError,
     WritePropertyException,
 )
@@ -322,7 +321,7 @@ class WriteProperty:
                 None,
             )
 
-            if existingObject == None:
+            if existingObject is None:
                 property_values.append(
                     PropertyValue(
                         propertyIdentifier=prop_id,

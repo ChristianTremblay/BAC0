@@ -464,14 +464,14 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                             raise
 
                         # print('val : ', val, len(val), type(val))
-                        if val == None:
+                        if val is None:
                             self.properties.segmentation_supported = False
                             raise SegmentationNotSupported
 
                     except KeyError as error:
                         raise Exception("Unknown point name : {}".format(error))
 
-                    except SegmentationNotSupported as error:
+                    except SegmentationNotSupported:
                         self.properties.segmentation_supported = False
                         # self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
                         self._log.warning("Segmentation not supported")
@@ -503,7 +503,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                             request, vendor_id=self.properties.vendor_id
                         )
 
-                    except SegmentationNotSupported as error:
+                    except SegmentationNotSupported:
                         self.properties.segmentation_supported = False
                         self.read_multiple(
                             points_list,
@@ -664,7 +664,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
         except KeyError as error:
             raise Exception("Unknown point name: {}".format(error))
 
-        except NoResponseFromController as error:
+        except NoResponseFromController:
             return ""
 
     def poll(self, command="start", *, delay=120):
@@ -693,7 +693,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
 
         if (
             str(command).lower() == "stop"
-            or command == False
+            or command is False
             or command == 0
             or delay == 0
         ):

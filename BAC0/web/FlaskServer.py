@@ -8,7 +8,6 @@
 This module will start the Flask server 
 """
 import json
-import logging
 import weakref
 from threading import Thread
 

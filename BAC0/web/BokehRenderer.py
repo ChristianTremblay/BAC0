@@ -182,7 +182,6 @@ class DynamicPlotHandler(Handler):
 
     def update_glyphs(self):
         self._log.debug("Updating Glyphs")
-        enumerated_axis_needed = True
         for point in self.network.trends:
             name = "{}/{}".format(
                 point.properties.device.properties.name, point.properties.name
@@ -196,7 +195,6 @@ class DynamicPlotHandler(Handler):
                     (name, point.properties.description, point.properties.units_state)
                 )
             elif "multi" in point.properties.type:
-                enumerated_axis_needed = True
                 self.multistates_queue.put(
                     (name, point.properties.description, point.properties.units_state)
                 )

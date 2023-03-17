@@ -27,7 +27,6 @@ from bacpypes.apdu import IAmRequest, ReadRangeACK, SimpleAckPDU
 # --- 3rd party modules ---
 from bacpypes.app import ApplicationIOController
 from bacpypes.appservice import ApplicationServiceAccessPoint, StateMachineAccessPoint
-from bacpypes.basetypes import LogRecord
 from bacpypes.bvllservice import (
     BIPBBMD,
     AnnexJCodec,
@@ -36,13 +35,9 @@ from bacpypes.bvllservice import (
     UDPMultiplexer,
 )
 from bacpypes.comm import Client, bind
-from bacpypes.constructeddata import Any as AnyBACnet
 from bacpypes.constructeddata import (
-    AnyAtomic,
     Array,
     List,
-    ListOf,
-    SequenceOf,
     SequenceOfAny,
 )
 from bacpypes.core import deferred

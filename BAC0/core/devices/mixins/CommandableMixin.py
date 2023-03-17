@@ -5,7 +5,6 @@
 Rebuilt Commandable
 """
 
-from bacpypes.app import BIPSimpleApplication
 from bacpypes.basetypes import (
     BinaryPV,
     ChannelValue,
@@ -14,11 +13,8 @@ from bacpypes.basetypes import (
     PriorityArray,
     PriorityValue,
 )
-from bacpypes.consolelogging import ConfigArgumentParser
-from bacpypes.core import run
 from bacpypes.debugging import ModuleLogger, bacpypes_debugging
 from bacpypes.errors import ExecutionError
-from bacpypes.local.device import LocalDeviceObject
 from bacpypes.local.object import CurrentPropertyListMixIn
 from bacpypes.object import (
     AccessDoorObject,

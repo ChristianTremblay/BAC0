@@ -177,7 +177,7 @@ class InfluxDB:
                         "device_id",
                     ],
                 )
-            except Exception as error:
+            except Exception:
                 # print('Oups', _name, error)
                 continue
 

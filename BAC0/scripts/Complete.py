@@ -251,7 +251,7 @@ class Complete(Lite, Stats_Mixin):
             )
             self._log.error(error)
 
-        except RuntimeError as rterror:
+        except RuntimeError:
             self.bokehserver = False
             self._log.warning("Server already running")
 

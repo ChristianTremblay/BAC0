@@ -27,13 +27,10 @@ try:
 except ImportError:
     _PANDAS = False
 
-from bacpypes.object import TrendLogObject
 
-from ...tasks.Match import Match, Match_Value
+from ...tasks.Match import Match_Value
 
 # --- this application's modules ---
-from ...tasks.Poll import SimplePoll as Poll
-from ..io.IOExceptions import NoResponseFromController, UnknownPropertyError
 from ..utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
@@ -161,7 +158,7 @@ class VirtualPoint(VirtualPointProperties):
                         -self.properties.history_size :
                     ]
                     assert len(self._history.timestamp) == len(self._history.value)
-                except Exception as e:
+                except Exception:
                     self._log.exception("Can't append to history")
 
     @property

@@ -7,11 +7,7 @@ from bacpypes.object import (
     AnalogInputObject,
     AnalogOutputObject,
     AnalogValueObject,
-    BinaryValueObject,
     DeviceObject,
-    Object,
-    Property,
-    register_object_type,
 )
 from bacpypes.primitivedata import (
     Atomic,
@@ -40,7 +36,6 @@ JCIDeviceObject = {
         "ARCHIVE_STATUS": {"obj_id": 1187, "datatype": Unsigned, "mutable": False},
         "ARCHIVE_TIME": {"obj_id": 850, "datatype": Time, "mutable": False},
         "CPU_USAGE": {"obj_id": 2583, "datatype": Real, "mutable": False},
-        "ENABLED": {"obj_id": 673, "datatype": Boolean, "mutable": True},
         "ENABLED": {"obj_id": 673, "datatype": Boolean, "mutable": True},
         "EXECUTION_PRIORITY": {
             "obj_id": 2197,

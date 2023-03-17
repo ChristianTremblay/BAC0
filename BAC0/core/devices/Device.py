@@ -513,7 +513,7 @@ class DeviceConnected(Device):
             self._log.error("Controller not found, aborting. ({})".format(error))
             return ("Not Found", "", [], [])
 
-        except SegmentationNotSupported as error:
+        except SegmentationNotSupported:
             self._log.warning("Segmentation not supported")
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
@@ -587,7 +587,7 @@ class DeviceConnected(Device):
                                 )
                             else:
                                 raise ValueError()
-                        except ValueError as ve:
+                        except ValueError:
                             raise ValueError()
         except ValueError as ve:
             self._log.error("{}".format(ve))
@@ -873,7 +873,7 @@ class DeviceDisconnected(Device):
 
         else:
             try:
-                name = self.properties.network.read(
+                self.properties.network.read(
                     "{} device {} objectName".format(
                         self.properties.address, self.properties.device_id
                     )

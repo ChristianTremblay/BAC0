@@ -1,10 +1,10 @@
-from bacpypes.apdu import AbortPDU, RejectPDU, SimpleAckPDU, SubscribeCOVRequest
+from bacpypes.apdu import SubscribeCOVRequest
 from bacpypes.constructeddata import Array
 from bacpypes.core import deferred
 from bacpypes.iocb import IOCB
-from bacpypes.object import get_datatype, get_object_class
+from bacpypes.object import get_datatype
 from bacpypes.pdu import Address
-from bacpypes.primitivedata import ObjectIdentifier, Tag, Unsigned
+from bacpypes.primitivedata import Unsigned
 
 from BAC0.core.io.Read import cast_datatype_from_tag
 

@@ -15,7 +15,6 @@ except ImportError:
     _PANDAS = False
 
 from bacpypes.primitivedata import Date, Time
-from bacpypes.basetypes import StatusFlags
 from collections import namedtuple
 
 # --- this application's modules ---
@@ -162,7 +161,7 @@ class TrendLog(TrendLogProperties):
             _status = each.statusFlags
             print(_index, _logDatum, _status, _choice)
             his_component = HistoryComponent(_index, _logDatum, _status, _choice)
-            if not his_component in self.properties._history_components:
+            if his_component not in self.properties._history_components:
                 self.properties._history_components.append(his_component)
 
         if _PANDAS:
@@ -183,8 +182,8 @@ class TrendLog(TrendLogProperties):
                 }
             )
             df = df.set_index("index")
-            #df["choice"] = _choice
-            #df[self.properties.object_name] = df['logDatum']
+            # df["choice"] = _choice
+            # df[self.properties.object_name] = df['logDatum']
 
             self.properties._df = df
         else:
