@@ -61,11 +61,12 @@ class ObjectFactory(object):
         is_commandable=False,
         relinquish_default=None,
     ):
+        _localTrendLogDataType = properties.pop("trendLog_datatype", None)
         self._properties = ObjectFactory.default_properties(
             objectType, properties, is_commandable, relinquish_default
         )
         print(f"Obj {objectType} of type {type(objectType)}")
-        if not objectType is TrendLogObject:
+        if objectType is not TrendLogObject:
             pv_datatype = ObjectFactory.get_pv_datatype(objectType)
 
             if not isinstance(presentValue, pv_datatype):
@@ -101,7 +102,7 @@ class ObjectFactory(object):
             )
         if objectType is TrendLogObject:
             self.objects[objectName]._local = LocalTrendLog(
-                self.objects[objectName]
+                self.objects[objectName], datatype=_localTrendLogDataType
             )  # this will need to be fed by another process.
 
     def validate_instance(self, objectType, instance):

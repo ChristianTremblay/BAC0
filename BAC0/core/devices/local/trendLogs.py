@@ -15,10 +15,8 @@ from bacpypes.basetypes import (
     LoggingType,
     Reliability,
 )
-from bacpypes.primitivedata import Real
 from bacpypes.constructeddata import ListOf
 from bacpypes.primitivedata import Unsigned
-from datetime import datetime
 from collections import namedtuple
 
 Record = namedtuple(
@@ -35,11 +33,12 @@ class LocalTrendLog(object):
 
     """
 
-    def __init__(self, obj):
+    def __init__(self, obj, datatype):
         self.obj = obj
         self.data = []
         self.bufferSize = 250
         self.statusFlags = StatusFlags([0, 0, 0, 0])
+        self.datatype = datatype
 
     @staticmethod
     def to_float(val):
@@ -63,19 +62,22 @@ class LocalTrendLog(object):
             date=Date(year=_y - 1900, month=_M, day=_d), time=Time(hour=_h, minute=_m)
         )
 
-    def to_bacpypes_logrecord(self, record, datatype=None):
+    def to_logDatum(self, value):
+        for each in LogRecordLogDatum.choiceElements:
+            if each.name == self.datatype:
+                return {self.datatype: each.klass(value)}
+
+    def to_bacpypes_logrecord(self, record):
         """
         For now, only support real... make it work first
         """
-        _xref = {
-            "numeric": ("realValue", Real),
-        }
         _timestamp = record.timestamp.astimezone()
         _dt = self.to_bacpypes_datetime(_timestamp)
+        record_value = self.to_logDatum(record.value)
 
         return LogRecord(
             timestamp=_dt,
-            logDatum=LogRecordLogDatum(realValue=Real(record.value)),
+            logDatum=LogRecordLogDatum(**record_value),
             statusFlags=record.statusFlags,
         )
 
@@ -104,7 +106,7 @@ class LocalTrendLog(object):
             trendFlag=None,
             logEvent=None,
         )
-        if not _rec.timestamp in [each.timestamp for each in self.data]:
+        if _rec.timestamp not in [each.timestamp for each in self.data]:
             self.data.append(_rec)
 
         # limit to 250 values

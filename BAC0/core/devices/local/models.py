@@ -2,7 +2,6 @@ from bacpypes.basetypes import (
     Boolean,
     Date,
     DateTime,
-    DeviceObjectPropertyReference,
     EventState,
     LogRecord,
     Polarity,
@@ -25,7 +24,7 @@ from bacpypes.object import (
     MultiStateValueObject,
     TrendLogObject,
 )
-from bacpypes.primitivedata import CharacterString, ObjectIdentifier
+from bacpypes.primitivedata import CharacterString
 
 from .object import ObjectFactory
 
@@ -279,7 +278,8 @@ def trendlog(**kwargs):
             "logBuffer": ListOf(LogRecord),
             # "logDeviceObjectProperty": DeviceObjectPropertyReference(
             #    objectIdentifier=ObjectIdentifier("trendLog", 0),
-            # )
+            # ),
+            "trendLog_datatype": "realValue",
         },
     }
     return _create(definition, **kwargs)
