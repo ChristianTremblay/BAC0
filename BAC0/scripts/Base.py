@@ -105,6 +105,7 @@ class Base:
     def __init__(
         self,
         localIPAddr="127.0.0.1",
+        networkNumber=None,
         localObjName="BAC0",
         deviceId=None,
         firmwareRevision="".join(sys.version.split("|")[:2]),
@@ -155,6 +156,7 @@ class Base:
                     localIPAddr
                 )
             )
+        self.networkNumber = networkNumber
 
         self.Boid = (
             int(deviceId) if deviceId else (3056177 + int(random.uniform(0, 1000)))
@@ -224,6 +226,7 @@ class Base:
                 self.this_application = BAC0BBMDDeviceApplication(
                     self.this_device,
                     self.localIPAddr,
+                    networkNumber=self.networkNumber,
                     bdtable=self.bdtable,
                     iam_req=self._iam_request(),
                     subscription_contexts=self.subscription_contexts,
@@ -234,6 +237,7 @@ class Base:
                 self.this_application = BAC0ForeignDeviceApplication(
                     self.this_device,
                     self.localIPAddr,
+                    networkNumber=self.networkNumber,
                     bbmdAddress=self.bbmdAddress,
                     bbmdTTL=self.bbmdTTL,
                     iam_req=self._iam_request(),
@@ -244,6 +248,7 @@ class Base:
                 self.this_application = BAC0Application(
                     self.this_device,
                     self.localIPAddr,
+                    networkNumber=self.networkNumber,
                     iam_req=self._iam_request(),
                     subscription_contexts=self.subscription_contexts,
                 )
