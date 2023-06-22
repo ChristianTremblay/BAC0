@@ -77,7 +77,6 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
         queue.request_io(iocb)
 
     def _net_complete(self, npdu):
-
         # look up the queue
         queue = self.queue_by_address.get(npdu.pduDestination, None)
         if not queue:
@@ -367,6 +366,7 @@ class Discover:
         elif object_id and not object_name:
             obj = WhoHasObject(objectIdentifier=obj_id)
         else:
+            obj_name = CharacterString(object_name)
             obj = WhoHasObject(objectIdentifier=obj_id, objectName=obj_name)
         limits = WhoHasLimits(
             deviceInstanceRangeLowLimit=instance_range_low_limit,
