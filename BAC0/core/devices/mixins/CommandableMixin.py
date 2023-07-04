@@ -1,52 +1,34 @@
 #!/usr/bin/env python
+# type: ignore
 
 """
 Rebuilt Commandable
 """
 
-from bacpypes.debugging import bacpypes_debugging, ModuleLogger
-from bacpypes.consolelogging import ConfigArgumentParser
-
-from bacpypes.core import run
-from bacpypes.task import OneShotTask
-from bacpypes.errors import ExecutionError
-
-from bacpypes.primitivedata import (
-    BitString,
-    CharacterString,
-    Date,
-    Integer,
-    Double,
-    Enumerated,
-    OctetString,
-    Real,
-    Time,
-    Unsigned,
-)
 from bacpypes.basetypes import (
     BinaryPV,
     ChannelValue,
     DateTime,
     DoorValue,
-    PriorityValue,
     PriorityArray,
+    PriorityValue,
 )
+from bacpypes.debugging import ModuleLogger, bacpypes_debugging
+from bacpypes.errors import ExecutionError
+from bacpypes.local.object import CurrentPropertyListMixIn
 from bacpypes.object import (
-    Property,
-    ReadableProperty,
-    WritableProperty,
-    register_object_type,
     AccessDoorObject,
     AnalogOutputObject,
     AnalogValueObject,
     BinaryOutputObject,
     BinaryValueObject,
     BitStringValueObject,
+    ChannelObject,
     CharacterStringValueObject,
-    DateValueObject,
     DatePatternValueObject,
     DateTimePatternValueObject,
     DateTimeValueObject,
+    DateValueObject,
     IntegerValueObject,
     LargeAnalogValueObject,
     LightingOutputObject,
@@ -54,14 +36,26 @@ from bacpypes.object import (
     MultiStateValueObject,
     OctetStringValueObject,
     PositiveIntegerValueObject,
-    TimeValueObject,
+    Property,
+    ReadableProperty,
     TimePatternValueObject,
-    ChannelObject,
+    TimeValueObject,
+    WritableProperty,
+    register_object_type,
 )
-
-from bacpypes.app import BIPSimpleApplication
-from bacpypes.local.object import CurrentPropertyListMixIn
-from bacpypes.local.device import LocalDeviceObject
+from bacpypes.primitivedata import (
+    BitString,
+    CharacterString,
+    Date,
+    Double,
+    Enumerated,
+    Integer,
+    OctetString,
+    Real,
+    Time,
+    Unsigned,
+)
+from bacpypes.task import OneShotTask
 
 # some debugging
 _debug = 0

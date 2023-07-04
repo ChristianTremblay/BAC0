@@ -8,8 +8,8 @@
 DoOnce.py - execute a task once
 """
 
-from .TaskManager import OneShotTask
 from ..core.utils.notes import note_and_log
+from .TaskManager import OneShotTask
 
 
 @note_and_log

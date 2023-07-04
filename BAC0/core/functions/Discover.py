@@ -15,39 +15,32 @@ import time
 
 # --- 3rd party modules ---
 from bacpypes.apdu import (
-    WhoIsRequest,
     IAmRequest,
-    WhoHasRequest,
     WhoHasLimits,
     WhoHasObject,
+    WhoHasRequest,
+    WhoIsRequest,
 )
 from bacpypes.core import deferred
-from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
-from bacpypes.primitivedata import Unsigned, ObjectIdentifier, CharacterString
-from bacpypes.constructeddata import Array
-from bacpypes.object import get_object_class, get_datatype
-from bacpypes.iocb import IOCB, SieveQueue, IOController
-
-from bacpypes.netservice import NetworkServiceAccessPoint, NetworkServiceElement
+from bacpypes.iocb import IOCB, IOController, SieveQueue
+from bacpypes.netservice import NetworkServiceElement
 from bacpypes.npdu import (
-    WhoIsRouterToNetwork,
     IAmRouterToNetwork,
     InitializeRoutingTable,
     InitializeRoutingTableAck,
-    WhatIsNetworkNumber,
     NetworkNumberIs,
     RejectMessageToNetwork,
+    WhatIsNetworkNumber,
+    WhoIsRouterToNetwork,
 )
+from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
+from bacpypes.primitivedata import CharacterString, ObjectIdentifier
+
+from ...core.utils.notes import note_and_log
 
 # --- this application's modules ---
-from ..io.IOExceptions import (
-    SegmentationNotSupported,
-    ReadPropertyException,
-    ReadPropertyMultipleException,
-    NoResponseFromController,
-    ApplicationNotStarted,
-)
-from ...core.utils.notes import note_and_log
+from ..io.IOExceptions import ApplicationNotStarted
+
 
 # ------------------------------------------------------------------------------
 @note_and_log
@@ -84,7 +77,6 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
         queue.request_io(iocb)
 
     def _net_complete(self, npdu):
-
         # look up the queue
         queue = self.queue_by_address.get(npdu.pduDestination, None)
         if not queue:
@@ -197,6 +189,7 @@ class Discover:
         # build a request
         request = WhoIsRequest()
         if (len(args) == 1) or (len(args) == 3):
+            self._log.info("{:>12} {}".format("- discovered addr:", args))
             request.pduDestination = Address(args[0])
             del args[0]
         else:
@@ -223,12 +216,13 @@ class Discover:
         iocb.wait()  # Wait for BACnet response
 
         if iocb.ioResponse:  # successful response
-            apdu = iocb.ioResponse
+            pass
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
             pass
 
-        time.sleep(3)
+        for each in range(100):
+            time.sleep(1 / 1000)
         self.discoveredDevices = self.this_application.i_am_counter
         return self.this_application._last_i_am_received
 
@@ -372,6 +366,7 @@ class Discover:
         elif object_id and not object_name:
             obj = WhoHasObject(objectIdentifier=obj_id)
         else:
+            obj_name = CharacterString(object_name)
             obj = WhoHasObject(objectIdentifier=obj_id, objectName=obj_name)
         limits = WhoHasLimits(
             deviceInstanceRangeLowLimit=instance_range_low_limit,
@@ -394,7 +389,7 @@ class Discover:
         self.this_application._last_i_have_received = []
 
         if iocb.ioResponse:  # successful response
-            apdu = iocb.ioResponse
+            pass
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
             pass

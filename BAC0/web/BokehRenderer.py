@@ -8,41 +8,29 @@
 This module deals with Bokeh Session, Document and Plots
 A connection to the server is mandatory to use update_data
 """
-from bokeh.plotting import Figure
-from bokeh.models import (
-    ColumnDataSource,
-    HoverTool,
-    Range1d,
-    Label,
-    LabelSet,
-    LinearAxis,
-    Legend,
-    LegendItem,
-    Dropdown,
-    MultiChoice,
-    CustomJS,
-)
-from bokeh.models.widgets import DataTable, TableColumn, Div
-from bokeh.layouts import widgetbox, row, column, gridplot, widgetbox
-from bokeh.palettes import d3, viridis
-from bokeh.io import curdoc
-from bokeh.application.handlers import Handler
-from bokeh.models.tools import CustomJSHover
-
-from functools import partial
-
-from tornado import gen
-
-import math
-import pandas as pd
 import weakref
 from queue import Queue
-from collections import deque
 
-from ..tasks.RecurringTask import RecurringTask
-from ..core.utils.notes import note_and_log
+import pandas as pd
+from bokeh.application.handlers import Handler
+from bokeh.io import curdoc
+from bokeh.layouts import column, row
+from bokeh.models import (
+    ColumnDataSource,
+    CustomJS,
+    HoverTool,
+    Legend,
+    LegendItem,
+    LinearAxis,
+    MultiChoice,
+    Range1d,
+)
+from bokeh.models.widgets import DataTable, TableColumn
+from bokeh.palettes import d3
+from bokeh.plotting import Figure
+
 from ..core.devices.Virtuals import VirtualPoint
-from ..core.devices.Trends import TrendLog
+from ..core.utils.notes import note_and_log
 
 
 @note_and_log
@@ -194,7 +182,6 @@ class DynamicPlotHandler(Handler):
 
     def update_glyphs(self):
         self._log.debug("Updating Glyphs")
-        enumerated_axis_needed = True
         for point in self.network.trends:
             name = "{}/{}".format(
                 point.properties.device.properties.name, point.properties.name
@@ -208,7 +195,6 @@ class DynamicPlotHandler(Handler):
                     (name, point.properties.description, point.properties.units_state)
                 )
             elif "multi" in point.properties.type:
-                enumerated_axis_needed = True
                 self.multistates_queue.put(
                     (name, point.properties.description, point.properties.units_state)
                 )

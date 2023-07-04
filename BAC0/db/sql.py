@@ -5,21 +5,22 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-sql.py - 
+sql.py -
 """
+
+import contextlib
+import os.path
 
 # --- standard Python modules ---
 import pickle
-import os.path
 
 # --- 3rd party modules ---
 import sqlite3
-import contextlib
 
 try:
     import pandas as pd
-    from pandas.io import sql
     from pandas.core.base import DataError
+    from pandas.io import sql
 
     try:
         from pandas import Timestamp
@@ -29,7 +30,7 @@ try:
 except ImportError:
     _PANDAS = False
 
-from ..core.io.IOExceptions import RemovedPointException, NoResponseFromController
+from ..core.io.IOExceptions import NoResponseFromController, RemovedPointException
 
 # --- this application's modules ---
 
@@ -271,7 +272,7 @@ class SQLMixin(object):
         """
         Retrive point histories from SQL database
         """
-        his = self._read_from_sql('select * from "{}"'.format("history", db_name))
+        his = self._read_from_sql('select * from "{}"'.format("history"), db_name)
         his.index = his["index"].apply(Timestamp)
         return his.set_index("index")[point]
 

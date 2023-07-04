@@ -21,18 +21,17 @@ Once the class is created, create the local object and use it::
     bacnet.read('2:5 analogInput 1 presentValue)
 
 """
+import logging
+import time
+import typing as t
+
 # --- standard Python modules ---
 from datetime import datetime
-import logging
-import pandas as pd
-import time
 
+import pandas as pd
 
 # --- 3rd party modules ---
 from bokeh.application import Application
-
-# --- this application's modules ---
-from ..scripts.Lite import Lite
 
 from ..core.io.IOExceptions import (
     BokehServerCantStart,
@@ -41,6 +40,8 @@ from ..core.io.IOExceptions import (
 )
 from ..core.utils.notes import note_and_log, update_log_level
 
+# --- this application's modules ---
+from ..scripts.Lite import Lite
 from ..web.BokehRenderer import (
     DevicesTableHandler,
     DynamicPlotHandler,
@@ -61,9 +62,7 @@ class Stats_Mixin:
     def number_of_devices(self):
         if not self.discoveredDevices:
             return 0
-        s = []
-        [s.append(x) for x in self.discoveredDevices.items() if x[1] > 0]
-        return len(s)
+        return len([x for x in self.discoveredDevices.items() if x[1] > 0])
 
     @property
     def number_of_registered_trends(self):
@@ -105,7 +104,7 @@ class Stats_Mixin:
         """
         Used by Flask to show informations on the network
         """
-        statistics = {}
+        statistics: t.Dict[str, t.Any] = {}
         mstp_networks = []
         mstp_map = {}
         ip_devices = []
@@ -190,7 +189,7 @@ class Complete(Lite, Stats_Mixin):
     @property
     def devices(self):
         lst = []
-        for device in list(self.discoveredDevices):
+        for device in list(self.discoveredDevices or {}):
             try:
                 deviceName, vendorName = self.readMultiple(
                     "{} device {} objectName vendorName".format(device[0], device[1])
@@ -252,7 +251,7 @@ class Complete(Lite, Stats_Mixin):
             )
             self._log.error(error)
 
-        except RuntimeError as rterror:
+        except RuntimeError:
             self.bokehserver = False
             self._log.warning("Server already running")
 

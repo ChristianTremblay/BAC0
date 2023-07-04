@@ -19,34 +19,32 @@ Write.py - creation of WriteProperty requests
 
 
 """
-# --- 3rd party modules ---
-from bacpypes.debugging import bacpypes_debugging, ModuleLogger
-
-from bacpypes.pdu import Address
-from bacpypes.object import get_datatype
-
 from bacpypes.apdu import (
-    WritePropertyRequest,
-    WritePropertyMultipleRequest,
     SimpleAckPDU,
     WriteAccessSpecification,
+    WritePropertyMultipleRequest,
+    WritePropertyRequest,
 )
-
-from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real, Enumerated
-from bacpypes.constructeddata import Array, Any, SequenceOf
-from bacpypes.basetypes import PropertyValue, PropertyIdentifier
-from bacpypes.iocb import IOCB
+from bacpypes.basetypes import PropertyValue
+from bacpypes.constructeddata import Any, Array
 from bacpypes.core import deferred
+
+# --- 3rd party modules ---
+from bacpypes.debugging import ModuleLogger
+from bacpypes.iocb import IOCB
+from bacpypes.object import get_datatype
+from bacpypes.pdu import Address
+from bacpypes.primitivedata import Atomic, Enumerated, Integer, Null, Real, Unsigned
+
+from ...core.utils.notes import note_and_log
 
 # --- this application's modules ---
 from .IOExceptions import (
-    WritePropertyCastError,
-    NoResponseFromController,
-    WritePropertyException,
-    WriteAccessDenied,
     ApplicationNotStarted,
+    NoResponseFromController,
+    WritePropertyCastError,
+    WritePropertyException,
 )
-from ...core.utils.notes import note_and_log
 from .Read import find_reason
 
 # ------------------------------------------------------------------------------
@@ -102,9 +100,7 @@ class WriteProperty:
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))
-                )
+                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -279,9 +275,7 @@ class WriteProperty:
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))
-                )
+                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -327,7 +321,7 @@ class WriteProperty:
                 None,
             )
 
-            if existingObject == None:
+            if existingObject is None:
                 property_values.append(
                     PropertyValue(
                         propertyIdentifier=prop_id,

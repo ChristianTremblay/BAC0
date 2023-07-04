@@ -7,16 +7,16 @@
 """
 This module will start the Flask server 
 """
-from threading import Thread
-import weakref
-import logging
-from flask import Flask, render_template, jsonify, request
-from flask_bootstrap import Bootstrap
 import json
-from bokeh.embed import server_document
+import weakref
+from threading import Thread
 
-from .templates import create_sidebar, create_card, update_notifications
+from bokeh.embed import server_document
+from flask import Flask, jsonify, render_template, request
 from flask.logging import default_handler
+from flask_bootstrap import Bootstrap
+
+from .templates import create_card, create_sidebar, update_notifications
 
 
 class FlaskServer(Thread):

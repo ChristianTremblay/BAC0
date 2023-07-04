@@ -8,27 +8,24 @@
 TimeSync.py - creation of time synch requests
 
 """
-from ...core.io.Read import find_reason
-from ..io.IOExceptions import (
-    SegmentationNotSupported,
-    ReadPropertyException,
-    ReadPropertyMultipleException,
-    NoResponseFromController,
-    ApplicationNotStarted,
-)
-from ...core.utils.notes import note_and_log
-
 # --- standard Python modules ---
 import datetime as dt
+from datetime import datetime
+
+import pytz
+from bacpypes.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest
+from bacpypes.basetypes import DateTime
+from bacpypes.core import deferred
+from bacpypes.iocb import IOCB
 
 # --- 3rd party modules ---
 from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
 from bacpypes.primitivedata import Date, Time
-from bacpypes.basetypes import DateTime
-from bacpypes.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest
-from bacpypes.iocb import IOCB
-from bacpypes.core import deferred
-import pytz
+
+from ...core.utils.notes import note_and_log
+from ..io.IOExceptions import (
+    ApplicationNotStarted,
+)
 
 
 def _build_datetime(UTC=False):
@@ -138,14 +135,14 @@ class TimeHandler(object):
     of timezone.
     """
 
-    def __init__(self, tz="America/Montreal"):
+    def __init__(self, tz: str = "America/Montreal") -> None:
         self.set_timezone(tz)
 
-    def set_timezone(self, tz):
+    def set_timezone(self, tz: str) -> None:
         self.timezone = pytz.timezone(tz)
 
     @property
-    def now(self):
+    def now(self) -> datetime:
         return dt.datetime.now()
 
     def local_time(self):
@@ -154,11 +151,11 @@ class TimeHandler(object):
     def local_date(self):
         return self.now.date()
 
-    def utcOffset(self):
+    def utcOffset(self) -> float:
         "Returns UTC offset in minutes"
-        return round(self.now.astimezone().utcoffset().total_seconds() / 60)
+        return round(self.now.astimezone().utcoffset().total_seconds() / 60)  # type: ignore[union-attr]
 
-    def is_dst(self):
+    def is_dst(self) -> bool:
         return self.timezone.dst(self.now) != dt.timedelta(0)
 
     def __repr__(self):

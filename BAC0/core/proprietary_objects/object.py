@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from bacpypes.object import (
     Object,
     Property,
@@ -5,8 +7,9 @@ from bacpypes.object import (
     registered_object_types,
 )
 
+
 # Prochaine étape : créer une focntion qui va lire "all" et se redéfinir dynamiquement
-def create_proprietary_object(params):
+def create_proprietary_object(params: Dict[str, Any]) -> None:
 
     try:
         _validate_params(params)
@@ -36,7 +39,7 @@ def create_proprietary_object(params):
     registered_object_types["BAC0"][params["name"]] = params["properties"]
 
 
-def _validate_params(params):
+def _validate_params(params: Dict[str, Any]) -> bool:
     if not params["name"]:
         raise ValueError(
             "Proprietary definition dict must contains a name key with a custom class name"

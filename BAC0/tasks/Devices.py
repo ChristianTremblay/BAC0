@@ -4,21 +4,15 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-"""
-Match.py - verify a point's status matches its commanded value.
-
-Example:
-    Is a fan commanded to 'On' actually 'running'?
-"""
 
 # --- standard Python modules ---
 # --- 3rd party modules ---
 
+from ..core.devices.Device import Device
+from ..core.io.IOExceptions import BadDeviceDefinition
+
 # --- this application's modules ---
 from .TaskManager import Task
-from ..core.io.IOExceptions import BadDeviceDefinition
-from ..core.devices.Device import Device
-from ..core.utils.notes import note_and_log
 
 """
 A way to define a BAC0.device using a task, so it won't block the Notebook or the REPL

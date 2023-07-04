@@ -1,7 +1,9 @@
+import time
+
+from bacpypes.primitivedata import Real
+
 import BAC0
 from BAC0.core.devices.local.models import analog_value
-from bacpypes.primitivedata import Real
-import time
 
 device = BAC0.lite("192.168.211.55/24", deviceId=123)
 client = BAC0.lite("192.168.212.12/24")

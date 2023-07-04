@@ -1,11 +1,10 @@
 try:
     from influxdb_client import InfluxDBClient, Point, WriteOptions
-
+    from influxdb_client.client.write import WriteApi
 except ImportError:
     raise ImportError("Install influxdb to use this feature")
 
 import pytz
-from datetime import datetime
 
 
 class InfluxDB:
@@ -21,7 +20,8 @@ class InfluxDB:
     tags_file = None
     username = None
     password = None
-    client = None
+    client: InfluxDBClient
+    write_api: WriteApi
 
     def __init__(self, params):
         # params should be a dict with name=InfluxDB and bucket=valid_bucket_to_use.
@@ -177,7 +177,7 @@ class InfluxDB:
                         "device_id",
                     ],
                 )
-            except Exception as error:
+            except Exception:
                 # print('Oups', _name, error)
                 continue
 

@@ -6,14 +6,15 @@ logging feature at the same time.
 Goal is to be able to access quickly to important informations for
 the web interface.
 """
+import logging
+import os
+import sys
+import typing as t
+
 # --- standard Python modules ---
 from collections import namedtuple
 from datetime import datetime
-import logging
-from logging import FileHandler
-import sys
-
-import os
+from logging import FileHandler, Logger
 from os.path import expanduser, join
 
 # --- 3rd party modules ---
@@ -26,7 +27,7 @@ except ImportError:
 
 
 class LogList:
-    LOGGERS = []
+    LOGGERS: t.List[Logger] = []
 
 
 def convert_level(level):

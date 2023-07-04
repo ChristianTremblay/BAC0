@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# type: ignore
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
@@ -12,12 +13,11 @@ Simulate.py - simulate the value of controller I/O values
 # --- 3rd party modules ---
 # --- this application's modules ---
 from .IOExceptions import (
+    ApplicationNotStarted,
+    NoResponseFromController,
     OutOfServiceNotSet,
     OutOfServiceSet,
-    NoResponseFromController,
-    ApplicationNotStarted,
 )
-
 
 # ------------------------------------------------------------------------------
 

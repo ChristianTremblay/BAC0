@@ -1,36 +1,20 @@
-from .decorator import bacnet_properties, make_commandable, create
+import typing as t
+from collections import namedtuple
 
-from ...utils.notes import note_and_log
+from bacpypes.basetypes import PriorityArray, Reliability
+from bacpypes.object import TrendLogObject
+from colorama import Fore
+
+from BAC0.core.devices.local.trendLogs import LocalTrendLog
+
 from ....scripts.Base import Base
 from ...app.ScriptApplication import (
     BAC0Application,
     BAC0BBMDDeviceApplication,
     BAC0ForeignDeviceApplication,
 )
-
-from bacpypes.object import (
-    AnalogInputObject,
-    AnalogValueObject,
-    BinaryValueObject,
-    Property,
-    register_object_type,
-    registered_object_types,
-    DatePatternValueObject,
-    ReadableProperty,
-    WritableProperty,
-    OptionalProperty,
-)
-from bacpypes.basetypes import (
-    EngineeringUnits,
-    DateTime,
-    PriorityArray,
-    StatusFlags,
-    Reliability,
-    Polarity,
-)
-
-from collections import namedtuple
-from colorama import Fore, Back, Style
+from ...utils.notes import note_and_log
+from .decorator import bacnet_properties, create, make_commandable
 
 
 @note_and_log
@@ -55,14 +39,14 @@ class ObjectFactory(object):
 
     """
 
-    instances = {}
+    instances: t.Dict[str, t.Set] = {}
 
-    definition = namedtuple(
+    definition = namedtuple(  # type: ignore[name-match]
         "Definition",
         "name, objectType, instance, properties, description, presentValue, is_commandable, relinquish_default",
     )
 
-    objects = {}
+    objects: t.Dict[str, t.Any] = {}
     # In the future... should think about a way to store relinquish default values because on a restart
     # those should be restored.
 
@@ -77,16 +61,21 @@ class ObjectFactory(object):
         is_commandable=False,
         relinquish_default=None,
     ):
+        _localTrendLogDataType = properties.pop("trendLog_datatype", None)
         self._properties = ObjectFactory.default_properties(
             objectType, properties, is_commandable, relinquish_default
         )
-        pv_datatype = ObjectFactory.get_pv_datatype(objectType)
+        print(f"Obj {objectType} of type {type(objectType)}")
+        if objectType is not TrendLogObject:
+            pv_datatype = ObjectFactory.get_pv_datatype(objectType)
 
-        if not isinstance(presentValue, pv_datatype):
-            try:
-                presentValue = pv_datatype(presentValue)
-            except:
-                raise ValueError("Wrong datatype provided for presentValue")
+            if not isinstance(presentValue, pv_datatype):
+                try:
+                    presentValue = pv_datatype(presentValue)
+                except:
+                    raise ValueError(
+                        f"Wrong datatype provided for presentValue for {objectType} of type {type(objectType)}"
+                    )
 
         @bacnet_properties(self._properties)
         @make_commandable()
@@ -111,6 +100,10 @@ class ObjectFactory(object):
             self.objects[objectName] = _create(
                 objectType, instance, objectName, presentValue, description
             )
+        if objectType is TrendLogObject:
+            self.objects[objectName]._local = LocalTrendLog(
+                self.objects[objectName], datatype=_localTrendLogDataType
+            )  # this will need to be fed by another process.
 
     def validate_instance(self, objectType, instance):
         _warning = True

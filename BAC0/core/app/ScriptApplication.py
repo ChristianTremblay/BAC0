@@ -5,47 +5,61 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-SimpleApplication 
+SimpleApplication
 =================
 
-A basic BACnet application (bacpypes BIPSimpleApplication) for interacting with 
-the bacpypes BACnet stack.  It enables the base-level BACnet functionality 
+A basic BACnet application (bacpypes BIPSimpleApplication) for interacting with
+the bacpypes BACnet stack.  It enables the base-level BACnet functionality
 (a.k.a. device discovery) - meaning it can send & receive WhoIs & IAm messages.
 
-Additional functionality is enabled by inheriting this application, and then 
+Additional functionality is enabled by inheriting this application, and then
 extending it with more functions. [See BAC0.scripts for more examples of this.]
 
 """
+import typing as t
+
 # --- standard Python modules ---
 from collections import defaultdict
+from typing import Any, Dict, Optional
+
+from bacpypes.apdu import IAmRequest, ReadRangeACK, SimpleAckPDU
 
 # --- 3rd party modules ---
 from bacpypes.app import ApplicationIOController
-from bacpypes.pdu import Address
-from bacpypes.service.object import ReadWritePropertyMultipleServices
-from bacpypes.service.cov import ChangeOfValueServices
-from bacpypes.netservice import NetworkServiceAccessPoint, NetworkServiceElement
+from bacpypes.appservice import ApplicationServiceAccessPoint, StateMachineAccessPoint
 from bacpypes.bvllservice import (
-    BIPSimple,
-    BIPForeign,
     BIPBBMD,
     AnnexJCodec,
+    BIPForeign,
+    BIPSimple,
     UDPMultiplexer,
 )
-from bacpypes.apdu import SubscribeCOVRequest, SimpleAckPDU, RejectPDU, AbortPDU
-
-from bacpypes.appservice import StateMachineAccessPoint, ApplicationServiceAccessPoint
-from bacpypes.comm import ApplicationServiceElement, bind, Client
-from bacpypes.iocb import IOCB
+from bacpypes.comm import Client, bind
+from bacpypes.constructeddata import (
+    Array,
+    List,
+    SequenceOfAny,
+)
 from bacpypes.core import deferred
+from bacpypes.errors import ExecutionError, RejectException
+from bacpypes.iocb import IOCB
+from bacpypes.local.device import LocalDeviceObject
+from bacpypes.netservice import NetworkServiceAccessPoint
+from bacpypes.object import PropertyError
+from bacpypes.pdu import Address
+from bacpypes.service.cov import ChangeOfValueServices
 
 # basic services
-from bacpypes.service.device import WhoIsIAmServices, WhoHasIHaveServices
-from bacpypes.service.object import ReadWritePropertyServices
+from bacpypes.service.device import WhoHasIHaveServices, WhoIsIAmServices
+from bacpypes.service.object import (
+    ReadWritePropertyMultipleServices,
+    ReadWritePropertyServices,
+)
+
+from ..functions.Discover import NetworkServiceElementWithRequests
 
 # --- this application's modules ---
 from ..utils.notes import note_and_log
-from ..functions.Discover import NetworkServiceElementWithRequests
 
 # ------------------------------------------------------------------------------
 
@@ -147,6 +161,82 @@ class common_mixin:
         if context.callback is not None:
             context.callback(elements=elements)
 
+    def do_ReadRangeRequest(self, apdu):
+        self._log.debug("do_ReadRangeRequest %r", apdu)
+
+        # extract the object identifier
+        objId = apdu.objectIdentifier
+
+        # get the object
+        obj = self.get_object_id(objId)
+        self._log.debug("    - object: %r", obj)
+
+        if not obj:
+            raise ExecutionError(errorClass="object", errorCode="unknownObject")
+
+        # get the datatype
+        datatype = obj.get_datatype(apdu.propertyIdentifier)
+        self._log.debug("    - datatype: %r", datatype)
+
+        # must be a list, or an array of lists
+        if issubclass(datatype, List):
+            pass
+        elif (
+            (apdu.propertyArrayIndex is not None)
+            and issubclass(datatype, Array)
+            and issubclass(datatype.subtype, List)
+        ):
+            pass
+        else:
+            raise ExecutionError(errorClass="property", errorCode="propertyIsNotAList")
+
+        # get the value
+        self._log.debug(apdu.__dict__)
+        value = obj.ReadProperty(apdu.propertyIdentifier, apdu.propertyArrayIndex)
+        self._log.debug(f"    - value: {value.__repr__()} | of type {type(value)}")
+        if value is None:
+            raise PropertyError(apdu.propertyIdentifier)
+        if isinstance(value, List):
+            self._log.debug("    - value is a list of: %r", datatype.subtype)
+            # datatype = datatype.subtype
+
+        if apdu.range.byPosition:
+            range_by_position = apdu.range.byPosition
+            self._log.debug("    - range_by_position: %r", range_by_position)
+
+        elif apdu.range.bySequenceNumber:
+            range_by_sequence_number = apdu.range.bySequenceNumber
+            self._log.debug(
+                "    - range_by_sequence_number: %r", range_by_sequence_number
+            )
+
+        elif apdu.range.byTime:
+            range_by_time = apdu.range.byTime
+            self._log.debug("    - range_by_time: %r", range_by_time)
+
+        else:
+            raise RejectException("missingRequiredParameter")
+
+        # this is an ack
+        resp = ReadRangeACK(context=apdu)
+        resp.objectIdentifier = objId
+        resp.propertyIdentifier = apdu.propertyIdentifier
+        resp.propertyArrayIndex = apdu.propertyArrayIndex
+
+        resp.resultFlags = [1, 1, 0]
+        resp.itemCount = len(value)
+
+        # save the result in the item data
+        item_data = SequenceOfAny()
+        item_data.cast_in(value)
+        resp.itemData = item_data
+        self._log.debug("    - itemData : %r", resp.itemData)
+        self._log.debug("    - resp: %r", resp)
+        self.response(resp)
+        # return the result
+        # iocb = IOCB(resp)  # make an IOCB
+        # deferred(self.request_io, iocb)
+
 
 @note_and_log
 class BAC0Application(
@@ -168,15 +258,16 @@ class BAC0Application(
 
     def __init__(
         self,
-        localDevice,
-        localAddress,
+        localDevice: LocalDeviceObject,
+        localAddress: Address,
+        networkNumber: int = None,
         bbmdAddress=None,
-        bbmdTTL=0,
+        bbmdTTL: int = 0,
         deviceInfoCache=None,
         aseID=None,
-        iam_req=None,
-        subscription_contexts=None,
-    ):
+        iam_req: Optional[IAmRequest] = None,
+        subscription_contexts: Optional[Dict[Any, Any]] = None,
+    ) -> None:
 
         ApplicationIOController.__init__(
             self, localDevice, deviceInfoCache, aseID=aseID
@@ -188,7 +279,7 @@ class BAC0Application(
             self.localAddress = localAddress
         else:
             self.localAddress = Address(localAddress)
-
+        self.networkNumber = networkNumber
         # include a application decoder
         self.asap = ApplicationServiceAccessPoint()
 
@@ -220,9 +311,9 @@ class BAC0Application(
         bind(self.bip, self.annexj, self.mux.annexJ)
 
         # bind the BIP stack to the network, no network number
-        self.nsap.bind(self.bip, address=self.localAddress)
+        self.nsap.bind(self.bip, net=self.networkNumber, address=self.localAddress)
 
-        self.i_am_counter = defaultdict(int)
+        self.i_am_counter: t.Dict[t.Tuple[str, int], int] = defaultdict(int)
         self.i_have_counter = defaultdict(int)
         self.who_is_counter = defaultdict(int)
 
@@ -268,6 +359,7 @@ class BAC0ForeignDeviceApplication(
         self,
         localDevice,
         localAddress,
+        networkNumber: int = None,
         bbmdAddress=None,
         bbmdTTL=0,
         deviceInfoCache=None,
@@ -368,6 +460,7 @@ class BAC0BBMDDeviceApplication(
         self,
         localDevice,
         localAddress,
+        networkNumber: int = None,
         bdtable=[],
         deviceInfoCache=None,
         aseID=None,
@@ -427,6 +520,7 @@ class BAC0BBMDDeviceApplication(
 
         # bind the NSAP to the stack, no network number
         self.nsap.bind(self.bip)
+        # self.nsap.bind(self.bip, net=self.networkNumber)
 
         self.i_am_counter = defaultdict(int)
         self.i_have_counter = defaultdict(int)

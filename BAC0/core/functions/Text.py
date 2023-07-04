@@ -1,9 +1,10 @@
-from bacpypes.iocb import IOCB
-from bacpypes.core import deferred
-from bacpypes.apdu import WritePropertyRequest, SimpleAckPDU
-from bacpypes.primitivedata import CharacterString
+from bacpypes.apdu import SimpleAckPDU, WritePropertyRequest
 from bacpypes.constructeddata import Any
+from bacpypes.core import deferred
+from bacpypes.iocb import IOCB
 from bacpypes.pdu import Address
+from bacpypes.primitivedata import CharacterString
+
 from BAC0.core.io.IOExceptions import NoResponseFromController, WritePropertyException
 from BAC0.core.io.Read import find_reason
 

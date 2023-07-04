@@ -5,8 +5,10 @@
 Test BAC0.lite
 """
 
-import pytest
 import time
+
+import pytest
+
 import BAC0
 
 

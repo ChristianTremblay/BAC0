@@ -8,12 +8,10 @@
 Device.py - describe a BACnet Device
 
 """
+import os.path
+
 # --- standard Python modules ---
 from collections import namedtuple
-from datetime import datetime
-import weakref
-
-import os.path
 
 try:
     import pandas as pd
@@ -21,10 +19,9 @@ try:
     _PANDAS = True
 except ImportError:
     _PANDAS = False
-import logging
 
 try:
-    from xlwings import Workbook, Sheet, Range, Chart
+    from xlwings import Chart, Range, Sheet, Workbook  # noqa E401
 
     _XLWINGS = True
 except ImportError:
@@ -34,25 +31,22 @@ except ImportError:
 # --- this application's modules ---
 from bacpypes.basetypes import ServicesSupported
 
-from .Points import NumericPoint, BooleanPoint, EnumPoint, OfflinePoint
-from ..io.IOExceptions import (
-    NoResponseFromController,
-    SegmentationNotSupported,
-    BadDeviceDefinition,
-    RemovedPointException,
-    WritePropertyException,
-    WrongParameter,
-    DeviceNotConnected,
-)
-
 # from ...bokeh.BokehRenderer import BokehPlot
 from ...db.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
-from .mixins.read_mixin import ReadPropertyMultiple, ReadProperty
-from .Virtuals import VirtualPoint
-
+from ..io.IOExceptions import (
+    BadDeviceDefinition,
+    DeviceNotConnected,
+    NoResponseFromController,
+    RemovedPointException,
+    SegmentationNotSupported,
+    WritePropertyException,
+    WrongParameter,
+)
 from ..utils.notes import note_and_log
-
+from .mixins.read_mixin import ReadProperty, ReadPropertyMultiple
+from .Points import BooleanPoint, EnumPoint, NumericPoint, OfflinePoint
+from .Virtuals import VirtualPoint
 
 # ------------------------------------------------------------------------------
 
@@ -134,7 +128,7 @@ class Device(SQLMixin):
         network=None,
         *,
         poll=10,
-        from_backup=None,
+        from_backup=None,  # filename of backup
         segmentation_supported=True,
         object_list=None,
         auto_save=False,
@@ -167,7 +161,7 @@ class Device(SQLMixin):
 
         # self.db = None
         # Todo : find a way to normalize the name of the db
-        self.properties.db_name = ""
+        self.properties.db_name = None
 
         self.points = []
         self._list_of_trendlogs = {}
@@ -176,7 +170,9 @@ class Device(SQLMixin):
         self._polling_task.task = None
         self._polling_task.running = False
 
+        self._find_overrides_progress = 0.0
         self._find_overrides_running = False
+        self._release_overrides_progress = 0.0
         self._release_overrides_running = False
 
         self.note("Controller initialized")
@@ -250,7 +246,7 @@ class Device(SQLMixin):
         :rtype: BAC0.core.devices.Points.Point
         """
         for each in self.points:
-            if each.properties.simulated:
+            if each.properties.simulated[0]:
                 yield each
 
     def _buildPointList(self):
@@ -383,7 +379,7 @@ class Device(SQLMixin):
             )
             return
         lst = []
-        self._find_overrides_progress = 0
+        self._find_overrides_progress = 0.0
         self._find_overrides_running = True
         total = len(self.points)
 
@@ -400,11 +396,11 @@ class Device(SQLMixin):
             )
             self.properties.points_overridden = lst
             self._find_overrides_running = False
-            self._find_overrides_progress = 1
+            self._find_overrides_progress = 1.0
 
         self.do(_find_overrides)
 
-    def find_overrides_progress(self):
+    def find_overrides_progress(self) -> float:
         return self._find_overrides_progress
 
     def release_all_overrides(self, force=False):
@@ -416,7 +412,7 @@ class Device(SQLMixin):
             )
             return
         self._release_overrides_running = True
-        self._release_overrides_progress = 0
+        self._release_overrides_progress = 0.0
 
         def _release_all_overrides():
             self.find_overrides()
@@ -461,11 +457,15 @@ class DeviceConnected(Device):
     def disconnect(self, save_on_disconnect=True, unregister=True):
         self._log.info("Wait while stopping polling")
         self.poll(command="stop")
-        if save_on_disconnect:
-            self.save()
         if unregister:
             self.properties.network.unregister_device(self)
-        self.new_state(DeviceFromDB)
+            self.properties.network = None
+        if save_on_disconnect:
+            self.save()
+        if self.properties.db_name:
+            self.new_state(DeviceFromDB)
+        else:
+            self.new_state(DeviceDisconnected)
 
     def connect(self, *, db=None):
         """
@@ -513,7 +513,7 @@ class DeviceConnected(Device):
             self._log.error("Controller not found, aborting. ({})".format(error))
             return ("Not Found", "", [], [])
 
-        except SegmentationNotSupported as error:
+        except SegmentationNotSupported:
             self._log.warning("Segmentation not supported")
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
@@ -539,15 +539,15 @@ class DeviceConnected(Device):
                 self.points,
                 self._list_of_trendlogs,
             ) = self._discoverPoints(self.custom_object_list)
-            if self.properties.pollDelay > 0:
+            if self.properties.pollDelay is not None and self.properties.pollDelay > 0:
                 self.poll(delay=self.properties.pollDelay)
             self.update_history_size(size=self.properties.history_size)
             # self.clear_histories()
-        except NoResponseFromController as error:
+        except NoResponseFromController:
             self._log.error("Cannot retrieve object list, disconnecting...")
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
-        except IndexError as error:
+        except IndexError:
             if self._reconnect_on_failure:
                 self._log.error("Device creation failed... re-connecting")
                 self.new_state(DeviceDisconnected)
@@ -587,7 +587,7 @@ class DeviceConnected(Device):
                                 )
                             else:
                                 raise ValueError()
-                        except ValueError as ve:
+                        except ValueError:
                             raise ValueError()
         except ValueError as ve:
             self._log.error("{}".format(ve))
@@ -856,17 +856,24 @@ class DeviceDisconnected(Device):
     def _init_state(self):
         self.connect()
 
-    def connect(self, *, db=None):
+    def connect(self, *, db=None, network=None):
         """
         Attempt to connect to device.  If unable, attempt to connect to a controller database
         (so the user can use previously saved data).
         """
+        if network:
+            self.properties.network = network
         if not self.properties.network:
             self._log.debug("No network...calling DeviceFromDB")
-            self.new_state(DeviceFromDB)
+            if db:
+                self.new_state(DeviceFromDB)
+            self._log.info(
+                'You can reconnect to network using : "device.connect(network=bacnet)"'
+            )
+
         else:
             try:
-                name = self.properties.network.read(
+                self.properties.network.read(
                     "{} device {} objectName".format(
                         self.properties.address, self.properties.device_id
                     )

@@ -8,26 +8,20 @@
 read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device
 """
 # --- standard Python modules ---
+import typing as t
+
+# --- this application's modules ---
+from ....tasks.Poll import DeviceFastPoll, DeviceNormalPoll
+from ...io.IOExceptions import (
+    BufferOverflow,
+    NoResponseFromController,
+    SegmentationNotSupported,
+)
+from ..Points import BooleanPoint, DateTimePoint, EnumPoint, NumericPoint, StringPoint
+from ..Trends import TrendLog
 
 # --- 3rd party modules ---
 
-# --- this application's modules ---
-from ....tasks.Poll import DeviceNormalPoll, DeviceFastPoll
-from ...io.IOExceptions import (
-    ReadPropertyMultipleException,
-    NoResponseFromController,
-    SegmentationNotSupported,
-    BufferOverflow,
-)
-from ..Points import (
-    NumericPoint,
-    BooleanPoint,
-    EnumPoint,
-    StringPoint,
-    OfflinePoint,
-    DateTimePoint,
-)
-from ..Trends import TrendLog
 
 # from ...functions.Schedule import Schedule
 
@@ -70,12 +64,15 @@ def create_trendlogs(objList, device):
         try:
             tl = TrendLog(point_address, device, read_log_on_creation=False)
             if tl.properties.log_device_object_property is None:
-                raise TrendLogCreationException
-            (
-                ldop_type,
-                ldop_addr,
-            ) = tl.properties.log_device_object_property.objectIdentifier
-            ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
+                ldop_type = "trendLog"
+                ldop_addr = point_address
+                ldop_prop = "log"
+            else:
+                (
+                    ldop_type,
+                    ldop_addr,
+                ) = tl.properties.log_device_object_property.objectIdentifier
+                ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
             trendlogs["{}_{}_{}".format(ldop_type, ldop_addr, ldop_prop)] = (
                 tl.properties.object_name,
                 tl,
@@ -251,7 +248,7 @@ class DiscoveryUtilsMixin:
 
 class RPMObjectsProcessing:
     def _process_new_objects(
-        self, obj_cls=None, obj_type=None, objList=None, points_per_request=5
+        self, obj_cls=None, obj_type: str = "", objList=None, points_per_request=5
     ):
         """
         Template to generate BAC0 points instances from information coming from the network.
@@ -302,7 +299,7 @@ class RPMObjectsProcessing:
 
             pointName = point_infos[_find_propid_index("objectName")]
             presentValue = point_infos[_find_propid_index("presentValue")]
-            if presentValue != None:
+            if presentValue is not None:
                 if obj_type == "analog" or obj_type == "loop":
                     presentValue = float(presentValue)
                 elif obj_type == "multi":
@@ -354,7 +351,7 @@ class RPMObjectsProcessing:
 
 class RPObjectsProcessing:
     def _process_new_objects(
-        self, obj_cls=NumericPoint, obj_type="analog", objList=None
+        self, obj_cls=NumericPoint, obj_type: str = "analog", objList=None
     ):
         _newpoints = []
         for each in retrieve_type(objList, obj_type):
@@ -467,14 +464,14 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                             raise
 
                         # print('val : ', val, len(val), type(val))
-                        if val == None:
+                        if val is None:
                             self.properties.segmentation_supported = False
                             raise SegmentationNotSupported
 
                     except KeyError as error:
                         raise Exception("Unknown point name : {}".format(error))
 
-                    except SegmentationNotSupported as error:
+                    except SegmentationNotSupported:
                         self.properties.segmentation_supported = False
                         # self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
                         self._log.warning("Segmentation not supported")
@@ -506,7 +503,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                             request, vendor_id=self.properties.vendor_id
                         )
 
-                    except SegmentationNotSupported as error:
+                    except SegmentationNotSupported:
                         self.properties.segmentation_supported = False
                         self.read_multiple(
                             points_list,
@@ -565,6 +562,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
         device.poll('stop')
         device.poll(delay = 5)
         """
+        _poll_cls: t.Union[t.Type[DeviceFastPoll], t.Type[DeviceNormalPoll]]
         if delay < 10:
             self.properties.fast_polling = True
             _poll_cls = DeviceFastPoll
@@ -580,7 +578,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
 
         if (
             str(command).lower() == "stop"
-            or command == False
+            or command == False  # noqa E712
             or command == 0
             or delay == 0
         ):
@@ -666,7 +664,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
         except KeyError as error:
             raise Exception("Unknown point name: {}".format(error))
 
-        except NoResponseFromController as error:
+        except NoResponseFromController:
             return ""
 
     def poll(self, command="start", *, delay=120):
@@ -695,7 +693,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
 
         if (
             str(command).lower() == "stop"
-            or command == False
+            or command is False
             or command == 0
             or delay == 0
         ):

@@ -4,37 +4,24 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-"""
-ScheduleWrite.py - creation of ReinitializeDeviceRequest
-
-"""
-from ..io.Read import find_reason
-from ..io.IOExceptions import (
-    SegmentationNotSupported,
-    ReadPropertyException,
-    ReadPropertyMultipleException,
-    NoResponseFromController,
-    ApplicationNotStarted,
-)
-from ...core.utils.notes import note_and_log
+import typing as t
 
 # --- standard Python modules ---
-import datetime as dt
+from datetime import time as dt_time
+
+from bacpypes.apdu import SimpleAckPDU, WritePropertyRequest
+from bacpypes.basetypes import DailySchedule, TimeValue
+from bacpypes.constructeddata import Any, ArrayOf
+from bacpypes.core import deferred
+from bacpypes.iocb import IOCB
 
 # --- 3rd party modules ---
-from bacpypes.pdu import Address, GlobalBroadcast
-from bacpypes.primitivedata import Integer, Date, Time, CharacterString
-from bacpypes.basetypes import DateTime
-from bacpypes.apdu import WritePropertyRequest, SimpleAckPDU
-from bacpypes.iocb import IOCB
-from bacpypes.core import deferred
-from bacpypes.basetypes import DateTime, DailySchedule, TimeValue, Time
-from bacpypes.constructeddata import ArrayOf, Any
+from bacpypes.pdu import Address
+from bacpypes.primitivedata import Enumerated, Integer, Real
 
-from bacpypes.primitivedata import Null, Atomic, Integer, Unsigned, Real, Enumerated
-
-from datetime import time as dt_time
-from datetime import datetime as dt
+from ...core.utils.notes import note_and_log
+from ..io.IOExceptions import NoResponseFromController
+from ..io.Read import find_reason
 
 
 @note_and_log
@@ -106,7 +93,7 @@ class Schedule:
                 if dict_schedule["states"].lower() == "analog":
                     return Real(v)
             except AttributeError:
-                if dict_schedule["states"] == ["inactive", "active"]:
+                if dict_schedule["states"] == {"inactive": 0, "active": 1}:
                     return Integer(dict_schedule["states"][v])
                 else:
                     return Enumerated(dict_schedule["states"][v] - 1)
@@ -146,9 +133,7 @@ class Schedule:
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))
-                )
+                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
                 return
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
@@ -205,8 +190,8 @@ class Schedule:
             except Exception:
                 raise ()
 
-        schedule = {}
-        _state_text = None
+        schedule: t.Dict[str, t.Union[t.Dict, t.List]] = {}
+        _state_text: t.Union[str, range, t.List[str], None] = None
         offset_MV = 0 if len(object_references) == 0 else 1
 
         try:
@@ -239,30 +224,33 @@ class Schedule:
             schedule["object_references"] = []
             schedule["references_names"] = []
 
-        schedule["states"] = {}
+        # re-ordered to make type inference possible, but not sure the logic here
+        # is 100% sound (ignored type warnings both look like actual problems).
+        # keeping logic intact and ignoring warnings for now
+        sched_states = {}
         if _state_text == ["inactive", "active"]:
             for i, each in enumerate(_state_text):
-                schedule["states"][each] = i
+                sched_states[each] = i
             presentValue = "{} ({})".format(
-                list(schedule["states"].keys())[int(presentValue.value)],
+                list(sched_states.keys())[int(presentValue.value)],
                 presentValue.value,
             )
-        elif _state_text != "analog":
-            for i, each in enumerate(_state_text):
-                schedule["states"][each] = i + offset_MV
+        elif _state_text == "analog":
+            sched_states = _state_text  # type: ignore[assignment]
+            if presentValue is not None:
+                presentValue = "{}".format(presentValue.value)
+        else:
             try:
+                for i, each in enumerate(_state_text):  # type: ignore[arg-type]
+                    sched_states[each] = i + offset_MV
                 presentValue = "{} ({})".format(
-                    list(schedule["states"].keys())[
-                        int(presentValue.value) - offset_MV
-                    ],
+                    list(sched_states.keys())[int(presentValue.value) - offset_MV],
                     presentValue.value,
                 )
             except TypeError:
                 presentValue = presentValue.value
-        else:
-            schedule["states"] = _state_text
-            if presentValue is not None:
-                presentValue = "{}".format(presentValue.value)
+
+        schedule["states"] = sched_states
         schedule["reliability"] = reliability
         schedule["priority"] = priority
         schedule["presentValue"] = presentValue

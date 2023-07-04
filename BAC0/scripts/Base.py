@@ -21,20 +21,21 @@ Class::
 """
 import random
 import sys
+import typing as t
 
 # --- standard Python modules ---
 from threading import Thread
 
-from bacpypes.basetypes import DeviceStatus, ServicesSupported
+from bacpypes.basetypes import DeviceStatus
 from bacpypes.core import enable_sleeping
 from bacpypes.core import run as startBacnetIPApp
 from bacpypes.core import stop as stopBacnetIPApp
 from bacpypes.local.device import LocalDeviceObject
+from bacpypes.pdu import Address
 from bacpypes.primitivedata import CharacterString
 
-from .. import infos
-
 # --- this application's modules ---
+from .. import infos
 from ..core.app.ScriptApplication import (
     BAC0Application,
     BAC0BBMDDeviceApplication,
@@ -81,6 +82,10 @@ class LocalObjects(object):
             return item
 
 
+def charstring(val):
+    return CharacterString(val) if isinstance(val, str) else val
+
+
 @note_and_log
 class Base:
     """
@@ -95,11 +100,12 @@ class Base:
     :param segmentationSupported='segmentedBoth':
     """
 
-    _used_ips = set()
+    _used_ips: t.Set[Address] = set()
 
     def __init__(
         self,
         localIPAddr="127.0.0.1",
+        networkNumber=None,
         localObjName="BAC0",
         deviceId=None,
         firmwareRevision="".join(sys.version.split("|")[:2]),
@@ -109,10 +115,11 @@ class Base:
         bbmdAddress=None,
         bbmdTTL=0,
         bdtable=None,
-        modelName=CharacterString("BAC0 Scripting Tool"),
+        modelName="BAC0 Scripting Tool",
         vendorId=842,
-        vendorName=CharacterString("SERVISYS inc."),
-        description=CharacterString("http://christiantremblay.github.io/BAC0/"),
+        vendorName="SERVISYS inc.",
+        description="http://christiantremblay.github.io/BAC0/",
+        location="Bromont, Québec",
         spin=None,
     ):
 
@@ -149,6 +156,7 @@ class Base:
                     localIPAddr
                 )
             )
+        self.networkNumber = networkNumber
 
         self.Boid = (
             int(deviceId) if deviceId else (3056177 + int(random.uniform(0, 1000)))
@@ -161,11 +169,12 @@ class Base:
 
         self.maxAPDULengthAccepted = maxAPDULengthAccepted
         self.vendorId = vendorId
-        self.vendorName = vendorName
-        self.modelName = modelName
-        self.description = description
+        self.vendorName = charstring(vendorName)
+        self.modelName = charstring(modelName)
+        self.description = charstring(description)
+        self.location = charstring(location)
 
-        self.discoveredDevices = None
+        self.discoveredDevices: t.Optional[t.Dict[t.Tuple[str, int], int]] = None
         self.systemStatus = DeviceStatus(1)
 
         self.bbmdAddress = bbmdAddress
@@ -195,6 +204,7 @@ class Base:
             self.this_device = LocalDeviceObject(
                 objectName=self.localObjName,
                 objectIdentifier=self.Boid,
+                maxSegmentsAccepted=int(self.maxSegmentsAccepted),
                 maxApduLengthAccepted=int(self.maxAPDULengthAccepted),
                 segmentationSupported=self.segmentationSupported,
                 vendorIdentifier=self.vendorId,
@@ -202,6 +212,7 @@ class Base:
                 modelName=self.modelName,
                 systemStatus=self.systemStatus,
                 description=self.description,
+                location=self.location,
                 firmwareRevision=self.firmwareRevision,
                 applicationSoftwareVersion=infos.__version__,
                 protocolVersion=1,
@@ -215,6 +226,7 @@ class Base:
                 self.this_application = BAC0BBMDDeviceApplication(
                     self.this_device,
                     self.localIPAddr,
+                    networkNumber=self.networkNumber,
                     bdtable=self.bdtable,
                     iam_req=self._iam_request(),
                     subscription_contexts=self.subscription_contexts,
@@ -225,6 +237,7 @@ class Base:
                 self.this_application = BAC0ForeignDeviceApplication(
                     self.this_device,
                     self.localIPAddr,
+                    networkNumber=self.networkNumber,
                     bbmdAddress=self.bbmdAddress,
                     bbmdTTL=self.bbmdTTL,
                     iam_req=self._iam_request(),
@@ -235,6 +248,7 @@ class Base:
                 self.this_application = BAC0Application(
                     self.this_device,
                     self.localIPAddr,
+                    networkNumber=self.networkNumber,
                     iam_req=self._iam_request(),
                     subscription_contexts=self.subscription_contexts,
                 )

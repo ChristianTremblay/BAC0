@@ -3,26 +3,21 @@
 """
 Johnson Controls Proprietary Objects for FX/FEC Line
 """
-from bacpypes.primitivedata import (
-    Real,
-    Boolean,
-    CharacterString,
-    Enumerated,
-    Unsigned,
-    Atomic,
-    Date,
-    Time,
-    #    Signed,
-)
 from bacpypes.object import (
-    Object,
-    DeviceObject,
-    AnalogValueObject,
     AnalogInputObject,
     AnalogOutputObject,
-    BinaryValueObject,
-    Property,
-    register_object_type,
+    AnalogValueObject,
+    DeviceObject,
+)
+from bacpypes.primitivedata import (
+    Atomic,
+    Boolean,  # Signed,
+    CharacterString,
+    Date,
+    Enumerated,
+    Real,
+    Time,
+    Unsigned,
 )
 
 #
@@ -41,7 +36,6 @@ JCIDeviceObject = {
         "ARCHIVE_STATUS": {"obj_id": 1187, "datatype": Unsigned, "mutable": False},
         "ARCHIVE_TIME": {"obj_id": 850, "datatype": Time, "mutable": False},
         "CPU_USAGE": {"obj_id": 2583, "datatype": Real, "mutable": False},
-        "ENABLED": {"obj_id": 673, "datatype": Boolean, "mutable": True},
         "ENABLED": {"obj_id": 673, "datatype": Boolean, "mutable": True},
         "EXECUTION_PRIORITY": {
             "obj_id": 2197,
@@ -307,10 +301,8 @@ JCIAnalogOutputObject = {
     "properties": {
         "Offline": {"obj_id": 913, "datatype": Boolean, "mutable": False},
         "SABusAddr": {"obj_id": 3645, "datatype": Unsigned, "mutable": False},
-        "InputRangeLow": {"obj_id": 1293, "datatype": Real, "mutable": True},
-        "InputRangeHigh": {"obj_id": 1294, "datatype": Real, "mutable": True},
-        "OutputRangeLow": {"obj_id": 1295, "datatype": Real, "mutable": True},
-        "OutputRangeHigh": {"obj_id": 1296, "datatype": Real, "mutable": True},
+        "MIN_OUT_VALUE": {"obj_id": 652, "datatype": Real, "mutable": True},
+        "MAX_OUT_VALUE": {"obj_id": 653, "datatype": Real, "mutable": True},
         "polarity": {"obj_id": "polarity", "datatype": Enumerated, "mutable": True},
         "stroketime": {"obj_id": 3478, "datatype": Real, "mutable": True},
     },

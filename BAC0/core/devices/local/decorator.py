@@ -1,17 +1,13 @@
-from functools import wraps, partial
+from functools import wraps
 
+from bacpypes.basetypes import EngineeringUnits
+from bacpypes.local.object import Commandable
 from bacpypes.object import (
-    AnalogInputObject,
-    AnalogValueObject,
-    BinaryValueObject,
     Property,
+    TrendLogObject,
     register_object_type,
-    registered_object_types,
-    DatePatternValueObject,
 )
-from bacpypes.primitivedata import CharacterString, Date, Time, Real, Boolean, Integer
-from bacpypes.basetypes import EngineeringUnits, BinaryPV, Polarity
-from bacpypes.local.object import AnalogValueCmdObject, Commandable, MinOnOff
+from bacpypes.primitivedata import CharacterString
 
 _SHOULD_BE_COMMANDABLE = ["relinquishDefault", "outOfService", "lowLimit", "highLimit"]
 
@@ -224,11 +220,19 @@ def bacnet_properties(properties):
     return decorate
 
 
-def create(object_type, instance, objectName, presentValue, description):
-    new_object = object_type(
-        objectIdentifier=(object_type.objectType, instance),
-        objectName="{}".format(objectName),
-        presentValue=presentValue,
-        description=CharacterString("{}".format(description)),
-    )
+def create(object_type, instance, objectName, value, description):
+    if object_type is TrendLogObject:
+        new_object = object_type(
+            objectIdentifier=(object_type.objectType, instance),
+            objectName="{}".format(objectName),
+            logBuffer=value,
+            description=CharacterString("{}".format(description)),
+        )
+    else:
+        new_object = object_type(
+            objectIdentifier=(object_type.objectType, instance),
+            objectName="{}".format(objectName),
+            presentValue=value,
+            description=CharacterString("{}".format(description)),
+        )
     return new_object

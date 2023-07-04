@@ -4,41 +4,25 @@
 # Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
-"""
-Points.py - Definition of points so operations on Read results are more convenient.
-"""
 
 # --- standard Python modules ---
-from datetime import datetime
-from collections import namedtuple
-import time
-from itertools import islice
-
-
 # --- 3rd party modules ---
 try:
     import pandas as pd
-    from pandas.io import sql
 
-    try:
-        from pandas import Timestamp
-    except ImportError:
-        from pandas.lib import Timestamp
     _PANDAS = True
 except ImportError:
     _PANDAS = False
 
-from bacpypes.object import TrendLogObject
 from bacpypes.primitivedata import Date, Time
+from collections import namedtuple
 
 # --- this application's modules ---
-from ...tasks.Poll import SimplePoll as Poll
-from ...tasks.Match import Match, Match_Value
-from ..io.IOExceptions import NoResponseFromController, UnknownPropertyError
 from ..utils.notes import note_and_log
 
-
 # ------------------------------------------------------------------------------
+
+HistoryComponent = namedtuple("HistoryComponent", "index logdatum status choice")
 
 
 class TrendLogProperties(object):
@@ -56,7 +40,6 @@ class TrendLogProperties(object):
         self.record_count = 0
         self.total_record_count = 0
         self.log_interval = 0
-        self.description = None
         self.statusFlags = None
         self.status_flags = {
             "in_alarm": False,
@@ -64,7 +47,7 @@ class TrendLogProperties(object):
             "overridden": False,
             "out_of_service": False,
         }
-        self._history_components = {"index": [], "logdatum": [], "status": []}
+        self._history_components = []
         self._df = None
         self.type = "TrendLog"
         self.units_state = "None"
@@ -97,6 +80,14 @@ class TrendLog(TrendLogProperties):
             self.read_log_buffer()
         self._last_index = 0
 
+    @staticmethod
+    def read_logDatum(logDatum):
+        for k, v in logDatum.__dict__.items():
+            if v is None:
+                continue
+            else:
+                return (k, v)
+
     def update_properties(self):
         try:
             (
@@ -105,11 +96,10 @@ class TrendLog(TrendLogProperties):
                 self.properties.record_count,
                 self.properties.buffer_size,
                 self.properties.total_record_count,
-                self.properties.log_device_object_property,
                 self.properties.statusFlags,
                 self.properties.log_interval,
             ) = self.properties.device.properties.network.readMultiple(
-                "{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount logDeviceObjectProperty statusFlags logInterval".format(
+                "{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount statusFlags logInterval".format(
                     addr=self.properties.device.properties.address,
                     oid=str(self.properties.oid),
                 )
@@ -132,9 +122,9 @@ class TrendLog(TrendLogProperties):
         RECORDS = 10
         log_buffer = set()
         _actual_index = self._total_record_count()
-        start = max(_actual_index - self.properties.record_count, self._last_index) + 1
-        _count = _actual_index - start
-        steps = int(_count / 10) + int(_count % 10)
+        start = max(_actual_index - self.properties.record_count, self._last_index)
+        _count = max(_actual_index - start, 0)
+        steps = int(_count / RECORDS) + int(1 if (_count % RECORDS) > 0 else 0)
 
         self._log.debug("Reading log : {} {} {}".format(start, _count, steps))
 
@@ -159,32 +149,41 @@ class TrendLog(TrendLogProperties):
             year, month, day, dow = each.timestamp.date
             year = year + 1900
             hours, minutes, seconds, ms = each.timestamp.time
-            self.properties._history_components["index"].append(
-                pd.to_datetime(
-                    "{}-{}-{} {}:{}:{}.{}".format(
-                        year, month, day, hours, minutes, seconds, ms
-                    ),
-                    format="%Y-%m-%d %H:%M:%S.%f",
-                )
+            seconds = 0 if seconds == 255 else seconds
+            ms = 0 if ms == 255 else ms
+            _index = pd.to_datetime(
+                "{}-{}-{} {}:{}:{}.{}".format(
+                    year, month, day, hours, minutes, seconds, ms
+                ),
+                format="%Y-%m-%d %H:%M:%S.%f",
             )
-            self.properties._history_components["logdatum"].append(
-                each.logDatum.dict_contents()
-            )
-            self.properties._history_components["status"].append(each.statusFlags)
+            _choice, _logDatum = self.read_logDatum(each.logDatum)
+            _status = each.statusFlags
+            print(_index, _logDatum, _status, _choice)
+            his_component = HistoryComponent(_index, _logDatum, _status, _choice)
+            if his_component not in self.properties._history_components:
+                self.properties._history_components.append(his_component)
 
         if _PANDAS:
             df = pd.DataFrame(
                 {
-                    "index": self.properties._history_components["index"],
-                    "logdatum": self.properties._history_components["logdatum"],
-                    "status": self.properties._history_components["status"],
+                    "index": [
+                        each.index for each in self.properties._history_components
+                    ],
+                    self.properties.object_name: [
+                        each.logdatum for each in self.properties._history_components
+                    ],
+                    "status": [
+                        each.status for each in self.properties._history_components
+                    ],
+                    "choice": [
+                        each.choice for each in self.properties._history_components
+                    ],
                 }
             )
             df = df.set_index("index")
-            df["choice"] = df["logdatum"].apply(lambda x: list(x.keys())[0])
-            df[self.properties.object_name] = df["logdatum"].apply(
-                lambda x: list(x.values())[0]
-            )
+            # df["choice"] = _choice
+            # df[self.properties.object_name] = df['logDatum']
 
             self.properties._df = df
         else:
@@ -196,21 +195,33 @@ class TrendLog(TrendLogProperties):
     @property
     def history(self):
         self.read_log_buffer()
-        if not _PANDAS:
+
+        if not _PANDAS or self.properties._df is None:
             return dict(
                 zip(
-                    self.properties._history_components["index"],
-                    self.properties._history_components["logdatum"],
+                    [each.index for each in self.properties._history_components],
+                    [each.logDatum for each in self.properties._history_components],
                 )
             )
-        (
-            objectType,
-            objectAddress,
-        ) = self.properties.log_device_object_property.objectIdentifier
+
         try:
+            if not self.properties.log_device_object_property:
+                self.properties.log_device_object_property = (
+                    self.properties.device.properties.network.read(
+                        "{addr} trendLog {oid} logDeviceObjectProperty".format(
+                            addr=self.properties.device.properties.address,
+                            oid=str(self.properties.oid),
+                        )
+                    )
+                )
+            (
+                objectType,
+                objectAddress,
+            ) = self.properties.log_device_object_property.objectIdentifier
             logged_point = self.properties.device.find_point(objectType, objectAddress)
-        except ValueError:
+        except (Exception, ValueError):
             logged_point = None
+
         serie = self.properties._df[self.properties.object_name].copy()
         serie.units = logged_point.properties.units_state if logged_point else "n/a"
         serie.name = ("{}/{}").format(
@@ -218,6 +229,7 @@ class TrendLog(TrendLogProperties):
         )
         if not logged_point:
             serie.states = "unknown"
+            serie.datatype = None
         else:
             if logged_point.properties.name in self.properties.device.binary_states:
                 serie.states = "binary"
@@ -225,8 +237,9 @@ class TrendLog(TrendLogProperties):
                 serie.states = "multistates"
             else:
                 serie.states = "analog"
+            serie.datatype = objectType
         serie.description = self.properties.description
-        serie.datatype = objectType
+
         return serie.sort_index()
 
     def chart(self, remove=False):

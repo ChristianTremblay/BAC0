@@ -14,9 +14,10 @@ Example:
 # --- standard Python modules ---
 # --- 3rd party modules ---
 
+from ..core.utils.notes import note_and_log
+
 # --- this application's modules ---
 from .TaskManager import Task
-from ..core.utils.notes import note_and_log
 
 # ------------------------------------------------------------------------------
 

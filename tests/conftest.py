@@ -5,12 +5,12 @@
 Test Bacnet communication with another device
 """
 
-import pytest
-from collections import namedtuple
 import time
+from collections import namedtuple
+
+import pytest
 
 import BAC0
-
 from BAC0.core.devices.local.models import (
     analog_input,
     analog_output,
@@ -18,19 +18,19 @@ from BAC0.core.devices.local.models import (
     binary_input,
     binary_output,
     binary_value,
+    character_string,
+    date_value,
+    datetime_value,
+    humidity_input,
+    humidity_value,
+    make_state_text,
     multistate_input,
     multistate_output,
     multistate_value,
-    date_value,
-    datetime_value,
     temperature_input,
     temperature_value,
-    humidity_input,
-    humidity_value,
-    character_string,
 )
 from BAC0.core.devices.local.object import ObjectFactory
-from BAC0.core.devices.local.models import make_state_text
 
 
 def add_points(qty_per_type, device):

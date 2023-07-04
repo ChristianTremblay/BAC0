@@ -5,21 +5,21 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-TaskManager.py - creation of threads used for repetitive tasks.  
+TaskManager.py - creation of threads used for repetitive tasks.
 
 A key building block for point simulation.
 """
-# --- standard Python modules ---
-from threading import Thread, Lock
 import time
-from collections import deque
 from random import random
 
+# --- standard Python modules ---
+from threading import Thread
+
+from ..core.io.IOExceptions import DeviceNotConnected
 
 # --- 3rd party modules ---
 # --- this application's modules ---
 from ..core.utils.notes import note_and_log
-from ..core.io.IOExceptions import DeviceNotConnected
 
 # ------------------------------------------------------------------------------
 
@@ -62,7 +62,9 @@ class Manager:
                 time.sleep(1)
             except DeviceNotConnected as error:
                 cls._log.warning(
-                    "Device disconnected. Removing task ({}).".format(error, task)
+                    "Device disconnected with error {}. Removing task ({}).".format(
+                        error, task
+                    )
                 )
                 cls.tasks.remove(task.id)
             except Exception as error:
@@ -150,7 +152,7 @@ class Task(object):
         self.average_execution_delay = 0
         self.average_latency = 0
         self.next_execution = time.time() + delay + (random() * 10)
-        self.execution_time = 0
+        self.execution_time = 0.0
         self.count = 0
         self.id = id(self)
         self._kwargs = None
@@ -171,7 +173,7 @@ class Task(object):
             self.fn()
         else:
             if self._kwargs is not None:
-                self.task(self._kwargs)
+                self.task(**self._kwargs)
             else:
                 self.task()
         if self.previous_execution:

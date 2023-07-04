@@ -21,47 +21,44 @@ Once the class is created, create the local object and use it::
     bacnet.read('2:5 analogInput 1 presentValue)
 
 """
+import typing as t
+
 # --- standard Python modules ---
-import time
-from datetime import datetime
 import weakref
 from collections import namedtuple
 
+from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
+from ..core.devices.Points import Point
+from ..core.devices.Trends import TrendLog
+from ..core.devices.Virtuals import VirtualPoint
+from ..core.functions.Calendar import Calendar
+from ..core.functions.cov import CoV
+from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
+from ..core.functions.Discover import Discover
+from ..core.functions.GetIPAddr import HostIP
+from ..core.functions.Reinitialize import Reinitialize
+from ..core.functions.Schedule import Schedule
+from ..core.functions.Text import TextMixin
+from ..core.functions.TimeSync import TimeSync
+from ..core.io.IOExceptions import (
+    NoResponseFromController,
+    NumerousPingFailures,
+    Timeout,
+    UnrecognizedService,
+)
+from ..core.io.Read import ReadProperty
+from ..core.io.Simulate import Simulation
+from ..core.io.Write import WriteProperty
+from ..core.utils.notes import note_and_log
+from ..infos import __version__ as version
 
 # --- this application's modules ---
 from ..scripts.Base import Base
-
-from ..core.io.Read import ReadProperty
-from ..core.io.Write import WriteProperty
-from ..core.functions.GetIPAddr import HostIP
-from ..core.functions.Discover import Discover
-from ..core.functions.TimeSync import TimeSync
-from ..core.functions.Reinitialize import Reinitialize
-from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
-from ..core.functions.cov import CoV
-from ..core.functions.Schedule import Schedule
-from ..core.functions.Calendar import Calendar
-from ..core.functions.Text import TextMixin
-from ..core.io.Simulate import Simulation
-from ..core.devices.Points import Point
-from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
-from ..core.devices.Trends import TrendLog
-from ..core.devices.Virtuals import VirtualPoint
-from ..core.utils.notes import note_and_log
-from ..core.io.IOExceptions import (
-    NoResponseFromController,
-    UnrecognizedService,
-    Timeout,
-    NumerousPingFailures,
-)
-
 from ..tasks.RecurringTask import RecurringTask
 from ..tasks.UpdateCOV import Update_local_COV
 
-from ..infos import __version__ as version
-
 try:
-    from ..db.influxdb import InfluxDB, ConnectionError
+    from ..db.influxdb import ConnectionError, InfluxDB
 
     INFLUXDB = True
 except ImportError:
@@ -100,17 +97,17 @@ class Lite(
 
     def __init__(
         self,
-        ip=None,
-        port=None,
-        mask=None,
+        ip: t.Optional[str] = None,
+        port: t.Optional[int] = None,
+        mask: t.Optional[int] = None,
         bbmdAddress=None,
-        bbmdTTL=0,
+        bbmdTTL: int = 0,
         bdtable=None,
-        ping=True,
-        ping_delay=300,
-        db_params=None,
-        **params
-    ):
+        ping: bool = True,
+        ping_delay: int = 300,
+        db_params: t.Optional[t.Dict[str, t.Any]] = None,
+        **params,
+    ) -> None:
         self._log.info(
             "Starting BAC0 version {} ({})".format(
                 version, self.__module__.split(".")[-1]
@@ -137,9 +134,11 @@ class Lite(
             try:
                 ip, subnet_mask_and_port = ip.split("/")
                 try:
-                    mask, port = subnet_mask_and_port.split(":")
+                    mask_s, port_s = subnet_mask_and_port.split(":")
+                    mask = int(mask_s)
+                    port = int(port_s)
                 except ValueError:
-                    mask = subnet_mask_and_port
+                    mask = int(subnet_mask_and_port)
             except ValueError:
                 ip = ip
 
@@ -148,16 +147,19 @@ class Lite(
             if not port:
                 port = 47808
             ip_addr = Address("{}/{}:{}".format(ip, mask, port))
-        self._log.info("Using ip : {ip_addr}".format(ip_addr=ip_addr))
+        self._log.info(
+            f"Using ip : {ip_addr} on port {ip_addr.addrPort} | broadcast : {ip_addr.addrBroadcastTuple[0]}"
+        )
+
         Base.__init__(
             self,
             localIPAddr=ip_addr,
             bbmdAddress=bbmdAddress,
             bbmdTTL=bbmdTTL,
             bdtable=bdtable,
-            **params
+            **params,
         )
-
+        self._log.info("Device instance (id) : {boid}".format(boid=self.Boid))
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
 
@@ -173,7 +175,7 @@ class Lite(
         )
         self._update_local_cov_task.task.start()
         self._update_local_cov_task.running = True
-        self._log.info("Update Local COV Task started")
+        self._log.info("Update Local COV Task started (required to support COV)")
 
         # Activate InfluxDB if params are available
         if db_params and INFLUXDB:
@@ -205,12 +207,19 @@ class Lite(
                 addr, instance = each
                 net = addr.split(":")[0] if ":" in addr else None
                 if net:
-                    self.this_application.nse._learnedNetworks.add(int(net))
+                    try:
+                        self.this_application.nse._learnedNetworks.add(int(net))
+                    except ValueError:
+                        pass  # proabbly a IP address with a specified port other than 0xBAC0
 
         return self.this_application.nse._learnedNetworks
 
     def discover(
-        self, networks="known", limits=(0, 4194303), global_broadcast=False, reset=False
+        self,
+        networks: t.Union[str, t.List[int], int] = "known",
+        limits: t.Tuple[int, int] = (0, 4194303),
+        global_broadcast: bool = False,
+        reset: bool = False,
     ):
         """
         Discover is meant to be the function used to explore the network when we
@@ -241,7 +250,7 @@ class Lite(
             limit. Those are the device instances used in the creation of the
             whois request. Min : 0 ; Max : 4194303
 
-        :param global_broadcast (boolean) : If set to true, a global braodcast
+        :param global_broadcast (boolean) : If set to true, a global broadcast
             will be used for the whois. Use with care.
         """
         if reset:
@@ -264,7 +273,7 @@ class Lite(
             elif networks == "known":
                 _networks = self.known_network_numbers.copy()
             else:
-                if networks < 65535:
+                if isinstance(networks, int) and networks < 65535:
                     _networks.append(networks)
 
         if _networks:
@@ -297,11 +306,13 @@ class Lite(
                 found.append(each)
         return found
 
-    def register_device(self, device):
+    def register_device(
+        self, device: t.Union[RPDeviceConnected, RPMDeviceConnected]
+    ) -> None:
         oid = id(device)
         self._registered_devices[oid] = device
 
-    def ping_registered_devices(self):
+    def ping_registered_devices(self) -> None:
         """
         Registered device on a network (self) are kept in a list (registered_devices).
         This function will allow pinging thoses device regularly to monitor them. In case
@@ -365,7 +376,7 @@ class Lite(
         except KeyError:
             pass
 
-    def add_trend(self, point_to_trend):
+    def add_trend(self, point_to_trend: t.Union[Point, TrendLog, VirtualPoint]) -> None:
         """
         Add point to the list of histories that will be handled by Bokeh
 
@@ -375,14 +386,16 @@ class Lite(
         if (
             isinstance(point_to_trend, Point)
             or isinstance(point_to_trend, TrendLog)
-            or (isinstance(point_to_trend, VirtualPoint))
+            or isinstance(point_to_trend, VirtualPoint)
         ):
             oid = id(point_to_trend)
             self._points_to_trend[oid] = point_to_trend
         else:
             raise TypeError("Please provide point containing history")
 
-    def remove_trend(self, point_to_remove):
+    def remove_trend(
+        self, point_to_remove: t.Union[Point, TrendLog, VirtualPoint]
+    ) -> None:
         """
         Remove point from the list of histories that will be handled by Bokeh
 
@@ -401,7 +414,7 @@ class Lite(
             del self._points_to_trend[oid]
 
     @property
-    def devices(self):
+    def devices(self) -> t.List[t.Tuple[str, str, str, int]]:
         """
         This property will create a good looking table of all the discovered devices
         seen on the network.
@@ -410,7 +423,7 @@ class Lite(
         manufacturer, etc and in big network, this could be a long process.
         """
         lst = []
-        for device in list(self.discoveredDevices):
+        for device in list(self.discoveredDevices or {}):
             try:
                 deviceName, vendorName = self.readMultiple(
                     "{} device {} objectName vendorName".format(device[0], device[1])
@@ -433,22 +446,22 @@ class Lite(
                 self._log.warning("No response from {}".format(device))
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
-        return lst
+        return lst  # type: ignore[return-value]
 
     @property
-    def trends(self):
+    def trends(self) -> t.List[t.Any]:
         """
         This will present a list of all registered trends used by Bokeh Server
         """
         return list(self._points_to_trend.values())
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         self._log.debug("Disconnecting")
         for each in self.registered_devices:
             each.disconnect()
         super().disconnect()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "Bacnet Network using ip {} with device id {}".format(
             self.localIPAddr, self.Boid
         )

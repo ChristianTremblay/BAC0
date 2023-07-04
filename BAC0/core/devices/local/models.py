@@ -1,30 +1,31 @@
+from bacpypes.basetypes import (
+    Boolean,
+    Date,
+    DateTime,
+    EventState,
+    LogRecord,
+    Polarity,
+    Time,
+    Unsigned,
+)
+from bacpypes.constructeddata import ArrayOf, ListOf
 from bacpypes.object import (
-    AnalogValueObject,
-    CharacterStringValueObject,
     AnalogInputObject,
     AnalogOutputObject,
+    AnalogValueObject,
     BinaryInputObject,
     BinaryOutputObject,
     BinaryValueObject,
-    DateValueObject,
+    CharacterStringValueObject,
     DateTimeValueObject,
+    DateValueObject,
     MultiStateInputObject,
     MultiStateOutputObject,
     MultiStateValueObject,
+    TrendLogObject,
 )
-from bacpypes.basetypes import (
-    EngineeringUnits,
-    BinaryPV,
-    Polarity,
-    Boolean,
-    EventState,
-    Date,
-    Time,
-    DateTime,
-    Unsigned,
-)
-from bacpypes.constructeddata import ArrayOf
-from bacpypes.primitivedata import CharacterString, Real
+from bacpypes.primitivedata import CharacterString
+
 from .object import ObjectFactory
 
 """
@@ -51,8 +52,9 @@ def _create(definition, **kwargs):
     for k, v in kwargs.items():
         if k == "properties":
             for _k, _v in v.items():
-                _definition[k][_k] = _v
-        _definition[k] = v
+                _definition["properties"][_k] = _v  # type: ignore[index]
+        else:
+            _definition[k] = v
     return ObjectFactory.from_dict(_definition)
 
 
@@ -261,5 +263,23 @@ def datetime_value(**kwargs):
         "properties": {},
         "is_commandable": False,
         "relinquish_default": "inactive",
+    }
+    return _create(definition, **kwargs)
+
+
+def trendlog(**kwargs):
+    definition = {
+        "name": "TREND_LOG",
+        "objectType": TrendLogObject,
+        "instance": 0,
+        "description": "No description",
+        "properties": {
+            "enable": True,
+            "logBuffer": ListOf(LogRecord),
+            # "logDeviceObjectProperty": DeviceObjectPropertyReference(
+            #    objectIdentifier=ObjectIdentifier("trendLog", 0),
+            # ),
+            "trendLog_datatype": "realValue",
+        },
     }
     return _create(definition, **kwargs)

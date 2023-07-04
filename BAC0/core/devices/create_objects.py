@@ -1,31 +1,20 @@
+from bacpypes.basetypes import DateTime, PriorityArray, StatusFlags
+from bacpypes.constructeddata import ArrayOf
 from bacpypes.object import (
-    MultiStateValueObject,
-    AnalogValueObject,
-    BinaryValueObject,
     AnalogInputObject,
-    BinaryInputObject,
     AnalogOutputObject,
-    BinaryOutputObject,
+    AnalogValueObject,
+    BinaryInputObject,
+    BinaryValueObject,
     CharacterStringValueObject,
     DateTimeValueObject,
-    Property,
-    register_object_type,
+    MultiStateValueObject,
 )
-
-from bacpypes.local.object import (
-    AnalogOutputCmdObject,
-    AnalogValueCmdObject,
-    BinaryOutputCmdObject,
-    BinaryValueCmdObject,
-)
-
-from bacpypes.primitivedata import CharacterString, Date, Time, Real, Boolean
-from bacpypes.constructeddata import ArrayOf
-from bacpypes.basetypes import EngineeringUnits, DateTime, PriorityArray, StatusFlags
+from bacpypes.primitivedata import Boolean, CharacterString, Date, Time
 
 from .mixins.CommandableMixin import LocalBinaryOutputObjectCmd
 
-
+# THIS IS DEPRECATED
 def _make_mutable(obj, identifier="presentValue", mutable=True):
     """
     This function is not the way to go as it changes the class
