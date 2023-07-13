@@ -381,11 +381,12 @@ class ReadProperty:
                                 _key = (str(_obj), vendor_id)
                                 if _key in registered_object_types.keys():
                                     _classname = registered_object_types[_key].__name__
-                                    for k, v in registered_object_types["BAC0"][
-                                        _classname
-                                    ].items():
-                                        if v["obj_id"] == propertyIdentifier:
-                                            prop_id = (k, propertyIdentifier)  # type: ignore
+                                    if _classname in registered_object_types["BAC0"]:
+                                        for k, v in registered_object_types["BAC0"][
+                                            _classname
+                                        ].items():
+                                            if v["obj_id"] == propertyIdentifier:
+                                                prop_id = (k, propertyIdentifier)  # type: ignore
                                 if isinstance(value, dict):
                                     value = list(value.items())[0][1]
 
