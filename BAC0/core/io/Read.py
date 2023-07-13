@@ -144,11 +144,11 @@ class ReadProperty:
             )
             if not datatype:
                 # raise TypeError("unknown datatype")
-                value = cast_datatype_from_tag(
+                value = list(cast_datatype_from_tag(
                     apdu.propertyValue,
                     apdu.objectIdentifier[0],
                     apdu.propertyIdentifier,
-                )
+                ).items())[0][1]
             else:
                 # special case for array parts, others are managed by cast_out
                 if issubclass(datatype, Array) and (
@@ -169,7 +169,6 @@ class ReadProperty:
             try:
                 int(apdu.propertyIdentifier)
                 prop_id = "@prop_{}".format(apdu.propertyIdentifier)
-                value = list(value.items())[0][1]
             except ValueError:
                 prop_id = apdu.propertyIdentifier
             return (value, prop_id)
@@ -344,9 +343,9 @@ class ReadProperty:
                         )
 
                         if not datatype:
-                            value = cast_datatype_from_tag(
+                            value = list(cast_datatype_from_tag(
                                 propertyValue, objectIdentifier[0], propertyIdentifier
-                            )
+                            ).items())[0][1]
                         else:
                             # special case for array parts, others are managed by cast_out
                             if issubclass(datatype, Array) and (
