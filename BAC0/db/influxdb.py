@@ -1,6 +1,6 @@
 try:
     from influxdb_client import InfluxDBClient, Point, WriteOptions
-    from influxdb_client.client.write import WriteApi
+    from influxdb_client.client.write_api import WriteApi
 except ImportError:
     raise ImportError("Install influxdb to use this feature")
 
