@@ -672,20 +672,43 @@ class ReadProperty:
         timeout=10,
     ):
         """
-        Build a ReadProperty request, wait for the answer and return the value
+        Build a ReadRangeRequest request, wait for the answer and return the value
 
         :param args: String with <addr> <type> <inst> <prop> [ <indx> ]
-        :returns: data read from device (str representing data like 10 or True)
+        :param range_params: parameters defining how to query the range, a list of five elements
+        :returns: data read from device (list of LogRecords)
+
+        range_params: a list of five elements: (range_type: str, first: int, date: str, time: str, count: int)
+            range_type: one of ['p', 's', 't']
+                        p - RangeByPosition:
+                                uses (first, count)
+                        s - RangeBySequenceNumber:
+                                uses (first, count)
+                        t - RangeByTime: Filter by the given time
+                                uses (date, time, count)
+            first: int, first element when querying by Position or Sequence Number
+            date: str, "YYYY-mm-DD" passed to bacpypes.primitivedata.Date constructor
+            time: str, "HH:MM:SS" passed to bacpypes.primitivedata.Time constructor
+            count: int, number of elements to return, negative numbers reverse direction of search
 
         *Example*::
 
             import BAC0
+            from bacpypes.basetypes import Date, Time
             myIPAddr = '192.168.1.10/24'
-            bacnet = BAC0.connect(ip = myIPAddr)
-            bacnet.read('2:5 analogInput 1 presentValue')
+            bacnet = BAC0.connect(ip=myIPAddr)
 
-        Requests the controller at (Network 2, address 5) for the presentValue of
-        its analog input 1 (AI:1).
+            log_records = bacnet.readRange('2:5 trendLog 1 logBuffer', range_params=('t', None, '2023-05-12', '12:00:00', 2))
+            for log_record in log_records:
+              print(Date(log_record.timestamp.date), Time(log_record.timestamp.time), log_record.logDatum.realValue)
+            # Date(2023-5-12 fri) Time(12:10:00.00) 130.331
+            # Date(2023-5-12 fri) Time(12:20:00.00) 134.123
+
+            log_records = bacnet.readRange('2:5 trendLog 1 logBuffer', range_params=('t', None, '2023-05-12', '12:00:00', -2))
+            for log_record in log_records:
+              print(Date(log_record.timestamp.date), Time(log_record.timestamp.time), log_record.logDatum.realValue)
+            # Date(2023-5-12 fri) Time(11:40:00.00) 123.4
+            # Date(2023-5-12 fri) Time(11:50:00.00) 125.1213
         """
         if not self._started:
             raise ApplicationNotStarted("BACnet stack not running - use startApp()")
