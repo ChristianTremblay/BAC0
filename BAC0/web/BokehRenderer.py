@@ -160,12 +160,12 @@ class DynamicPlotHandler(Handler):
         df["time_s"] = df["index"].apply(str)
         try:
             df = (
-                df.fillna(method="ffill")
-                .fillna(method="bfill")
+                df.ffill()
+                .bfill()
                 .replace(["inactive", "active"], [0, 1])
             )
         except TypeError:
-            df = df.fillna(method="ffill").fillna(method="bfill")
+            df = df.ffill().bfill()
         return df
 
     def make_glyph_invisible(self):

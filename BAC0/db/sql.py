@@ -19,7 +19,7 @@ import sqlite3
 
 try:
     import pandas as pd
-    from pandas.core.base import DataError
+    from pandas.errors import DataError
     from pandas.io import sql
 
     try:
@@ -178,8 +178,8 @@ class SQLMixin(object):
             return (
                 df.resample(resampling_freq)
                 .last()
-                .fillna(method="ffill")
-                .fillna(method="bfill")
+                .ffill()
+                .bfill()
             )
         else:
             return df
