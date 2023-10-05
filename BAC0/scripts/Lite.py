@@ -38,6 +38,7 @@ from ..core.functions.Discover import Discover
 from ..core.functions.GetIPAddr import HostIP
 from ..core.functions.Reinitialize import Reinitialize
 from ..core.functions.Schedule import Schedule
+from ..core.functions.EventEnrollment import EventEnrollment
 from ..core.functions.Text import TextMixin
 from ..core.functions.TimeSync import TimeSync
 from ..core.io.IOExceptions import (
@@ -73,6 +74,7 @@ from bacpypes.pdu import Address
 class Lite(
     Base,
     Discover,
+    EventEnrollment,
     ReadProperty,
     WriteProperty,
     Simulation,
