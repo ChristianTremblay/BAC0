@@ -359,13 +359,14 @@ class Discover:
         global_broadcast : False
 
         """
-        obj_id = ObjectIdentifier(object_id)
         if object_name and not object_id:
             obj_name = CharacterString(object_name)
             obj = WhoHasObject(objectName=obj_name)
         elif object_id and not object_name:
+            obj_id = ObjectIdentifier(object_id)
             obj = WhoHasObject(objectIdentifier=obj_id)
         else:
+            obj_id = ObjectIdentifier(object_id)
             obj_name = CharacterString(object_name)
             obj = WhoHasObject(objectIdentifier=obj_id, objectName=obj_name)
         limits = WhoHasLimits(
