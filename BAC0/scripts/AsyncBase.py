@@ -231,10 +231,12 @@ class AsyncBase:
                 app_type = "Simple BACnet/IP App"
             self._log.debug("Starting")
             self._initialized = True
+            
             try:
                 # self._startAppThread()
                 AsyncBase._used_ips.add(self.localIPAddr)
                 self._log.info("Registered as {}".format(app_type))
+                self._started = True
             except OSError as error:
                 self._log.warning("Error opening socket: {}".format(error))
                 raise InitializationError("Error opening socket: {}".format(error))
