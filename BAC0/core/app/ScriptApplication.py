@@ -268,7 +268,6 @@ class BAC0Application(
         iam_req: Optional[IAmRequest] = None,
         subscription_contexts: Optional[Dict[Any, Any]] = None,
     ) -> None:
-
         ApplicationIOController.__init__(
             self, localDevice, deviceInfoCache, aseID=aseID
         )
@@ -367,7 +366,6 @@ class BAC0ForeignDeviceApplication(
         iam_req=None,
         subscription_contexts=None,
     ):
-
         ApplicationIOController.__init__(
             self, localDevice, deviceInfoCache, aseID=aseID
         )
@@ -467,7 +465,6 @@ class BAC0BBMDDeviceApplication(
         iam_req=None,
         subscription_contexts=None,
     ):
-
         self.bdtable = bdtable
 
         null_client = NullClient()
