@@ -231,7 +231,7 @@ class AsyncBase:
                 app_type = "Simple BACnet/IP App"
             self._log.debug("Starting")
             self._initialized = True
-            
+
             try:
                 # self._startAppThread()
                 AsyncBase._used_ips.add(self.localIPAddr)
