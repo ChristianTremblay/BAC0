@@ -221,7 +221,7 @@ class ReadProperty:
         _app: Application = _this_application.app
 
         if request_dict is not None:
-            address, parameter_list = self.build_rpm_request_from_dict(
+            address, parameter_list = await self.build_rpm_request_from_dict(
                 request_dict, vendor_id
             )
 
@@ -295,15 +295,13 @@ class ReadProperty:
                 property_value,
             ) in response:
                 if property_array_index is not None:
-                    #property_value = await _app.response(
+                    # property_value = await _app.response(
                     print(
                         f"{object_identifier} {property_identifier}[{property_array_index}] {property_value}"
                     )
                 else:
-                    #property_value = await _app.response(
-                    print(
-                        f"{object_identifier} {property_identifier} {property_value}"
-                    )
+                    # property_value = await _app.response(
+                    print(f"{object_identifier} {property_identifier} {property_value}")
 
                     # TODO : what if there is an error ?
                     # if readResult.propertyAccessError is not None:
@@ -313,7 +311,6 @@ class ReadProperty:
                     #        )
                     #    )
                     # values.append(None)
-                
 
                 # find the datatype
                 # datatype = get_datatype(
@@ -344,7 +341,7 @@ class ReadProperty:
                         property_array_index,
                         property_value,
                         # datatype,
-                        ""
+                        "",
                     )
                 )
                 dict_values[str(object_identifier)] = []
@@ -399,26 +396,32 @@ class ReadProperty:
 
     def build_rp_request(
         self, args: t.List[str], arr_index=None, vendor_id: int = 0, bacoid=None
-    ) -> ReadPropertyRequest:
-        addr, obj_type_str, obj_inst_str, prop_id_str = args[:4]
+    ) -> t.Tuple:
+        try:
+            addr, obj_type_str, obj_inst_str, prop_id_str = args[:4]
+            object_identifier = ObjectIdentifier((obj_type_str, obj_inst_str))
+        except ValueError:
+            addr, obj_type_str, prop_id_str = args[:3]
+            object_identifier = ObjectIdentifier(obj_type_str)
+
         device_address = Address(addr)
 
         # TODO : This part needs work to find proprietary objects
         # obj_type = self.__get_obj_type(obj_type_str, vendor_id)
-        obj_inst = int(obj_inst_str)
-        # _objid_tuple = (obj_type, obj_inst)
-        _objid_tuple = (obj_type_str, obj_inst)
-        object_identifier = ObjectIdentifier(_objid_tuple)
 
         if prop_id_str.isdigit():
             prop_id = int(prop_id_str)
-        elif "@prop_" in prop_id_str:
-            prop_id = int(prop_id_str.split("_")[1])
+        elif "@prop_" in prop_id_str or "@idx" in prop_id_str:
+            if "@idx" in prop_id_str:
+                prop_id, arr_index = prop_id_str.split("@idx:")
+            if "@prop_" in prop_id_str:
+                prop_id = int(prop_id_str.split("_")[1])
         else:
             prop_id = prop_id_str  # type: ignore
         prop_id = PropertyIdentifier(prop_id)
 
-        arr_index = int(args[4]) if len(args) == 5 else arr_index
+        if arr_index is None:
+            arr_index = int(args[4]) if len(args) == 5 else arr_index
         params = (device_address, object_identifier, prop_id, arr_index)
         self._log.debug("{:<20} {!r}".format("REQUEST", params))
         return params
@@ -429,6 +432,7 @@ class ReadProperty:
         """
         Build request from args
         """
+        property_array_index = None
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
         self._log.debug(args)
@@ -471,8 +475,11 @@ class ReadProperty:
                 # now get the property type from the class
                 if "@obj_" in args[0]:
                     break
-                elif "@prop_" in args[0]:
-                    prop_id = int(args.pop(0).split("_")[1])
+                elif "@prop_" in args[0] or "@idx" in args[0]:
+                    if "@idx" in prop_id:
+                        prop_id, arr_index = prop_id.split("@idx:")
+                    if "@prop_" in args[0]:
+                        prop_id = int(args.pop(0).split("_")[1])
                 else:
                     prop_id = args.pop(0)
                 property_identifier = vendor_info.property_identifier(prop_id)
@@ -497,10 +504,12 @@ class ReadProperty:
                 parameter_list.append(property_identifier)
 
                 # check for a property array index
-                if args and args[0].isdigit():
+                if args and args[0].isdigit() and arr_index is None:
                     property_array_index = int(args.pop(0))
                     # save this as a parameter
                     parameter_list.append(property_array_index)
+                elif property_array_index is not None:
+                    parameter_list.append(arr_index)
 
                 # crude check to see if the next thing is an object identifier
                 if args and ((":" in args[0]) or ("," in args[0])):
@@ -512,7 +521,7 @@ class ReadProperty:
         else:
             return (address, parameter_list)
 
-    def build_rpm_request_from_dict(self, request_dict, vendor_id):
+    async def build_rpm_request_from_dict(self, request_dict, vendor_id=0):
         """
         Read property multiple allow to read a lot of properties with only one request
         The existing RPM function is made using a string that must be created using bacpypes
@@ -528,36 +537,50 @@ class ReadProperty:
                 }
 
         """
-        vendor_id = 842
-        addr = request_dict["address"]
+
+        vendor_id = vendor_id
+        address = Address(request_dict["address"])
         objects = request_dict["objects"]
         if "vendor_id" in request_dict.keys():
             vendor_id = int(request_dict["vendor_id"])
 
-        read_access_spec_list = []
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
+
+        # get information about the device from the cache
+        device_info = await _app.device_info_cache.get_device_info(address)
+
+        # using the device info, look up the vendor information
+        if device_info:
+            vendor_info = get_vendor_info(device_info.vendor_identifier)
+        else:
+            vendor_info = get_vendor_info(0)
+
+        parameter_list = []
+        arr_index = None
 
         for obj, list_of_properties in objects.items():
-            obj_type, obj_instance = obj.split(":")
-            obj_type = validate_object_type(obj_type, vendor_id=vendor_id)
-            obj_instance = int(obj_instance)
-            property_reference_list = build_property_reference_list(
-                obj_type, list_of_properties
-            )
-            read_acces_spec = build_read_access_spec(
-                obj_type, obj_instance, property_reference_list
-            )
-            read_access_spec_list.append(read_acces_spec)
+            object_identifier = ObjectIdentifier(obj)
+            parameter_list.append(object_identifier)
+            for each in list_of_properties:
+                if "@obj_" in each:
+                    break
+                elif "@prop_" in each or "@idx" in each:
+                    prop_id = int(each.split("_")[1])
+                    if "@idx" in prop_id:
+                        prop_id, arr_index = prop_id.split("@idx:")
+                else:
+                    prop_id = each
+                property_identifier = vendor_info.property_identifier(prop_id)
+                parameter_list.append(property_identifier)
+                if arr_index:
+                    parameter_list.append(arr_index)
 
-        if not read_access_spec_list:
-            raise RuntimeError("at least one read access specification required")
+        if not parameter_list:
+            await _app.response("object identifier expected")
+            return
 
-        # build the request
-        # request = ReadPropertyMultipleRequest(
-        #    listOfReadAccessSpecs=read_access_spec_list
-        # )
-        # request.pduDestination = Address(addr)
-
-        return (Address(addr), read_access_spec_list)
+        return (address, parameter_list)
 
     def build_rrange_request(
         self, args, range_params=None, arr_index=None, vendor_id=0, bacoid=None
