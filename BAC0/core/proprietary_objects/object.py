@@ -10,7 +10,6 @@ from bacpypes.object import (
 
 # Prochaine étape : créer une focntion qui va lire "all" et se redéfinir dynamiquement
 def create_proprietary_object(params: Dict[str, Any]) -> None:
-
     try:
         _validate_params(params)
     except:

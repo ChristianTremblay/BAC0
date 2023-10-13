@@ -97,7 +97,6 @@ class Point:
         history_size=None,
         tags=[],
     ):
-
         self._history = namedtuple("_history", ["timestamp", "value"])
         self.properties = PointProperties()
 
@@ -528,7 +527,6 @@ class Point:
             or command == 0
             or delay == 0
         ):
-
             if isinstance(self._polling_task.task, Poll):
                 self._polling_task.task.stop()
                 self._polling_task.task = None
@@ -680,7 +678,6 @@ class NumericPoint(Point):
         units_state=None,
         history_size=None,
     ):
-
         Point.__init__(
             self,
             device=device,
@@ -802,7 +799,6 @@ class BooleanPoint(Point):
         units_state=None,
         history_size=None,
     ):
-
         Point.__init__(
             self,
             device=device,
@@ -915,7 +911,6 @@ class EnumPoint(Point):
         units_state=None,
         history_size=None,
     ):
-
         Point.__init__(
             self,
             device=device,
@@ -1018,7 +1013,6 @@ class StringPoint(Point):
         presentValue=None,
         history_size=None,
     ):
-
         Point.__init__(
             self,
             device=device,
@@ -1092,7 +1086,6 @@ class DateTimePoint(Point):
         presentValue=None,
         history_size=None,
     ):
-
         Point.__init__(
             self,
             device=device,

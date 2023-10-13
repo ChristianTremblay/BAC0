@@ -14,6 +14,7 @@ from bacpypes.primitivedata import Boolean, CharacterString, Date, Time
 
 from .mixins.CommandableMixin import LocalBinaryOutputObjectCmd
 
+
 # THIS IS DEPRECATED
 def _make_mutable(obj, identifier="presentValue", mutable=True):
     """

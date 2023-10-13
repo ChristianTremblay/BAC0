@@ -175,12 +175,7 @@ class SQLMixin(object):
 
         df = pd.DataFrame(dict([(k, pd.Series(v)) for k, v in backup.items()]))
         if resampling_needed:
-            return (
-                df.resample(resampling_freq)
-                .last()
-                .ffill()
-                .bfill()
-            )
+            return df.resample(resampling_freq).last().ffill().bfill()
         else:
             return df
 

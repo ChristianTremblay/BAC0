@@ -35,7 +35,6 @@ from ..core.utils.notes import note_and_log
 
 @note_and_log
 class DynamicPlotHandler(Handler):
-
     analog_queue = Queue()
     binary_queue = Queue()
     multistates_queue = Queue()
@@ -159,11 +158,7 @@ class DynamicPlotHandler(Handler):
         df = df.reset_index()
         df["time_s"] = df["index"].apply(str)
         try:
-            df = (
-                df.ffill()
-                .bfill()
-                .replace(["inactive", "active"], [0, 1])
-            )
+            df = df.ffill().bfill().replace(["inactive", "active"], [0, 1])
         except TypeError:
             df = df.ffill().bfill()
         return df
@@ -227,7 +222,6 @@ class DynamicPlotHandler(Handler):
             process_queue, key = each
 
             while not process_queue.empty():
-
                 index = "{}{}".format(key[0].upper(), i)
                 if "labels" in key:
                     index = index + "_state"
@@ -356,7 +350,6 @@ class DynamicPlotHandler(Handler):
                 self._log.warning("Problem updating. Will retry")
 
     def create_figure(self):
-
         analog_glyphs = {}
         binary_glyphs = {}
         multistates_glyphs = {}
@@ -757,7 +750,6 @@ class NotesTableHandler(Handler):
         return self._network_ref()
 
     def modify_document(self, doc):
-
         controller = self.network.notes[0]
         notes_df = pd.DataFrame(self.network.notes[1]).reset_index()
         notes_df.columns = ["index", "notes"]

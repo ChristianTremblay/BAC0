@@ -78,7 +78,6 @@ def Commandable(
         Commandable._debug("Commandable %r ...", datatype)
 
     class _Commando(object):
-
         properties = [
             WritableProperty(presentValue, datatype),
             ReadableProperty(priorityArray, PriorityArray),
@@ -484,7 +483,6 @@ class ChannelValueProperty(Property):
 
 
 class ChannelObjectCmd(ChannelObject):
-
     properties = [ChannelValueProperty()]
 
 

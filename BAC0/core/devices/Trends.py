@@ -78,7 +78,6 @@ class TrendLog(TrendLogProperties):
         self._last_index = 0
         if read_log_on_creation:
             self.read_log_buffer()
-        
 
     @staticmethod
     def read_logDatum(logDatum):

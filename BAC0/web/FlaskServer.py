@@ -20,7 +20,6 @@ from .templates import create_card, create_sidebar, update_notifications
 
 
 class FlaskServer(Thread):
-
     # Init thread running server
     def __init__(self, network, port=8111, ip="0.0.0.0", *, daemon=True):
         Thread.__init__(self, daemon=daemon)

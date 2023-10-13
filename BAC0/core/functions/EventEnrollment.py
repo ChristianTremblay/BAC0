@@ -11,11 +11,12 @@ from ..io.Read import find_reason
 
 # this class follows the same design as schedule/calendar
 class EventEnrollment:
-
-    def __make_event_parameters_request(self, destination, object_instance, event_parameters):
+    def __make_event_parameters_request(
+        self, destination, object_instance, event_parameters
+    ):
         request = WritePropertyRequest(
             objectIdentifier=("eventEnrollment", object_instance),
-            propertyIdentifier="eventParameters"
+            propertyIdentifier="eventParameters",
         )
 
         address = Address(destination)
@@ -47,11 +48,15 @@ class EventEnrollment:
             raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
 
         self._log.info(
-            "Event Parameters Write request sent to device : {}".format(request.pduDestination)
+            "Event Parameters Write request sent to device : {}".format(
+                request.pduDestination
+            )
         )
 
     # external interface
-    def write_event_parameters(self, destination, event_enrollment_instance, event_parameters):
+    def write_event_parameters(
+        self, destination, event_enrollment_instance, event_parameters
+    ):
         if type(event_parameters) is not EventParameter:
             self.log.warning("Data is not of type EventParameter.")
             return
@@ -59,14 +64,14 @@ class EventEnrollment:
         request = self.__make_event_parameters_request(
             destination=destination,
             object_instance=event_enrollment_instance,
-            event_parameters=event_parameters
+            event_parameters=event_parameters,
         )
         self.__send_event_parameters_request(request)
 
     def __make_obj_prop_ref_request(self, destination, object_instance, obj_prop_ref):
         request = WritePropertyRequest(
             objectIdentifier=("eventEnrollment", object_instance),
-            propertyIdentifier="objectPropertyReference"
+            propertyIdentifier="objectPropertyReference",
         )
 
         address = Address(destination)
@@ -98,7 +103,9 @@ class EventEnrollment:
             raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
 
         self._log.info(
-            "Object Property Reference Write request sent to device : {}".format(request.pduDestination)
+            "Object Property Reference Write request sent to device : {}".format(
+                request.pduDestination
+            )
         )
 
     # external interface
@@ -110,6 +117,6 @@ class EventEnrollment:
         request = self.__make_obj_prop_ref_request(
             destination=destination,
             object_instance=event_enrollment_instance,
-            obj_prop_ref=obj_prop_ref
+            obj_prop_ref=obj_prop_ref,
         )
         self.__send_obj_prop_ref_request(request)

@@ -18,7 +18,6 @@ from ..core.utils.notes import note_and_log
 
 @note_and_log
 class Bokeh_Worker(Thread):
-
     # Init thread running server
     def __init__(self, dev_app, trends_app, notes_app, serverIP, *, daemon=True):
         Thread.__init__(self, daemon=daemon)

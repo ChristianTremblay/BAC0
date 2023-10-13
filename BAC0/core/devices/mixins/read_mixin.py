@@ -27,6 +27,7 @@ from ..Trends import TrendLog
 
 # ------------------------------------------------------------------------------
 
+
 # Requests processing
 def retrieve_type(obj_list, point_type_key):
     for point_type, point_address in obj_list:
@@ -582,7 +583,6 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             or command == 0
             or delay == 0
         ):
-
             if isinstance(self._polling_task.task, DeviceNormalPoll) or isinstance(
                 self._polling_task.task, DeviceFastPoll
             ):
@@ -643,7 +643,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
         """
         if isinstance(points_list, list):
             (requests, points) = self._rpm_request_by_name(points_list)
-            for (i, req) in enumerate(requests):
+            for i, req in enumerate(requests):
                 val = self.read_single(
                     req, points_per_request=1, discover_request=discover_request
                 )
@@ -697,7 +697,6 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
             or command == 0
             or delay == 0
         ):
-
             if isinstance(self._polling_task.task, DeviceNormalPoll):
                 self._polling_task.task.stop()
                 while self._polling_task.task.is_alive():

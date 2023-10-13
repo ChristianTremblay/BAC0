@@ -77,15 +77,18 @@ def add_points(qty_per_type, device):
 
 @pytest.fixture(scope="session")
 def network_and_devices():
-
     # This is the BACnet network and the "client" instance used to interact with
     # devices that will be created.
     bacnet = BAC0.lite()
+    time.sleep(0.01)
 
     # We'll use 3 devices with our first instance
     device_app = BAC0.lite(port=47809, deviceId=101)
+    time.sleep(0.01)
     device30_app = BAC0.lite(port=47810, deviceId=102)
+    time.sleep(0.01)
     # device300_app = BAC0.lite(port=47811, deviceId=103)
+    # time.sleep(0.01)
 
     add_points(2, device_app)
     add_points(5, device30_app)

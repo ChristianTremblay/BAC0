@@ -93,7 +93,7 @@ class LocalTrendLog(object):
         each object will contain a dict of values that will be
         turned into log_record.
         """
-        if not self.data or self.data[-1] == (2 ** 32) - 1:
+        if not self.data or self.data[-1] == (2**32) - 1:
             sequencenumber = 1
         else:
             sequencenumber = self.data[-1].sequencenumber + 1

@@ -122,7 +122,6 @@ class Base:
         location="Bromont, Québec",
         spin=None,
     ):
-
         self._log.debug("Configurating app")
 
         self.timehandler = TimeHandler()
@@ -233,7 +232,6 @@ class Base:
                 )
                 app_type = "BBMD Device"
             elif self.bbmdAddress and self.bbmdTTL > 0:
-
                 self.this_application = BAC0ForeignDeviceApplication(
                     self.this_device,
                     self.localIPAddr,

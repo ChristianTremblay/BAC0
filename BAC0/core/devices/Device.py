@@ -137,7 +137,6 @@ class Device(SQLMixin):
         history_size=None,
         reconnect_on_failure=True
     ):
-
         self.properties = DeviceProperties()
 
         self.properties.address = address
