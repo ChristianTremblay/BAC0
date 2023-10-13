@@ -20,6 +20,7 @@ try:
     from .core.utils.notes import update_log_level as log_level
     from .infos import __version__ as version
     from .scripts.Base import Base
+    from .scripts.AsyncBase import AsyncBase
     from .tasks.Devices import AddDevice as add_device
     from .tasks.Match import Match as match
     from .tasks.Poll import SimplePoll as poll
@@ -47,6 +48,7 @@ try:
         print("You need to pip install python-dotenv to use your .env file")
 
     from .scripts.Lite import Lite as lite
+    from .scripts.Async import Async as Async
 
     if _COMPLETE:
         from .scripts.Complete import Complete as gui

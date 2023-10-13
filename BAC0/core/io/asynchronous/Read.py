@@ -1,0 +1,901 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2015 by Christian Tremblay, P.Eng <christian.tremblay@servisys.com>
+# Licensed under LGPLv3, see file LICENSE in this source tree.
+#
+"""
+Read.py - creation of ReadProperty and ReadPropertyMultiple requests
+
+    Used while defining an app:
+    Example::
+
+        class BasicScript(WhoisIAm, ReadProperty)
+
+    Class::
+
+        ReadProperty()
+            def read()
+            def readMultiple()
+
+"""
+
+# --- standard Python modules ---
+import typing as t
+
+from bacpypes3.apdu import (
+    AbortPDU,
+    AbortReason,
+    PropertyReference,
+    Range,
+    # RangeByPosition,
+    # RangeBySequenceNumber,
+    # RangeByTime,
+    ReadAccessSpecification,
+    ReadPropertyACK,
+    ReadPropertyMultipleACK,
+    ReadPropertyMultipleRequest,
+    ReadPropertyRequest,
+    ReadRangeACK,
+    ReadRangeRequest,
+    RejectPDU,
+    RejectReason,
+)
+from bacpypes3.basetypes import DateTime, PropertyIdentifier
+from bacpypes3.constructeddata import Array, AnyAtomic
+
+# from bacpypes3.core import deferred
+# from bacpypes.iocb import IOCB, TimeoutError
+# from bacpypes3.object import get_object_class, registered_object_types
+from bacpypes3.apdu import ErrorRejectAbortNack
+
+# --- 3rd party modules ---
+from bacpypes3.pdu import Address
+
+from bacpypes3.primitivedata import ObjectIdentifier, Date, Tag, Time, Unsigned
+from bacpypes3.app import Application
+from bacpypes3.errors import (
+    ExecutionError,
+    ObjectError,
+    PropertyError,
+)
+from bacpypes3.object import get_vendor_info
+from ...utils.notes import note_and_log
+
+# --- this application's modules ---
+from ..IOExceptions import (
+    ApplicationNotStarted,
+    NoResponseFromController,
+    ReadPropertyException,
+    ReadPropertyMultipleException,
+    ReadRangeException,
+    SegmentationNotSupported,
+    UnknownObjectError,
+    UnknownPropertyError,
+    UnrecognizedService,
+)
+from BAC0.core.app.asyncApp import BAC0Application
+
+# ------------------------------------------------------------------------------
+
+
+ReadValue = t.Union[float, str, t.List]
+
+
+@note_and_log
+class ReadProperty:
+    """
+    Defines BACnet Read functions: readProperty and readPropertyMultiple.
+    Data exchange is made via a Queue object
+    A timeout of 10 seconds allows detection of invalid device or communciation errors.
+    """
+
+    async def read(
+        self,
+        args: str,
+        arr_index: t.Optional[int] = None,
+        vendor_id: int = 0,
+        bacoid=None,
+        timeout: int = 10,
+        show_property_name: bool = False,
+    ) -> t.Union[ReadValue, t.Tuple[ReadValue, str], None]:
+        """
+        Build a ReadProperty request, wait for the answer and return the value
+
+        :param args: String with <addr> <type> <inst> <prop> [ <indx> ]
+        :returns: data read from device (str representing data like 10 or True)
+
+        *Example*::
+
+            import BAC0
+            myIPAddr = '192.168.1.10/24'
+            bacnet = BAC0.connect(ip = myIPAddr)
+            bacnet.read('2:5 analogInput 1 presentValue')
+
+        Requests the controller at (Network 2, address 5) for the presentValue of
+        its analog input 1 (AI:1).
+        """
+        if not self._started:
+            raise ApplicationNotStarted("BACnet stack not running - use startApp()")
+
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
+
+        args_split = args.split()
+
+        (
+            device_address,
+            object_identifier,
+            property_identifier,
+            property_array_index,
+        ) = self.build_rp_request(
+            args_split, arr_index=arr_index, vendor_id=vendor_id, bacoid=bacoid
+        )
+
+        self.log_title("Read property", args_split)
+
+        try:
+            response = await _app.read_property(
+                device_address,
+                object_identifier,
+                property_identifier,
+                property_array_index,
+            )
+
+        except ErrorRejectAbortNack as err:
+            response = err
+            print(response)
+        except ObjectError as err:
+            raise UnknownObjectError("Unknown object {}".format(args))
+
+        # except bufferOverflow
+        # except NoResponseFromController
+
+        except PropertyError as err:
+            if "description" in args:
+                self._log.warning(
+                    "The description property is not implemented in the device. "
+                    "Using a default value for internal needs."
+                )
+                return "Property Not Implemented"
+            elif "inactiveText" in args:
+                self._log.warning(
+                    "The inactiveText property is not implemented in the device. "
+                    "Using a default value of Off for internal needs."
+                )
+                return "Off"
+            elif "activeText" in args:
+                self._log.warning(
+                    "The activeText property is not implemented in the device. "
+                    "Using a default value of On for internal needs."
+                )
+                return "On"
+            else:
+                raise UnknownPropertyError("Unknown property {}".format(args))
+
+        if not isinstance(response, ErrorRejectAbortNack):
+            return response
+
+    def _split_the_read_request(self, args, arr_index):
+        """
+        When a device doesn't support segmentation, this function
+        will split the request according to the length of the
+        predicted result which can be known when reading the array_index
+        number 0.
+
+        This can be a very long process as some devices count a large
+        number of properties without supporting segmentation
+        (FieldServers are a good example)
+        """
+        # parameter arr_index appears to be unused in this function?
+        nmbr_obj = self.read(args, arr_index=0)
+        return [self.read(args, arr_index=i) for i in range(1, nmbr_obj + 1)]  # type: ignore
+
+    async def readMultiple(
+        self,
+        args: str,
+        request_dict=None,
+        vendor_id: int = 0,
+        timeout: int = 10,
+        show_property_name: bool = False,
+    ) -> t.Union[t.Dict, t.List[t.Tuple[t.Any, str]]]:
+        """Build a ReadPropertyMultiple request, wait for the answer and return the values
+
+        :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
+        :returns: data read from device (str representing data like 10 or True)
+
+        *Example*::
+
+            import BAC0
+            myIPAddr = '192.168.1.10/24'
+            bacnet = BAC0.connect(ip = myIPAddr)
+            bacnet.readMultiple('2:5 analogInput 1 presentValue units')
+
+        Requests the controller at (Network 2, address 5) for the (presentValue and units) of
+        its analog input 1 (AI:1).
+        """
+        if not self._started:
+            raise ApplicationNotStarted("BACnet stack not running - use startApp()")
+
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
+
+        if request_dict is not None:
+            address, parameter_list = await self.build_rpm_request_from_dict(
+                request_dict, vendor_id
+            )
+
+        else:
+            args_list = args.split()
+            address, parameter_list = await self.build_rpm_request(
+                args_list, vendor_id=vendor_id
+            )
+            self.log_title("Read Multiple", args_list)
+
+        values = []
+        dict_values = {}
+
+        try:
+            # build an ReadPropertyMultiple request
+            response = await _app.read_property_multiple(address, parameter_list)
+
+        except ErrorRejectAbortNack as err:
+            # construction error
+            response = err
+            self._log.exception("exception: {!r}".format(err))
+
+        """ 
+        Other Except if BAC0 can catch them
+        Which is not the case actually
+
+        
+        # note: the return types along this pass don't appear to be consistent
+        # not sure if this is a real problem or not, leaving as-is and ignoring errors
+        if iocb.ioError:  # unsuccessful: error/reject/abort
+            apdu = iocb.ioError
+            reason = find_reason(apdu)
+            self._log.warning("APDU Abort Reject Reason : {}".format(reason))
+            self._log.debug("The Request was : {}".format(args))
+            if reason == "unrecognizedService":
+                raise UnrecognizedService()
+            elif reason == "segmentationNotSupported":
+                # value = self._split_the_read_request(args, arr_index)
+                # return value
+                self.segmentation_supported = False
+                raise SegmentationNotSupported()
+            elif reason == "unknownObject":
+                self._log.warning("Unknown object {}".format(args))
+                raise UnknownObjectError("Unknown object {}".format(args))
+            elif reason == "unknownProperty":
+                self._log.warning("Unknown property {}".format(args))
+                values.append("")  # type: ignore[arg-type]
+                return values
+            else:
+                self._log.warning("No response from controller {}".format(reason))
+                values.append("")  # type: ignore[arg-type]
+                return values
+        """
+
+        if not isinstance(response, ErrorRejectAbortNack):
+            # Dealt in bp3
+            # note: the return types along this pass don't appear to be consistent
+            # not sure if this is a real problem or not, leaving as-is and ignoring errors
+            # if not isinstance(apdu, ReadPropertyMultipleACK):  # expecting an ACK
+            #    self._log.debug("{:<20}".format("not an ack"))
+            #    self._log.warning(
+            #        "Not an Ack. | APDU : {} / {}".format(apdu, type(apdu))
+            #    )
+            #    return  # type: ignore[return-value]
+
+            # loop through the results
+            for (
+                object_identifier,
+                property_identifier,
+                property_array_index,
+                property_value,
+            ) in response:
+                if property_array_index is not None:
+                    # property_value = await _app.response(
+                    print(
+                        f"{object_identifier} {property_identifier}[{property_array_index}] {property_value}"
+                    )
+                else:
+                    # property_value = await _app.response(
+                    print(f"{object_identifier} {property_identifier} {property_value}")
+
+                    # TODO : what if there is an error ?
+                    # if readResult.propertyAccessError is not None:
+                    #    self._log.debug(
+                    #        "Property Access Error for {}".format(
+                    #            readResult.propertyAccessError
+                    #        )
+                    #    )
+                    # values.append(None)
+
+                # find the datatype
+                # datatype = get_datatype(
+                #    objectIdentifier[0], propertyIdentifier, vendor_id=vendor_id
+                # )
+
+                # if not datatype:
+                #   value = cast_datatype_from_tag(
+                #        propertyValue, objectIdentifier[0], propertyIdentifier
+                #   )
+                # else:
+                #    # special case for array parts, others are managed by cast_out
+                #    if issubclass(datatype, Array) and (
+                #        propertyArrayIndex is not None
+                #    ):
+                #        if propertyArrayIndex == 0:
+                #            value = propertyValue.cast_out(Unsigned)
+                #        else:
+                #            value = propertyValue.cast_out(datatype.subtype)
+                #    elif propertyValue.is_application_class_null():
+                #        value = None
+                #    else:
+                #        value = propertyValue.cast_out(datatype)
+
+                self._log.debug(
+                    "{!r:<20} {!r:<20} {!r:<30} {!r:<20}".format(
+                        property_identifier,
+                        property_array_index,
+                        property_value,
+                        # datatype,
+                        "",
+                    )
+                )
+                dict_values[str(object_identifier)] = []
+                if show_property_name:
+                    # try:
+                    #    int(
+                    #        property_identifier
+                    #    )  # else it will be a name like maxMaster
+                    # prop_id = "@prop_{}".format(property_identifier)
+                    # _obj, _id = apdu.listOfReadAccessResults[
+                    #    0
+                    # ].objectIdentifier
+                    # _key = (str(_obj), vendor_id)
+                    # TODO is this required ?
+                    # if _key in registered_object_types.keys():
+                    #    _classname = registered_object_types[_key].__name__
+                    #    for k, v in registered_object_types["BAC0"][
+                    #        _classname
+                    #    ].items():
+                    #        if v["obj_id"] == property_identifier:
+                    #            prop_id = (k, property_identifier)  # type: ignore
+                    # if isinstance(value, dict):
+                    #    value = list(value.items())[0][1]
+
+                    # except ValueError:
+                    #    prop_id = property_identifier
+                    values.append((property_value, property_identifier))
+                    dict_values[str(object_identifier)].append(
+                        (property_identifier, (property_value, property_identifier))
+                    )
+                else:
+                    values.append(property_value)
+                    dict_values[str(object_identifier)].append(
+                        (property_identifier, property_value)
+                    )
+
+            if request_dict is not None:
+                return dict_values
+            else:
+                return values
+
+        return values
+
+    #    def __get_obj_type(self, obj_type: str, vendor_id) -> int:
+    #        if obj_type.isdigit():
+    #            return int(obj_type)
+    #        elif "@obj_" in obj_type:
+    #            return int(obj_type.split("_")[1])
+    #        elif not get_object_class(obj_type, vendor_id=vendor_id):
+    #            raise ValueError("Unknown object type : {}".format(obj_type))
+    #        return obj_type  # type: ignore
+
+    def build_rp_request(
+        self, args: t.List[str], arr_index=None, vendor_id: int = 0, bacoid=None
+    ) -> t.Tuple:
+        try:
+            addr, obj_type_str, obj_inst_str, prop_id_str = args[:4]
+            object_identifier = ObjectIdentifier((obj_type_str, obj_inst_str))
+        except ValueError:
+            addr, obj_type_str, prop_id_str = args[:3]
+            object_identifier = ObjectIdentifier(obj_type_str)
+
+        device_address = Address(addr)
+
+        # TODO : This part needs work to find proprietary objects
+        # obj_type = self.__get_obj_type(obj_type_str, vendor_id)
+
+        if prop_id_str.isdigit():
+            prop_id = int(prop_id_str)
+        elif "@prop_" in prop_id_str or "@idx" in prop_id_str:
+            if "@idx" in prop_id_str:
+                prop_id, arr_index = prop_id_str.split("@idx:")
+            if "@prop_" in prop_id_str:
+                prop_id = int(prop_id_str.split("_")[1])
+        else:
+            prop_id = prop_id_str  # type: ignore
+        prop_id = PropertyIdentifier(prop_id)
+
+        if arr_index is None:
+            arr_index = int(args[4]) if len(args) == 5 else arr_index
+        params = (device_address, object_identifier, prop_id, arr_index)
+        self._log.debug("{:<20} {!r}".format("REQUEST", params))
+        return params
+
+    async def build_rpm_request(
+        self, args: t.List[str], vendor_id: int = 0
+    ) -> ReadPropertyMultipleRequest:
+        """
+        Build request from args
+        """
+        property_array_index = None
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
+        self._log.debug(args)
+
+        vendor_id = vendor_id
+        address = Address(args.pop(0))
+        # get information about the device from the cache
+        device_info = await _app.device_info_cache.get_device_info(address)
+
+        # using the device info, look up the vendor information
+        if device_info:
+            vendor_info = get_vendor_info(device_info.vendor_identifier)
+        else:
+            vendor_info = get_vendor_info(0)
+
+        parameter_list = []
+        while args:
+            # get the object identifier and using the vendor information, look
+            # up the class
+            obj_id = args.pop(0)
+            if obj_id.isdigit():
+                obj_id = int(obj_id)
+            elif "@obj_" in obj_id:
+                obj_id = int(obj_id.split("@obj_")[1])
+            if ":" not in obj_id:
+                obj_instance = args.pop(0)
+            else:
+                obj_instance = obj_id.split(":")[1]
+                obj_id = obj_id.split(":")[0]
+            object_identifier = vendor_info.object_identifier((obj_id, obj_instance))
+            object_class = vendor_info.get_object_class(object_identifier[0])
+            if not object_class:
+                await self.response(f"unrecognized object type: {object_identifier}")
+                return
+
+            # save this as a parameter
+            parameter_list.append(object_identifier)
+
+            while args:
+                # now get the property type from the class
+                if "@obj_" in args[0]:
+                    break
+                elif "@prop_" in args[0] or "@idx" in args[0]:
+                    if "@idx" in prop_id:
+                        prop_id, arr_index = prop_id.split("@idx:")
+                    if "@prop_" in args[0]:
+                        prop_id = int(args.pop(0).split("_")[1])
+                else:
+                    prop_id = args.pop(0)
+                property_identifier = vendor_info.property_identifier(prop_id)
+
+                if property_identifier not in (
+                    PropertyIdentifier.all,
+                    PropertyIdentifier.required,
+                    PropertyIdentifier.optional,
+                    # "objectName",
+                    # "objectType",
+                    # "objectIdentifier",
+                    # "polarity",
+                ):
+                    property_type = object_class.get_property_type(property_identifier)
+                    if not property_type:
+                        await _app.response(
+                            f"unrecognized property: {property_identifier}"
+                        )
+                        return
+
+                # save this as a parameter
+                parameter_list.append(property_identifier)
+
+                # check for a property array index
+                if args and args[0].isdigit() and arr_index is None:
+                    property_array_index = int(args.pop(0))
+                    # save this as a parameter
+                    parameter_list.append(property_array_index)
+                elif property_array_index is not None:
+                    parameter_list.append(arr_index)
+
+                # crude check to see if the next thing is an object identifier
+                if args and ((":" in args[0]) or ("," in args[0])):
+                    break
+
+        if not parameter_list:
+            await _app.response("object identifier expected")
+            return
+        else:
+            return (address, parameter_list)
+
+    async def build_rpm_request_from_dict(self, request_dict, vendor_id=0):
+        """
+        Read property multiple allow to read a lot of properties with only one request
+        The existing RPM function is made using a string that must be created using bacpypes
+        console style and is hard to automate.
+
+        This new version will be an attempt to improve that::
+
+            _rpm = {'address': '11:2',
+                'objects': {'analogInput:1': ['presentValue', 'description', 'unit', 'objectList@idx:0'],
+                            'analogInput:2': ['presentValue', 'description', 'unit', 'objectList@idx:0'],
+                },
+                vendor_id: 842
+                }
+
+        """
+
+        vendor_id = vendor_id
+        address = Address(request_dict["address"])
+        objects = request_dict["objects"]
+        if "vendor_id" in request_dict.keys():
+            vendor_id = int(request_dict["vendor_id"])
+
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
+
+        # get information about the device from the cache
+        device_info = await _app.device_info_cache.get_device_info(address)
+
+        # using the device info, look up the vendor information
+        if device_info:
+            vendor_info = get_vendor_info(device_info.vendor_identifier)
+        else:
+            vendor_info = get_vendor_info(0)
+
+        parameter_list = []
+        arr_index = None
+
+        for obj, list_of_properties in objects.items():
+            object_identifier = ObjectIdentifier(obj)
+            parameter_list.append(object_identifier)
+            for each in list_of_properties:
+                if "@obj_" in each:
+                    break
+                elif "@prop_" in each or "@idx" in each:
+                    prop_id = int(each.split("_")[1])
+                    if "@idx" in prop_id:
+                        prop_id, arr_index = prop_id.split("@idx:")
+                else:
+                    prop_id = each
+                property_identifier = vendor_info.property_identifier(prop_id)
+                parameter_list.append(property_identifier)
+                if arr_index:
+                    parameter_list.append(arr_index)
+
+        if not parameter_list:
+            await _app.response("object identifier expected")
+            return
+
+        return (address, parameter_list)
+
+    def build_rrange_request(
+        self, args, range_params=None, arr_index=None, vendor_id=0, bacoid=None
+    ):
+        addr, obj_type, obj_inst, prop_id = args[:4]
+
+        vendor_id = vendor_id
+        bacoid = bacoid
+
+        if obj_type.isdigit():
+            obj_type = int(obj_type)
+        elif not get_object_class(obj_type, vendor_id=vendor_id):
+            raise ValueError("Unknown object type {}".format(obj_type))
+
+        obj_inst = int(obj_inst)
+
+        if prop_id.isdigit():
+            prop_id = int(prop_id)
+        datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
+        if not datatype:
+            raise ValueError("invalid property for object type")
+
+        # build a request
+        request = ReadRangeRequest(
+            objectIdentifier=(obj_type, obj_inst), propertyIdentifier=prop_id
+        )
+        request.pduDestination = Address(addr)
+        if range_params is not None:
+            range_type, first, date, time, count = range_params
+            if range_type == "p":
+                rbp = RangeByPosition(referenceIndex=int(first), count=int(count))
+                request.range = Range(byPosition=rbp)
+            elif range_type == "s":
+                rbs = RangeBySequenceNumber(
+                    referenceSequenceNumber=int(first), count=int(count)
+                )
+                request.range = Range(bySequenceNumber=rbs)
+            elif range_type == "t":
+                rbt = RangeByTime(
+                    referenceTime=DateTime(
+                        date=Date(date).value, time=Time(time).value
+                    ),
+                    count=int(count),
+                )
+                request.range = Range(byTime=rbt)
+            elif range_type == "x":
+                # should be missing required parameter
+                request.range = Range()
+            else:
+                raise ValueError("unknown range type: %r" % (range_type,))
+
+        if len(args) == 5:
+            request.propertyArrayIndex = int(args[4])
+        self._log.debug("{:<20} {!r}".format("REQUEST", request))
+        return request
+
+    def readRange(
+        self,
+        args,
+        range_params=None,
+        arr_index=None,
+        vendor_id=0,
+        bacoid=None,
+        timeout=10,
+    ):
+        """
+        Build a ReadRangeRequest request, wait for the answer and return the value
+
+        :param args: String with <addr> <type> <inst> <prop> [ <indx> ]
+        :param range_params: parameters defining how to query the range, a list of five elements
+        :returns: data read from device (list of LogRecords)
+
+        range_params: a list of five elements: (range_type: str, first: int, date: str, time: str, count: int)
+            range_type: one of ['p', 's', 't']
+                        p - RangeByPosition:
+                                uses (first, count)
+                        s - RangeBySequenceNumber:
+                                uses (first, count)
+                        t - RangeByTime: Filter by the given time
+                                uses (date, time, count)
+            first: int, first element when querying by Position or Sequence Number
+            date: str, "YYYY-mm-DD" passed to bacpypes.primitivedata.Date constructor
+            time: str, "HH:MM:SS" passed to bacpypes.primitivedata.Time constructor
+            count: int, number of elements to return, negative numbers reverse direction of search
+
+        *Example*::
+
+            import BAC0
+            from bacpypes.basetypes import Date, Time
+            myIPAddr = '192.168.1.10/24'
+            bacnet = BAC0.connect(ip=myIPAddr)
+
+            log_records = bacnet.readRange('2:5 trendLog 1 logBuffer', range_params=('t', None, '2023-05-12', '12:00:00', 2))
+            for log_record in log_records:
+              print(Date(log_record.timestamp.date), Time(log_record.timestamp.time), log_record.logDatum.realValue)
+            # Date(2023-5-12 fri) Time(12:10:00.00) 130.331
+            # Date(2023-5-12 fri) Time(12:20:00.00) 134.123
+
+            log_records = bacnet.readRange('2:5 trendLog 1 logBuffer', range_params=('t', None, '2023-05-12', '12:00:00', -2))
+            for log_record in log_records:
+              print(Date(log_record.timestamp.date), Time(log_record.timestamp.time), log_record.logDatum.realValue)
+            # Date(2023-5-12 fri) Time(11:40:00.00) 123.4
+            # Date(2023-5-12 fri) Time(11:50:00.00) 125.1213
+        """
+        if not self._started:
+            raise ApplicationNotStarted("BACnet stack not running - use startApp()")
+
+        args_split = args.split()
+
+        self.log_title("Read range ", args_split)
+
+        vendor_id = vendor_id
+        bacoid = bacoid
+
+        try:
+            # build ReadProperty request
+            request = self.build_rrange_request(
+                args_split,
+                range_params=range_params,
+                arr_index=arr_index,
+                vendor_id=vendor_id,
+                bacoid=bacoid,
+            )
+            iocb = IOCB(request)
+            iocb.set_timeout(timeout)
+            # pass to the BACnet stack
+            deferred(self.this_application.request_io, iocb)
+            self._log.debug("{:<20} {!r}".format("iocb", iocb))
+
+        except ReadRangeException as error:
+            # construction error
+            self._log.exception("exception: {!r}".format(error))
+
+        iocb.wait()  # Wait for BACnet response
+
+        if iocb.ioResponse:  # successful response
+            apdu = iocb.ioResponse
+
+            if not isinstance(apdu, ReadRangeACK):  # expecting an ACK
+                self._log.warning("Not an ack, see debug for more infos.")
+                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
+                return
+
+            # find the datatype
+            datatype = get_datatype(
+                apdu.objectIdentifier[0], apdu.propertyIdentifier, vendor_id=vendor_id
+            )
+            if not datatype:
+                # raise TypeError("unknown datatype")
+                datatype = cast_datatype_from_tag(
+                    apdu.propertyValue,
+                    apdu.objectIdentifier[0],
+                    apdu.propertyIdentifier,
+                )
+
+            try:
+                value = apdu.itemData.cast_out(datatype)
+            except TypeError as error:
+                self._log.error(
+                    "Problem casting value : {} | Datatype : {} | error : {}".format(
+                        apdu.itemData, datatype, error
+                    )
+                )
+                return apdu
+
+            self._log.debug("{:<20} {:<20}".format("value", "datatype"))
+            self._log.debug("{!r:<20} {!r:<20}".format(value, datatype))
+            return value
+
+        if iocb.ioError:  # unsuccessful: error/reject/abort
+            apdu = iocb.ioError
+            reason = find_reason(apdu)
+            if reason == "segmentationNotSupported":
+                self._log.warning(
+                    "Segmentation not supported... will read properties one by one..."
+                )
+                self._log.debug("The Request was : {}".format(args_split))
+                value = self._split_the_read_request(args, arr_index)
+                return value
+            else:
+                if reason == "unknownProperty":
+                    if "priorityArray" in args:
+                        self._log.debug("Unknown property {}".format(args))
+                    else:
+                        self._log.warning("Unknown property {}".format(args))
+                    if "description" in args:
+                        return ""
+                    elif "inactiveText" in args:
+                        return "Off"
+                    elif "activeText" in args:
+                        return "On"
+                    else:
+                        raise UnknownPropertyError("Unknown property {}".format(args))
+                elif reason == "unknownObject":
+                    self._log.warning("Unknown object {}".format(args))
+                    raise UnknownObjectError("Unknown object {}".format(args))
+                else:
+                    # Other error... consider NoResponseFromController (65)
+                    # even if the realy reason is another one
+                    raise NoResponseFromController(
+                        "APDU Abort Reason : {}".format(reason)
+                    )
+
+    def read_priority_array(self, addr, obj, obj_instance) -> t.List:
+        pa = self.read("{} {} {} priorityArray".format(addr, obj, obj_instance))
+        res = [pa]
+        for each in range(1, 17):
+            _pa = pa[each]  # type: ignore[index]
+            for k, v in _pa.__dict__.items():
+                if v is not None:
+                    res.append(v)
+        return res
+
+
+def find_reason(apdu):
+    try:
+        if apdu == TimeoutError:
+            return "Timeout"
+        elif apdu.pduType == RejectPDU.pduType:
+            reasons = RejectReason.enumerations
+        elif apdu.pduType == AbortPDU.pduType:
+            reasons = AbortReason.enumerations
+        else:
+            _code = None
+            try:
+                _code = apdu.errorCode
+            except AttributeError:
+                try:
+                    _code = apdu.errorType.errorCode
+                except AttributeError:
+                    raise ValueError("Cannot find reason...")
+
+            if _code:
+                return "{}".format(_code)
+        code = apdu.apduAbortRejectReason
+        try:
+            return [k for k, v in reasons.items() if v == code][0]
+        except IndexError:
+            return code
+    except KeyError as err:
+        return "KeyError: {} has no key {!r}".format(type(apdu), err.args[0])
+
+
+def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
+    try:
+        tag_list = propertyValue.tagList.tagList
+        if tag_list[0].tagClass == 0:
+            tag = tag_list[0].tagNumber
+
+            datatype = Tag._app_tag_class[tag]
+        else:
+            from bacpypes.constructeddata import ArrayOf
+
+            subtype_tag = propertyValue.tagList.tagList[0].tagList[0].tagNumber
+            datatype = ArrayOf(Tag._app_tag_class[subtype_tag])
+        value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
+    except:
+        value = {"{}_{}".format(obj_id, prop_id): propertyValue}
+    return value
+
+
+def validate_object_type(obj_type, vendor_id=842):
+    if obj_type.isdigit():
+        obj_type = int(obj_type)
+    elif "@obj_" in obj_type:
+        obj_type = int(obj_type.split("_")[1])
+    elif not get_object_class(obj_type, vendor_id=vendor_id):
+        raise ValueError("Unknown object type : {}".format(obj_type))
+    return obj_type
+
+
+def build_read_access_spec(obj_type, obj_instance, property_reference_list):
+    return ReadAccessSpecification(
+        objectIdentifier=(obj_type, obj_instance),
+        listOfPropertyReferences=property_reference_list,
+    )
+
+
+def build_property_reference_list(obj_type, list_of_properties):
+    property_reference_list = []
+    for prop in list_of_properties:
+        idx = None
+        if "@idx:" in prop:
+            prop, idx = prop.split("@idx:")
+        prop_id = validate_property_id(obj_type, prop)
+        prop_reference = PropertyReference(propertyIdentifier=prop_id)
+        if idx:
+            prop_reference.propertyArrayIndex = int(idx)
+        property_reference_list.append(prop_reference)
+    return property_reference_list
+
+
+def validate_property_id(obj_type, prop_id):
+    if prop_id in PropertyIdentifier.enumerations:
+        if prop_id in (
+            "all",
+            "required",
+            "optional",
+            "objectName",
+            "objectType",
+            "objectIdentifier",
+            "polarity",
+        ):
+            return prop_id
+        elif validate_datatype(obj_type, prop_id) is not None:
+            return prop_id
+        else:
+            raise ValueError(
+                "invalid property for object type : {} | {}".format(obj_type, prop_id)
+            )
+    elif "@prop_" in prop_id:
+        return int(prop_id.split("_")[1])
+    else:
+        raise ValueError("{} is an invalid property for {}".format(prop_id, obj_type))
+
+
+def validate_datatype(obj_type, prop_id, vendor_id=842):
+    return get_datatype(obj_type, prop_id, vendor_id=vendor_id) if not None else False

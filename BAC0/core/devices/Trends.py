@@ -75,10 +75,10 @@ class TrendLog(TrendLogProperties):
         self.properties.device = device
         self.properties.oid = OID
         self.update_properties()
-
+        self._last_index = 0
         if read_log_on_creation:
             self.read_log_buffer()
-        self._last_index = 0
+        
 
     @staticmethod
     def read_logDatum(logDatum):
@@ -122,7 +122,7 @@ class TrendLog(TrendLogProperties):
         RECORDS = 10
         log_buffer = set()
         _actual_index = self._total_record_count()
-        start = max(_actual_index - self.properties.record_count, self._last_index)
+        start = max(_actual_index - self.properties.record_count + 1, self._last_index)
         _count = max(_actual_index - start, 0)
         steps = int(_count / RECORDS) + int(1 if (_count % RECORDS) > 0 else 0)
 
@@ -140,7 +140,6 @@ class TrendLog(TrendLogProperties):
             _from += len(_chunk)
             for chunk in _chunk:
                 log_buffer.add(chunk)
-
         self._last_index = _from
         self.create_dataframe(log_buffer)
 
