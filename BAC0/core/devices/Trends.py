@@ -75,10 +75,10 @@ class TrendLog(TrendLogProperties):
         self.properties.device = device
         self.properties.oid = OID
         self.update_properties()
-
+        self._last_index = 0
         if read_log_on_creation:
             self.read_log_buffer()
-        self._last_index = 0
+        
 
     @staticmethod
     def read_logDatum(logDatum):
