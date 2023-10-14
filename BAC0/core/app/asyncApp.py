@@ -3,7 +3,6 @@ import os
 from threading import Thread
 
 loop = asyncio.new_event_loop()
-import nest_asyncio
 from bacpypes3.ipv4.app import NormalApplication
 from bacpypes3.app import Application
 import asyncio
