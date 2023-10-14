@@ -1,3 +1,4 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from . import Device, Points, Trends, Virtuals
+
+from . import AsyncDevice, Device, Points, Trends, Virtuals

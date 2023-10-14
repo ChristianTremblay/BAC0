@@ -164,7 +164,7 @@ class AsyncBase:
         self.firmwareRevision = firmwareRevision
         self._ric = {}
         self.subscription_contexts = {}
-        self.dataStart = None
+        self.database = None
 
         try:
             self.startApp()

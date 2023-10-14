@@ -15,6 +15,7 @@ except ImportError:
 try:
     from . import core, tasks
     from .core.devices.Device import Device as device
+    from .core.devices.AsyncDevice import ADevice
     from .core.devices.Device import DeviceLoad as load
     from .core.devices.Trends import TrendLog as TrendLog
     from .core.utils.notes import update_log_level as log_level
@@ -73,3 +74,5 @@ except ImportError as error:
     print("\nDiscard this message if you are actually installing BAC0.")
     print("=" * 80)
     # Probably installing the app...
+
+ASYNC = False

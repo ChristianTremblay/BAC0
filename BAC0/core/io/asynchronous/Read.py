@@ -457,7 +457,7 @@ class ReadProperty:
                 obj_id = int(obj_id)
             elif "@obj_" in obj_id:
                 obj_id = int(obj_id.split("@obj_")[1])
-            if ":" not in obj_id:
+            if ":" not in str(obj_id):
                 obj_instance = args.pop(0)
             else:
                 obj_instance = obj_id.split(":")[1]
@@ -482,7 +482,13 @@ class ReadProperty:
                         prop_id = int(args.pop(0).split("_")[1])
                 else:
                     prop_id = args.pop(0)
-                property_identifier = vendor_info.property_identifier(prop_id)
+                try:
+                    property_identifier = vendor_info.property_identifier(prop_id)
+                except ValueError:
+                    try:
+                        property_identifier = PropertyIdentifier(prop_id)
+                    except ValueError:
+                        break  # probably another object
 
                 if property_identifier not in (
                     PropertyIdentifier.all,
@@ -512,7 +518,7 @@ class ReadProperty:
                     parameter_list.append(arr_index)
 
                 # crude check to see if the next thing is an object identifier
-                if args and ((":" in args[0]) or ("," in args[0])):
+                if args and ((":" in args[0]) or ("," in args[0]) or ("-" in args[0])):
                     break
 
         if not parameter_list:

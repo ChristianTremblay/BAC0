@@ -26,7 +26,7 @@ import typing as t
 # --- standard Python modules ---
 import weakref
 from collections import namedtuple
-
+import BAC0
 from BAC0.scripts.AsyncBase import AsyncBase
 
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
@@ -59,7 +59,7 @@ from ..infos import __version__ as version
 
 # --- this application's modules ---
 from .Base import Base
-from ..tasks.RecurringTask import RecurringTask
+from ..tasks.asynchronous.RecurringTask import RecurringTask
 from ..tasks.UpdateCOV import Update_local_COV
 
 try:
