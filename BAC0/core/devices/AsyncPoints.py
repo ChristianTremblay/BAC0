@@ -17,7 +17,9 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 
 # --- 3rd party modules ---
-from bacpypes.primitivedata import CharacterString
+from bacpypes3.primitivedata import CharacterString, ObjectIdentifier
+from bacpypes3.basetypes import PropertyIdentifier
+from bacpypes3.pdu import Address
 
 try:
     import pandas as pd
@@ -372,6 +374,7 @@ class Point:
             except Exception:
                 raise ValueError("Cannot find property named {}".format(key))
 
+    
     async def write(self, value, *, prop="presentValue", priority=""):
         """
         Write to present value of a point
@@ -397,10 +400,9 @@ class Point:
             try:
                 await self.properties.device.properties.network.write(
                     "{} {} {} {} {} {}".format(
-                        self.properties.device.properties.address,
-                        self.properties.type,
-                        self.properties.address,
-                        prop,
+                        Address(self.properties.device.properties.address),
+                        ObjectIdentifier(self.properties.type, self.properties.address),
+                        PropertyIdentifier(prop),
                         value,
                         priority,
                     ),
@@ -412,8 +414,8 @@ class Point:
             # Read after the write so history gets updated.
             await self.value
 
-    async def default(self, value):
-        await self.write(value, prop="relinquishDefault")
+    def default(self, value):
+        self.write(value, prop="relinquishDefault")
 
     async def sim(self, value, *, force=False):
         """
@@ -432,7 +434,7 @@ class Point:
                 "{} {} {} presentValue {}".format(
                     self.properties.device.properties.address,
                     self.properties.type,
-                    str(self.properties.address),
+                    self.properties.address,
                     str(value),
                 )
             )
@@ -464,17 +466,17 @@ class Point:
         )
         self.properties.simulated = (False, None)
 
-    async def ovr(self, value):
-        await self.write(value, priority=8)
+    def ovr(self, value):
+        self.write(value, priority=8)
         self.properties.overridden = (True, value)
 
-    async def auto(self):
-        await self.write("null", priority=8)
+    def auto(self):
+        self.write("null", priority=8)
         self.properties.overridden = (False, 0)
 
-    async def release_ovr(self):
-        await self.write("null", priority=1)
-        await self.write("null", priority=8)
+    def release_ovr(self):
+        self.write("null", priority=1)
+        self.write("null", priority=8)
         self.properties.overridden = (False, None)
 
     async def _setitem(self, value):
@@ -486,7 +488,7 @@ class Point:
         AnalogOutput are overridden
         """
         if "characterstring" in self.properties.type:
-            await self.write(value)
+            self.write(value)
 
         elif "Value" in self.properties.type:
             if str(value).lower() == "auto":
@@ -494,18 +496,18 @@ class Point:
                     "Value was not simulated or overridden, cannot release to auto"
                 )
             # analog value must be written to
-            await self.write(value)
+            self.write(value)
 
         elif "Output" in self.properties.type:
             # analog output must be overridden
             if str(value).lower() == "auto":
-                await self.auto()
+                self.auto()
             else:
-                await self.ovr(value)
+                self.ovr(value)
         else:
             # input are left... must be simulated
             if str(value).lower() == "auto":
-                await self.release()
+                self.release()
             else:
                 await self.sim(value)
 
@@ -516,7 +518,10 @@ class Point:
         """
         raise NotImplementedError("Must be overridden")
 
-    async def poll(self, command="start", *, delay: int = 10) -> None:
+    def poll(self, command="start", *, delay: int = 10) -> None:
+        asyncio.create_task(self._poll(command=command, delay=delay))
+
+    async def _poll(self, command="start", *, delay: int = 10) -> None:
         """
         Poll a point every x seconds (delay=x sec)
         Stopped by using point.poll('stop') or .poll(0) or .poll(False)
@@ -549,6 +554,9 @@ class Point:
             raise RuntimeError("Stop polling before redefining it")
 
     def match(self, point, *, delay=5):
+        asyncio.create_task(self._match(point=point, delay=delay))
+
+    def _match(self, point, *, delay=5):
         """
         This allow functions like :
             device['status'].match('command')
@@ -577,6 +585,11 @@ class Point:
             raise RuntimeError("Stop task before redefining it")
 
     def match_value(self, value, *, delay=5, use_last_value=False):
+        asyncio.create_task(
+            self._match_value(value=value, delay=delay, use_last_value=use_last_value)
+        )
+
+    def _match_value(self, value, *, delay=5, use_last_value=False):
         """
         This allow functions like :
             device['point'].match('value')
@@ -634,7 +647,10 @@ class Point:
             address, obj_tuple, callback=callback
         )
 
-    async def update_description(self, value):
+    def update_description(self, value):
+        asyncio.create_task(self._update_description(value=value))
+
+    async def _update_description(self, value):
         """
         This will write to the BACnet point and modify the description
         of the object
@@ -692,6 +708,11 @@ class NumericPoint(Point):
             units_state=units_state,
             history_size=history_size,
         )
+
+    @property
+    def val(self):
+        res = asyncio.run_coroutine_threadsafe(self.value)
+        return res
 
     @property
     async def value(self):
