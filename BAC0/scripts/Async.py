@@ -43,7 +43,7 @@ from ..core.functions.Reinitialize import Reinitialize
 from ..core.functions.Schedule import Schedule
 from ..core.functions.EventEnrollment import EventEnrollment
 from ..core.functions.Text import TextMixin
-from ..core.functions.TimeSync import TimeSync
+from ..core.functions.asynchronous.TimeSync import TimeSync
 from ..core.io.IOExceptions import (
     NoResponseFromController,
     NumerousPingFailures,
@@ -51,6 +51,7 @@ from ..core.io.IOExceptions import (
     UnrecognizedService,
 )
 from ..core.io.asynchronous.Read import ReadProperty
+from ..core.io.asynchronous.Write import WriteProperty
 from ..core.io.Simulate import Simulation
 
 # from ..core.io.asynchronous.Write import WriteProperty
@@ -81,9 +82,9 @@ class Async(
     Alias,
     # EventEnrollment,
     ReadProperty,
-    # WriteProperty,
+    WriteProperty,
     # Simulation,
-    # TimeSync,
+    TimeSync,
     # Reinitialize,
     # DeviceCommunicationControl,
     # CoV,
