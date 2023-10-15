@@ -9,6 +9,7 @@ Device.py - describe a BACnet Device
 
 """
 import os.path
+import asyncio
 
 # --- standard Python modules ---
 from collections import namedtuple
@@ -626,7 +627,7 @@ class DeviceConnected(Device):
             device['point_name'] = value
         """
         try:
-            self._findPoint(point_name)._set(value)
+            asyncio.create_task(self._findPoint(point_name)._set(value))
         except WritePropertyException as ve:
             self._log.error("{}".format(ve))
 
