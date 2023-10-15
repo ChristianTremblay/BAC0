@@ -25,7 +25,7 @@ from ...core.utils.notes import note_and_log
 async def stopAllTasks():
     Task._log.info("Stopping all tasks")
     for each in Task.tasks:
-        each.cancel()
+        each.aio_task.cancel()
     Task._log.info("Ok all tasks stopped")
     Task.clean_tasklist()
     return True
@@ -73,8 +73,15 @@ class Task(object):
     async def execute(self):
         if self.delay > 0:
             while True:
-                _start_time = time.time()
                 self.count += 1
+                _start_time = time.time()
+                self._log.debug(f"Executing : {self.name} | Count : {self.count}")
+                self._log.debug(f"Start Time : {_start_time}")
+                if self.previous_execution:
+                    self._log.debug(f"Previous execution : {self.previous_execution}")
+                else:
+                    self._log.debug(f"First Run")
+                
                 self.average_latency = (
                     self.average_latency + (_start_time - self.next_execution)
                 ) / 2
@@ -100,10 +107,13 @@ class Task(object):
                     self._log.warning("High latency for {}".format(self.name))
                     self._log.warning("Stats : {}".format(self))
 
-                self._log.debug("Executing : {}".format(self.name))
+                
                 self.execution_time = time.time() - _start_time
+                self._log.debug(f"Execution Time : {self.execution_time}")
+                self.previous_execution = _start_time
+                self.next_execution = time.time() + self.delay
                 await asyncio.sleep(self.delay)
-        else:
+        else: #one shot
             if self.fn and self.args is not None:
                 await self.fn(self.args)
             elif self.fn:
@@ -115,8 +125,8 @@ class Task(object):
                     await self.task()
 
     def start(self):
-        self._task = asyncio.create_task(self.execute())
-        Task.tasks.append(self._task)
+        self.aio_task = asyncio.create_task(self.execute())
+        Task.tasks.append(self)
 
     def stop(self):
         self._task.cancel()
