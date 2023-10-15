@@ -4,6 +4,7 @@ import typing as t
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import ObjectIdentifier
 from bacpypes3.app import Application
+import asyncio
 
 
 @note_and_log
@@ -32,7 +33,23 @@ class Discover:
 
         return self.this_application._learnedNetworks
 
-    async def discover(
+    def discover(
+        self,
+        networks: t.Union[str, t.List[int], int] = "known",
+        limits: t.Tuple[int, int] = (0, 4194303),
+        global_broadcast: bool = False,
+        reset: bool = False,
+    ):
+        asyncio.create_task(
+            self._discover(
+                networks=networks,
+                limits=limits,
+                global_broadcast=global_broadcast,
+                reset=reset,
+            )
+        )
+
+    async def _discover(
         self,
         networks: t.Union[str, t.List[int], int] = "known",
         limits: t.Tuple[int, int] = (0, 4194303),
