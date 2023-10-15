@@ -2,7 +2,6 @@ import asyncio
 import os
 from threading import Thread
 
-loop = asyncio.new_event_loop()
 from bacpypes3.ipv4.app import NormalApplication
 from bacpypes3.app import Application
 import asyncio
@@ -26,32 +25,6 @@ from typing import Coroutine
 import asyncio
 from asyncio import Future, AbstractEventLoop
 from threading import Thread
-
-loop = None
-
-
-def create_event_loop_thread() -> AbstractEventLoop:
-    """
-    From https://gist.github.com/dmfigol/3e7d5b84a16d076df02baa9f53271058
-    """
-
-    def start_background_loop(loop: AbstractEventLoop) -> None:
-        asyncio.set_event_loop(loop)
-        loop.run_forever()
-
-    eventloop = asyncio.new_event_loop()
-    thread = Thread(target=start_background_loop, args=(eventloop,), daemon=True)
-    thread.start()
-    global loop
-    loop = eventloop
-    return eventloop, thread
-
-
-def run(coro: Coroutine, loop) -> Future:
-    """
-    From https://gist.github.com/dmfigol/3e7d5b84a16d076df02baa9f53271058
-    """
-    return asyncio.run_coroutine_threadsafe(coro, loop)
 
 
 class BAC0Application(Application):
