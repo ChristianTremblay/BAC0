@@ -47,12 +47,14 @@ class Task(object):
 
     def __init__(self, fn=None, name=None, delay=0):
         # delay = 0 -> one shot
+        self.id = id(self)
+        self.name = name if name is not None else f"Task_{self.id}"
         if isinstance(fn, tuple):
             self.fn, self.args = fn
         else:
             self.fn = fn
             self.args = None
-        self.name = name
+        
         if delay > 0:
             self.delay = delay if delay >= 5 else 5
         else:
@@ -63,9 +65,10 @@ class Task(object):
         self.next_execution = time.time() + delay + (random() * 10)
         self.execution_time = 0.0
         self.count = 0
-        self.id = id(self)
+
         self._kwargs = None
         self._task = None
+        self.aio_task = None
 
     async def task(self):
         raise NotImplementedError("Must be implemented")
@@ -81,7 +84,7 @@ class Task(object):
                     self._log.debug(f"Previous execution : {self.previous_execution}")
                 else:
                     self._log.debug(f"First Run")
-                
+
                 self.average_latency = (
                     self.average_latency + (_start_time - self.next_execution)
                 ) / 2
@@ -107,13 +110,12 @@ class Task(object):
                     self._log.warning("High latency for {}".format(self.name))
                     self._log.warning("Stats : {}".format(self))
 
-                
                 self.execution_time = time.time() - _start_time
                 self._log.debug(f"Execution Time : {self.execution_time}")
                 self.previous_execution = _start_time
                 self.next_execution = time.time() + self.delay
                 await asyncio.sleep(self.delay)
-        else: #one shot
+        else:  # one shot
             if self.fn and self.args is not None:
                 await self.fn(self.args)
             elif self.fn:
@@ -125,11 +127,18 @@ class Task(object):
                     await self.task()
 
     def start(self):
-        self.aio_task = asyncio.create_task(self.execute())
+        self.aio_task = asyncio.create_task(self.execute(), name=f"aio{self.name}")
         Task.tasks.append(self)
 
     def stop(self):
         self._task.cancel()
+
+    @property
+    def done(self):
+        if self.aio_task is not None:
+            return self.aio_task.done()
+        else:
+            return False
 
     @property
     def last_time(self):
