@@ -35,7 +35,15 @@ from bacpypes3.debugging import ModuleLogger
 from bacpypes3.apdu import ErrorRejectAbortNack
 
 from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import ObjectIdentifier, Atomic, Enumerated, Integer, Null, Real, Unsigned
+from bacpypes3.primitivedata import (
+    ObjectIdentifier,
+    Atomic,
+    Enumerated,
+    Integer,
+    Null,
+    Real,
+    Unsigned,
+)
 from bacpypes3.basetypes import PropertyIdentifier
 from ....core.utils.notes import note_and_log
 
@@ -62,8 +70,11 @@ class WriteProperty:
     Defines BACnet Write functions: WriteProperty [WritePropertyMultiple not supported]
 
     """
+
     def write(self, args, vendor_id=0, timeout=10):
-        asyncio.create_task(self._write(args=args, vendor_id=vendor_id, timeout=timeout))
+        asyncio.create_task(
+            self._write(args=args, vendor_id=vendor_id, timeout=timeout)
+        )
 
     async def _write(self, args, vendor_id=0, timeout=10):
         """Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
