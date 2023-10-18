@@ -29,9 +29,9 @@ from collections import namedtuple
 import BAC0
 from BAC0.scripts.AsyncBase import AsyncBase
 
-from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
-from ..core.devices.Points import Point
-from ..core.devices.Trends import TrendLog
+from ..core.devices.AsyncDevice import RPDeviceConnected, RPMDeviceConnected
+from ..core.devices.AsyncPoints import Point
+from ..core.devices.AsyncTrends import TrendLog
 from ..core.devices.Virtuals import VirtualPoint
 from ..core.functions.Calendar import Calendar
 from ..core.functions.cov import CoV
@@ -59,7 +59,6 @@ from ..core.utils.notes import note_and_log
 from ..infos import __version__ as version
 
 # --- this application's modules ---
-from .Base import Base
 from ..tasks.asynchronous.RecurringTask import RecurringTask
 from ..tasks.UpdateCOV import Update_local_COV
 
@@ -70,7 +69,7 @@ try:
 except ImportError:
     INFLUXDB = False
 
-from bacpypes.pdu import Address
+from bacpypes3.pdu import Address
 
 # ------------------------------------------------------------------------------
 

@@ -374,7 +374,6 @@ class Point:
             except Exception:
                 raise ValueError("Cannot find property named {}".format(key))
 
-    
     async def write(self, value, *, prop="presentValue", priority=""):
         """
         Write to present value of a point

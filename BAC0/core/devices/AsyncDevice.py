@@ -30,7 +30,7 @@ except ImportError:
 
 
 # --- this application's modules ---
-from bacpypes.basetypes import ServicesSupported
+from bacpypes3.basetypes import ServicesSupported
 
 # from ...bokeh.BokehRenderer import BokehPlot
 from ...db.sql import SQLMixin
@@ -85,9 +85,11 @@ class DeviceProperties(object):
         return self.__dict__
 
 
-async def ADevice(*args, **kwargs):
+def ADevice(*args, **kwargs):
     dev = Device(*args, **kwargs)
-    await dev.new_state(DeviceDisconnected)
+    t = asyncio.create_task(dev.new_state(DeviceDisconnected))
+    while not t.done:
+        pass
     return dev
 
 

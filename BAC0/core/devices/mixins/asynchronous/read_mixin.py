@@ -24,7 +24,7 @@ from ...AsyncPoints import (
     NumericPoint,
     StringPoint,
 )
-from ...Trends import TrendLog
+from ...AsyncTrends import TrendLog, ATrendLog
 
 # --- 3rd party modules ---
 
@@ -64,12 +64,14 @@ class TrendLogCreationException(Exception):
     pass
 
 
-def create_trendlogs(objList, device):
+async def create_trendlogs(objList, device):
     trendlogs = {}
     for each in retrieve_type(objList, "trendLog"):
         point_address = str(each[1])
         try:
-            tl = TrendLog(point_address, device, read_log_on_creation=False)
+            #tl = await ATrendLog(point_address, device, read_log_on_creation=False)
+            tl = ATrendLog(point_address, device)
+            await tl.update_properties()
             if tl.properties.log_device_object_property is None:
                 ldop_type = "trendLog"
                 ldop_addr = point_address
@@ -223,7 +225,7 @@ class DiscoveryUtilsMixin:
             )
         )
         # TrendLogs
-        trendlogs = create_trendlogs(objList, self)
+        trendlogs = await create_trendlogs(objList, self)
 
         self._log.info("Ready!")
         return (objList, points, trendlogs)
