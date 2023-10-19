@@ -44,7 +44,7 @@ def retrieve_type(obj_list, point_type_key):
 def to_float_if_possible(val):
     try:
         return float(val)
-    except:
+    except ValueError:
         return val
 
 
