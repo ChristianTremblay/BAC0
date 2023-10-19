@@ -33,16 +33,16 @@ from ..core.devices.AsyncDevice import RPDeviceConnected, RPMDeviceConnected
 from ..core.devices.AsyncPoints import Point
 from ..core.devices.AsyncTrends import TrendLog
 from ..core.devices.Virtuals import VirtualPoint
-from ..core.functions.Calendar import Calendar
+from ..core.functions.asynchronous.Calendar import Calendar
 from ..core.functions.cov import CoV
 from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
 from ..core.functions.asynchronous.Discover import Discover
 from ..core.functions.asynchronous.Alias import Alias
 from ..core.functions.GetIPAddr import HostIP
 from ..core.functions.Reinitialize import Reinitialize
-from ..core.functions.Schedule import Schedule
-from ..core.functions.EventEnrollment import EventEnrollment
-from ..core.functions.Text import TextMixin
+from ..core.functions.asynchronous.Schedule import Schedule
+from ..core.functions.asynchronous.EventEnrollment import EventEnrollment
+from ..core.functions.asynchronous.Text import TextMixin
 from ..core.functions.asynchronous.TimeSync import TimeSync
 from ..core.io.IOExceptions import (
     NoResponseFromController,
@@ -79,7 +79,7 @@ class Async(
     AsyncBase,
     Discover,
     Alias,
-    # EventEnrollment,
+    EventEnrollment,
     ReadProperty,
     WriteProperty,
     # Simulation,
@@ -87,9 +87,9 @@ class Async(
     # Reinitialize,
     # DeviceCommunicationControl,
     # CoV,
-    # Schedule,
-    # Calendar,
-    # TextMixin,
+    Schedule,
+    Calendar,
+    TextMixin,
 ):
     """
     Build a BACnet application to accept read and write requests.

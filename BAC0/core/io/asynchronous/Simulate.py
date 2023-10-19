@@ -44,12 +44,12 @@ class Simulation:
         prop_id = "presentValue"
 
         if await self.read("{} {} {} outOfService".format(addr, obj_type, obj_inst)):
-            await self.write(
+            self.write(
                 "{} {} {} {} {}".format(addr, obj_type, obj_inst, prop_id, value)
             )
         else:
             try:
-                await self.write(
+                self.write(
                     "{} {} {} outOfService True".format(addr, obj_type, obj_inst)
                 )
             except NoResponseFromController as e:
@@ -61,7 +61,7 @@ class Simulation:
                 if await self.read(
                     "{} {} {} outOfService".format(addr, obj_type, obj_inst)
                 ):
-                    await self.write(
+                    self.write(
                         "{} {} {} {} {}".format(
                             addr, obj_type, obj_inst, prop_id, value
                         )
@@ -73,7 +73,7 @@ class Simulation:
                     "Failed to write to OutOfService property ({})".format(e)
                 )
 
-    async def out_of_service(self, args):
+    def out_of_service(self, args):
         """
         Set the Out_Of_Service property so the Present_Value of an I/O may be written.
 
@@ -87,7 +87,7 @@ class Simulation:
         args = args.split()
         addr, obj_type, obj_inst = args[:3]
         try:
-            await self.write(
+            self.write(
                 "{} {} {} outOfService True".format(addr, obj_type, obj_inst)
             )
         except NoResponseFromController as e:
@@ -107,7 +107,7 @@ class Simulation:
         args = args.split()
         addr, obj_type, obj_inst = args[:3]
         try:
-            await self.write(
+            self.write(
                 "{} {} {} outOfService False".format(addr, obj_type, obj_inst)
             )
         except NoResponseFromController as e:
