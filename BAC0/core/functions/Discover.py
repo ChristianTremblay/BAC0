@@ -163,7 +163,7 @@ class Discover:
     Define BACnet WhoIs and IAm functions.
     """
 
-    def whois(self, *args, global_broadcast=False, destination=None):
+    def whois(self, *args, global_broadcast=False, destination=None, sleep_ms=100):
         """
         Build a WhoIs request
 
@@ -175,6 +175,7 @@ class Discover:
             whois(global_broadcast=True) # WhoIs broadcast globally.  Every device will respond with an IAm
             whois('2:5')                 # WhoIs looking for the device at (Network 2, Address 5)
             whois('10 1000')             # WhoIs looking for devices in the ID range (10 - 1000)
+            whois(sleep_ms=3000)         # WhoIs waiting for 3 seconds for responses
 
         """
         if not self._started:
@@ -221,8 +222,7 @@ class Discover:
         if iocb.ioError:  # unsuccessful: error/reject/abort
             pass
 
-        for each in range(100):
-            time.sleep(1 / 1000)
+        time.sleep(sleep_ms / 1000)
         self.discoveredDevices = self.this_application.i_am_counter
         return self.this_application._last_i_am_received
 

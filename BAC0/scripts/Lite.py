@@ -222,6 +222,7 @@ class Lite(
         limits: t.Tuple[int, int] = (0, 4194303),
         global_broadcast: bool = False,
         reset: bool = False,
+        whois_sleep_ms: int = 100,
     ):
         """
         Discover is meant to be the function used to explore the network when we
@@ -288,6 +289,7 @@ class Lite(
                         deviceInstanceRangeHighLimit,
                     ),
                     global_broadcast=global_broadcast,
+                    sleep_ms=whois_sleep_ms,
                 )
                 for each in _res:
                     found.append(each)
@@ -303,6 +305,7 @@ class Lite(
                     deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
                 ),
                 global_broadcast=global_broadcast,
+                sleep_ms=whois_sleep_ms,
             )
             for each in _res:
                 found.append(each)
