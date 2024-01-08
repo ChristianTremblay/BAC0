@@ -1,18 +1,20 @@
 import typing as t
 from collections import namedtuple
 
-from bacpypes.basetypes import PriorityArray, Reliability
-from bacpypes.object import TrendLogObject
+from bacpypes3.basetypes import PriorityArray, Reliability
+from bacpypes3.object import TrendLogObject
 from colorama import Fore
 
-from BAC0.core.devices.local.trendLogs import LocalTrendLog
-
-from ....scripts.Base import Base
-from ...app.ScriptApplication import (
-    BAC0Application,
+from BAC0.core.app.ScriptApplication import (
     BAC0BBMDDeviceApplication,
     BAC0ForeignDeviceApplication,
 )
+from BAC0.core.devices.local.trendLogs import LocalTrendLog
+
+from ....scripts.Base import Base
+from ...app.asyncApp import (
+    BAC0Application,
+)  # BAC0BBMDDeviceApplication,; BAC0ForeignDeviceApplication,
 from ...utils.notes import note_and_log
 from .decorator import bacnet_properties, create, make_commandable
 

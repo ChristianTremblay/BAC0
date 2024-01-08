@@ -1,10 +1,4 @@
-PANDAS = True
-try:
-    import pandas as pd
-except ImportError:
-    PANDAS = False
-
-from bacpypes.basetypes import (
+from bacpypes3.basetypes import (
     StatusFlags,
     DateTime,
     Date,
@@ -15,9 +9,15 @@ from bacpypes.basetypes import (
     LoggingType,
     Reliability,
 )
-from bacpypes.constructeddata import ListOf
-from bacpypes.primitivedata import Unsigned
+from bacpypes3.constructeddata import ListOf
+from bacpypes3.primitivedata import Unsigned
 from collections import namedtuple
+
+PANDAS = True
+try:
+    import pandas as pd
+except ImportError:
+    PANDAS = False
 
 Record = namedtuple(
     "Record", "timestamp value statusFlags sequencenumber interval trendFlag logEvent"

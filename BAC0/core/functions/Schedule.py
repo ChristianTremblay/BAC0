@@ -9,17 +9,17 @@ import typing as t
 # --- standard Python modules ---
 from datetime import time as dt_time
 
-from bacpypes.apdu import SimpleAckPDU, WritePropertyRequest
-from bacpypes.basetypes import DailySchedule, TimeValue
-from bacpypes.constructeddata import Any, ArrayOf
-from bacpypes.core import deferred
-from bacpypes.iocb import IOCB
+from bacpypes3.apdu import SimpleAckPDU, WritePropertyRequest
+from bacpypes3.basetypes import DailySchedule, TimeValue
+from bacpypes3.constructeddata import Any, ArrayOf
+from bacpypes3.app import Application
 
 # --- 3rd party modules ---
-from bacpypes.pdu import Address
-from bacpypes.primitivedata import Enumerated, Integer, Real
+from bacpypes3.pdu import Address
+from bacpypes3.primitivedata import Enumerated, Integer, Real
 
 from ...core.utils.notes import note_and_log
+from ...core.app.asyncApp import BAC0Application
 from ..io.IOExceptions import NoResponseFromController
 from ..io.Read import find_reason
 
@@ -122,23 +122,12 @@ class Schedule:
         return request
 
     def send_weeklyschedule_request(self, request, timeout=10):
-        iocb = IOCB(request)
-        iocb.set_timeout(timeout)
-        deferred(self.this_application.request_io, iocb)
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
 
-        iocb.wait()
+        self._log.debug("{:>12} {}".format("- request:", request))
 
-        if iocb.ioResponse:  # successful response
-            apdu = iocb.ioResponse
-
-            if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
-                self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
-                return
-        if iocb.ioError:  # unsuccessful: error/reject/abort
-            apdu = iocb.ioError
-            reason = find_reason(apdu)
-            raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
+        _app.request(request)
 
         self._log.info(
             "Schedule Write request sent to device : {}".format(request.pduDestination)
@@ -153,7 +142,7 @@ class Schedule:
         )
         self.send_weeklyschedule_request(request)
 
-    def read_weeklySchedule(self, address, schedule_instance):
+    async def read_weeklySchedule(self, address, schedule_instance):
         """
         This function will turn the weeklySchedule received into a
         human readable dict.
@@ -167,7 +156,7 @@ class Schedule:
                 reliability,
                 priority,
                 presentValue,
-            ) = self.readMultiple(
+            ) = await self.readMultiple(
                 "{} schedule {} weeklySchedule listOfObjectPropertyReferences reliability priorityForWriting presentValue".format(
                     address, schedule_instance
                 )

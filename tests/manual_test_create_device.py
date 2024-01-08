@@ -72,9 +72,9 @@ def main():
     bacnet = BAC0.lite()
 
     # We'll use 3 devices with our first instance
-    device_app = BAC0.lite(port=47809, deviceId=101)
-    device30_app = BAC0.lite(port=47810, deviceId=102)
-    device300_app = BAC0.lite(port=47811, deviceId=103)
+    device_app = BAC0.Async(port=47809, deviceId=101)
+    device30_app = BAC0.Async(port=47810, deviceId=102)
+    device300_app = BAC0.Async(port=47811, deviceId=103)
 
     add_points(2, device_app)
     add_points(10, device30_app)
@@ -90,7 +90,7 @@ def main():
     boid_300 = device300_app.Boid
 
     # Connect to test device using main network
-    test_device = BAC0.device("{}:47809".format(ip), boid, bacnet, poll=10)
+    test_device = BAC0.ADevice("{}:47809".format(ip), boid, bacnet, poll=10)
     # test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
     # test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
     while True:

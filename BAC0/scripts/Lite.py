@@ -26,17 +26,23 @@ import typing as t
 # --- standard Python modules ---
 import weakref
 from collections import namedtuple
+from BAC0.scripts.Base import Base
 
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
 from ..core.devices.Points import Point
 from ..core.devices.Trends import TrendLog
 from ..core.devices.Virtuals import VirtualPoint
-from ..core.functions.Calendar import Calendar
-from ..core.functions.cov import CoV
-from ..core.functions.DeviceCommunicationControl import DeviceCommunicationControl
+from ..core.functions import Calendar
+
+# from ..core.functions.legacy.cov import CoV
+# from ..core.functions.legacy.DeviceCommunicationControl import (
+#    DeviceCommunicationControl,
+# )
 from ..core.functions.Discover import Discover
+from ..core.functions.Alias import Alias
 from ..core.functions.GetIPAddr import HostIP
-from ..core.functions.Reinitialize import Reinitialize
+
+# from ..core.functions.legacy.Reinitialize import Reinitialize
 from ..core.functions.Schedule import Schedule
 from ..core.functions.EventEnrollment import EventEnrollment
 from ..core.functions.Text import TextMixin
@@ -48,15 +54,17 @@ from ..core.io.IOExceptions import (
     UnrecognizedService,
 )
 from ..core.io.Read import ReadProperty
-from ..core.io.Simulate import Simulation
 from ..core.io.Write import WriteProperty
+from ..core.io.Simulate import Simulation
+
+# from ..core.io.asynchronous.Write import WriteProperty
 from ..core.utils.notes import note_and_log
 from ..infos import __version__ as version
 
 # --- this application's modules ---
-from ..scripts.Base import Base
 from ..tasks.RecurringTask import RecurringTask
-from ..tasks.UpdateCOV import Update_local_COV
+
+# from ..tasks.legacy.UpdateCOV import Update_local_COV
 
 try:
     from ..db.influxdb import ConnectionError, InfluxDB
@@ -65,7 +73,7 @@ try:
 except ImportError:
     INFLUXDB = False
 
-from bacpypes.pdu import Address
+from bacpypes3.pdu import Address
 
 # ------------------------------------------------------------------------------
 
@@ -74,16 +82,17 @@ from bacpypes.pdu import Address
 class Lite(
     Base,
     Discover,
+    Alias,
     EventEnrollment,
     ReadProperty,
     WriteProperty,
-    Simulation,
+    # Simulation,
     TimeSync,
-    Reinitialize,
-    DeviceCommunicationControl,
-    CoV,
+    # Reinitialize,
+    # DeviceCommunicationControl,
+    # CoV,
     Schedule,
-    Calendar,
+    # Calendar,
     TextMixin,
 ):
     """
@@ -166,18 +175,18 @@ class Lite(
         self._points_to_trend = weakref.WeakValueDictionary()
 
         # Announce yourself
-        self.iam()
+        # self.iam()
 
         # Do what's needed to support COV
-        self._update_local_cov_task = namedtuple(
-            "_update_local_cov_task", ["task", "running"]
-        )
-        self._update_local_cov_task.task = Update_local_COV(
-            self, delay=1, name="Update Local COV Task"
-        )
-        self._update_local_cov_task.task.start()
-        self._update_local_cov_task.running = True
-        self._log.info("Update Local COV Task started (required to support COV)")
+        # self._update_local_cov_task = namedtuple(
+        #    "_update_local_cov_task", ["task", "running"]
+        # )
+        # self._update_local_cov_task.task = Update_local_COV(
+        #    self, delay=1, name="Update Local COV Task"
+        # )
+        # self._update_local_cov_task.task.start()
+        # self._update_local_cov_task.running = True
+        # self._log.info("Update Local COV Task started (required to support COV)")
 
         # Activate InfluxDB if params are available
         if db_params and INFLUXDB:
@@ -196,120 +205,6 @@ class Lite(
                 self._log.error(
                     "Unable to connect to InfluxDB. Please validate parameters"
                 )
-
-    @property
-    def known_network_numbers(self):
-        """
-        This function will read the table of known network numbers gathered by the
-        NetworkServiceElement. It will also look into the discoveredDevices property
-        and add any network number that would not be in the NSE table.
-        """
-        if self.discoveredDevices:
-            for each in self.discoveredDevices:
-                addr, instance = each
-                net = addr.split(":")[0] if ":" in addr else None
-                if net:
-                    try:
-                        self.this_application.nse._learnedNetworks.add(int(net))
-                    except ValueError:
-                        pass  # proabbly a IP address with a specified port other than 0xBAC0
-
-        return self.this_application.nse._learnedNetworks
-
-    def discover(
-        self,
-        networks: t.Union[str, t.List[int], int] = "known",
-        limits: t.Tuple[int, int] = (0, 4194303),
-        global_broadcast: bool = False,
-        reset: bool = False,
-        whois_sleep_ms: int = 100,
-    ):
-        """
-        Discover is meant to be the function used to explore the network when we
-        connect.
-        It will trigger whois request using the different options provided with
-        parameters.
-
-        By default, a local broadcast will be used. This is required as in big
-        BACnet network, global broadcast can lead to network flood and loss of data.
-
-        If not parameters are given, BAC0 will try to :
-
-            * Find the network on which it is
-            * Find routers for other networks (accessible via local broadcast)
-            * Detect "known networks"
-            * Use the list of known networks and create whois request to find all devices on those networks
-
-        This should be sufficient for most cases.
-
-        Once discovery is done, user may access the list of "discovered devices" using ::
-
-            bacnet.discoveredDevices
-
-        :param networks (list, integer) : A simple integer or a list of integer
-            representing the network numbers used to issue whois request.
-
-        :param limits (tuple) : tuple made of 2 integer, the low limit and the high
-            limit. Those are the device instances used in the creation of the
-            whois request. Min : 0 ; Max : 4194303
-
-        :param global_broadcast (boolean) : If set to true, a global broadcast
-            will be used for the whois. Use with care.
-        """
-        if reset:
-            self.discoveredDevices = None
-        found = []
-        _networks = []
-        deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit = limits
-        # Try to find on which network we are
-        self.what_is_network_number()
-        # Try to find local routers...
-        self.whois_router_to_network()
-        self._log.info("Found those networks : {}".format(self.known_network_numbers))
-
-        if networks:
-            if isinstance(networks, list):
-                # we'll make multiple whois...
-                for network in networks:
-                    if network < 65535:
-                        _networks.append(network)
-            elif networks == "known":
-                _networks = self.known_network_numbers.copy()
-            else:
-                if isinstance(networks, int) and networks < 65535:
-                    _networks.append(networks)
-
-        if _networks:
-            for network in _networks:
-                self._log.info("Discovering network {}".format(network))
-                _res = self.whois(
-                    "{}:* {} {}".format(
-                        network,
-                        deviceInstanceRangeLowLimit,
-                        deviceInstanceRangeHighLimit,
-                    ),
-                    global_broadcast=global_broadcast,
-                    sleep_ms=whois_sleep_ms,
-                )
-                for each in _res:
-                    found.append(each)
-
-        else:
-            self._log.info(
-                "No BACnet network found, attempting a simple whois using provided device instances limits ({} - {})".format(
-                    deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
-                )
-            )
-            _res = self.whois(
-                "{} {}".format(
-                    deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
-                ),
-                global_broadcast=global_broadcast,
-                sleep_ms=whois_sleep_ms,
-            )
-            for each in _res:
-                found.append(each)
-        return found
 
     def register_device(
         self, device: t.Union[RPDeviceConnected, RPMDeviceConnected]
@@ -419,7 +314,7 @@ class Lite(
             del self._points_to_trend[oid]
 
     @property
-    def devices(self) -> t.List[t.Tuple[str, str, str, int]]:
+    async def devices(self) -> t.List[t.Tuple[str, str, str, int]]:
         """
         This property will create a good looking table of all the discovered devices
         seen on the network.
@@ -429,28 +324,25 @@ class Lite(
         """
         lst = []
         for device in list(self.discoveredDevices or {}):
+            objId, addr = device
+            devId = objId[1]  # you can do better
+
             try:
-                deviceName, vendorName = self.readMultiple(
-                    "{} device {} objectName vendorName".format(device[0], device[1])
+                deviceName, vendorName = await self.readMultiple(
+                    f"{addr} device {devId} objectName vendorName"
                 )
             except (UnrecognizedService, ValueError):
-                self._log.warning(
-                    "Unrecognized service for {} | {}".format(device[0], device[1])
-                )
+                self._log.warning(f"Unrecognized service for {addr} | {devId}")
                 try:
-                    deviceName = self.read(
-                        "{} device {} objectName".format(device[0], device[1])
-                    )
-                    vendorName = self.read(
-                        "{} device {} vendorName".format(device[0], device[1])
-                    )
+                    deviceName = await self.read(f"{addr} device {devId} objectName")
+                    vendorName = await self.read(f"{addr} device {devId} vendorName")
                 except NoResponseFromController:
-                    self._log.warning("No response from {}".format(device))
+                    self._log.warning(f"No response from {addr} | {devId}")
                     continue
             except (NoResponseFromController, Timeout):
-                self._log.warning("No response from {}".format(device))
+                self._log.warning(f"No response from {addr} | {devId}")
                 continue
-            lst.append((deviceName, vendorName, device[0], device[1]))
+            lst.append((deviceName, vendorName, str(addr), devId))
         return lst  # type: ignore[return-value]
 
     @property

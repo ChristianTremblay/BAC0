@@ -16,6 +16,7 @@ from .TaskManager import Task
 
 """
 A way to define a BAC0.device using a task, so it won't block the Notebook or the REPL
+TODO : check if still required, maybe deprecated
 """
 
 

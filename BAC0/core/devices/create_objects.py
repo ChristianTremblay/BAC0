@@ -1,6 +1,6 @@
-from bacpypes.basetypes import DateTime, PriorityArray, StatusFlags
-from bacpypes.constructeddata import ArrayOf
-from bacpypes.object import (
+from bacpypes3.basetypes import DateTime, PriorityArray, StatusFlags
+from bacpypes3.constructeddata import ArrayOf
+from bacpypes3.object import (
     AnalogInputObject,
     AnalogOutputObject,
     AnalogValueObject,
@@ -10,7 +10,7 @@ from bacpypes.object import (
     DateTimeValueObject,
     MultiStateValueObject,
 )
-from bacpypes.primitivedata import Boolean, CharacterString, Date, Time
+from bacpypes3.primitivedata import Boolean, CharacterString, Date, Time
 
 from .mixins.CommandableMixin import LocalBinaryOutputObjectCmd
 

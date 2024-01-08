@@ -1,12 +1,13 @@
-from bacpypes.apdu import SimpleAckPDU, WritePropertyRequest
-from bacpypes.constructeddata import Any
-from bacpypes.core import deferred
-from bacpypes.iocb import IOCB
-from bacpypes.pdu import Address
-from bacpypes.primitivedata import CharacterString
+from bacpypes3.apdu import SimpleAckPDU, WritePropertyRequest
+from bacpypes3.constructeddata import Any
+from bacpypes3.pdu import Address
+from bacpypes3.primitivedata import CharacterString
+from bacpypes3.app import Application
+from BAC0.core.app.asyncApp import BAC0Application
 
 from BAC0.core.io.IOExceptions import NoResponseFromController, WritePropertyException
 from BAC0.core.io.Read import find_reason
+import asyncio
 
 
 class TextMixin:
@@ -42,26 +43,9 @@ class TextMixin:
         return request
 
     def write_text_value(self, request, timeout=10):
-        try:
-            iocb = IOCB(request)
-            iocb.set_timeout(timeout)
-            # pass to the BACnet stack
-            deferred(self.this_application.request_io, iocb)
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
 
-            iocb.wait()  # Wait for BACnet response
+        self._log.debug("{:>12} {}".format("- request:", request))
 
-            if iocb.ioResponse:  # successful response
-                apdu = iocb.ioResponse
-
-                if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
-                    self._log.error("Not an ack, see debug for more infos.")
-                    return
-
-            if iocb.ioError:  # unsuccessful: error/reject/abort
-                apdu = iocb.ioError
-                reason = find_reason(apdu)
-                raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
-
-        except WritePropertyException as error:
-            # construction error
-            self._log.error(("exception: {!r}".format(error)))
+        _app.request(request)

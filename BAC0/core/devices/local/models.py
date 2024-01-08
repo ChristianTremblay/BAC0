@@ -1,4 +1,4 @@
-from bacpypes.basetypes import (
+from bacpypes3.basetypes import (
     Boolean,
     Date,
     DateTime,
@@ -8,8 +8,8 @@ from bacpypes.basetypes import (
     Time,
     Unsigned,
 )
-from bacpypes.constructeddata import ArrayOf, ListOf
-from bacpypes.object import (
+from bacpypes3.constructeddata import ArrayOf, ListOf
+from bacpypes3.object import (
     AnalogInputObject,
     AnalogOutputObject,
     AnalogValueObject,
@@ -24,7 +24,7 @@ from bacpypes.object import (
     MultiStateValueObject,
     TrendLogObject,
 )
-from bacpypes.primitivedata import CharacterString
+from bacpypes3.primitivedata import CharacterString
 
 from .object import ObjectFactory
 

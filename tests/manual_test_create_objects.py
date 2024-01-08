@@ -25,7 +25,7 @@ from BAC0.core.devices.local.object import ObjectFactory
 
 
 def build():
-    bacnet = BAC0.lite(deviceId=3056235)
+    bacnet = BAC0.Async(deviceId=3056235)
     # Add 10 AI with automatic names
     for each in range(10):
         _new_objects = analog_input()

@@ -17,7 +17,13 @@ from ...io.IOExceptions import (
     NoResponseFromController,
     SegmentationNotSupported,
 )
-from ..Points import BooleanPoint, DateTimePoint, EnumPoint, NumericPoint, StringPoint
+from ..Points import (
+    BooleanPoint,
+    DateTimePoint,
+    EnumPoint,
+    NumericPoint,
+    StringPoint,
+)
 from ..Trends import TrendLog
 
 # --- 3rd party modules ---
@@ -58,12 +64,14 @@ class TrendLogCreationException(Exception):
     pass
 
 
-def create_trendlogs(objList, device):
+async def create_trendlogs(objList, device):
     trendlogs = {}
     for each in retrieve_type(objList, "trendLog"):
         point_address = str(each[1])
         try:
-            tl = TrendLog(point_address, device, read_log_on_creation=False)
+            # tl = await ATrendLog(point_address, device, read_log_on_creation=False)
+            tl = TrendLog(point_address, device)
+            await tl.update_properties()
             if tl.properties.log_device_object_property is None:
                 ldop_type = "trendLog"
                 ldop_addr = point_address
@@ -140,12 +148,12 @@ class DiscoveryUtilsMixin:
     Those functions are used in the process of discovering points in a device
     """
 
-    def read_objects_list(self, custom_object_list=None):
+    async def read_objects_list(self, custom_object_list=None):
         if custom_object_list:
             objList = custom_object_list
         else:
             try:
-                objList = self.properties.network.read(
+                objList = await self.properties.network.read(
                     "{} device {} objectList".format(
                         self.properties.address, self.properties.device_id
                     ),
@@ -160,7 +168,7 @@ class DiscoveryUtilsMixin:
 
             except (SegmentationNotSupported, BufferOverflow):
                 objList = []
-                number_of_objects = self.properties.network.read(
+                number_of_objects = await self.properties.network.read(
                     "{} device {} objectList".format(
                         self.properties.address, self.properties.device_id
                     ),
@@ -170,7 +178,7 @@ class DiscoveryUtilsMixin:
 
                 for i in range(1, number_of_objects + 1):
                     objList.append(
-                        self.properties.network.read(
+                        await self.properties.network.read(
                             "{} device {} objectList".format(
                                 self.properties.address, self.properties.device_id
                             ),
@@ -180,49 +188,49 @@ class DiscoveryUtilsMixin:
                     )
         return objList
 
-    def _discoverPoints(self, custom_object_list=None):
-        objList = self.read_objects_list(custom_object_list=custom_object_list)
+    async def _discoverPoints(self, custom_object_list=None):
+        objList = await self.read_objects_list(custom_object_list=custom_object_list)
 
         points = []
         trendlogs = {}
 
         points.extend(
-            self._process_new_objects(
+            await self._process_new_objects(
                 obj_cls=NumericPoint, obj_type="analog", objList=objList
             )
         )
         points.extend(
-            self._process_new_objects(
+            await self._process_new_objects(
                 obj_cls=BooleanPoint, obj_type="binary", objList=objList
             )
         )
         points.extend(
-            self._process_new_objects(
+            await self._process_new_objects(
                 obj_cls=EnumPoint, obj_type="multi", objList=objList
             )
         )
         points.extend(
-            self._process_new_objects(
+            await self._process_new_objects(
                 obj_cls=NumericPoint, obj_type="loop", objList=objList
             )
         )
         points.extend(
-            self._process_new_objects(
+            await self._process_new_objects(
                 obj_cls=StringPoint, obj_type="characterstringValue", objList=objList
             )
         )
         points.extend(
-            self._process_new_objects(
+            await self._process_new_objects(
                 obj_cls=DateTimePoint, obj_type="datetimeValue", objList=objList
             )
         )
         # TrendLogs
-        trendlogs = create_trendlogs(objList, self)
+        trendlogs = await create_trendlogs(objList, self)
 
         self._log.info("Ready!")
         return (objList, points, trendlogs)
 
-    def rp_discovered_values(self, discover_request, points_per_request):
+    async def rp_discovered_values(self, discover_request, points_per_request):
         values = []
         info_length = discover_request[1]
         big_request = discover_request[0]
@@ -233,7 +241,7 @@ class DiscoveryUtilsMixin:
             try:
                 request = "{} {}".format(self.properties.address, "".join(request))
                 self._log.debug("RP_Request: %s " % request)
-                val = self.properties.network.read(
+                val = await self.properties.network.read(
                     request, vendor_id=self.properties.vendor_id
                 )
 
@@ -248,7 +256,7 @@ class DiscoveryUtilsMixin:
 
 
 class RPMObjectsProcessing:
-    def _process_new_objects(
+    async def _process_new_objects(
         self, obj_cls=None, obj_type: str = "", objList=None, points_per_request=5
     ):
         """
@@ -283,7 +291,7 @@ class RPMObjectsProcessing:
 
         try:
             self._log.debug("Request : %s" % request)
-            points_info = self.read_multiple(
+            points_info = await self.read_multiple(
                 "",
                 discover_request=(request, len(prop_list.split(" "))),
                 points_per_request=points_per_request,
@@ -351,7 +359,7 @@ class RPMObjectsProcessing:
 
 
 class RPObjectsProcessing:
-    def _process_new_objects(
+    async def _process_new_objects(
         self, obj_cls=NumericPoint, obj_type: str = "analog", objList=None
     ):
         _newpoints = []
@@ -360,26 +368,26 @@ class RPObjectsProcessing:
             point_address = str(each[1])
 
             if obj_type == "analog":
-                units_state = self.read_single(
+                units_state = await self.read_single(
                     "{} {} units ".format(point_type, point_address)
                 )
             elif obj_type == "multi":
-                units_state = self.read_single(
+                units_state = await self.read_single(
                     "{} {} stateText ".format(point_type, point_address)
                 )
             elif obj_type == "loop":
-                units_state = self.read_single(
+                units_state = await self.read_single(
                     "{} {} units ".format(point_type, point_address)
                 )
             elif obj_type == "binary":
                 units_state = (
                     (
-                        self.read_single(
+                        await self.read_single(
                             "{} {} inactiveText ".format(point_type, point_address)
                         )
                     ),
                     (
-                        self.read_single(
+                        await self.read_single(
                             "{} {} activeText ".format(point_type, point_address)
                         )
                     ),
@@ -387,7 +395,7 @@ class RPObjectsProcessing:
             else:
                 units_state = None
 
-            presentValue = self.read_single(
+            presentValue = await self.read_single(
                 "{} {} presentValue ".format(point_type, point_address)
             )
             if (obj_type == "analog" or obj_type == "loop") and presentValue:
@@ -397,10 +405,10 @@ class RPObjectsProcessing:
                 obj_cls(
                     pointType=point_type,
                     pointAddress=point_address,
-                    pointName=self.read_single(
+                    pointName=await self.read_single(
                         "{} {} objectName ".format(point_type, point_address)
                     ),
-                    description=self.read_single(
+                    description=await self.read_single(
                         "{} {} description ".format(point_type, point_address)
                     ),
                     presentValue=presentValue,
@@ -412,7 +420,7 @@ class RPObjectsProcessing:
 
 
 class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProcessing):
-    def read_multiple(
+    async def read_multiple(
         self,
         points_list,
         *,
@@ -437,7 +445,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
         """
         if not self.properties.pss["readPropertyMultiple"] or force_single:
             self._log.warning("Read property Multiple Not supported")
-            self.read_single(
+            await self.read_single(
                 points_list, points_per_request=1, discover_request=discover_request
             )
         else:
@@ -453,12 +461,13 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
 
                 for request in batch_requests(big_request, points_per_request):
                     try:
+                        self.properties.address
                         request = "{} {}".format(
                             self.properties.address, "".join(request)
                         )
                         self._log.debug("RPM_Request: {} ".format(request))
                         try:
-                            val = self.properties.network.readMultiple(
+                            val = await self.properties.network.readMultiple(
                                 request, vendor_id=self.properties.vendor_id
                             )
                         except SegmentationNotSupported:
@@ -479,7 +488,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                         self._log.warning("Request too big...will reduce it")
                         if points_per_request == 1:
                             raise
-                        self.read_multiple(
+                        await self.read_multiple(
                             points_list,
                             points_per_request=1,
                             discover_request=discover_request,
@@ -500,13 +509,13 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                             self.properties.address, "".join(request)
                         )
                         self._log.debug(request)
-                        val = self.properties.network.readMultiple(
+                        val = await self.properties.network.readMultiple(
                             request, vendor_id=self.properties.vendor_id
                         )
 
                     except SegmentationNotSupported:
                         self.properties.segmentation_supported = False
-                        self.read_multiple(
+                        await self.read_multiple(
                             points_list,
                             points_per_request=1,
                             discover_request=discover_request,
@@ -521,11 +530,11 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                         for each in points_values:
                             each[0]._trend(each[1])
 
-    def read_single(
+    async def read_single(
         self, points_list, *, points_per_request=1, discover_request=(None, 4)
     ):
         if discover_request[0]:
-            return self.rp_discovered_values(
+            return await self.rp_discovered_values(
                 discover_request, points_per_request=points_per_request
             )
 
@@ -535,7 +544,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             for request in batch_requests(big_request[0], points_per_request):
                 try:
                     request = "{} {}".format(self.properties.address, "".join(request))
-                    val = self.properties.network.read(
+                    val = await self.properties.network.read(
                         request, vendor_id=self.properties.vendor_id
                     )
                     points_values = zip(big_request[1][i : i + len(val)], val)
@@ -623,7 +632,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
 
 
 class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
-    def read_multiple(
+    async def read_multiple(
         self, points_list, *, points_per_request=1, discover_request=(None, 6)
     ):
         """
@@ -644,21 +653,23 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
         if isinstance(points_list, list):
             (requests, points) = self._rpm_request_by_name(points_list)
             for i, req in enumerate(requests):
-                val = self.read_single(
+                val = await self.read_single(
                     req, points_per_request=1, discover_request=discover_request
                 )
                 if val is not None and val != "":
                     points[i]._trend(val)
         else:
-            self.read_single(
+            await self.read_single(
                 points_list, points_per_request=1, discover_request=discover_request
             )
 
-    def read_single(self, request, *, points_per_request=1, discover_request=(None, 4)):
+    async def read_single(
+        self, request, *, points_per_request=1, discover_request=(None, 4)
+    ):
         try:
             request = "{} {}".format(self.properties.address, "".join(request))
             self._log.debug("RP_Request: %s " % request)
-            return self.properties.network.read(
+            return await self.properties.network.read(
                 request, vendor_id=self.properties.vendor_id
             )
         except KeyError as error:

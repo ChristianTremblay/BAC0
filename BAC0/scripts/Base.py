@@ -5,41 +5,24 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-BasicScript - implement the BAC0.core.app.ScriptApplication
-Its basic function is to start and stop the bacpypes stack.
-Stopping the stack, frees the IP socket used for BACnet communications.
-No communications will occur if the stack is stopped.
-
-Bacpypes stack enables Whois and Iam functions, since this minimum is needed to be
-a BACnet device.  Other stack services can be enabled later (via class inheritance).
-[see: see BAC0.scripts.ReadWriteScript]
-
-Class::
-    BasicScript(WhoisIAm)
-        def startApp()
-        def stopApp()
+Doc here
 """
 import random
 import sys
 import typing as t
 
 # --- standard Python modules ---
-from threading import Thread
 
-from bacpypes.basetypes import DeviceStatus
-from bacpypes.core import enable_sleeping
-from bacpypes.core import run as startBacnetIPApp
-from bacpypes.core import stop as stopBacnetIPApp
-from bacpypes.local.device import LocalDeviceObject
-from bacpypes.pdu import Address
-from bacpypes.primitivedata import CharacterString
+from bacpypes3.basetypes import DeviceStatus
+from bacpypes3.pdu import Address
+from bacpypes3.primitivedata import CharacterString
 
 # --- this application's modules ---
 from .. import infos
-from ..core.app.ScriptApplication import (
+from ..core.app.asyncApp import (
     BAC0Application,
-    BAC0BBMDDeviceApplication,
-    BAC0ForeignDeviceApplication,
+    # BAC0BBMDDeviceApplication,
+    # BAC0ForeignDeviceApplication,
 )
 from ..core.functions.GetIPAddr import validate_ip_address
 from ..core.functions.TimeSync import TimeHandler
@@ -51,9 +34,6 @@ from ..tasks.TaskManager import stopAllTasks
 
 
 try:
-    import bokeh
-    import flask
-    import flask_bootstrap
     import pandas
 
     _COMPLETE = True
@@ -200,63 +180,62 @@ class Base:
         self._log.debug("Create Local Device")
         try:
             # make a device object
-            self.this_device = LocalDeviceObject(
-                objectName=self.localObjName,
-                objectIdentifier=self.Boid,
-                maxSegmentsAccepted=int(self.maxSegmentsAccepted),
-                maxApduLengthAccepted=int(self.maxAPDULengthAccepted),
-                segmentationSupported=self.segmentationSupported,
-                vendorIdentifier=self.vendorId,
-                vendorName=self.vendorName,
-                modelName=self.modelName,
-                systemStatus=self.systemStatus,
-                description=self.description,
-                location=self.location,
-                firmwareRevision=self.firmwareRevision,
-                applicationSoftwareVersion=infos.__version__,
-                protocolVersion=1,
-                protocolRevision=0,
-                utcOffset=self.timehandler.utcOffset(),
-                daylightSavingsStatus=self.timehandler.is_dst(),
-            )
+            # self.this_device = LocalDeviceObject(
+            #    objectName=self.localObjName,
+            #    objectIdentifier=self.Boid,
+            #    maxSegmentsAccepted=int(self.maxSegmentsAccepted),
+            #    maxApduLengthAccepted=int(self.maxAPDULengthAccepted),
+            #    segmentationSupported=self.segmentationSupported,
+            #    vendorIdentifier=self.vendorId,
+            #    vendorName=self.vendorName,
+            #    modelName=self.modelName,
+            #    systemStatus=self.systemStatus,
+            #    description=self.description,
+            #    location=self.location,
+            #    firmwareRevision=self.firmwareRevision,
+            #    applicationSoftwareVersion=infos.__version__,
+            #    protocolVersion=1,
+            #    protocolRevision=0,
+            #    utcOffset=self.timehandler.utcOffset(),
+            #    daylightSavingsStatus=self.timehandler.is_dst(),
+            # )
 
             # make an application
             if self.bdtable:
-                self.this_application = BAC0BBMDDeviceApplication(
-                    self.this_device,
-                    self.localIPAddr,
-                    networkNumber=self.networkNumber,
-                    bdtable=self.bdtable,
-                    iam_req=self._iam_request(),
-                    subscription_contexts=self.subscription_contexts,
-                )
-                app_type = "BBMD Device"
+                # self.this_application = BAC0BBMDDeviceApplication(
+                #    self.this_device,
+                #    self.localIPAddr,
+                #    networkNumber=self.networkNumber,
+                #    bdtable=self.bdtable,
+                #    iam_req=self._iam_request(),
+                #    subscription_contexts=self.subscription_contexts,
+                # )
+                # app_type = "BBMD Device"
+                raise NotImplementedError()
             elif self.bbmdAddress and self.bbmdTTL > 0:
-                self.this_application = BAC0ForeignDeviceApplication(
-                    self.this_device,
-                    self.localIPAddr,
-                    networkNumber=self.networkNumber,
-                    bbmdAddress=self.bbmdAddress,
-                    bbmdTTL=self.bbmdTTL,
-                    iam_req=self._iam_request(),
-                    subscription_contexts=self.subscription_contexts,
-                )
-                app_type = "Foreign Device"
+                # self.this_application = BAC0ForeignDeviceApplication(
+                #    self.this_device,
+                #    self.localIPAddr,
+                #    networkNumber=self.networkNumber,
+                #    bbmdAddress=self.bbmdAddress,
+                #    bbmdTTL=self.bbmdTTL,
+                #    iam_req=self._iam_request(),
+                #    subscription_contexts=self.subscription_contexts,
+                # )
+                # app_type = "Foreign Device"
+                raise NotImplementedError()
             else:
-                self.this_application = BAC0Application(
-                    self.this_device,
-                    self.localIPAddr,
-                    networkNumber=self.networkNumber,
-                    iam_req=self._iam_request(),
-                    subscription_contexts=self.subscription_contexts,
-                )
+                self.this_application = BAC0Application()
+                # self.this_application = self.this_application.app
                 app_type = "Simple BACnet/IP App"
             self._log.debug("Starting")
             self._initialized = True
+
             try:
-                self._startAppThread()
+                # self._startAppThread()
                 Base._used_ips.add(self.localIPAddr)
                 self._log.info("Registered as {}".format(app_type))
+                self._started = True
             except OSError as error:
                 self._log.warning("Error opening socket: {}".format(error))
                 raise InitializationError("Error opening socket: {}".format(error))
@@ -281,47 +260,18 @@ class Base:
         stopAllTasks()
         self._log.debug("Stopping BACnet stack")
         # Freeing socket
-        try:
-            self.this_application.mux.directPort.handle_close()
-        except:
-            self.this_application.mux.broadcastPort.handle_close()
+        self.this_application.close()
+        # try:
+        #    self.this_application.mux.directPort.handle_close()
+        # except:
+        #    self.this_application.mux.broadcastPort.handle_close()
 
-        stopBacnetIPApp()  # Stop Core
+        # stopBacnetIPApp()  # Stop Core
         self._stopped = True  # Stop stack thread
         self.t.join()
         self._started = False
         Base._used_ips.discard(self.localIPAddr)
         self._log.info("BACnet stopped")
-
-    def _startAppThread(self):
-        """
-        Starts the BACnet stack in its own thread so requests can be processed.
-        As signal cannot be called in another thread than the main thread
-        when calling startBacnetIPApp, we must pass None to both parameters
-        """
-        self._log.info("Starting app...")
-        enable_sleeping(0.0005)
-        if self._spin:
-            kwargs = {"sigterm": None, "sigusr1": None, "spin": self._spin}
-        else:
-            kwargs = {"sigterm": None, "sigusr1": None}
-        self.t = Thread(
-            target=startBacnetIPApp,
-            kwargs=kwargs,
-            daemon=True,
-        )
-        try:
-            self.t.start()
-            self._started = True
-            self._log.info("BAC0 started")
-        except OSError:
-            stopBacnetIPApp()
-            self.t.join()
-            raise
-
-    @property
-    def discoveredNetworks(self):
-        return self.this_application.nse._learnedNetworks or set()
 
     #    @property
     #    def routing_table(self):

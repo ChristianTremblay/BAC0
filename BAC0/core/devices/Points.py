@@ -8,6 +8,7 @@
 Points.py - Definition of points so operations on Read results are more convenient.
 """
 
+import asyncio
 import time
 import typing as t
 from collections import namedtuple
@@ -16,7 +17,9 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 
 # --- 3rd party modules ---
-from bacpypes.primitivedata import CharacterString
+from bacpypes3.primitivedata import CharacterString, ObjectIdentifier
+from bacpypes3.basetypes import PropertyIdentifier
+from bacpypes3.pdu import Address
 
 try:
     import pandas as pd
@@ -133,7 +136,7 @@ class Point:
         }
 
     @property
-    def value(self):
+    async def value(self):
         """
         Retrieve value of the point
         """
@@ -145,7 +148,7 @@ class Point:
             return self._cache["_previous_read"][1]
 
         try:
-            res = self.properties.device.properties.network.read(
+            res = await self.properties.device.properties.network.read(
                 "{} {} {} presentValue".format(
                     self.properties.device.properties.address,
                     self.properties.type,
@@ -159,13 +162,13 @@ class Point:
         self._cache["_previous_read"] = (datetime.now().astimezone(), res)
         return res
 
-    def read_priority_array(self):
+    async def read_priority_array(self):
         """
         Retrieve priority array of the point
         """
         if self.properties.priority_array is not False:
             try:
-                res = self.properties.device.properties.network.read(
+                res = await self.properties.device.properties.network.read(
                     "{} {} {} priorityArray".format(
                         self.properties.device.properties.address,
                         self.properties.type,
@@ -181,9 +184,9 @@ class Point:
                     "Problem reading : {} | {}".format(self.properties.name, e)
                 )
 
-    def read_property(self, prop):
+    async def read_property(self, prop):
         try:
-            return self.properties.device.properties.network.read(
+            return await self.properties.device.properties.network.read(
                 "{} {} {} {}".format(
                     self.properties.device.properties.address,
                     self.properties.type,
@@ -195,13 +198,13 @@ class Point:
         except Exception as e:
             raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
 
-    def update_bacnet_properties(self):
+    async def update_bacnet_properties(self):
         """
         Retrieve bacnet properties for this point
         To retrieve something general, forcing vendor id 0
         """
         try:
-            res = self.properties.device.properties.network.readMultiple(
+            res = await self.properties.device.properties.network.readMultiple(
                 "{} {} {} all".format(
                     self.properties.device.properties.address,
                     self.properties.type,
@@ -220,9 +223,9 @@ class Point:
             raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
 
     @property
-    def bacnet_properties(self):
+    async def bacnet_properties(self):
         if not self.properties.bacnet_properties:
-            self.update_bacnet_properties()
+            await self.update_bacnet_properties()
         return self.properties.bacnet_properties
 
     @property
@@ -236,11 +239,11 @@ class Point:
         else:
             return False
 
-    def priority(self, priority=None):
+    async def priority(self, priority=None):
         if self.properties.priority_array is False:
             return None
 
-        self.read_priority_array()
+        await self.read_priority_array()
         if not priority:
             return self.properties.priority_array.debug_contents()
         if priority < 1 or priority > 16:
@@ -352,7 +355,7 @@ class Point:
         else:
             self.properties.device.properties.network.add_trend(self)
 
-    def __getitem__(self, key):
+    async def __getitem__(self, key):
         """
         Way to get points... presentValue, status, flags, etc...
 
@@ -367,11 +370,11 @@ class Point:
             try:
                 if "@prop_" in key:
                     key = key.split("prop_")[1]
-                return self.read_property(key)
+                return await self.read_property(key)
             except Exception:
                 raise ValueError("Cannot find property named {}".format(key))
 
-    def write(self, value, *, prop="presentValue", priority=""):
+    async def write(self, value, *, prop="presentValue", priority=""):
         """
         Write to present value of a point
 
@@ -381,7 +384,7 @@ class Point:
 
         """
         if prop == "description":
-            self.update_description(value)
+            await self.update_description(value)
         else:
             if priority != "":
                 if (
@@ -394,12 +397,11 @@ class Point:
                     raise ValueError("Priority must be a number between 1 and 16")
 
             try:
-                self.properties.device.properties.network.write(
+                await self.properties.device.properties.network.write(
                     "{} {} {} {} {} {}".format(
-                        self.properties.device.properties.address,
-                        self.properties.type,
-                        self.properties.address,
-                        prop,
+                        Address(self.properties.device.properties.address),
+                        ObjectIdentifier(self.properties.type, self.properties.address),
+                        PropertyIdentifier(prop),
                         value,
                         priority,
                     ),
@@ -409,12 +411,12 @@ class Point:
                 raise
 
             # Read after the write so history gets updated.
-            self.value
+            await self.value
 
     def default(self, value):
         self.write(value, prop="relinquishDefault")
 
-    def sim(self, value, *, force=False):
+    async def sim(self, value, *, force=False):
         """
         Simulate a value.  Sets the Out_Of_Service property- to disconnect the point from the
         controller's control.  Then writes to the Present_Value.
@@ -427,21 +429,21 @@ class Point:
             or self.properties.simulated[1] != value
             or force is not False
         ):
-            self.properties.device.properties.network.sim(
+            await self.properties.device.properties.network.sim(
                 "{} {} {} presentValue {}".format(
                     self.properties.device.properties.address,
                     self.properties.type,
-                    str(self.properties.address),
+                    self.properties.address,
                     str(value),
                 )
             )
             self.properties.simulated = (True, value)
 
-    def out_of_service(self):
+    async def out_of_service(self):
         """
         Sets the Out_Of_Service property [to True].
         """
-        self.properties.device.properties.network.out_of_service(
+        await self.properties.device.properties.network.out_of_service(
             "{} {} {}".format(
                 self.properties.device.properties.address,
                 self.properties.type,
@@ -450,11 +452,11 @@ class Point:
         )
         self.properties.simulated = (True, None)
 
-    def release(self):
+    async def release(self):
         """
         Clears the Out_Of_Service property [to False] - so the controller regains control of the point.
         """
-        self.properties.device.properties.network.release(
+        await self.properties.device.properties.network.release(
             "{} {} {}".format(
                 self.properties.device.properties.address,
                 self.properties.type,
@@ -476,7 +478,7 @@ class Point:
         self.write("null", priority=8)
         self.properties.overridden = (False, None)
 
-    def _setitem(self, value):
+    async def _setitem(self, value):
         """
         Called by _set, will trigger right function depending on
         point type to write to the value and make tests.
@@ -506,7 +508,7 @@ class Point:
             if str(value).lower() == "auto":
                 self.release()
             else:
-                self.sim(value)
+                await self.sim(value)
 
     def _set(self, value):
         """
@@ -516,6 +518,9 @@ class Point:
         raise NotImplementedError("Must be overridden")
 
     def poll(self, command="start", *, delay: int = 10) -> None:
+        asyncio.create_task(self._poll(command=command, delay=delay))
+
+    async def _poll(self, command="start", *, delay: int = 10) -> None:
         """
         Poll a point every x seconds (delay=x sec)
         Stopped by using point.poll('stop') or .poll(0) or .poll(False)
@@ -548,6 +553,9 @@ class Point:
             raise RuntimeError("Stop polling before redefining it")
 
     def match(self, point, *, delay=5):
+        asyncio.create_task(self._match(point=point, delay=delay))
+
+    def _match(self, point, *, delay=5):
         """
         This allow functions like :
             device['status'].match('command')
@@ -576,6 +584,11 @@ class Point:
             raise RuntimeError("Stop task before redefining it")
 
     def match_value(self, value, *, delay=5, use_last_value=False):
+        asyncio.create_task(
+            self._match_value(value=value, delay=delay, use_last_value=use_last_value)
+        )
+
+    def _match_value(self, value, *, delay=5, use_last_value=False):
         """
         This allow functions like :
             device['point'].match('value')
@@ -613,6 +626,7 @@ class Point:
         """
         return len(self.history)
 
+    # TODO
     def subscribe_cov(self, confirmed=True, lifetime=None, callback=None):
         address = self.properties.device.properties.address
         obj_tuple = (self.properties.type, int(self.properties.address))
@@ -624,6 +638,7 @@ class Point:
             callback=callback,
         )
 
+    # TODO
     def cancel_cov(self, callback=None):
         address = self.properties.device.properties.address
         obj_tuple = (self.properties.type, int(self.properties.address))
@@ -632,11 +647,14 @@ class Point:
         )
 
     def update_description(self, value):
+        asyncio.create_task(self._update_description(value=value))
+
+    async def _update_description(self, value):
         """
         This will write to the BACnet point and modify the description
         of the object
         """
-        self.properties.device.properties.network.send_text_write_request(
+        await self.properties.device.properties.network.send_text_write_request(
             addr=self.properties.device.properties.address,
             obj_type=self.properties.type,
             obj_inst=int(self.properties.address),
@@ -649,7 +667,7 @@ class Point:
         """
         Add tag to point. Those tags can be used to make queries,
         add information, etc.
-        They will be included in InfluxDB is used.
+        They will be included if InfluxDB is used.
         """
         if lst is None:
             self.tag.append((tag_id, tag_value))
@@ -691,8 +709,13 @@ class NumericPoint(Point):
         )
 
     @property
-    def value(self):
-        res = super().value
+    def val(self):
+        res = asyncio.run_coroutine_threadsafe(self.value)
+        return res
+
+    @property
+    async def value(self):
+        res = await super().value
         self._trend(res)
         return res
 
@@ -700,16 +723,16 @@ class NumericPoint(Point):
     def units(self):
         return self.properties.units_state
 
-    def _set(self, value):
+    async def _set(self, value):
         if str(value).lower() == "auto":
-            self._setitem(value)
+            await self._setitem(value)
         else:
             try:
                 if isinstance(value, Point):
                     value = value.lastValue
                 val = float(value)
                 if isinstance(val, float):
-                    self._setitem(value)
+                    await self._setitem(value)
             except Exception as error:
                 raise WritePropertyException(
                     "Problem writing to device : {}".format(error)
@@ -721,7 +744,8 @@ class NumericPoint(Point):
             if (polling < 90 and polling > 0) or self.cov_registered:
                 val = float(self.lastValue)
             else:
-                val = float(self.value)
+                asyncio.gather(self.value, asyncio.sleep(1))
+                val = float(self.lastValue)
         except ValueError:
             self._log.error(
                 "Cannot convert value {}. Device probably disconnected or the response is inconsistent".format(
@@ -742,42 +766,42 @@ class NumericPoint(Point):
             self.properties.units_state,
         )
 
-    def __add__(self, other):
-        return self.value + other
+    async def __add__(self, other):
+        return await self.value + other
 
     __radd__ = __add__
 
-    def __sub__(self, other):
-        return self.value - other
+    async def __sub__(self, other):
+        return await self.value - other
 
-    def __rsub__(self, other):
-        return other - self.value
+    async def __rsub__(self, other):
+        return other - await self.value
 
-    def __mul__(self, other):
-        return self.value * other
+    async def __mul__(self, other):
+        return await self.value * other
 
     __rmul__ = __mul__
 
-    def __truediv__(self, other):
-        return self.value / other
+    async def __truediv__(self, other):
+        return await self.value / other
 
-    def __rtruediv__(self, other):
-        return other / self.value
+    async def __rtruediv__(self, other):
+        return other / await self.value
 
-    def __lt__(self, other):
-        return self.value < other
+    async def __lt__(self, other):
+        return await self.value < other
 
-    def __le__(self, other):
-        return self.value <= other
+    async def __le__(self, other):
+        return await self.value <= other
 
-    def __eq__(self, other):
-        return self.value == other
+    async def __eq__(self, other):
+        return await self.value == other
 
-    def __gt__(self, other):
-        return self.value > other
+    async def __gt__(self, other):
+        return await self.value > other
 
-    def __ge__(self, other):
-        return self.value >= other
+    async def __ge__(self, other):
+        return await self.value >= other
 
 
 # ------------------------------------------------------------------------------
@@ -816,11 +840,11 @@ class BooleanPoint(Point):
         super()._trend(res)
 
     @property
-    def value(self):
+    async def value(self):
         """
         Read the value from BACnet network
         """
-        res = super().value
+        res = await super().value
         self._trend(res)
 
         if res == "inactive":
@@ -855,14 +879,14 @@ class BooleanPoint(Point):
         """
         return None
 
-    def _set(self, value):
+    async def _set(self, value):
         try:
             if value is True:
-                self._setitem("active")
+                await self._setitem("active")
             elif value is False:
-                self._setitem("inactive")
+                await self._setitem("inactive")
             elif str(value) in ["inactive", "active"] or str(value).lower() == "auto":
-                self._setitem(value)
+                await self._setitem(value)
             else:
                 raise ValueError(
                     'Value must be boolean True, False or "active"/"inactive"'
@@ -928,8 +952,8 @@ class EnumPoint(Point):
         super()._trend(res)
 
     @property
-    def value(self):
-        res = super().value
+    async def value(self):
+        res = await super().value
         # self._log.info("Value : {}".format(res))
         # self._log.info("EnumValue : {}".format(self.get_state(res)))
         self._trend(res)
@@ -967,14 +991,14 @@ class EnumPoint(Point):
         """
         return None
 
-    def _set(self, value):
+    async def _set(self, value):
         try:
             if isinstance(value, int):
-                self._setitem(value)
+                await self._setitem(value)
             elif str(value) in self.properties.units_state:  # type: ignore[operator]
-                self._setitem(self.properties.units_state.index(value) + 1)
+                await self._setitem(self.properties.units_state.index(value) + 1)
             elif str(value).lower() == "auto":
-                self._setitem("auto")
+                await self._setitem("auto")
             else:
                 raise ValueError(
                     "Value must be integer or correct enum state : {}".format(
@@ -993,8 +1017,8 @@ class EnumPoint(Point):
             self.properties.device.properties.name, self.properties.name, self.enumValue
         )
 
-    def __eq__(self, other):
-        return self.value == self.properties.units_state.index(other) + 1
+    async def __eq__(self, other):
+        return await self.value == self.properties.units_state.index(other) + 1
 
 
 class StringPoint(Point):
@@ -1035,17 +1059,17 @@ class StringPoint(Point):
         super()._trend(res)
 
     @property
-    def value(self):
-        res = super().value
+    async def value(self):
+        res = await super().value
         self._trend(res)
         return res
 
-    def _set(self, value):
+    async def _set(self, value):
         try:
             if isinstance(value, str):
-                self._setitem(value)
+                await self._setitem(value)
             elif isinstance(value, CharacterString):
-                self._setitem(value.value)
+                await self._setitem(value.value)
             else:
                 raise ValueError("Value must be string or CharacterString")
         except (Exception, ValueError) as error:
@@ -1066,8 +1090,8 @@ class StringPoint(Point):
             self.properties.device.properties.name, self.properties.name, val
         )
 
-    def __eq__(self, other):
-        return self.value == other.value
+    async def __eq__(self, other):
+        return await self.value == other.value
 
 
 class DateTimePoint(Point):
@@ -1109,8 +1133,8 @@ class DateTimePoint(Point):
         return
 
     @property
-    def value(self):
-        res = super().value
+    async def value(self):
+        res = await super().value
         # self._trend(res)
         year, month, day, dayofweek = res.date
         hour, minutes, seconds, ms = res.time
@@ -1129,13 +1153,13 @@ class DateTimePoint(Point):
         #    raise WritePropertyException("Problem writing to device : {}".format(error))`
         raise NotImplementedError("Writing to Datetime is not supported yet")
 
-    def __repr__(self):
+    async def __repr__(self):
         try:
             # polling = self.properties.device.properties.pollDelay
             # if (polling < 90 and polling > 0) or self.cov_registered:
             #    val = str(self.lastValue)
             # else:
-            val = self.value
+            val = await self.value
         except ValueError:
             self._log.error("Cannot convert value. Device probably disconnected")
             # Probably disconnected
@@ -1144,20 +1168,20 @@ class DateTimePoint(Point):
             self.properties.device.properties.name, self.properties.name, val
         )
 
-    def __eq__(self, other):
-        return self.value == other.value
+    async def __eq__(self, other):
+        return await self.value == other.value
 
-    def __ge__(self, other):
-        return self.value >= other.value
+    async def __ge__(self, other):
+        return await self.value >= other.value
 
-    def __le__(self, other):
-        return self.value <= other.value
+    async def __le__(self, other):
+        return await self.value <= other.value
 
-    def __gt__(self, other):
-        return self.value > other.value
+    async def __gt__(self, other):
+        return await self.value > other.value
 
-    def __lt__(self, other):
-        return self.value < other.value
+    async def __lt__(self, other):
+        return await self.value < other.value
 
 
 # ------------------------------------------------------------------------------

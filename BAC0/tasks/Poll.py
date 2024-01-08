@@ -55,8 +55,8 @@ class SimplePoll(Task):
         else:
             raise ValueError("Provide a point object")
 
-    def task(self):
-        self._point.value
+    async def task(self):
+        await self._point.value
 
 
 @note_and_log
@@ -92,14 +92,14 @@ class DevicePoll(Task):
     def device(self) -> t.Union["RPMDeviceConnected", "RPDeviceConnected", None]:
         return self._device()
 
-    def task(self) -> None:
+    async def task(self) -> None:
         if self.device.properties.ping_failures > 0:
             self.device._log.warning(
                 "{} ({}) | Ping failed, skipping polling for now. Resending a ping to speed up things".format(
                     self.device.properties.name, self.device.properties.address
                 )
             )
-            self.device.ping()
+            await self.device.ping()
             return
         try:
             if self.failures >= self.MAX_FAILURES:
@@ -108,7 +108,7 @@ class DevicePoll(Task):
                         self.device.properties.name, self.device.properties.address
                     )
                 )
-            self.device.read_multiple(
+            await self.device.read_multiple(
                 list(self.device.pollable_points_name), points_per_request=25
             )
             self._counter += 1

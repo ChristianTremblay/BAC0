@@ -7,7 +7,7 @@
 """
 RecurringTask.py - execute a recurring task
 """
-
+import asyncio
 from typing import Any, Callable, Tuple, Union
 
 from ..core.utils.notes import note_and_log
@@ -33,6 +33,7 @@ class RecurringTask(Task):
         :returns: Nothing
         """
         self.fnc_args = None
+        self.delay = delay
         if isinstance(fnc, tuple):
             self.func, self.fnc_args = fnc
         elif hasattr(fnc, "__call__"):
@@ -43,8 +44,9 @@ class RecurringTask(Task):
             )
         Task.__init__(self, name=name, delay=delay)
 
-    def task(self) -> None:
+    async def task(self) -> None:
         if self.fnc_args:
             self.func(self.fnc_args)
         else:
             self.func()
+        await asyncio.sleep(self.delay)

@@ -5,7 +5,7 @@ from setuptools import setup
 
 from BAC0 import infos
 
-requirements = ["bacpypes", "colorama"]
+requirements = ["bacpypes3", "colorama"]
 
 setup(
     name="BAC0",
@@ -21,19 +21,19 @@ setup(
         "BAC0.core",
         "BAC0.core.app",
         "BAC0.core.io",
-        "BAC0.core.io.asynchronous",
+        # "BAC0.core.io.legacy",
         "BAC0.core.functions",
-        "BAC0.core.functions.asynchronous",
+        # "BAC0.core.functions.legacy",
         "BAC0.core.devices",
         "BAC0.core.devices.local",
         "BAC0.core.devices.mixins",
-        "BAC0.core.devices.mixins.asynchronous",
+        # "BAC0.core.devices.mixins.legacy",
         "BAC0.core.utils",
         "BAC0.core.proprietary_objects",
         "BAC0.scripts",
         "BAC0.tasks",
-        "BAC0.tasks.asynchronous",
-        "BAC0.web",
+        # "BAC0.tasks.legacy",
+        # "BAC0.web",
         "BAC0.db",
         "BAC0.tools",
     ],

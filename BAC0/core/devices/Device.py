@@ -9,6 +9,7 @@ Device.py - describe a BACnet Device
 
 """
 import os.path
+import asyncio
 
 # --- standard Python modules ---
 from collections import namedtuple
@@ -29,7 +30,7 @@ except ImportError:
 
 
 # --- this application's modules ---
-from bacpypes.basetypes import ServicesSupported
+from bacpypes3.basetypes import ServicesSupported
 
 # from ...bokeh.BokehRenderer import BokehPlot
 from ...db.sql import SQLMixin
@@ -82,6 +83,14 @@ class DeviceProperties(object):
     @property
     def asdict(self):
         return self.__dict__
+
+
+def ADevice(*args, **kwargs):
+    dev = Device(*args, **kwargs)
+    t = asyncio.create_task(dev.new_state(DeviceDisconnected))
+    while not t.done:
+        pass
+    return dev
 
 
 @note_and_log
@@ -182,7 +191,7 @@ class Device(SQLMixin):
             self.properties.network = None
             if os.path.isfile(filename):
                 self.properties.db_name = db_name
-                self.new_state(DeviceDisconnected)
+
             else:
                 raise FileNotFoundError("Can't find {} on drive".format(filename))
         else:
@@ -191,13 +200,13 @@ class Device(SQLMixin):
                 and self.properties.address
                 and self.properties.device_id is not None
             ):
-                self.new_state(DeviceDisconnected)
+                pass
             else:
                 raise BadDeviceDefinition(
                     "Please provide address, device id and network or specify from_backup argument"
                 )
 
-    def new_state(self, newstate):
+    async def new_state(self, newstate):
         """
         Base of the state machine mechanism.
         Used to make transitions between device states.
@@ -207,9 +216,9 @@ class Device(SQLMixin):
             "Changing device state to {}".format(str(newstate).split(".")[-1])
         )
         self.__class__ = newstate
-        self._init_state()
+        await self._init_state()
 
-    def _init_state(self):
+    async def _init_state(self):
         """
         Execute additional code upon state modification
         """
@@ -248,7 +257,7 @@ class Device(SQLMixin):
             if each.properties.simulated[0]:
                 yield each
 
-    def _buildPointList(self):
+    async def _buildPointList(self):
         """
         Read all points from a device into a (Pandas) dataframe (Pandas).  Items are
         accessible by point name.
@@ -449,11 +458,11 @@ class DeviceConnected(Device):
     Once connected, all subsequent commands use this BACnet connection.
     """
 
-    def _init_state(self):
-        self._buildPointList()
+    async def _init_state(self):
+        await self._buildPointList()
         self.properties.network.register_device(self)
 
-    def disconnect(self, save_on_disconnect=True, unregister=True):
+    async def disconnect(self, save_on_disconnect=True, unregister=True):
         self._log.info("Wait while stopping polling")
         self.poll(command="stop")
         if unregister:
@@ -462,11 +471,11 @@ class DeviceConnected(Device):
         if save_on_disconnect:
             self.save()
         if self.properties.db_name:
-            self.new_state(DeviceFromDB)
+            await self.new_state(DeviceFromDB)
         else:
-            self.new_state(DeviceDisconnected)
+            await self.new_state(DeviceDisconnected)
 
-    def connect(self, *, db=None):
+    async def connect(self, *, db=None):
         """
         A connected device can be switched to 'database mode' where the device will
         not use the BACnet network but instead obtain its contents from a previously
@@ -475,7 +484,7 @@ class DeviceConnected(Device):
         if db:
             self.poll(command="stop")
             self.properties.db_name = db.split(".")[0]
-            self.new_state(DeviceFromDB)
+            await self.new_state(DeviceFromDB)
         else:
             self._log.warning(
                 "Already connected, provide db arg if you want to connect to db"
@@ -497,12 +506,12 @@ class DeviceConnected(Device):
             return dict(zip(list_of_points, his))
         return pd.DataFrame(dict(zip(list_of_points, his)))
 
-    def _buildPointList(self):
+    async def _buildPointList(self):
         """
         Upon connection to build the device point list and properties.
         """
         try:
-            self.properties.pss.value = self.properties.network.read(
+            self.properties.pss.value = await self.properties.network.read(
                 "{} device {} protocolServicesSupported".format(
                     self.properties.address, self.properties.device_id
                 )
@@ -515,14 +524,14 @@ class DeviceConnected(Device):
         except SegmentationNotSupported:
             self._log.warning("Segmentation not supported")
             self.segmentation_supported = False
-            self.new_state(DeviceDisconnected)
+            await self.new_state(DeviceDisconnected)
 
-        self.properties.name = self.properties.network.read(
+        self.properties.name = await self.properties.network.read(
             "{} device {} objectName".format(
                 self.properties.address, self.properties.device_id
             )
         )
-        self.properties.vendor_id = self.properties.network.read(
+        self.properties.vendor_id = await self.properties.network.read(
             "{} device {} vendorIdentifier".format(
                 self.properties.address, self.properties.device_id
             )
@@ -537,7 +546,7 @@ class DeviceConnected(Device):
                 self.properties.objects_list,
                 self.points,
                 self._list_of_trendlogs,
-            ) = self._discoverPoints(self.custom_object_list)
+            ) = await self._discoverPoints(self.custom_object_list)
             if self.properties.pollDelay is not None and self.properties.pollDelay > 0:
                 self.poll(delay=self.properties.pollDelay)
             self.update_history_size(size=self.properties.history_size)
@@ -545,11 +554,11 @@ class DeviceConnected(Device):
         except NoResponseFromController:
             self._log.error("Cannot retrieve object list, disconnecting...")
             self.segmentation_supported = False
-            self.new_state(DeviceDisconnected)
+            await self.new_state(DeviceDisconnected)
         except IndexError:
             if self._reconnect_on_failure:
                 self._log.error("Device creation failed... re-connecting")
-                self.new_state(DeviceDisconnected)
+                await self.new_state(DeviceDisconnected)
             else:
                 self._log.error("Device creation failed... disconnecting")
 
@@ -620,7 +629,7 @@ class DeviceConnected(Device):
             device['point_name'] = value
         """
         try:
-            self._findPoint(point_name)._set(value)
+            asyncio.create_task(self._findPoint(point_name)._set(value))
         except WritePropertyException as ve:
             self._log.error("{}".format(ve))
 
@@ -713,7 +722,7 @@ class DeviceConnected(Device):
                 return trend
         raise ValueError("{} doesn't exist in controller".format(name))
 
-    def read_property(self, prop):
+    async def read_property(self, prop):
         # if instance == -1:
         #    pass
         if isinstance(prop, tuple):
@@ -730,14 +739,14 @@ class DeviceConnected(Device):
             request = "{} {} {} {}".format(
                 self.properties.address, _obj, _instance, _prop
             )
-            val = self.properties.network.read(
+            val = await self.properties.network.read(
                 request, vendor_id=self.properties.vendor_id
             )
         except KeyError as error:
             raise Exception("Unknown property : {}".format(error))
         return val
 
-    def write_property(self, prop, value, priority=None):
+    async def write_property(self, prop, value, priority=None):
         if prop == "description":
             self.update_description(value)
         else:
@@ -753,20 +762,20 @@ class DeviceConnected(Device):
                 request = "{} {} {} {} {} {}".format(
                     self.properties.address, _obj, _instance, _prop, value, priority
                 )
-                val = self.properties.network.write(
+                val = await self.properties.network.write(
                     request, vendor_id=self.properties.vendor_id
                 )
             except KeyError as error:
                 raise Exception("Unknown property : {}".format(error))
             return val
 
-    def update_bacnet_properties(self):
+    async def update_bacnet_properties(self):
         """
         Retrieve bacnet properties for this device
 
         """
         try:
-            res = self.properties.network.readMultiple(
+            res = await self.properties.network.readMultiple(
                 "{} device {} all".format(
                     self.properties.address, str(self.properties.device_id)
                 ),
@@ -791,19 +800,19 @@ class DeviceConnected(Device):
     def bacnet_properties(self):
         return self._bacnet_properties(update=True)
 
-    def update_description(self, value):
-        self.properties.network.send_text_write_request(
+    async def update_description(self, value):
+        await self.properties.network.send_text_write_request(
             addr=self.properties.address,
             obj_type="device",
             obj_inst=int(self.device_id),
             value=value,
             prop_id="description",
         )
-        self.properties.description = self.read_property("description")
+        self.properties.description = await self.read_property("description")
 
-    def ping(self):
+    async def ping(self):
         try:
-            if self.read_property("objectName") == self.properties.name:
+            if await self.read_property("objectName") == self.properties.name:
                 self.properties.ping_failures = 0
                 return True
             else:
@@ -852,10 +861,10 @@ class DeviceDisconnected(Device):
     [Device state] Initial state of a device. Disconnected from BACnet.
     """
 
-    def _init_state(self):
-        self.connect()
+    async def _init_state(self):
+        await self.connect()
 
-    def connect(self, *, db=None, network=None):
+    async def connect(self, *, db=None, network=None):
         """
         Attempt to connect to device.  If unable, attempt to connect to a controller database
         (so the user can use previously saved data).
@@ -865,50 +874,45 @@ class DeviceDisconnected(Device):
         if not self.properties.network:
             self._log.debug("No network...calling DeviceFromDB")
             if db:
-                self.new_state(DeviceFromDB)
+                await self.new_state(DeviceFromDB)
             self._log.info(
                 'You can reconnect to network using : "device.connect(network=bacnet)"'
             )
 
         else:
             try:
-                self.properties.network.read(
+                await self.properties.network.read(
                     "{} device {} objectName".format(
                         self.properties.address, self.properties.device_id
                     )
                 )
 
-                segmentation = self.properties.network.read(
+                segmentation = await self.properties.network.read(
                     "{} device {} segmentationSupported".format(
                         self.properties.address, self.properties.device_id
                     )
                 )
 
-                if not self.segmentation_supported or segmentation not in (
-                    "segmentedTransmit",
-                    "segmentedBoth",
-                ):
-                    segmentation_supported = False
-                    self._log.debug("Segmentation not supported")
-                else:
-                    segmentation_supported = True
+                self.segmentation_supported = (
+                    False if segmentation.numerator == 3 else True
+                )
 
-                if segmentation_supported:
-                    self.new_state(RPMDeviceConnected)
+                if self.segmentation_supported:
+                    await self.new_state(RPMDeviceConnected)
                 else:
-                    self.new_state(RPDeviceConnected)
+                    await self.new_state(RPDeviceConnected)
 
             except SegmentationNotSupported:
                 self.segmentation_supported = False
                 self._log.warning(
                     "Segmentation not supported.... expect slow responses."
                 )
-                self.new_state(RPDeviceConnected)
+                await self.new_state(RPDeviceConnected)
 
             except (NoResponseFromController, AttributeError) as error:
                 self._log.warning("Error connecting: %s", error)
                 if self.properties.db_name:
-                    self.new_state(DeviceFromDB)
+                    await self.new_state(DeviceFromDB)
                 else:
                     self._log.warning(
                         "Offline: provide database name to load stored data."
@@ -999,15 +1003,15 @@ class DeviceFromDB(DeviceConnected):
     valid value from the point's history.
     """
 
-    def _init_state(self):
+    async def _init_state(self):
         try:
-            self.initialize_device_from_db()
+            await self.initialize_device_from_db()
         except ValueError as e:
             self._log.error("Problem with DB initialization : {}".format(e))
             # self.new_state(DeviceDisconnected)
             raise
 
-    def connect(self, *, network=None, from_backup=None):
+    async def connect(self, *, network=None, from_backup=None):
         """
         In DBState, a device can be reconnected to BACnet using:
             device.connect(network=bacnet) (bacnet = BAC0.connect())
@@ -1019,34 +1023,26 @@ class DeviceFromDB(DeviceConnected):
             self._log.debug("Network provided... trying to connect")
             self.properties.network = network
             try:
-                name = self.properties.network.read(
+                name = await self.properties.network.read(
                     "{} device {} objectName".format(
                         self.properties.address, self.properties.device_id
                     )
                 )
 
-                segmentation = self.properties.network.read(
+                segmentation = await self.properties.network.read(
                     "{} device {} segmentationSupported".format(
                         self.properties.address, self.properties.device_id
                     )
                 )
-
-                if not self.segmentation_supported or segmentation not in (
-                    "segmentedTransmit",
-                    "segmentedBoth",
-                ):
-                    segmentation_supported = False
-                    self._log.debug("Segmentation not supported")
-                else:
-                    segmentation_supported = True
+                segmentation_supported = False if segmentation.numerator == 3 else True
 
                 if name:
                     if segmentation_supported:
                         self._log.debug("Segmentation supported, connecting...")
-                        self.new_state(RPMDeviceConnected)
+                        await self.new_state(RPMDeviceConnected)
                     else:
                         self._log.debug("Segmentation not supported, connecting...")
-                        self.new_state(RPDeviceConnected)
+                        await self.new_state(RPDeviceConnected)
                     # self.db.close()
 
             except NoResponseFromController:
@@ -1056,9 +1052,9 @@ class DeviceFromDB(DeviceConnected):
             self._log.debug("Not connected, open DB")
             if from_backup:
                 self.properties.db_name = from_backup.split(".")[0]
-            self._init_state()
+            await self._init_state()
 
-    def initialize_device_from_db(self):
+    async def initialize_device_from_db(self):
         self._log.info("Initializing DB")
         # Save important properties for reuse
         if self.properties.db_name:

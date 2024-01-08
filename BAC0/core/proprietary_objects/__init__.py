@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from .jci import (
+from .legacy.jci import (
     JCIAnalogInputObject,
     JCIAnalogOutputObject,
     JCIAnalogValueObject,

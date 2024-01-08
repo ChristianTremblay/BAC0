@@ -5,7 +5,7 @@
 Rebuilt Commandable
 """
 
-from bacpypes.basetypes import (
+from bacpypes3.basetypes import (
     BinaryPV,
     ChannelValue,
     DateTime,
@@ -13,10 +13,10 @@ from bacpypes.basetypes import (
     PriorityArray,
     PriorityValue,
 )
-from bacpypes.debugging import ModuleLogger, bacpypes_debugging
-from bacpypes.errors import ExecutionError
-from bacpypes.local.object import CurrentPropertyListMixIn
-from bacpypes.object import (
+from bacpypes3.debugging import ModuleLogger, bacpypes_debugging
+from bacpypes3.errors import ExecutionError
+from bacpypes3.local.object import CurrentPropertyListMixIn
+from bacpypes3.object import (
     AccessDoorObject,
     AnalogOutputObject,
     AnalogValueObject,
@@ -43,7 +43,7 @@ from bacpypes.object import (
     WritableProperty,
     register_object_type,
 )
-from bacpypes.primitivedata import (
+from bacpypes3.primitivedata import (
     BitString,
     CharacterString,
     Date,
@@ -55,7 +55,7 @@ from bacpypes.primitivedata import (
     Time,
     Unsigned,
 )
-from bacpypes.task import OneShotTask
+from bacpypes3.task import OneShotTask
 
 # some debugging
 _debug = 0

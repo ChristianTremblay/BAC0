@@ -8,18 +8,18 @@
 import datetime
 import typing as t
 
-from bacpypes.apdu import SimpleAckPDU, WritePropertyRequest
-from bacpypes.basetypes import CalendarEntry, DateRange
-from bacpypes.constructeddata import Any, ArrayOf
-from bacpypes.core import deferred
-from bacpypes.iocb import IOCB
+from bacpypes3.apdu import SimpleAckPDU, WritePropertyRequest
+from bacpypes3.basetypes import CalendarEntry, DateRange
+from bacpypes3.constructeddata import Any, ArrayOf
+from bacpypes3.app import Application
 
 # --- 3rd party modules ---
-from bacpypes.pdu import Address
+from bacpypes3.pdu import Address
 
 from ...core.utils.notes import note_and_log
 from ..io.IOExceptions import NoResponseFromController
 from ..io.Read import find_reason
+from ...core.app.asyncApp import BAC0Application
 
 
 @note_and_log
@@ -96,24 +96,12 @@ class Calendar:
         return request
 
     def send_calendar_request(self, request, timeout=10):
-        iocb = IOCB(request)
-        iocb.set_timeout(timeout)
-        deferred(self.this_application.request_io, iocb)
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
 
-        iocb.wait()  # Wait for BACnet response
+        self._log.debug("{:>12} {}".format("- request:", request))
 
-        if iocb.ioResponse:  # successful response
-            apdu = iocb.ioResponse
-
-            if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
-                self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
-                return
-
-        if iocb.ioError:  # unsuccessful: error/reject/abort
-            apdu = iocb.ioError
-            reason = find_reason(apdu)
-            raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
+        _app.request(request)
 
         self._log.info(
             "Calendar Write request sent to device : {}".format(request.pduDestination)
@@ -128,14 +116,14 @@ class Calendar:
         )
         self.send_calendar_request(request)
 
-    def read_calendar_dateList(self, address, calendar_instance):
+    async def read_calendar_dateList(self, address, calendar_instance):
         """
         This function will read the dateList property of given calendar object and
         pass it to decode_dateList() to convert it into a human readable dict.
         """
 
         try:
-            dateList_object = self.read(
+            dateList_object = await self.read(
                 "{} calendar {} dateList".format(address, calendar_instance)
             )
             dict_calendar = self.decode_dateList(dateList_object)

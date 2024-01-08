@@ -1,15 +1,20 @@
-#!/usr/bin/env python
+"""
+Custom Objects and Properties
+"""
 
-"""
-Johnson Controls Proprietary Objects for FX/FEC Line
-"""
-from bacpypes.object import (
-    AnalogInputObject,
-    AnalogOutputObject,
-    AnalogValueObject,
-    DeviceObject,
+from bacpypes3.debugging import ModuleLogger
+from bacpypes3.basetypes import PropertyIdentifier
+from bacpypes3.object import VendorInfo
+
+from bacpypes3.local.analog import (
+    AnalogInputObject as _AnalogInputObject,
+    AnalogValueObject as _AnalogValueObject,
+    AnalogOutputObject as _AnalogOutputObject,
 )
-from bacpypes.primitivedata import (
+from bacpypes3.local.device import DeviceObject as _DeviceObject
+from bacpypes3.local.networkport import NetworkPortObject as _NetworkPortObject
+from bacpypes3.primitivedata import (
+    ObjectType,
     Atomic,
     Boolean,  # Signed,
     CharacterString,
@@ -20,354 +25,249 @@ from bacpypes.primitivedata import (
     Unsigned,
 )
 
+# some debugging
+_debug = 0
+_log = ModuleLogger(globals())
+
+
+# this vendor identifier reference is used when registering custom classes
+_vendor_id = 5
 #
 #   Proprietary Objects and their attributes
 #   https://cgproducts.johnsoncontrols.com/MET_PDF/12013102.pdf
 #
 
-JCIDeviceObject = {
-    "name": "JCIDeviceObject",
-    "vendor_id": 5,
-    "objectType": "device",
-    "bacpypes_type": DeviceObject,
-    "properties": {
-        "ALARM_STATE": {"obj_id": 1006, "datatype": Enumerated, "mutable": False},
-        "ARCHIVE_DATE": {"obj_id": 849, "datatype": Date, "mutable": False},
-        "ARCHIVE_STATUS": {"obj_id": 1187, "datatype": Unsigned, "mutable": False},
-        "ARCHIVE_TIME": {"obj_id": 850, "datatype": Time, "mutable": False},
-        "CPU_USAGE": {"obj_id": 2583, "datatype": Real, "mutable": False},
-        "ENABLED": {"obj_id": 673, "datatype": Boolean, "mutable": True},
-        "EXECUTION_PRIORITY": {
-            "obj_id": 2197,
-            "datatype": Enumerated,
-            "mutable": True,
-        },  # 0-3
-        "EXTENDED_PROTO_VERSION": {
-            "obj_id": 2291,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "FLASH_USAGE": {"obj_id": 2584, "datatype": Real, "mutable": False},
-        "ITEM_REFERENCE": {
-            "obj_id": 32527,
-            "datatype": CharacterString,
-            "mutable": False,
-        },
-        "JCI_STATUS": {"obj_id": 847, "datatype": Enumerated, "mutable": False},
-        "MEMORY_USAGE": {"obj_id": 2581, "datatype": Real, "mutable": False},
-        "OBJECT_CATEGORY": {
-            "obj_id": 908,
-            "datatype": Enumerated,
-            "mutable": True,
-        },  # 0-249
-        "OBJECT_MEMORY_USAGE": {"obj_id": 2582, "datatype": Real, "mutable": False},
-        "STATUS": {"obj_id": 512, "datatype": Enumerated, "mutable": False},
-        "BACNET_BROADCAST_RECEIVE_RATE": {
-            "obj_id": 745,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "DEFAULT_BASE_UNITS": {
-            "obj_id": 2206,
-            "datatype": Enumerated,
-            "mutable": False,
-        },
-        "ESTIMATED_FLASH_AVAILABLE": {
-            "obj_id": 2395,
-            "datatype": Real,
-            "mutable": False,
-        },
-        "LAST_IDLE_SAMPLE": {"obj_id": 30082, "datatype": Real, "mutable": False},
-        "MAX_MESSAGE_BUFFER": {
-            "obj_id": 848,
-            "datatype": Unsigned,
-            "mutable": True,
-        },  # 98-65535
-        "USER_NAME": {"obj_id": 2390, "datatype": CharacterString, "mutable": False},
-        "PCODE": {"obj_id": 1320, "datatype": CharacterString, "mutable": False},
-        # "SAB_DEVICE_STATUS_LIST": {"obj_id": 4513, "datatype": Complex, "mutable": False},
-        "SAB_DEVICE_STATUS_LIST_CHANGED ": {
-            "obj_id": 4514,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "EVENTS_LOST ": {"obj_id": 1479, "datatype": Unsigned, "mutable": False},
-        # "STANDARD_TIME_OFFSET ": {"obj_id": 1017, "datatype": Signed, "mutable": False}, # -900-900
-        # "DAYLIGHT_SAVING_TIME_OFFSET ": {"obj_id": 1093, "datatype": Signed, "mutable": False}, # -900-900
-        # "STANDARD_TIME_START ": {"obj_id": 988, "datatype": Complex, "mutable": True},
-        # "DAYLIGHT_SAVING_TIME_START ": {"obj_id": 1040, "datatype": Complex, "mutable": True},
-        "ACCEPT_BACNET_TIME_SYNC": {
-            "obj_id": 4970,
-            "datatype": Boolean,
-            "mutable": False,
-        },
-        # "LAST_BACNET_TIME_SYNC_RECEIVED ": {"obj_id": 5728, "datatype": Complex, "mutable": False},
-        "SUPERVISORY_DEVICE_ONLINE": {
-            "obj_id": 3653,
-            "datatype": Boolean,
-            "mutable": True,
-        },
-        "SUPERVISORY_OFFLINE_TIMEOUT": {
-            "obj_id": 6002,
-            "datatype": Unsigned,
-            "mutable": True,
-        },  # 1-255
-        "NEXT_AVAILABLE_OID": {
-            "obj_id": 787,
-            "datatype": Unsigned,
-            "mutable": True,
-        },  # 30,000,001-41,799,991
-        "HAS_UNBOUND_REFERENCES": {
-            "obj_id": 767,
-            "datatype": Boolean,
-            "mutable": False,
-        },
-        "SURROGATE_CACHE_CNT": {"obj_id": 571, "datatype": Unsigned, "mutable": False},
-        "SURROGATE_CACHE_MAX": {"obj_id": 639, "datatype": Unsigned, "mutable": False},
-        # "ASSET_VERSIONS": {"obj_id": 4960, "datatype": Complex, "mutable": False},
-        "LOAD_BALANCER_LEVEL": {
-            "obj_id": 4722,
-            "datatype": Enumerated,
-            "mutable": False,
-        },
-        "TIMER_DB_SIZE": {"obj_id": 733, "datatype": Unsigned, "mutable": False},
-        "TIMER_USED": {"obj_id": 734, "datatype": Unsigned, "mutable": False},
-        "TIMER_PEAK": {"obj_id": 735, "datatype": Unsigned, "mutable": False},
-        "TIMER_MESSAGES_ABORTED": {
-            "obj_id": 4959,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "BACNET_OID_ALLOCATED": {
-            "obj_id": 1291,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "BACNET_OID_USED": {"obj_id": 1292, "datatype": Unsigned, "mutable": False},
-        "SIGN_PRI_DB_SIZE": {"obj_id": 730, "datatype": Unsigned, "mutable": False},
-        "SIGN_PRI_USED": {"obj_id": 731, "datatype": Unsigned, "mutable": False},
-        "SIGN_PRI_PEAK": {"obj_id": 732, "datatype": Unsigned, "mutable": False},
-        "BACNET_ENCODE_TYPE": {
-            "obj_id": 32578,
-            "datatype": Enumerated,
-            "mutable": True,
-        },  # 0-3
-        "ROUTING_MODE": {
-            "obj_id": 4307,
-            "datatype": Enumerated,
-            "mutable": True,
-        },  # 0-2
-        "BACNET_INTEGRATED_OBJECTS": {
-            "obj_id": 4302,
-            "datatype": Enumerated,
-            "mutable": False,
-        },
-        "BACNET_COMPATIBLE": {"obj_id": 4581, "datatype": Boolean, "mutable": False},
-        "SEND_I_AM_RATE": {
-            "obj_id": 579,
-            "datatype": Unsigned,
-            "mutable": True,
-        },  # 60-86,400
-        "DEFAULT_TIME_ZONE": {
-            "obj_id": 32583,
-            "datatype": Enumerated,
-            "mutable": True,
-        },  # #-1,101
-        "TIME_ZONE": {
-            "obj_id": 1403,
-            "datatype": Enumerated,
-            "mutable": True,
-        },  # #-1,101
-        "LOCAL_TIME_ZONE": {"obj_id": 1404, "datatype": Enumerated, "mutable": False},
-        "FC_MULTICAST_RESPONDER": {
-            "obj_id": 3390,
-            "datatype": Unsigned,
-            "mutable": True,
-        },
-        "FC_WAIT_BEFORE_POLLING": {
-            "obj_id": 3391,
-            "datatype": Unsigned,
-            "mutable": True,
-        },
-        "SUPERVISOR_MAC_ADDRESS": {
-            "obj_id": 3652,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "LIBRARY_PART_ID": {
-            "obj_id": 3295,
-            "datatype": CharacterString,
-            "mutable": False,
-        },
-        "APPLICATION_CLASS_SET_VERSION": {
-            "obj_id": 4128,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "DEVICE_MODEL_CLASS_SET_VERSION": {
-            "obj_id": 4129,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "COV_MIN_SEND_TIME": {
-            "obj_id": 3929,
-            "datatype": Unsigned,
-            "mutable": True,
-        },  # 10-255
-        "COV_TRANSMITS_PER_MINUTE": {
-            "obj_id": 651,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "CONTROL_SEQUENCE_IN_TEST": {
-            "obj_id": 3651,
-            "datatype": Unsigned,
-            "mutable": True,
-        },
-        "END_OF_LINE": {"obj_id": 603, "datatype": Boolean, "mutable": False},
-        "DEVICE_ADDRESS": {"obj_id": 876, "datatype": Unsigned, "mutable": False},
-        "FC_BUS_COMMUNICATION_MODE": {
-            "obj_id": 4400,
-            "datatype": Enumerated,
-            "mutable": False,
-        },
-        "SYSTEM_TYPE": {"obj_id": 3900, "datatype": Unsigned, "mutable": False},
-        "SYSTEM_CONFIGURATION": {
-            "obj_id": 3899,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "SABusPerformance": {
-            "obj_id": 12157,
-            "datatype": Enumerated,
-            "mutable": False,
-        },
-        "SABusTokenLoopTime": {
-            "obj_id": 12158,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "SABusCOVRcvPerMinute": {
-            "obj_id": 12159,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-        "SABusCOVWritesPerMinute": {
-            "obj_id": 12160,
-            "datatype": Unsigned,
-            "mutable": False,
-        },
-    },
-}
-# EOL ?
-# MEMORY ?
 
-JCIAnalogValueObject = {
-    "name": "JCIAnalogValueObject",
-    "vendor_id": 5,
-    "objectType": "analogValue",
-    "bacpypes_type": AnalogValueObject,
-    "properties": {
-        "FLOW-SP_EEPROM": {"obj_id": 3113, "datatype": Real, "mutable": True},
-        "Offset": {"obj_id": 956, "datatype": Real, "mutable": True},
-        "Offline": {"obj_id": 913, "datatype": Boolean, "mutable": False},
-        "SABusAddr": {"obj_id": 3645, "datatype": Unsigned, "mutable": False},
-        "PeerToPeer": {"obj_id": 748, "datatype": Atomic, "mutable": False},
-        "P2P_ErrorStatus": {"obj_id": 746, "datatype": Enumerated, "mutable": False},
-    },
-}
-
-JCIAnalogInputObject = {
-    "name": "JCIAnalogInputObject",
-    "vendor_id": 5,
-    "objectType": "analogInput",
-    "bacpypes_type": AnalogInputObject,
-    "properties": {
-        "Offset": {"obj_id": 956, "datatype": Real, "mutable": True},
-        "Offline": {"obj_id": 913, "datatype": Boolean, "mutable": False},
-        "SABusAddr": {"obj_id": 3645, "datatype": Unsigned, "mutable": False},
-        "InputRangeLow": {"obj_id": 1293, "datatype": Real, "mutable": True},
-        "InputRangeHigh": {"obj_id": 1294, "datatype": Real, "mutable": True},
-        "OutputRangeLow": {"obj_id": 1295, "datatype": Real, "mutable": True},
-        "OutputRangeHigh": {"obj_id": 1296, "datatype": Real, "mutable": True},
-    },
-}
-
-JCIAnalogOutputObject = {
-    "name": "JCIAnalogOutputObject",
-    "vendor_id": 5,
-    "objectType": "analogOutput",
-    "bacpypes_type": AnalogOutputObject,
-    "properties": {
-        "Offline": {"obj_id": 913, "datatype": Boolean, "mutable": False},
-        "SABusAddr": {"obj_id": 3645, "datatype": Unsigned, "mutable": False},
-        "MIN_OUT_VALUE": {"obj_id": 652, "datatype": Real, "mutable": True},
-        "MAX_OUT_VALUE": {"obj_id": 653, "datatype": Real, "mutable": True},
-        "polarity": {"obj_id": "polarity", "datatype": Enumerated, "mutable": True},
-        "stroketime": {"obj_id": 3478, "datatype": Real, "mutable": True},
-    },
-}
-
-
-def tec_short_point_list(unit_type="2-pipe"):
+class ProprietaryObjectType(ObjectType):
     """
-    unit_type can be :
-        - 4-pipe
-        - 2-pipe
-        - VAV
+    This is a list of the object type enumerations for proprietary object types,
+    see Clause 23.4.1.
     """
-    _lst = [
-        ("binaryInput", 30827),
-        ("binaryInput", 30828),
-        ("binaryOutput", 86908),
-        ("binaryOutput", 86909),
-        ("binaryOutput", 86910),
-        ("binaryOutput", 86911),
-        ("binaryOutput", 86912),
-        ("binaryOutput", 87101),
-        ("binaryOutput", 87102),
-        ("multiStateValue", 29501),
-        ("multiStateValue", 29500),
-        ("multiStateValue", 29509),
-        ("multiStateValue", 29517),
-        ("multiStateValue", 29518),
-        ("multiStateValue", 29519),
-        ("multiStateValue", 29520),
-        ("multiStateValue", 29524),
-        ("multiStateValue", 29525),
-        ("multiStateValue", 29527),
-        ("multiStateValue", 29712),
-        ("multiStateValue", 29700),
-        ("multiStateValue", 29709),
-        ("multiStateValue", 29708),
-        ("analogValue", 29505),
-        # ("analogValue", 29502),
-        # ("analogValue", 29503),
-        ("analogValue", 29504),
-        ("analogValue", 29506),
-        ("analogValue", 29507),
-        ("analogValue", 29508),
-        ("analogValue", 29515),
-        ("analogValue", 29522),
-        ("analogValue", 29529),
-        ("analogValue", 29530),
-        ("analogValue", 29532),
-        ("analogValue", 29701),
-        ("analogValue", 29703),
-        ("analogValue", 29705),
-        ("analogValue", 29706),
-        ("analogValue", 29707),
-        ("analogValue", 29714),
-        ("analogValue", 29717),
-        ("analogValue", 29725),
-        ("analogValue", 29726),
-        ("analogValue", 29727),
-        ("analogOutput", 86905),
-        ("multiStateValue", 6),
-        ("trendLog", 101010),
-    ]
-    if unit_type == "4-pipe":
-        _lst.append(("analogOutput", 86914))
-        _lst.append(("analogOutput", 86915))
 
-    return _lst
+    pass
+
+
+class ProprietaryPropertyIdentifier(PropertyIdentifier):
+    """
+    This is a list of the property identifiers that are used in custom object
+    types or are used in custom properties of standard types.
+    """
+
+    # DEVICE OBJECT
+    ALARM_STATE = 1006
+    ARCHIVE_DATE = 849
+    ARCHIVE_STATUS = 1187
+    ARCHIVE_TIME = 850
+    CPU_USAGE = 2583
+    ENABLED = 673
+    EXECUTION_PRIORITY = 2197
+    EXTENDED_PROTO_VERSION = 2291
+    FLASH_USAGE = 2584
+    ITEM_REFERENCE = 32527
+    JCI_STATUS = 847
+    MEMORY_USAGE = 2581
+    OBJECT_CATEGORY = 908
+    OBJECT_MEMORY_USAGE = 2582
+    STATUS = 512
+    BACNET_BROADCAST_RECEIVE_RATE = 745
+    DEFAULT_BASE_UNITS = 2206
+    ESTIMATED_FLASH_AVAILABLE = 2395
+    LAST_IDLE_SAMPLE = 30082
+    MAX_MESSAGE_BUFFER = 848
+    USER_NAME = 2390
+    PCODE = 1320
+    SAB_DEVICE_STATUS_LIST_CHANGED = 4514
+    EVENTS_LOST = 1479
+    ACCEPT_BACNET_TIME_SYNC = 4970
+    SUPERVISORY_DEVICE_ONLINE = 3653
+    # "STANDARD_TIME_OFFSET ": {"obj_id": 1017, "datatype": Signed, "mutable": False}, # -900-900
+    # "DAYLIGHT_SAVING_TIME_OFFSET ": {"obj_id": 1093, "datatype": Signed, "mutable": False}, # -900-900
+    # "STANDARD_TIME_START ": {"obj_id": 988, "datatype": Complex, "mutable": True},
+    # "DAYLIGHT_SAVING_TIME_START ": {"obj_id": 1040, "datatype": Complex, "mutable": True},
+    # "LAST_BACNET_TIME_SYNC_RECEIVED ": {"obj_id": 5728, "datatype": Complex, "mutable": False},
+    # "ASSET_VERSIONS": {"obj_id": 4960, "datatype": Complex, "mutable": False},
+
+    SUPERVISORY_OFFLINE_TIMEOUT = 6002
+    NEXT_AVAILABLE_OID = 787
+    HAS_UNBOUND_REFERENCES = 767
+    SURROGATE_CACHE_CNT = 571
+    SURROGATE_CACHE_MAX = 639
+    LOAD_BALANCER_LEVEL = 4722
+    TIMER_DB_SIZE = 733
+    TIMER_USED = 734
+    TIMER_PEAK = 735
+    TIMER_MESSAGES_ABORTED = 4959
+    BACNET_OID_ALLOCATED = 1291
+    BACNET_OID_USED = 1292
+    SIGN_PRI_DB_SIZE = 730
+    SIGN_PRI_USED = 731
+    SIGN_PRI_PEAK = 732
+    BACNET_ENCODE_TYPE = 32578
+    ROUTING_MODE = 4307
+    BACNET_INTEGRATED_OBJECTS = 4302
+    BACNET_COMPATIBLE = 4581
+    SEND_I_AM_RATE = 579
+    DEFAULT_TIME_ZONE = 32583
+    TIME_ZONE = 1403
+    LOCAL_TIME_ZONE = 1404
+    FC_MULTICAST_RESPONDER = 3390
+    FC_WAIT_BEFORE_POLLING = 3391
+    SUPERVISOR_MAC_ADDRESS = 3652
+    LIBRARY_PART_ID = 3295
+    APPLICATION_CLASS_SET_VERSION = 4128
+    DEVICE_MODEL_CLASS_SET_VERSION = 4129
+    COV_MIN_SEND_TIME = 3929
+    COV_TRANSMITS_PER_MINUTE = 651
+    CONTROL_SEQUENCE_IN_TEST = 3651
+    END_OF_LINE = 603
+    DEVICE_ADDRESS = 876
+    FC_BUS_COMMUNICATION_MOD = 4400
+    SYSTEM_TYPE = 3900
+    SYSTEM_CONFIGURATION = 3899
+    SABusPerformance = 12157
+    SABusTokenLoopTime = 12158
+    SABusCOVRcvPerMinute = 12159
+    SABusCOVWritesPerMinute = 12160
+    # AV, AI, AO
+    FLOW_SP_EEPROM = 3113
+    Offset = 956
+    Offline = 913
+    SABusAddr = 3645
+    PeerToPeer = 748
+    P2P_ErrorStatus = 746
+    InputRangeLow = 1293
+    InputRangeHigh = 1294
+    OutputRangeLow = 1295
+    OutputRangeHigh = 1296
+    MIN_OUT_VALUE = 652
+    MAX_OUT_VALUE = 653
+    # polarity = polarity
+    stroketime = 3478
+
+
+# create a VendorInfo object for this custom application before registering
+# specialize object classes
+custom_vendor_info = VendorInfo(
+    _vendor_id, ProprietaryObjectType, ProprietaryPropertyIdentifier
+)
+
+
+class DeviceObject(_DeviceObject):
+    """
+    When running as an instance of this custom device, the DeviceObject is
+    an extension of the one defined in bacpypes3.local.device (in this case
+    doesn't add any proprietary properties).
+    """
+
+    ALARM_STATE: Enumerated
+    ARCHIVE_DATE: Date
+    ARCHIVE_STATUS: Unsigned
+    ARCHIVE_TIME: Time
+    CPU_USAGE: Real
+    ENABLED: Boolean
+    EXECUTION_PRIORITY: Enumerated
+    EXTENDED_PROTO_VERSION: Unsigned
+    FLASH_USAGE: Real
+    ITEM_REFERENCE: CharacterString
+    JCI_STATUS: Enumerated
+    MEMORY_USAGE: Real
+    OBJECT_CATEGORY: Enumerated
+    OBJECT_MEMORY_USAGE: Real
+    STATUS: Enumerated
+    BACNET_BROADCAST_RECEIVE_RATE: Unsigned
+    DEFAULT_BASE_UNITS: Enumerated
+    ESTIMATED_FLASH_AVAILABLE: Real
+    LAST_IDLE_SAMPLE: Real
+    MAX_MESSAGE_BUFFER: Unsigned
+    USER_NAME: CharacterString
+    PCODE: CharacterString
+    SAB_DEVICE_STATUS_LIST_CHANGED: Unsigned
+    EVENTS_LOST: Unsigned
+    ACCEPT_BACNET_TIME_SYNC: Boolean
+    SUPERVISORY_DEVICE_ONLINE: Boolean
+    # "STANDARD_TIME_OFFSET ": {"obj_id": 1017, "datatype": Signed, "mutable": False}, # -900-900
+    # "DAYLIGHT_SAVING_TIME_OFFSET ": {"obj_id": 1093, "datatype": Signed, "mutable": False}, # -900-900
+    # "STANDARD_TIME_START ": {"obj_id": 988, "datatype": Complex, "mutable": True},
+    # "DAYLIGHT_SAVING_TIME_START ": {"obj_id": 1040, "datatype": Complex, "mutable": True},
+    # "LAST_BACNET_TIME_SYNC_RECEIVED ": {"obj_id": 5728, "datatype": Complex, "mutable": False},
+    # "ASSET_VERSIONS": {"obj_id": 4960, "datatype": Complex, "mutable": False},
+
+    SUPERVISORY_OFFLINE_TIMEOUT: Unsigned
+    NEXT_AVAILABLE_OID: Unsigned
+    HAS_UNBOUND_REFERENCES: Boolean
+    SURROGATE_CACHE_CNT: Unsigned
+    SURROGATE_CACHE_MAX: Unsigned
+    LOAD_BALANCER_LEVEL: Enumerated
+    TIMER_DB_SIZE: Unsigned
+    TIMER_USED: Unsigned
+    TIMER_PEAK: Unsigned
+    TIMER_MESSAGES_ABORTED: Unsigned
+    BACNET_OID_ALLOCATED: Unsigned
+    BACNET_OID_USED: Unsigned
+    SIGN_PRI_DB_SIZE: Unsigned
+    SIGN_PRI_USED: Unsigned
+    SIGN_PRI_PEAK: Unsigned
+    BACNET_ENCODE_TYPE: Unsigned
+    ROUTING_MODE: Enumerated
+    BACNET_INTEGRATED_OBJECTS: Enumerated
+    BACNET_COMPATIBLE: Unsigned
+    SEND_I_AM_RATE: Unsigned
+    DEFAULT_TIME_ZONE: Enumerated
+    TIME_ZONE: Enumerated
+    LOCAL_TIME_ZONE: Enumerated
+    FC_MULTICAST_RESPONDER: Unsigned
+    FC_WAIT_BEFORE_POLLING: Unsigned
+    SUPERVISOR_MAC_ADDRESS: Unsigned
+    LIBRARY_PART_ID: CharacterString
+    APPLICATION_CLASS_SET_VERSION: Unsigned
+    DEVICE_MODEL_CLASS_SET_VERSION: Unsigned
+    COV_MIN_SEND_TIME: Unsigned
+    COV_TRANSMITS_PER_MINUTE: Unsigned
+    CONTROL_SEQUENCE_IN_TEST: Unsigned
+    END_OF_LINE: Boolean
+    DEVICE_ADDRESS: Unsigned
+    FC_BUS_COMMUNICATION_MOD: Enumerated
+    SYSTEM_TYPE: Unsigned
+    SYSTEM_CONFIGURATION: Unsigned
+    SABusPerformance: Unsigned
+    SABusTokenLoopTime: Unsigned
+    SABusCOVRcvPerMinute: Unsigned
+    SABusCOVWritesPerMinute: Unsigned
+
+
+class NetworkPortObject(_NetworkPortObject):
+    """
+    When running as an instance of this custom device, the NetworkPortObject is
+    an extension of the one defined in bacpypes3.local.networkport (in this
+    case doesn't add any proprietary properties).
+    """
+
+    pass
+
+
+class AnalogInputObject(_AnalogInputObject):
+    Offset: Real
+    Offline: Boolean
+    SABusAddr: Unsigned
+    InputRangeLow: Real
+    InputRangeHigh: Real
+    OutputRangeLow: Real
+    OutputRangeHigh: Real
+
+
+class AnalogValueObject(_AnalogValueObject):
+    FLOW_SP_EEPROM: Real
+    Offset: Real
+    Offline: Boolean
+    SABusAddr: Unsigned
+    PeerToPeer: Atomic
+    P2P_ErrorStatus: Enumerated
+
+
+class AnalogOutputObject(_AnalogOutputObject):
+    Offline: Boolean
+    SABusAddr: Unsigned
+    MIN_OUT_VALUE: Real
+    MAX_OUT_VALUE: Real
+    # polarity = polarity
+    stroketime: Real

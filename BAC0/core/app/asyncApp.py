@@ -24,7 +24,6 @@ from BAC0.core.functions.GetIPAddr import HostIP
 from typing import Coroutine
 import asyncio
 from asyncio import Future, AbstractEventLoop
-from threading import Thread
 
 
 class BAC0Application(Application):

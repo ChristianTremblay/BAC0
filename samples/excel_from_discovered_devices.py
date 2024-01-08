@@ -3,7 +3,7 @@ import time
 import pandas as pd
 
 import BAC0
-from BAC0.core.proprietary_objects.jci import tec_short_point_list
+from BAC0.core.proprietary_objects.legacy.jci import tec_short_point_list
 
 """
 This sample creates an Excel file containing one sheet per controller found on the network

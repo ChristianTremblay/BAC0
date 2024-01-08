@@ -10,40 +10,41 @@ TimeSync.py - creation of time synch requests
 """
 # --- standard Python modules ---
 import datetime as dt
+import asyncio
 from datetime import datetime
 
 import pytz
-from bacpypes.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest
-from bacpypes.basetypes import DateTime
-from bacpypes.core import deferred
-from bacpypes.iocb import IOCB
+from bacpypes3.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest
+from bacpypes3.basetypes import DateTime
+from bacpypes3.app import Application
 
 # --- 3rd party modules ---
-from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
-from bacpypes.primitivedata import Date, Time
+from bacpypes3.pdu import Address, GlobalBroadcast, LocalBroadcast
+from bacpypes3.primitivedata import Date, Time
 
 from ...core.utils.notes import note_and_log
 from ..io.IOExceptions import (
     ApplicationNotStarted,
 )
+from BAC0.core.app.asyncApp import BAC0Application
 
 
 def _build_datetime(UTC=False):
     if UTC:
         _d = dt.datetime.utcnow().date()
         _t = dt.datetime.utcnow().time()
-        _date = Date(
-            year=_d.year - 1900, month=_d.month, day=_d.day, day_of_week=_d.isoweekday()
-        ).value
+        _date = Date((_d.year - 1900, _d.month, _d.day, _d.isoweekday()))
         _time = Time(
-            hour=_t.hour,
-            minute=_t.minute,
-            second=_t.second,
-            hundredth=int(_t.microsecond / 10000),
-        ).value
+            (
+                _t.hour,
+                _t.minute,
+                _t.second,
+                int(_t.microsecond / 10000),
+            )
+        )
     else:
-        _date = Date().now().value
-        _time = Time().now().value
+        _date = Date().now()
+        _time = Time().now()
     return DateTime(date=_date, time=_time)
 
 
@@ -78,6 +79,9 @@ class TimeSync:
         """
         if not self._started:
             raise ApplicationNotStarted("BACnet stack not running - use startApp()")
+
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
 
         if not datetime:
             _datetime = _build_datetime(UTC=UTC)
@@ -114,13 +118,8 @@ class TimeSync:
 
         self._log.debug("{:>12} {}".format("- request:", request))
 
-        iocb = IOCB(request)  # make an IOCB
+        _app.request(request)
 
-        # pass to the BACnet stack
-        deferred(self.this_application.request_io, iocb)
-
-        # Unconfirmed request...so wait until complete
-        iocb.wait()  # Wait for BACnet response
         year, month, day, dow = _datetime.date
         year = year + 1900
         hour, minutes, sec, msec = _datetime.time

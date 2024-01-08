@@ -15,7 +15,7 @@ import ipaddress
 import socket
 import typing as t
 
-from bacpypes.pdu import Address as legacy_Address
+# from bacpypes.pdu import Address as legacy_Address
 from bacpypes3.pdu import Address
 
 from ...core.utils.notes import note_and_log
@@ -138,7 +138,7 @@ def validate_ip_address(ip: Address) -> bool:
     result = True
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        if not isinstance(ip, (Address, legacy_Address)):
+        if not isinstance(ip, Address):
             raise ValueError("Provide Address as bacpypes.Address object")
         s.bind(ip.addrTuple)
     except OSError:

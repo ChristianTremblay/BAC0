@@ -27,7 +27,7 @@ class Simulation:
     Global informations regarding simulation
     """
 
-    def sim(self, args):
+    async def sim(self, args):
         """
         Simulate I/O points by setting the Out_Of_Service property, then doing a
         WriteProperty to the point's Present_Value.
@@ -40,9 +40,10 @@ class Simulation:
 
         # with self.this_application._lock: if use lock...won't be able to call read...
         args = args.split()
-        addr, obj_type, obj_inst, prop_id, value = args[:5]
+        addr, obj_type, obj_inst, value = args[:4]
+        prop_id = "presentValue"
 
-        if self.read("{} {} {} outOfService".format(addr, obj_type, obj_inst)):
+        if await self.read("{} {} {} outOfService".format(addr, obj_type, obj_inst)):
             self.write(
                 "{} {} {} {} {}".format(addr, obj_type, obj_inst, prop_id, value)
             )
@@ -57,7 +58,9 @@ class Simulation:
                 )
 
             try:
-                if self.read("{} {} {} outOfService".format(addr, obj_type, obj_inst)):
+                if await self.read(
+                    "{} {} {} outOfService".format(addr, obj_type, obj_inst)
+                ):
                     self.write(
                         "{} {} {} {} {}".format(
                             addr, obj_type, obj_inst, prop_id, value
@@ -88,7 +91,7 @@ class Simulation:
         except NoResponseFromController as e:
             self._log.warning("Failed to write to OutOfService property ({})".format(e))
 
-    def release(self, args):
+    async def release(self, args):
         """
         Set the Out_Of_Service property to False - to release the I/O point back to
         the controller's control.
@@ -107,7 +110,9 @@ class Simulation:
             self._log.warning("Failed to write to OutOfService property ({})".format(e))
 
         try:
-            if self.read("{} {} {} outOfService".format(addr, obj_type, obj_inst)):
+            if await self.read(
+                "{} {} {} outOfService".format(addr, obj_type, obj_inst)
+            ):
                 raise OutOfServiceSet()
             else:
                 pass  # Everything is ok"

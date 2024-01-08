@@ -14,11 +14,13 @@ try:
 except ImportError:
     _PANDAS = False
 
-from bacpypes.primitivedata import Date, Time
+from bacpypes3.primitivedata import Date, Time
 from collections import namedtuple
 
 # --- this application's modules ---
 from ..utils.notes import note_and_log
+import asyncio
+from ...tasks.TaskManager import Task
 
 # ------------------------------------------------------------------------------
 
@@ -62,6 +64,18 @@ class TrendLogProperties(object):
         return self.object_name
 
 
+def TrendLog(*args, **kwargs):
+    trend = TrendLog(*args, **kwargs)
+    # update_properties_task = Task(trend.update_properties())
+    # update_properties_task.start()
+    # while not update_properties_task.done:
+    #    pass
+    # if "read_log_on_creation" in args:
+    #    trend.read_log_buffer_task = Task(trend.read_log_buffer())
+
+    return trend
+
+
 @note_and_log
 class TrendLog(TrendLogProperties):
     """
@@ -74,10 +88,10 @@ class TrendLog(TrendLogProperties):
         self.properties = TrendLogProperties()
         self.properties.device = device
         self.properties.oid = OID
-        self.update_properties()
+        self.update_properties_task = None
         self._last_index = 0
         if read_log_on_creation:
-            self.read_log_buffer()
+            self.read_log_buffer_task = None
 
     @staticmethod
     def read_logDatum(logDatum):
@@ -87,7 +101,7 @@ class TrendLog(TrendLogProperties):
             else:
                 return (k, v)
 
-    def update_properties(self):
+    async def update_properties(self):
         try:
             (
                 self.properties.object_name,
@@ -97,7 +111,7 @@ class TrendLog(TrendLogProperties):
                 self.properties.total_record_count,
                 self.properties.statusFlags,
                 self.properties.log_interval,
-            ) = self.properties.device.properties.network.readMultiple(
+            ) = await self.properties.device.properties.network.readMultiple(
                 "{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount statusFlags logInterval".format(
                     addr=self.properties.device.properties.address,
                     oid=str(self.properties.oid),
@@ -106,9 +120,9 @@ class TrendLog(TrendLogProperties):
         except Exception as error:
             raise Exception("Problem reading trendLog informations: {}".format(error))
 
-    def _total_record_count(self):
+    async def _total_record_count(self):
         self.properties.total_record_count = (
-            self.properties.device.properties.network.read(
+            await self.properties.device.properties.network.read(
                 "{addr} trendLog {oid} totalRecordCount".format(
                     addr=self.properties.device.properties.address,
                     oid=str(self.properties.oid),
@@ -117,10 +131,10 @@ class TrendLog(TrendLogProperties):
         )
         return self.properties.total_record_count
 
-    def read_log_buffer(self):
+    async def read_log_buffer(self):
         RECORDS = 10
         log_buffer = set()
-        _actual_index = self._total_record_count()
+        _actual_index = await self._total_record_count()
         start = max(_actual_index - self.properties.record_count + 1, self._last_index)
         _count = max(_actual_index - start, 0)
         steps = int(_count / RECORDS) + int(1 if (_count % RECORDS) > 0 else 0)
@@ -130,7 +144,7 @@ class TrendLog(TrendLogProperties):
         _from = start
         for each in range(steps):
             range_params = ("s", _from, Date("1979-01-01"), Time("00:00"), RECORDS)
-            _chunk = self.properties.device.properties.network.readRange(
+            _chunk = await self.properties.device.properties.network.readRange(
                 "{} trendLog {} logBuffer".format(
                     self.properties.device.properties.address, str(self.properties.oid)
                 ),
@@ -191,8 +205,8 @@ class TrendLog(TrendLogProperties):
             )
 
     @property
-    def history(self):
-        self.read_log_buffer()
+    async def history(self):
+        await self.read_log_buffer()
 
         if not _PANDAS or self.properties._df is None:
             return dict(
@@ -205,7 +219,7 @@ class TrendLog(TrendLogProperties):
         try:
             if not self.properties.log_device_object_property:
                 self.properties.log_device_object_property = (
-                    self.properties.device.properties.network.read(
+                    await self.properties.device.properties.network.read(
                         "{addr} trendLog {oid} logDeviceObjectProperty".format(
                             addr=self.properties.device.properties.address,
                             oid=str(self.properties.oid),
