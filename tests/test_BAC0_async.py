@@ -13,6 +13,7 @@ import pytest
 import BAC0
 
 
+@pytest.mark.asyncio
 def test_bac0_async_ok(event_loop):
     async def bac0_async_ok():
         fake_bac0_obj = "my_test_bac0"
@@ -25,7 +26,7 @@ def test_bac0_async_ok(event_loop):
         fake_vendor_id = 842
         fake_vendor_name = "Servisys"
 
-        bacnet = BAC0.Async(
+        bacnet = BAC0.lite(
             ip="127.0.1.1",
             localObjName=fake_bac0_obj,
             deviceId=fake_device_id,

@@ -256,39 +256,20 @@ class ReadProperty:
         except ErrorRejectAbortNack as err:
             # construction error
             response = err
-            self._log.exception(f"exception: {err!r}")
-
-        """ 
-        Other Except if BAC0 can catch them
-        Which is not the case actually
-
-        
-        # note: the return types along this pass don't appear to be consistent
-        # not sure if this is a real problem or not, leaving as-is and ignoring errors
-        if iocb.ioError:  # unsuccessful: error/reject/abort
-            apdu = iocb.ioError
-            reason = find_reason(apdu)
-            self._log.warning("APDU Abort Reject Reason : {}".format(reason))
-            self._log.debug("The Request was : {}".format(args))
-            if reason == "unrecognizedService":
+            self._log.exception(f"exception: {err.reason}")
+            if "segmentation-not-supported" in str(err.reason):
+                raise SegmentationNotSupported
+            if "unrecognized-service" in str(err.reason):
                 raise UnrecognizedService()
-            elif reason == "segmentationNotSupported":
-                # value = self._split_the_read_request(args, arr_index)
-                # return value
-                self.segmentation_supported = False
-                raise SegmentationNotSupported()
-            elif reason == "unknownObject":
+            if "unknown-object" in str(err.reason):
                 self._log.warning("Unknown object {}".format(args))
                 raise UnknownObjectError("Unknown object {}".format(args))
-            elif reason == "unknownProperty":
-                self._log.warning("Unknown property {}".format(args))
+            if "unknown-property" in str(err.reason):
                 values.append("")  # type: ignore[arg-type]
                 return values
-            else:
-                self._log.warning("No response from controller {}".format(reason))
+            if "no-response" in str(err.reason):
                 values.append("")  # type: ignore[arg-type]
                 return values
-        """
 
         if not isinstance(response, ErrorRejectAbortNack):
             # Dealt in bp3

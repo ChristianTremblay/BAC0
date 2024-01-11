@@ -5,7 +5,7 @@ from bacpypes3.basetypes import PriorityArray, Reliability
 from bacpypes3.object import TrendLogObject
 from colorama import Fore
 
-from BAC0.core.app.ScriptApplication import (
+from BAC0.core.app.asyncApp import (
     BAC0BBMDDeviceApplication,
     BAC0ForeignDeviceApplication,
 )

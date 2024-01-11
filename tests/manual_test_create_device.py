@@ -90,7 +90,7 @@ def main():
     boid_300 = device300_app.Boid
 
     # Connect to test device using main network
-    test_device = BAC0.ADevice("{}:47809".format(ip), boid, bacnet, poll=10)
+    test_device = BAC0.device("{}:47809".format(ip), boid, bacnet, poll=10)
     # test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
     # test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
     while True:

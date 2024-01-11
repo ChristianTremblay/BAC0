@@ -280,9 +280,10 @@ class RPMObjectsProcessing:
             raise ValueError("Unsupported objectType")
 
         for points, address in retrieve_type(objList, obj_type):
-            request.append("{} {} {} ".format(points, address, prop_list))
+            request.append(f"{points} {address} {prop_list} ")
 
         def _find_propid_index(key):
+            self._log.debug(f"Prop List : {prop_list}")
             _prop_list = prop_list.split(" ")
             for i, each in enumerate(_prop_list):
                 if key == each:
@@ -296,6 +297,7 @@ class RPMObjectsProcessing:
                 discover_request=(request, len(prop_list.split(" "))),
                 points_per_request=points_per_request,
             )
+            self._log.debug(f"Points Info : {points_info}")
         except SegmentationNotSupported:
             raise
         # Process responses and create point
@@ -305,9 +307,14 @@ class RPMObjectsProcessing:
             point_address = str(each[1])
             point_infos = points_info[i]
             i += 1
-
+            self._log.debug(
+                f"Retrieved Type {point_type} {point_address} {point_infos}"
+            )
             pointName = point_infos[_find_propid_index("objectName")]
             presentValue = point_infos[_find_propid_index("presentValue")]
+            self._log.debug(
+                f"Reading {pointName} gave {presentValue} of type {obj_type}"
+            )
             if presentValue is not None:
                 if obj_type == "analog" or obj_type == "loop":
                     presentValue = float(presentValue)
@@ -426,7 +433,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
         *,
         points_per_request=25,
         discover_request=(None, 6),
-        force_single=False
+        force_single=False,
     ):
         """
         Read points from a device using a ReadPropertyMultiple request.
@@ -472,6 +479,21 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                             )
                         except SegmentationNotSupported:
                             raise
+                        except ValueError as error:
+                            # high limit ?
+                            self._log.warning(
+                                f"Got a value error of {error} for request : {request}"
+                            )
+                            self._log.warning(
+                                "We will use single point reading to create device and turn off segmentation support"
+                            )
+                            self.properties.segmentation_supported = False
+                            await self.read_multiple(
+                                points_list,
+                                points_per_request=1,
+                                discover_request=discover_request,
+                            )
+                            break
 
                         # print('val : ', val, len(val), type(val))
                         if val is None:
@@ -483,6 +505,9 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
 
                     except SegmentationNotSupported:
                         self.properties.segmentation_supported = False
+                        self._log.warning(
+                            "Looks like segmentation is not supported. Turning that off."
+                        )
                         # self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
                         self._log.warning("Segmentation not supported")
                         self._log.warning("Request too big...will reduce it")

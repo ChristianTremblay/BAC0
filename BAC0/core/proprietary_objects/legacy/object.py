@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from bacpypes.object import (
+from bacpypes3.object import (
     Object,
     Property,
     register_object_type,

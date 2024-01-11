@@ -64,3 +64,11 @@ class BAC0Application(Application):
             # create a BVLL application service element
             bvll_ase = BVLLServiceElement()
             bind(bvll_ase, bvll_sap)
+
+
+class BAC0BBMDDeviceApplication(BAC0Application):
+    pass
+
+
+class BAC0ForeignDeviceApplication(BAC0Application):
+    pass

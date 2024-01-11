@@ -5,7 +5,7 @@
 Test Bacpypes version
 """
 
-import bacpypes
+import bacpypes3
 
 
 def test_BacpypesVersion():
@@ -16,6 +16,6 @@ def test_BacpypesVersion():
     Counting patch divided by 1000 should be enough.
     For comparison, 17.5 becomes 17.005
     """
-    maj, minor, patch = bacpypes.__version__.split(".")
+    maj, minor, patch = bacpypes3.__version__.split(".")
     version = float(maj) * 1000000 + float(minor) + float(patch) / 1000
-    assert version >= 17.005
+    assert version >= 0.083

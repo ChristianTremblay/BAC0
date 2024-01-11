@@ -14,7 +14,7 @@ except ImportError:
 
 try:
     from . import core, tasks
-    from .core.devices.Device import Device as device
+    from .core.devices.Device import device as device
     from .core.devices.Device import DeviceLoad as load
     from .core.devices.Trends import TrendLog as TrendLog
     from .core.utils.notes import update_log_level as log_level

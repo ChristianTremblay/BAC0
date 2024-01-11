@@ -33,7 +33,7 @@ from bacpypes.primitivedata import (
     Unsigned,
 )
 
-from BAC0.core.proprietary_objects.object import create_proprietary_object
+from BAC0.core.proprietary_objects.legacy.object import create_proprietary_object
 
 MyDeviceProprietaryProperties = {
     "name": "MyDeviceProprietaryProperties",

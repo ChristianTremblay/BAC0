@@ -85,7 +85,7 @@ class DeviceProperties(object):
         return self.__dict__
 
 
-def ADevice(*args, **kwargs):
+def device(*args, **kwargs):
     dev = Device(*args, **kwargs)
     t = asyncio.create_task(dev.new_state(DeviceDisconnected))
     while not t.done:
