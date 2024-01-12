@@ -1,7 +1,7 @@
 import time
 from collections import namedtuple
 
-import pytest
+import asyncio
 
 import BAC0
 from BAC0.core.devices.local.models import (
@@ -68,13 +68,13 @@ def add_points(qty_per_type, device):
     _new_objects.add_objects_to_application(device)
 
 
-def main():
+async def main():
     bacnet = BAC0.lite()
 
     # We'll use 3 devices with our first instance
-    device_app = BAC0.Async(port=47809, deviceId=101)
-    device30_app = BAC0.Async(port=47810, deviceId=102)
-    device300_app = BAC0.Async(port=47811, deviceId=103)
+    device_app = BAC0.lite(port=47809, deviceId=101)
+    device30_app = BAC0.lite(port=47810, deviceId=102)
+    device300_app = BAC0.lite(port=47811, deviceId=103)
 
     add_points(2, device_app)
     add_points(10, device30_app)
@@ -94,8 +94,8 @@ def main():
     # test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
     # test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
     while True:
-        time.sleep(0.01)
+        await asyncio.sleep(0.01)
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

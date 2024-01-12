@@ -2,8 +2,7 @@ from functools import wraps
 
 from bacpypes3.basetypes import EngineeringUnits
 from bacpypes3.local.cmd import Commandable
-from bacpypes3.local.oos import OutOfService
-from bacpypes3.object import TrendLogObject
+from bacpypes3.object import Property, TrendLogObject
 from bacpypes3.primitivedata import CharacterString
 
 _SHOULD_BE_COMMANDABLE = ["relinquishDefault", "outOfService", "lowLimit", "highLimit"]
@@ -93,39 +92,9 @@ def make_commandable():
                 obj = func(*args, **kwargs)
             else:
                 obj = func
-            # allowed_prop = _allowed_prop(obj)
-            _type = obj.get_property_type("presentValue")
+            allowed_prop = _allowed_prop(obj)
+            _type = allowed_prop["presentValue"]
             _commando = Commandable(_type)
-            base_cls = obj.__class__
-            base_cls_name = obj.__class__.__name__ + "Cmd"
-            new_type = type(base_cls_name, (_commando, base_cls), {})
-            new_type.__name__ = base_cls_name
-            # register_object_type(new_type, vendor_id=842)
-            objectType, instance, objectName, presentValue, description = args
-            new_object = new_type(
-                objectIdentifier=(base_cls.objectType, instance),
-                objectName="{}".format(objectName),
-                presentValue=presentValue,
-                description=CharacterString("{}".format(description)),
-            )
-            return new_object
-
-        return wrapper
-
-    return decorate
-
-
-def make_outOfService():
-    def decorate(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            if callable(func):
-                obj = func(*args, **kwargs)
-            else:
-                obj = func
-            # allowed_prop = _allowed_prop(obj)
-            _type = obj.get_property_type("presentValue")
-            _commando = OutOfService(_type)
             base_cls = obj.__class__
             base_cls_name = obj.__class__.__name__ + "Cmd"
             new_type = type(base_cls_name, (_commando, base_cls), {})
@@ -156,7 +125,7 @@ def add_feature(cls):
             base_cls = obj.__class__
             base_cls_name = obj.__class__.__name__ + cls.__name__
             new_type = type(base_cls_name, (cls, base_cls), {})
-            # register_object_type(new_type, vendor_id=842)
+            register_object_type(new_type, vendor_id=842)
             instance, objectName, presentValue, description = args
             new_object = new_type(
                 objectIdentifier=(base_cls.objectType, instance),
@@ -165,6 +134,43 @@ def add_feature(cls):
                 description=CharacterString("{}".format(description)),
             )
             return new_object
+
+        return wrapper
+
+    return decorate
+
+
+def bacnet_property(property_name, value, *, force_mutable=None):
+    """
+    Given a property, add it to the object
+    """
+
+    def decorate(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if callable(func):
+                obj = func(*args, **kwargs)
+            else:
+                obj = func
+            allowed_prop = _allowed_prop(obj)
+            mutable = _mutable(property_name)
+            if property_name == "units":
+                new_prop = EngineeringUnits.enumerations[value]
+                obj.units = new_prop
+            else:
+                try:
+                    new_prop = Property(
+                        property_name,
+                        allowed_prop[property_name],
+                        default=value,
+                        mutable=mutable,
+                    )
+                except KeyError:
+                    raise ValueError(
+                        "Invalid property ({}) for object".format(property_name)
+                    )
+                obj.add_property(new_prop)
+            return obj
 
         return wrapper
 

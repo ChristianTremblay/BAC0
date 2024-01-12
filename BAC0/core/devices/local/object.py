@@ -2,7 +2,7 @@ import typing as t
 from collections import namedtuple
 
 from bacpypes3.basetypes import PriorityArray, Reliability
-from bacpypes3.object import TrendLogObject
+from bacpypes3.object import AnalogInputObject, TrendLogObject
 from colorama import Fore
 
 from BAC0.core.app.asyncApp import (
@@ -16,7 +16,7 @@ from ...app.asyncApp import (
     BAC0Application,
 )  # BAC0BBMDDeviceApplication,; BAC0ForeignDeviceApplication,
 from ...utils.notes import note_and_log
-from .decorator import bacnet_properties, create, make_commandable
+from .decorator import bacnet_properties, create, make_commandable, make_outOfService
 
 
 @note_and_log
@@ -87,6 +87,13 @@ class ObjectFactory(object):
             return create(objectType, instance, objectName, presentValue, description)
 
         @bacnet_properties(self._properties)
+        @make_outOfService()
+        def _create_outOfService(
+            objectType, instance, objectName, presentValue, description
+        ):
+            return create(objectType, instance, objectName, presentValue, description)
+
+        @bacnet_properties(self._properties)
         def _create(objectType, instance, objectName, presentValue, description):
             return create(objectType, instance, objectName, presentValue, description)
 
@@ -94,8 +101,12 @@ class ObjectFactory(object):
             objectType, objectName, instance
         )
 
-        if is_commandable:
+        if is_commandable and not isinstance(objectType, AnalogInputObject):
             self.objects[objectName] = _create_commandable(
+                objectType, instance, objectName, presentValue, description
+            )
+        if is_commandable and isinstance(objectType, AnalogInputObject):
+            self.objects[objectName] = _create_outOfService(
                 objectType, instance, objectName, presentValue, description
             )
         else:
@@ -154,24 +165,26 @@ class ObjectFactory(object):
             relinquish_default=definition["relinquish_default"],
         )
 
-    @staticmethod
-    def properties_for(objectType):
-        prop_list = {}
-        for prop in objectType.properties:
-            prop_list[prop.identifier] = {
-                "datatype": prop.datatype,
-                "optional": prop.optional,
-                "mutable": prop.mutable,
-                "default": prop.default,
-            }
-        return prop_list
+    # DEPRECATED
+    # @staticmethod
+    # def properties_for(objectType):
+    #    prop_list = {}
+    #    for prop in objectType.properties:
+    #        prop_list[prop.identifier] = {
+    #            "datatype": prop.datatype,
+    #            "optional": prop.optional,
+    #            "mutable": prop.mutable,
+    #            "default": prop.default,
+    #        }
+    #    return prop_list
 
     @staticmethod
     def get_pv_datatype(objectType):
-        for prop in objectType.properties:
-            if prop.identifier == "presentValue":
-                return prop.datatype
-        raise KeyError("Unknown")
+        return objectType.get_property_type("presentValue")
+        # for prop in objectType.properties:
+        #    if prop.identifier == "presentValue":
+        #        return prop.datatype
+        # raise KeyError("Unknown")
 
     @staticmethod
     def clear_objects():
