@@ -10,19 +10,31 @@ Doc here
 import random
 import sys
 import typing as t
+from collections import defaultdict
 
 # --- standard Python modules ---
-
-from bacpypes3.basetypes import DeviceStatus
+from bacpypes3.app import Application
+from bacpypes3.basetypes import (
+    DeviceStatus,
+    Segmentation,
+    ServicesSupported,
+    ProtocolLevel,
+    NetworkType,
+    IPMode,
+    HostNPort,
+    BDTEntry,
+)
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import CharacterString
+
+from bacpypes3.vendor import VendorInfo
 
 # --- this application's modules ---
 from .. import infos
 from ..core.app.asyncApp import (
     BAC0Application,
     # BAC0BBMDDeviceApplication,
-    # BAC0ForeignDeviceApplication,
+    #BAC0ForeignDeviceApplication,
 )
 from ..core.functions.GetIPAddr import validate_ip_address
 from ..core.functions.TimeSync import TimeHandler
@@ -104,6 +116,9 @@ class Base:
     ):
         self._log.debug("Configurating app")
 
+        # Register Servisys
+        servisys = VendorInfo(vendorId)
+
         self.timehandler = TimeHandler()
 
         if not _COMPLETE:
@@ -114,7 +129,6 @@ class Base:
                 "Those are not all installed so BAC0 will work in Lite mode only."
             )
 
-        self._spin = spin
         self.response = None
         self._initialized = False
         self._started = False
@@ -201,33 +215,39 @@ class Base:
             # )
 
             # make an application
-            if self.bdtable:
-                # self.this_application = BAC0BBMDDeviceApplication(
-                #    self.this_device,
-                #    self.localIPAddr,
-                #    networkNumber=self.networkNumber,
-                #    bdtable=self.bdtable,
-                #    iam_req=self._iam_request(),
-                #    subscription_contexts=self.subscription_contexts,
-                # )
-                # app_type = "BBMD Device"
-                raise NotImplementedError()
-            elif self.bbmdAddress and self.bbmdTTL > 0:
-                # self.this_application = BAC0ForeignDeviceApplication(
-                #    self.this_device,
-                #    self.localIPAddr,
-                #    networkNumber=self.networkNumber,
-                #    bbmdAddress=self.bbmdAddress,
-                #    bbmdTTL=self.bbmdTTL,
-                #    iam_req=self._iam_request(),
-                #    subscription_contexts=self.subscription_contexts,
-                # )
-                # app_type = "Foreign Device"
-                raise NotImplementedError()
-            else:
-                self.this_application = BAC0Application()
-                # self.this_application = self.this_application.app
-                app_type = "Simple BACnet/IP App"
+            
+            app_type = "BACnet/IP App"
+            class config(defaultdict):
+                "Simple class to mimic args dot retrieval"
+                def __init__(self, cfg):
+                    for k, v in cfg.items():
+                        self[k] = v
+                def __getattr__(self, key):
+                    return self[key]
+            cfg = {
+                "device": {
+                    "vendor-identifier" : self.vendorId,
+                    "vendor-name": "Servisys inc.",
+                    "object-identifier": f"device,{self.Boid}",
+                    "object-list": [
+                        f"device,{self.Boid}",
+                        "network-port,1"
+                    ],
+                    "model-name" : self.modelName
+                },
+                "network-port":{
+                    "ip-address": str(self.localIPAddr),
+                    "ip-subnet-mask": str(self.localIPAddr.netmask),
+                    "network-number": None,
+                    "foreign": self.bbmdAddress,
+                    "ttl": self.bbmdTTL,
+                    "bdt" : self.bdtable,
+                    "bacnet-ip-udp-port": self.localIPAddr.addrPort,
+                    
+            }
+            }
+            
+            self.this_application = BAC0Application(config(cfg),self.localIPAddr)
             self._log.debug("Starting")
             self._initialized = True
 

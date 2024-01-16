@@ -64,12 +64,13 @@ This decorator works the same than commandable. Could serve as a way to add beha
 
 def _allowed_prop(obj):
     allowed_prop = {}
-    for each in type(obj).properties:
-        allowed_prop[each.identifier] = each.datatype
-    for base in type(obj).__bases__:
+    #print(obj.propertyList)
+    for each in obj.propertyList:
+        allowed_prop[each.identifier] = each.get_datatype()
+    for base in obj.__bases__:
         try:
-            for each in base.properties:
-                allowed_prop[each.identifier] = each.datatype
+            for each in base.propertyList:
+                allowed_prop[each.identifier] = each.get_datatype()
         except AttributeError:
             pass
     return allowed_prop
@@ -95,10 +96,9 @@ def make_commandable():
                 obj = func
             # allowed_prop = _allowed_prop(obj)
             _type = obj.get_property_type("presentValue")
-            _commando = Commandable(_type)
             base_cls = obj.__class__
             base_cls_name = obj.__class__.__name__ + "Cmd"
-            new_type = type(base_cls_name, (_commando, base_cls), {})
+            new_type = type(base_cls_name, (base_cls, Commandable), {})
             new_type.__name__ = base_cls_name
             # register_object_type(new_type, vendor_id=842)
             objectType, instance, objectName, presentValue, description = args
@@ -123,12 +123,9 @@ def make_outOfService():
                 obj = func(*args, **kwargs)
             else:
                 obj = func
-            # allowed_prop = _allowed_prop(obj)
-            _type = obj.get_property_type("presentValue")
-            _commando = OutOfService(_type)
             base_cls = obj.__class__
             base_cls_name = obj.__class__.__name__ + "Cmd"
-            new_type = type(base_cls_name, (_commando, base_cls), {})
+            new_type = type(base_cls_name, (base_cls, OutOfService), {})
             new_type.__name__ = base_cls_name
             # register_object_type(new_type, vendor_id=842)
             objectType, instance, objectName, presentValue, description = args
@@ -156,7 +153,6 @@ def add_feature(cls):
             base_cls = obj.__class__
             base_cls_name = obj.__class__.__name__ + cls.__name__
             new_type = type(base_cls_name, (cls, base_cls), {})
-            # register_object_type(new_type, vendor_id=842)
             instance, objectName, presentValue, description = args
             new_object = new_type(
                 objectIdentifier=(base_cls.objectType, instance),
@@ -183,26 +179,30 @@ def bacnet_properties(properties):
                 obj = func(*args, **kwargs)
             else:
                 obj = func
-            allowed_prop = _allowed_prop(obj)
+            #allowed_prop = _allowed_prop(obj)
 
             for property_name, value in properties.items():
                 if property_name == "units":
-                    new_prop = EngineeringUnits.enumerations[value]
-                    obj.units = new_prop
+                    new_prop = EngineeringUnits(value)
+                    #obj.units = new_prop
+                    obj.__setattr__("units", new_prop)
                 else:
                     try:
-                        mutable = _mutable(property_name)
-                        new_prop = Property(
-                            property_name,
-                            allowed_prop[property_name],
-                            default=value,
-                            mutable=mutable,
-                        )
-                    except KeyError:
+                        #mutable = _mutable(property_name)
+                        #new_prop = Property(
+                        #    property_name,
+                        #    allowed_prop[property_name],
+                        #    default=value,
+                        #    mutable=mutable,
+                        #)
+                        property_type = obj.get_property_type(property_name)
+                        print(f"Adding {property_name} of type {property_type} with value {value} to {obj}")
+                        obj.__setattr__(property_name, property_type(value))
+                    except (KeyError,AttributeError) as error:
                         raise ValueError(
-                            "Invalid property ({}) for object".format(property_name)
+                            f"Invalid property ({property_name}) for object | {error}"
                         )
-                    obj.add_property(new_prop)
+                    #obj.add_property(new_prop)
             return obj
 
         return wrapper

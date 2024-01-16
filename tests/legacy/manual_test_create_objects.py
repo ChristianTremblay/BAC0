@@ -2,7 +2,7 @@ import bacpypes
 import pytest
 
 import BAC0
-from BAC0.core.devices.local import (
+from BAC0.core.devices.local.factory import (
     analog_input,
     analog_output,
     analog_value,
@@ -19,9 +19,10 @@ from BAC0.core.devices.local import (
     multistate_value,
     temperature_input,
     temperature_value,
+    make_state_text
 )
-from BAC0.core.devices.local.models import make_state_text
-from BAC0.core.devices.local.object import ObjectFactory
+
+
 
 
 def build():

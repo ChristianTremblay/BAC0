@@ -4,7 +4,7 @@ from collections import namedtuple
 import asyncio
 
 import BAC0
-from BAC0.core.devices.local.models import (
+from BAC0.core.devices.local.factory import (
     analog_input,
     analog_output,
     analog_value,
@@ -22,8 +22,9 @@ from BAC0.core.devices.local.models import (
     multistate_value,
     temperature_input,
     temperature_value,
+    ObjectFactory
 )
-from BAC0.core.devices.local.object import ObjectFactory
+
 
 
 def add_points(qty_per_type, device):
@@ -34,7 +35,7 @@ def add_points(qty_per_type, device):
     # Default... percent
     for _ in range(basic_qty):
         _new_objects = analog_input(presentValue=99.9)
-        _new_objects = multistate_value(presentValue=1)
+        #_new_objects = multistate_value(presentValue=1,is_commandable=False)
 
     # Supplemental with more details, for demonstration
     _new_objects = analog_input(
@@ -45,16 +46,16 @@ def add_points(qty_per_type, device):
     )
 
     states = make_state_text(["Normal", "Alarm", "Super Emergency"])
-    _new_objects = multistate_value(
-        description="An Alarm Value",
-        properties={"stateText": states},
-        name="BIG-ALARM",
-        is_commandable=True,
-    )
+    #_new_objects = multistate_value(
+    #    description="An Alarm Value",
+    #    properties={"stateText": states},
+    #    name="BIG-ALARM",
+    #    is_commandable=False,
+    #)
 
     # All others using default implementation
     for _ in range(qty_per_type):
-        _new_objects = analog_output(presentValue=89.9)
+        #_new_objects = analog_output(presentValue=89.9)
         _new_objects = analog_value(presentValue=79.9)
         _new_objects = binary_input()
         _new_objects = binary_output()
