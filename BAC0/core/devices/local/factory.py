@@ -12,13 +12,30 @@ from bacpypes3.constructeddata import ArrayOf, ListOf
 import typing as t
 from collections import namedtuple
 from bacpypes3.basetypes import PriorityArray, Reliability
-from bacpypes3.local.analog import AnalogInputObject, AnalogOutputObject, AnalogValueObject
-from bacpypes3.local.binary import BinaryInputObject, BinaryValueObject, BinaryOutputObject
+from bacpypes3.local.analog import (
+    AnalogInputObject,
+    AnalogOutputObject,
+    AnalogValueObject,
+)
+from bacpypes3.local.binary import (
+    BinaryInputObject,
+    BinaryValueObject,
+    BinaryOutputObject,
+)
 
 
 from bacpypes3.primitivedata import CharacterString
-from .object import MultiStateValueObject, MultiStateInputObject, MultiStateOutputObject, CharacterStringValueObject, DateValueObject, DateTimeValueObject, TrendLogObject 
-#from .factory_old import ObjectFactory
+from .object import (
+    MultiStateValueObject,
+    MultiStateInputObject,
+    MultiStateOutputObject,
+    CharacterStringValueObject,
+    DateValueObject,
+    DateTimeValueObject,
+    TrendLogObject,
+)
+
+# from .factory_old import ObjectFactory
 from colorama import Fore
 from .decorator import bacnet_properties, create, make_commandable, make_outOfService
 from ...utils.notes import note_and_log
@@ -31,6 +48,7 @@ from ....scripts.Base import Base
 from ...app.asyncApp import (
     BAC0Application,
 )
+
 
 @note_and_log
 class ObjectFactory(object):
@@ -83,7 +101,7 @@ class ObjectFactory(object):
         print(f"Obj {objectType} of type {type(objectType)}")
         if objectType is not TrendLogObject:
             pv_datatype = ObjectFactory.get_pv_datatype(objectType)
-            self._log.info(f'pv datatype : {pv_datatype}')
+            self._log.info(f"pv datatype : {pv_datatype}")
 
             def enforce_datatype(val, datatype):
                 if not isinstance(val, datatype):
@@ -94,6 +112,7 @@ class ObjectFactory(object):
                             f"Wrong datatype provided for {val} for {datatype} of type {type(objectType)}"
                         )
                 return val
+
             presentValue = enforce_datatype(presentValue, pv_datatype)
             relinquish_default = enforce_datatype(relinquish_default, pv_datatype)
 
@@ -102,7 +121,9 @@ class ObjectFactory(object):
         def _create_commandable(
             objectType, instance, objectName, presentValue, description
         ):
-            self._log.info(f"creation : t:{objectType} id:{instance} ob:{objectName} pv:{presentValue} d:{description}")
+            self._log.info(
+                f"creation : t:{objectType} id:{instance} ob:{objectName} pv:{presentValue} d:{description}"
+            )
             return create(objectType, instance, objectName, presentValue, description)
 
         @bacnet_properties(self._properties)
@@ -120,11 +141,15 @@ class ObjectFactory(object):
             objectType, objectName, instance
         )
 
-        if is_commandable is True and not isinstance(objectType, (AnalogInputObject, BinaryInputObject, MultiStateInputObject)):
+        if is_commandable is True and not isinstance(
+            objectType, (AnalogInputObject, BinaryInputObject, MultiStateInputObject)
+        ):
             self.objects[objectName] = _create_commandable(
                 objectType, instance, objectName, presentValue, description
             )
-        elif isinstance(objectType, (AnalogInputObject, BinaryInputObject, MultiStateInputObject)):
+        elif isinstance(
+            objectType, (AnalogInputObject, BinaryInputObject, MultiStateInputObject)
+        ):
             self.objects[objectName] = _create_outOfService(
                 objectType, instance, objectName, presentValue, description
             )
@@ -238,7 +263,7 @@ class ObjectFactory(object):
         _properties = properties or {}
         if "statusFlags" not in _properties.keys():
             _properties["statusFlags"] = [0, 0, 0, 0]
-        #if "reliability" not in _properties.keys():
+        # if "reliability" not in _properties.keys():
         #    _properties["reliability"] = Reliability(0)
         if (
             "analog" in objectType.__name__.lower()
@@ -295,6 +320,8 @@ class ObjectFactory(object):
                 )
             )
         return _repr
+
+
 """
 Those models are opiniated versions of BACnet objects.
 They are meant to supply an easy mechanism to build BACnet objects
@@ -313,7 +340,7 @@ def _create(definition, **kwargs):
         "description": None,
         "presentValue": None,
         "is_commandable": False,
-        "relinquish_default": None,  #will be created by cmd ?
+        "relinquish_default": None,  # will be created by cmd ?
     }
     _definition.update(definition)
     for k, v in kwargs.items():
@@ -345,8 +372,8 @@ def analog(**kwargs):
         "description": "No description",
         "properties": {
             "units": "percent",
-            #"eventState": EventState(),
-            #"covIncrement": 0.15,
+            # "eventState": EventState(),
+            # "covIncrement": 0.15,
         },
         "presentValue": 0,
         "is_commandable": False,
@@ -386,9 +413,9 @@ def binary(**kwargs):
         "instance": 0,
         "description": "No description",
         "properties": {
-            #"outOfService": Boolean(False), 
-            #"eventState": EventState()
-            },
+            # "outOfService": Boolean(False),
+            # "eventState": EventState()
+        },
         "presentValue": "inactive",
         "is_commandable": False,
         "relinquish_default": "inactive",
@@ -400,9 +427,9 @@ def binary_input(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "BI", **kwargs)
     kwargs["objectType"] = BinaryInputObject
     try:
-        kwargs["properties"].update({"polarity": Polarity('normal')})
+        kwargs["properties"].update({"polarity": Polarity("normal")})
     except KeyError:
-        kwargs["properties"] = {"polarity": Polarity('normal')}
+        kwargs["properties"] = {"polarity": Polarity("normal")}
     # kwargs['is_commandable'] = True # Futur
 
     return binary(**kwargs)
@@ -413,9 +440,9 @@ def binary_output(**kwargs):
     kwargs["objectType"] = BinaryOutputObject
     kwargs["is_commandable"] = True
     try:
-        kwargs["properties"].update({"polarity": Polarity('normal')})
+        kwargs["properties"].update({"polarity": Polarity("normal")})
     except KeyError:
-        kwargs["properties"] = {"polarity": Polarity('normal')}
+        kwargs["properties"] = {"polarity": Polarity("normal")}
     return binary(**kwargs)
 
 
@@ -432,7 +459,7 @@ def multistate(**kwargs):
     definition = {
         "instance": 0,
         "properties": {
-            #"eventState": EventState(),
+            # "eventState": EventState(),
             "stateText": default_states,
             # "numberOfStates": Unsigned(2),
         },

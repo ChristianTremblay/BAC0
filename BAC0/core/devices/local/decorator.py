@@ -64,7 +64,7 @@ This decorator works the same than commandable. Could serve as a way to add beha
 
 def _allowed_prop(obj):
     allowed_prop = {}
-    #print(obj.propertyList)
+    # print(obj.propertyList)
     for each in obj.propertyList:
         allowed_prop[each.identifier] = each.get_datatype()
     for base in obj.__bases__:
@@ -179,30 +179,32 @@ def bacnet_properties(properties):
                 obj = func(*args, **kwargs)
             else:
                 obj = func
-            #allowed_prop = _allowed_prop(obj)
+            # allowed_prop = _allowed_prop(obj)
 
             for property_name, value in properties.items():
                 if property_name == "units":
                     new_prop = EngineeringUnits(value)
-                    #obj.units = new_prop
+                    # obj.units = new_prop
                     obj.__setattr__("units", new_prop)
                 else:
                     try:
-                        #mutable = _mutable(property_name)
-                        #new_prop = Property(
+                        # mutable = _mutable(property_name)
+                        # new_prop = Property(
                         #    property_name,
                         #    allowed_prop[property_name],
                         #    default=value,
                         #    mutable=mutable,
-                        #)
+                        # )
                         property_type = obj.get_property_type(property_name)
-                        print(f"Adding {property_name} of type {property_type} with value {value} to {obj}")
+                        print(
+                            f"Adding {property_name} of type {property_type} with value {value} to {obj}"
+                        )
                         obj.__setattr__(property_name, property_type(value))
-                    except (KeyError,AttributeError) as error:
+                    except (KeyError, AttributeError) as error:
                         raise ValueError(
                             f"Invalid property ({property_name}) for object | {error}"
                         )
-                    #obj.add_property(new_prop)
+                    # obj.add_property(new_prop)
             return obj
 
         return wrapper

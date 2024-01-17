@@ -26,15 +26,17 @@ from bacpypes3.basetypes import (
 )
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import CharacterString
-
+from bacpypes3.local.networkport import NetworkPortObject
+from bacpypes3.local.device import DeviceObject
 from bacpypes3.vendor import VendorInfo
+from bacpypes3.json.util import sequence_to_json
 
 # --- this application's modules ---
 from .. import infos
 from ..core.app.asyncApp import (
     BAC0Application,
     # BAC0BBMDDeviceApplication,
-    #BAC0ForeignDeviceApplication,
+    # BAC0ForeignDeviceApplication,
 )
 from ..core.functions.GetIPAddr import validate_ip_address
 from ..core.functions.TimeSync import TimeHandler
@@ -118,6 +120,8 @@ class Base:
 
         # Register Servisys
         servisys = VendorInfo(vendorId)
+        servisys.register_object_class(56, NetworkPortObject)
+        servisys.register_object_class(8, DeviceObject)
 
         self.timehandler = TimeHandler()
 
@@ -215,39 +219,50 @@ class Base:
             # )
 
             # make an application
-            
+
             app_type = "BACnet/IP App"
+
             class config(defaultdict):
                 "Simple class to mimic args dot retrieval"
+
                 def __init__(self, cfg):
                     for k, v in cfg.items():
                         self[k] = v
+
                 def __getattr__(self, key):
                     return self[key]
+                
+            if self.bbmdAddress is not None:
+                mode = "foreign"
+            elif self.bdtable:
+                mode = "bbmd"
+            else:
+                mode = "normal"
             cfg = {
+                "BAC0": {
+                    "bbmdAddress": self.bbmdAddress,
+                    "bdt": self.bdtable,
+                    "ttl": self.bbmdTTL,
+                },
                 "device": {
-                    "vendor-identifier" : self.vendorId,
+                    "vendor-identifier": self.vendorId,
                     "vendor-name": "Servisys inc.",
                     "object-identifier": f"device,{self.Boid}",
-                    "object-list": [
-                        f"device,{self.Boid}",
-                        "network-port,1"
-                    ],
-                    "model-name" : self.modelName
+                    "object-list": [f"device,{self.Boid}", "network-port,1"],
+                    "model-name": self.modelName,
                 },
-                "network-port":{
+                "network-port": {
                     "ip-address": str(self.localIPAddr),
                     "ip-subnet-mask": str(self.localIPAddr.netmask),
-                    "network-number": None,
-                    "foreign": self.bbmdAddress,
-                    "ttl": self.bbmdTTL,
-                    "bdt" : self.bdtable,
                     "bacnet-ip-udp-port": self.localIPAddr.addrPort,
-                    
+                    "network-number": None,
+                    "fd-bbmd-address": sequence_to_json(HostNPort(self.bbmdAddress)),
+                    "fd-subscription-lifetime": self.bbmdTTL,
+                    "bacnet-ip-mode" : mode
+                },
             }
-            }
-            
-            self.this_application = BAC0Application(config(cfg),self.localIPAddr)
+
+            self.this_application = BAC0Application(config(cfg), self.localIPAddr)
             self._log.debug("Starting")
             self._initialized = True
 
