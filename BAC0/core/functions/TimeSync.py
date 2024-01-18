@@ -8,25 +8,25 @@
 TimeSync.py - creation of time synch requests
 
 """
+import asyncio
+
 # --- standard Python modules ---
 import datetime as dt
-import asyncio
 from datetime import datetime
 
 import pytz
 from bacpypes3.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest
-from bacpypes3.basetypes import DateTime
 from bacpypes3.app import Application
+from bacpypes3.basetypes import DateTime
 
 # --- 3rd party modules ---
 from bacpypes3.pdu import Address, GlobalBroadcast, LocalBroadcast
 from bacpypes3.primitivedata import Date, Time
 
-from ...core.utils.notes import note_and_log
-from ..io.IOExceptions import (
-    ApplicationNotStarted,
-)
 from BAC0.core.app.asyncApp import BAC0Application
+
+from ...core.utils.notes import note_and_log
+from ..io.IOExceptions import ApplicationNotStarted
 
 
 def _build_datetime(UTC=False):

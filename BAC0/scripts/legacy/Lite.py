@@ -32,15 +32,15 @@ from ...core.devices.Points import Point
 from ...core.devices.Trends import TrendLog
 from ...core.devices.Virtuals import VirtualPoint
 from ...core.functions.Calendar import Calendar
+from ...core.functions.Discover import Discover
+from ...core.functions.EventEnrollment import EventEnrollment
+from ...core.functions.GetIPAddr import HostIP
 from ...core.functions.legacy.cov import CoV
 from ...core.functions.legacy.DeviceCommunicationControl import (
     DeviceCommunicationControl,
 )
-from ...core.functions.Discover import Discover
-from ...core.functions.GetIPAddr import HostIP
 from ...core.functions.legacy.Reinitialize import Reinitialize
 from ...core.functions.Schedule import Schedule
-from ...core.functions.EventEnrollment import EventEnrollment
 from ...core.functions.Text import TextMixin
 from ...core.functions.TimeSync import TimeSync
 from ...core.io.IOExceptions import (
@@ -54,11 +54,11 @@ from ...core.io.legacy.Simulate import Simulation
 from ...core.io.legacy.Write import WriteProperty
 from ...core.utils.notes import note_and_log
 from ...infos import __version__ as version
+from ...tasks.legacy.RecurringTask import RecurringTask
+from ...tasks.legacy.UpdateCOV import Update_local_COV
 
 # --- this application's modules ---
 from .Base import Base
-from ...tasks.legacy.RecurringTask import RecurringTask
-from ...tasks.legacy.UpdateCOV import Update_local_COV
 
 try:
     from ...db.influxdb import ConnectionError, InfluxDB

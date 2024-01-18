@@ -8,8 +8,8 @@
 Device.py - describe a BACnet Device
 
 """
-import os.path
 import asyncio
+import os.path
 
 # --- standard Python modules ---
 from collections import namedtuple

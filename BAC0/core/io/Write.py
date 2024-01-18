@@ -20,31 +20,32 @@ Write.py - creation of WriteProperty requests
 
 """
 import asyncio
+
 from bacpypes3.apdu import (
+    ErrorRejectAbortNack,
     SimpleAckPDU,
     WriteAccessSpecification,
     WritePropertyMultipleRequest,
     WritePropertyRequest,
 )
-from bacpypes3.basetypes import PropertyValue
-from bacpypes3.constructeddata import Any, Array
 from bacpypes3.app import Application
+from bacpypes3.basetypes import PropertyIdentifier, PropertyValue
+from bacpypes3.constructeddata import Any, Array
 
 # --- 3rd party modules ---
 from bacpypes3.debugging import ModuleLogger
-from bacpypes3.apdu import ErrorRejectAbortNack
-
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import (
-    ObjectIdentifier,
     Atomic,
     Enumerated,
     Integer,
     Null,
+    ObjectIdentifier,
     Real,
     Unsigned,
 )
-from bacpypes3.basetypes import PropertyIdentifier
+
+from ..app.asyncApp import BAC0Application
 from ..utils.notes import note_and_log
 
 # --- this application's modules ---
@@ -55,7 +56,6 @@ from .IOExceptions import (
     WritePropertyException,
 )
 from .Read import find_reason
-from ..app.asyncApp import BAC0Application
 
 # ------------------------------------------------------------------------------
 

@@ -14,8 +14,8 @@ except ImportError:
 
 try:
     from . import core, tasks
-    from .core.devices.Device import device as device
     from .core.devices.Device import DeviceLoad as load
+    from .core.devices.Device import device as device
     from .core.devices.Trends import TrendLog as TrendLog
     from .core.utils.notes import update_log_level as log_level
     from .infos import __version__ as version
@@ -38,7 +38,6 @@ try:
     from .scripts.Lite import Lite as lite  # to maintain compatibility with old code
 
     # from .scripts.Lite import Lite as app
-
     # Import proprietary classes
     # from .core.proprietary_objects.legacy import jci
 

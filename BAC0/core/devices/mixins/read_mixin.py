@@ -17,13 +17,7 @@ from ...io.IOExceptions import (
     NoResponseFromController,
     SegmentationNotSupported,
 )
-from ..Points import (
-    BooleanPoint,
-    DateTimePoint,
-    EnumPoint,
-    NumericPoint,
-    StringPoint,
-)
+from ..Points import BooleanPoint, DateTimePoint, EnumPoint, NumericPoint, StringPoint
 from ..Trends import TrendLog
 
 # --- 3rd party modules ---

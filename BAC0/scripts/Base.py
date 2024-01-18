@@ -15,34 +15,35 @@ from collections import defaultdict
 # --- standard Python modules ---
 from bacpypes3.app import Application
 from bacpypes3.basetypes import (
+    BDTEntry,
     DeviceStatus,
+    HostNPort,
+    IPMode,
+    NetworkType,
+    ProtocolLevel,
     Segmentation,
     ServicesSupported,
-    ProtocolLevel,
-    NetworkType,
-    IPMode,
-    HostNPort,
-    BDTEntry,
+    ObjectTypesSupported
 )
+from bacpypes3.json.util import sequence_to_json
+from bacpypes3.local.device import DeviceObject
+from bacpypes3.local.networkport import NetworkPortObject
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import CharacterString
-from bacpypes3.local.networkport import NetworkPortObject
-from bacpypes3.local.device import DeviceObject
-from bacpypes3.vendor import VendorInfo
-from bacpypes3.json.util import sequence_to_json
+from bacpypes3.vendor import VendorInfo, get_vendor_info
 
 # --- this application's modules ---
 from .. import infos
 from ..core.app.asyncApp import (
     BAC0Application,
-    # BAC0BBMDDeviceApplication,
-    # BAC0ForeignDeviceApplication,
-)
+)  # BAC0BBMDDeviceApplication,; BAC0ForeignDeviceApplication,
 from ..core.functions.GetIPAddr import validate_ip_address
 from ..core.functions.TimeSync import TimeHandler
 from ..core.io.IOExceptions import InitializationError, UnknownObjectError
 from ..core.utils.notes import note_and_log
 from ..tasks.TaskManager import stopAllTasks
+
+from ..core.devices.local.object import MultiStateInputObject, MultiStateOutputObject, MultiStateValueObject, TrendLogObject
 
 # --- 3rd party modules ---
 
@@ -119,9 +120,13 @@ class Base:
         self._log.debug("Configurating app")
 
         # Register Servisys
-        servisys = VendorInfo(vendorId)
-        servisys.register_object_class(56, NetworkPortObject)
-        servisys.register_object_class(8, DeviceObject)
+        try:
+            _BAC0_vendor = VendorInfo(vendorId)
+        except RuntimeError:
+            pass  # we are re-running the script... forgive us
+            _BAC0_vendor = get_vendor_info(vendorId)
+        _BAC0_vendor.register_object_class(ObjectTypesSupported.networkPort, NetworkPortObject)
+        _BAC0_vendor.register_object_class(ObjectTypesSupported.device, DeviceObject)
 
         self.timehandler = TimeHandler()
 
@@ -197,28 +202,6 @@ class Base:
         """
         self._log.debug("Create Local Device")
         try:
-            # make a device object
-            # self.this_device = LocalDeviceObject(
-            #    objectName=self.localObjName,
-            #    objectIdentifier=self.Boid,
-            #    maxSegmentsAccepted=int(self.maxSegmentsAccepted),
-            #    maxApduLengthAccepted=int(self.maxAPDULengthAccepted),
-            #    segmentationSupported=self.segmentationSupported,
-            #    vendorIdentifier=self.vendorId,
-            #    vendorName=self.vendorName,
-            #    modelName=self.modelName,
-            #    systemStatus=self.systemStatus,
-            #    description=self.description,
-            #    location=self.location,
-            #    firmwareRevision=self.firmwareRevision,
-            #    applicationSoftwareVersion=infos.__version__,
-            #    protocolVersion=1,
-            #    protocolRevision=0,
-            #    utcOffset=self.timehandler.utcOffset(),
-            #    daylightSavingsStatus=self.timehandler.is_dst(),
-            # )
-
-            # make an application
 
             app_type = "BACnet/IP App"
 
@@ -231,7 +214,7 @@ class Base:
 
                 def __getattr__(self, key):
                     return self[key]
-                
+
             if self.bbmdAddress is not None:
                 mode = "foreign"
             elif self.bdtable:
@@ -245,11 +228,18 @@ class Base:
                     "ttl": self.bbmdTTL,
                 },
                 "device": {
+                    "object-name": self.localObjName,
+                    #"firmware-revision": self.firmwareRevision,
                     "vendor-identifier": self.vendorId,
                     "vendor-name": "Servisys inc.",
                     "object-identifier": f"device,{self.Boid}",
                     "object-list": [f"device,{self.Boid}", "network-port,1"],
                     "model-name": self.modelName,
+                    #"max-apdu-length-accepted": self.maxAPDULengthAccepted,
+                    #"max-segments-accepted": self.maxSegmentsAccepted,
+                    #"location": self.location,
+                    #"description": self.description
+
                 },
                 "network-port": {
                     "ip-address": str(self.localIPAddr),
@@ -258,7 +248,7 @@ class Base:
                     "network-number": None,
                     "fd-bbmd-address": sequence_to_json(HostNPort(self.bbmdAddress)),
                     "fd-subscription-lifetime": self.bbmdTTL,
-                    "bacnet-ip-mode" : mode
+                    "bacnet-ip-mode": mode,
                 },
             }
 
@@ -282,10 +272,11 @@ class Base:
             self._log.debug("finally")
 
     def register_foreign_device(self, addr=None, ttl=0):
-        self.this_application.bip.register(addr, ttl)
+        #self.this_application.register_to_bbmd(addr, ttl)
+        raise NotImplementedError()
 
     def unregister_foreign_device(self):
-        self.this_application.bip.unregister()
+        self.this_application.unregister_from_bbmd()
 
     def disconnect(self):
         """
@@ -296,12 +287,7 @@ class Base:
         self._log.debug("Stopping BACnet stack")
         # Freeing socket
         self.this_application.close()
-        # try:
-        #    self.this_application.mux.directPort.handle_close()
-        # except:
-        #    self.this_application.mux.broadcastPort.handle_close()
 
-        # stopBacnetIPApp()  # Stop Core
         self._stopped = True  # Stop stack thread
         self.t.join()
         self._started = False
@@ -342,7 +328,7 @@ class Base:
         self._routers = {}
 
         self._ric = {}
-        ric = self.this_application.nsap.router_info_cache
+        ric = self.this_application.app.nsap.router_info_cache
 
         for networks, routers in ric.routers.items():
             for address, router in routers.items():

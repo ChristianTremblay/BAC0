@@ -1,62 +1,69 @@
 import asyncio
+import json
 import os
-from threading import Thread
-import json
-
-from bacpypes3.ipv4.app import NormalApplication, BBMDApplication, ForeignApplication
-from bacpypes3.app import Application
-import asyncio
-import json
 import sys
+from asyncio import AbstractEventLoop, Future
+from threading import Thread
+from typing import Coroutine
+
 from bacpypes3.apdu import ErrorRejectAbortNack
+from bacpypes3.app import Application
 from bacpypes3.basetypes import (
+    BDTEntry,
     DeviceStatus,
+    HostNPort,
+    IPMode,
     IPv4OctetString,
+    NetworkType,
+    ProtocolLevel,
     Segmentation,
     ServicesSupported,
-    ProtocolLevel,
-    NetworkType,
-    IPMode,
-    HostNPort,
-    BDTEntry,
 )
-from bacpypes3.primitivedata import ObjectIdentifier, ObjectType
-from bacpypes3.pdu import Address, IPv4Address
-from bacpypes3.constructeddata import AnyAtomic
 from bacpypes3.comm import bind
-from bacpypes3.vendor import get_vendor_info
+from bacpypes3.constructeddata import AnyAtomic
+from bacpypes3.ipv4 import IPv4DatagramServer
+from bacpypes3.ipv4.app import BBMDApplication, ForeignApplication, NormalApplication
 
 # for BVLL services
 from bacpypes3.ipv4.bvll import Result as IPv4BVLLResult
+from bacpypes3.ipv4.link import BBMDLinkLayer, ForeignLinkLayer, NormalLinkLayer
 from bacpypes3.ipv4.service import (
+    BIPBBMD,
+    BIPForeign,
+    BIPNormal,
     BVLLServiceAccessPoint,
     BVLLServiceElement,
-    BIPNormal,
-    BIPForeign,
-    BIPBBMD,
 )
-from bacpypes3.ipv4.link import NormalLinkLayer, BBMDLinkLayer, ForeignLinkLayer
-from bacpypes3.ipv4 import IPv4DatagramServer
+from bacpypes3.pdu import Address, IPv4Address
+from bacpypes3.primitivedata import ObjectIdentifier, ObjectType
+from bacpypes3.vendor import get_vendor_info
 
 from BAC0.core.functions.GetIPAddr import HostIP
 
-from typing import Coroutine
-import asyncio
-from asyncio import Future, AbstractEventLoop
 from ...core.utils.notes import note_and_log
 
 
 @note_and_log
 class BAC0Application:
     """
-    args.vendoridentifier
-    args.instance
-    args.name
-    args.address
-    args.foreign
-    args.network
-    args.ttl
-    args.bbmd
+    Use bacpypes3 helpers to generate a BACnet application following
+    the arguments given to BAC0.
+    Everythign rely on the creation of the device object and the 
+    network port object. The BACnet mode in the network port object 
+    will also create the correct version of the link layer (normal, foreign, bbmd)
+
+    I chose to keep the JSON file option over the arguments only and this way, 
+    I do not close the door to applications that could be entirely defined
+    using a JSON file, instead of being dynamic-only.
+
+    This is why I read a JSON file, update it with information from BAC0 
+    command line, and use bacpypes3 from_json to generate the app.
+
+    A very important thing is to use the bacpypes3.local.objects version
+    of the object. Or else, it fails.
+
+    It is also required to register the local objects in the vendor_id variable
+    (see base.py)
 
     """
 
@@ -71,19 +78,15 @@ class BAC0Application:
         self.bdt = self._cfg["BAC0"]["bdt"]
         self.device_cfg, self.networkport_cfg = self.cfg["application"]
 
-        #self.foreign_bbmd()
+        # self.foreign_bbmd()
         self._log.info(f"Configuration sent to build application : {self.cfg}")
         self.app = Application.from_json(self.cfg["application"])
-        # asyncio.get_running_loop().run_until_complete()
-
-        #self.bind_interface(self.localIPAddr)
 
     def bind_interface(self, addr):
         self.app.link_layers = {}
 
         self._log.info(f"Bind interface {addr} | {addr.netmask} | {addr.addrPort}")
         np = self.app.get_object_name("NetworkPort-1")
-        print(type(np))
         link_address = np.address
         if self.get_bacnet_ip_mode() == IPMode.foreign:
             self.add_foreign_device_host(self._cfg["BAC0"]["bbmdAddress"])
@@ -183,5 +186,4 @@ class BAC0Application:
 
         base_cfg["application"][0].update(cfg["device"])
         base_cfg["application"][1].update(cfg["network-port"])
-        print(base_cfg)
         return base_cfg

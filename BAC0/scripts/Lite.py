@@ -26,6 +26,7 @@ import typing as t
 # --- standard Python modules ---
 import weakref
 from collections import namedtuple
+
 from BAC0.scripts.Base import Base
 
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
@@ -33,18 +34,18 @@ from ..core.devices.Points import Point
 from ..core.devices.Trends import TrendLog
 from ..core.devices.Virtuals import VirtualPoint
 from ..core.functions import Calendar
+from ..core.functions.Alias import Alias
 
 # from ..core.functions.legacy.cov import CoV
 # from ..core.functions.legacy.DeviceCommunicationControl import (
 #    DeviceCommunicationControl,
 # )
 from ..core.functions.Discover import Discover
-from ..core.functions.Alias import Alias
+from ..core.functions.EventEnrollment import EventEnrollment
 from ..core.functions.GetIPAddr import HostIP
 
 # from ..core.functions.legacy.Reinitialize import Reinitialize
 from ..core.functions.Schedule import Schedule
-from ..core.functions.EventEnrollment import EventEnrollment
 from ..core.functions.Text import TextMixin
 from ..core.functions.TimeSync import TimeSync
 from ..core.io.IOExceptions import (
@@ -54,8 +55,8 @@ from ..core.io.IOExceptions import (
     UnrecognizedService,
 )
 from ..core.io.Read import ReadProperty
-from ..core.io.Write import WriteProperty
 from ..core.io.Simulate import Simulation
+from ..core.io.Write import WriteProperty
 
 # from ..core.io.asynchronous.Write import WriteProperty
 from ..core.utils.notes import note_and_log

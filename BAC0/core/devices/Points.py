@@ -16,10 +16,11 @@ from collections import namedtuple
 # --- standard Python modules ---
 from datetime import datetime, timedelta
 
-# --- 3rd party modules ---
-from bacpypes3.primitivedata import CharacterString, ObjectIdentifier
 from bacpypes3.basetypes import PropertyIdentifier
 from bacpypes3.pdu import Address
+
+# --- 3rd party modules ---
+from bacpypes3.primitivedata import CharacterString, ObjectIdentifier
 
 try:
     import pandas as pd

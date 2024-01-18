@@ -39,9 +39,6 @@ from ...core.io.IOExceptions import (
     UnrecognizedService,
 )
 from ...core.utils.notes import note_and_log, update_log_level
-
-# --- this application's modules ---
-from .Lite import Lite
 from ...web.BokehRenderer import (
     DevicesTableHandler,
     DynamicPlotHandler,
@@ -49,6 +46,9 @@ from ...web.BokehRenderer import (
 )
 from ...web.BokehServer import Bokeh_Worker
 from ...web.FlaskServer import FlaskServer
+
+# --- this application's modules ---
+from .Lite import Lite
 
 # ------------------------------------------------------------------------------
 

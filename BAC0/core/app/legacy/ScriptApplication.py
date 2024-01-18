@@ -35,11 +35,7 @@ from bacpypes.bvllservice import (
     UDPMultiplexer,
 )
 from bacpypes.comm import Client, bind
-from bacpypes.constructeddata import (
-    Array,
-    List,
-    SequenceOfAny,
-)
+from bacpypes.constructeddata import Array, List, SequenceOfAny
 from bacpypes.core import deferred
 from bacpypes.errors import ExecutionError, RejectException
 from bacpypes.iocb import IOCB

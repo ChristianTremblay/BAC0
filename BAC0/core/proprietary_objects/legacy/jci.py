@@ -9,9 +9,9 @@ from bacpypes.object import (
     AnalogValueObject,
     DeviceObject,
 )
+from bacpypes.primitivedata import Boolean  # Signed,
 from bacpypes.primitivedata import (
     Atomic,
-    Boolean,  # Signed,
     CharacterString,
     Date,
     Enumerated,

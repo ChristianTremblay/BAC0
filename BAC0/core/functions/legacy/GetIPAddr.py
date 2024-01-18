@@ -15,8 +15,8 @@ import ipaddress
 import socket
 import typing as t
 
-from bacpypes.pdu import Address as legacy_Address
 from bacpypes3.pdu import Address
+from bacpypes.pdu import Address as legacy_Address
 
 from ...core.utils.notes import note_and_log
 from ..io.IOExceptions import NetworkInterfaceException

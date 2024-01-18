@@ -1,3 +1,6 @@
+import typing as t
+from collections import namedtuple
+
 from bacpypes3.basetypes import (
     Boolean,
     Date,
@@ -5,13 +8,12 @@ from bacpypes3.basetypes import (
     EventState,
     LogRecord,
     Polarity,
+    PriorityArray,
+    Reliability,
     Time,
     Unsigned,
 )
 from bacpypes3.constructeddata import ArrayOf, ListOf
-import typing as t
-from collections import namedtuple
-from bacpypes3.basetypes import PriorityArray, Reliability
 from bacpypes3.local.analog import (
     AnalogInputObject,
     AnalogOutputObject,
@@ -19,34 +21,28 @@ from bacpypes3.local.analog import (
 )
 from bacpypes3.local.binary import (
     BinaryInputObject,
-    BinaryValueObject,
     BinaryOutputObject,
+    BinaryValueObject,
 )
-
-
 from bacpypes3.primitivedata import CharacterString
-from .object import (
-    MultiStateValueObject,
-    MultiStateInputObject,
-    MultiStateOutputObject,
-    CharacterStringValueObject,
-    DateValueObject,
-    DateTimeValueObject,
-    TrendLogObject,
-)
 
 # from .factory_old import ObjectFactory
 from colorama import Fore
-from .decorator import bacnet_properties, create, make_commandable, make_outOfService
-from ...utils.notes import note_and_log
+
 from BAC0.core.devices.local.trendLogs import LocalTrendLog
-from BAC0.core.app.asyncApp import (
-    BAC0BBMDDeviceApplication,
-    BAC0ForeignDeviceApplication,
-)
+
 from ....scripts.Base import Base
-from ...app.asyncApp import (
-    BAC0Application,
+from ...app.asyncApp import BAC0Application
+from ...utils.notes import note_and_log
+from .decorator import bacnet_properties, create, make_commandable, make_outOfService
+from .object import (
+    CharacterStringValueObject,
+    DateTimeValueObject,
+    DateValueObject,
+    MultiStateInputObject,
+    MultiStateOutputObject,
+    MultiStateValueObject,
+    TrendLogObject,
 )
 
 
@@ -115,9 +111,9 @@ class ObjectFactory(object):
 
             presentValue = enforce_datatype(presentValue, pv_datatype)
             relinquish_default = enforce_datatype(relinquish_default, pv_datatype)
-
-        @bacnet_properties(self._properties)
+        
         @make_commandable()
+        @bacnet_properties(self._properties)
         def _create_commandable(
             objectType, instance, objectName, presentValue, description
         ):
@@ -126,8 +122,8 @@ class ObjectFactory(object):
             )
             return create(objectType, instance, objectName, presentValue, description)
 
-        @bacnet_properties(self._properties)
         @make_outOfService()
+        @bacnet_properties(self._properties)
         def _create_outOfService(
             objectType, instance, objectName, presentValue, description
         ):
@@ -237,12 +233,8 @@ class ObjectFactory(object):
 
     def add_objects_to_application(self, app):
         if isinstance(app, Base):
-            app = app.this_application
-        if not (
-            isinstance(app, BAC0Application)
-            or isinstance(app, BAC0ForeignDeviceApplication)
-            or isinstance(app, BAC0BBMDDeviceApplication)
-        ):
+            app = app.app
+        if not (isinstance(app, BAC0Application)):
             raise TypeError("Provide BAC0Application object or BAC0 Base instance")
         for k, v in self.objects.items():
             try:
@@ -274,12 +266,13 @@ class ObjectFactory(object):
             "input" in objectType.__name__.lower()
             or "output" in objectType.__name__.lower()
         ):
-            _properties["outOfService"] = False
-        if is_commandable:
-            _properties["priorityArray"] = PriorityArray()
-            _properties["relinquishDefault"] = ObjectFactory.relinquish_default_value(
-                objectType, relinquish_default
-            )
+            pass
+            #_properties["outOfService"] = False
+        #if is_commandable:
+        #    #_properties["priorityArray"] = PriorityArray()
+        #    _properties["relinquishDefault"] = ObjectFactory.relinquish_default_value(
+        #        objectType, relinquish_default
+        #    )
         return _properties
 
     @staticmethod

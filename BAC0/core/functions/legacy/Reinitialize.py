@@ -20,9 +20,9 @@ from bacpypes.iocb import IOCB
 from bacpypes.pdu import Address
 from bacpypes.primitivedata import CharacterString
 
+from ...io.IOExceptions import ApplicationNotStarted, NoResponseFromController
 from ...io.legacy.Read import find_reason
 from ...utils.notes import note_and_log
-from ...io.IOExceptions import ApplicationNotStarted, NoResponseFromController
 
 # --- standard Python modules ---
 

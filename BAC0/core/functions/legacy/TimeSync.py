@@ -23,9 +23,7 @@ from bacpypes.pdu import Address, GlobalBroadcast, LocalBroadcast
 from bacpypes.primitivedata import Date, Time
 
 from ...core.utils.notes import note_and_log
-from ..io.IOExceptions import (
-    ApplicationNotStarted,
-)
+from ..io.IOExceptions import ApplicationNotStarted
 
 
 def _build_datetime(UTC=False):

@@ -20,14 +20,20 @@ Read.py - creation of ReadProperty and ReadPropertyMultiple requests
 
 """
 
+import asyncio
+import re
+
 # --- standard Python modules ---
 import typing as t
-import re
 from collections import namedtuple
-import asyncio
+
+# from bacpypes3.core import deferred
+# from bacpypes.iocb import IOCB, TimeoutError
+# from bacpypes3.object import get_object_class, registered_object_types
 from bacpypes3.apdu import (
     AbortPDU,
     AbortReason,
+    ErrorRejectAbortNack,
     PropertyReference,
     Range,
     ReadAccessSpecification,
@@ -40,32 +46,26 @@ from bacpypes3.apdu import (
     RejectPDU,
     RejectReason,
 )
+from bacpypes3.app import Application
 from bacpypes3.basetypes import (
     DateTime,
+    LogRecord,
+    LogRecordLogDatum,
+    PropertyIdentifier,
     RangeByPosition,
     RangeBySequenceNumber,
     RangeByTime,
-    LogRecord,
-    LogRecordLogDatum,
 )
-from bacpypes3.constructeddata import Array, AnyAtomic
-
-# from bacpypes3.core import deferred
-# from bacpypes.iocb import IOCB, TimeoutError
-# from bacpypes3.object import get_object_class, registered_object_types
-from bacpypes3.apdu import ErrorRejectAbortNack
+from bacpypes3.constructeddata import AnyAtomic, Array
+from bacpypes3.errors import ExecutionError, ObjectError, PropertyError
+from bacpypes3.object import get_vendor_info
 
 # --- 3rd party modules ---
 from bacpypes3.pdu import Address
-from bacpypes3.basetypes import PropertyIdentifier
-from bacpypes3.primitivedata import ObjectIdentifier, Date, Tag, Time, Unsigned
-from bacpypes3.app import Application
-from bacpypes3.errors import (
-    ExecutionError,
-    ObjectError,
-    PropertyError,
-)
-from bacpypes3.object import get_vendor_info
+from bacpypes3.primitivedata import Date, ObjectIdentifier, Tag, Time, Unsigned
+
+from BAC0.core.app.asyncApp import BAC0Application
+
 from ..utils.notes import note_and_log
 
 # --- this application's modules ---
@@ -80,7 +80,6 @@ from .IOExceptions import (
     UnknownPropertyError,
     UnrecognizedService,
 )
-from BAC0.core.app.asyncApp import BAC0Application
 
 # ------------------------------------------------------------------------------
 

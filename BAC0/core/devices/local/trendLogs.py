@@ -1,17 +1,18 @@
+from collections import namedtuple
+
 from bacpypes3.basetypes import (
-    StatusFlags,
-    DateTime,
     Date,
+    DateTime,
     EventState,
-    Time,
+    LoggingType,
     LogRecord,
     LogRecordLogDatum,
-    LoggingType,
     Reliability,
+    StatusFlags,
+    Time,
 )
 from bacpypes3.constructeddata import ListOf
 from bacpypes3.primitivedata import Unsigned
-from collections import namedtuple
 
 PANDAS = True
 try:

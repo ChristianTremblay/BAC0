@@ -1,5 +1,5 @@
 from bacpypes.apdu import SimpleAckPDU, WritePropertyRequest
-from bacpypes.basetypes import EventParameter, DeviceObjectPropertyReference
+from bacpypes.basetypes import DeviceObjectPropertyReference, EventParameter
 from bacpypes.constructeddata import Any
 from bacpypes.core import deferred
 from bacpypes.iocb import IOCB

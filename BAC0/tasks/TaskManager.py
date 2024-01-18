@@ -9,8 +9,8 @@ TaskManager.py - creation of threads used for repetitive tasks.
 
 A key building block for point simulation.
 """
-import time
 import asyncio
+import time
 from random import random
 
 from ..core.io.IOExceptions import DeviceNotConnected

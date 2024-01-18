@@ -14,8 +14,9 @@ try:
 except ImportError:
     _PANDAS = False
 
-from bacpypes.primitivedata import Date, Time
 from collections import namedtuple
+
+from bacpypes.primitivedata import Date, Time
 
 # --- this application's modules ---
 from ..utils.notes import note_and_log

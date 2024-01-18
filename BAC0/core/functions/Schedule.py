@@ -10,16 +10,16 @@ import typing as t
 from datetime import time as dt_time
 
 from bacpypes3.apdu import SimpleAckPDU, WritePropertyRequest
+from bacpypes3.app import Application
 from bacpypes3.basetypes import DailySchedule, TimeValue
 from bacpypes3.constructeddata import Any, ArrayOf
-from bacpypes3.app import Application
 
 # --- 3rd party modules ---
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import Enumerated, Integer, Real
 
-from ...core.utils.notes import note_and_log
 from ...core.app.asyncApp import BAC0Application
+from ...core.utils.notes import note_and_log
 from ..io.IOExceptions import NoResponseFromController
 from ..io.Read import find_reason
 

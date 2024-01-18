@@ -14,15 +14,13 @@ from BAC0.core.devices.local.factory import (
     datetime_value,
     humidity_input,
     humidity_value,
+    make_state_text,
     multistate_input,
     multistate_output,
     multistate_value,
     temperature_input,
     temperature_value,
-    make_state_text
 )
-
-
 
 
 def build():

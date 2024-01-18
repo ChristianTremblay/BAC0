@@ -2,24 +2,21 @@
 Custom Objects and Properties
 """
 
-from bacpypes3.debugging import ModuleLogger
 from bacpypes3.basetypes import PropertyIdentifier
-from bacpypes3.object import VendorInfo
-
-from bacpypes3.local.analog import (
-    AnalogInputObject as _AnalogInputObject,
-    AnalogValueObject as _AnalogValueObject,
-    AnalogOutputObject as _AnalogOutputObject,
-)
+from bacpypes3.debugging import ModuleLogger
+from bacpypes3.local.analog import AnalogInputObject as _AnalogInputObject
+from bacpypes3.local.analog import AnalogOutputObject as _AnalogOutputObject
+from bacpypes3.local.analog import AnalogValueObject as _AnalogValueObject
 from bacpypes3.local.device import DeviceObject as _DeviceObject
 from bacpypes3.local.networkport import NetworkPortObject as _NetworkPortObject
+from bacpypes3.object import VendorInfo
+from bacpypes3.primitivedata import Boolean  # Signed,
 from bacpypes3.primitivedata import (
-    ObjectType,
     Atomic,
-    Boolean,  # Signed,
     CharacterString,
     Date,
     Enumerated,
+    ObjectType,
     Real,
     Time,
     Unsigned,
