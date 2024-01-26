@@ -71,13 +71,13 @@ async def main():
     bacnet = BAC0.lite()
 
     # We'll use 3 devices with our first instance
-    device_app = BAC0.lite(port=47809, deviceId=101)
-    device30_app = BAC0.lite(port=47810, deviceId=102)
-    device300_app = BAC0.lite(port=47811, deviceId=103)
+    device_app = BAC0.lite(port=47809, deviceId=101, localObjName="App1")
+    device30_app = BAC0.lite(port=47810, deviceId=102, localObjName="App2")
+    device300_app = BAC0.lite(port=47811, deviceId=103, localObjName="App3")
 
     add_points(2, device_app)
-    add_points(10, device30_app)
-    add_points(30, device300_app)
+    add_points(3, device30_app)
+    add_points(4, device300_app)
 
     ip = device_app.localIPAddr.addrTuple[0]
     boid = device_app.Boid
@@ -90,10 +90,13 @@ async def main():
 
     # Connect to test device using main network
     test_device = BAC0.device("{}:47809".format(ip), boid, bacnet, poll=10)
-    # test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
-    # test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
+    test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
+    test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
     while True:
-        await asyncio.sleep(0.01)
+        await asyncio.sleep(10)
+        print(test_device.points)
+        (test_device_30.points)
+        (test_device_300.points)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ from bacpypes3.basetypes import (
     Time,
     Unsigned,
 )
+from bacpypes3.app import Application
 from bacpypes3.constructeddata import ArrayOf, ListOf
 from bacpypes3.local.analog import (
     AnalogInputObject,
@@ -24,24 +25,24 @@ from bacpypes3.local.binary import (
     BinaryOutputObject,
     BinaryValueObject,
 )
+from bacpypes3.local.multistate import (
+    MultiStateInputObject,
+    MultiStateOutputObject,
+    MultiStateValueObject,
+)
 from bacpypes3.primitivedata import CharacterString
 
-# from .factory_old import ObjectFactory
 from colorama import Fore
 
 from BAC0.core.devices.local.trendLogs import LocalTrendLog
 
 from ....scripts.Base import Base
-from ...app.asyncApp import BAC0Application
 from ...utils.notes import note_and_log
 from .decorator import bacnet_properties, create, make_commandable, make_outOfService
 from .object import (
     CharacterStringValueObject,
     DateTimeValueObject,
     DateValueObject,
-    MultiStateInputObject,
-    MultiStateOutputObject,
-    MultiStateValueObject,
     TrendLogObject,
 )
 
@@ -94,7 +95,7 @@ class ObjectFactory(object):
         self._properties = ObjectFactory.default_properties(
             objectType, properties, is_commandable, relinquish_default
         )
-        print(f"Obj {objectType} of type {type(objectType)}")
+        # print(f"Obj {objectType} of type {type(objectType)}")
         if objectType is not TrendLogObject:
             pv_datatype = ObjectFactory.get_pv_datatype(objectType)
             self._log.info(f"pv datatype : {pv_datatype}")
@@ -103,17 +104,19 @@ class ObjectFactory(object):
                 if not isinstance(val, datatype):
                     try:
                         val = datatype(val)
-                    except:
-                        raise ValueError(
-                            f"Wrong datatype provided for {val} for {datatype} of type {type(objectType)}"
+                    except TypeError as error:
+                        raise TypeError(
+                            f"Wrong datatype provided for value {val} using datatype {datatype} with target type of {pv_datatype} | {error}"
                         )
                 return val
 
-            presentValue = enforce_datatype(presentValue, pv_datatype)
-            relinquish_default = enforce_datatype(relinquish_default, pv_datatype)
-        
-        @make_commandable()
+            if presentValue is not None:
+                presentValue = enforce_datatype(presentValue, pv_datatype)
+            if relinquish_default is not None:
+                relinquish_default = enforce_datatype(relinquish_default, pv_datatype)
+
         @bacnet_properties(self._properties)
+        @make_commandable()
         def _create_commandable(
             objectType, instance, objectName, presentValue, description
         ):
@@ -122,8 +125,8 @@ class ObjectFactory(object):
             )
             return create(objectType, instance, objectName, presentValue, description)
 
-        @make_outOfService()
         @bacnet_properties(self._properties)
+        @make_outOfService()
         def _create_outOfService(
             objectType, instance, objectName, presentValue, description
         ):
@@ -137,16 +140,12 @@ class ObjectFactory(object):
             objectType, objectName, instance
         )
 
-        if is_commandable is True and not isinstance(
-            objectType, (AnalogInputObject, BinaryInputObject, MultiStateInputObject)
-        ):
-            self.objects[objectName] = _create_commandable(
+        if objectType in (AnalogInputObject, BinaryInputObject, MultiStateInputObject):
+            self.objects[objectName] = _create_outOfService(
                 objectType, instance, objectName, presentValue, description
             )
-        elif isinstance(
-            objectType, (AnalogInputObject, BinaryInputObject, MultiStateInputObject)
-        ):
-            self.objects[objectName] = _create_outOfService(
+        elif is_commandable is True:
+            self.objects[objectName] = _create_commandable(
                 objectType, instance, objectName, presentValue, description
             )
         else:
@@ -205,26 +204,9 @@ class ObjectFactory(object):
             relinquish_default=definition["relinquish_default"],
         )
 
-    # DEPRECATED
-    # @staticmethod
-    # def properties_for(objectType):
-    #    prop_list = {}
-    #    for prop in objectType.properties:
-    #        prop_list[prop.identifier] = {
-    #            "datatype": prop.datatype,
-    #            "optional": prop.optional,
-    #            "mutable": prop.mutable,
-    #            "default": prop.default,
-    #        }
-    #    return prop_list
-
     @staticmethod
     def get_pv_datatype(objectType):
         return objectType.get_property_type("presentValue")
-        # for prop in objectType.properties:
-        #    if prop.identifier == "presentValue":
-        #        return prop.datatype
-        # raise KeyError("Unknown")
 
     @staticmethod
     def clear_objects():
@@ -233,8 +215,8 @@ class ObjectFactory(object):
 
     def add_objects_to_application(self, app):
         if isinstance(app, Base):
-            app = app.app
-        if not (isinstance(app, BAC0Application)):
+            app = app.this_application.app
+        if not (isinstance(app, Application)):
             raise TypeError("Provide BAC0Application object or BAC0 Base instance")
         for k, v in self.objects.items():
             try:
@@ -255,8 +237,6 @@ class ObjectFactory(object):
         _properties = properties or {}
         if "statusFlags" not in _properties.keys():
             _properties["statusFlags"] = [0, 0, 0, 0]
-        # if "reliability" not in _properties.keys():
-        #    _properties["reliability"] = Reliability(0)
         if (
             "analog" in objectType.__name__.lower()
             and "units" not in _properties.keys()
@@ -267,12 +247,6 @@ class ObjectFactory(object):
             or "output" in objectType.__name__.lower()
         ):
             pass
-            #_properties["outOfService"] = False
-        #if is_commandable:
-        #    #_properties["priorityArray"] = PriorityArray()
-        #    _properties["relinquishDefault"] = ObjectFactory.relinquish_default_value(
-        #        objectType, relinquish_default
-        #    )
         return _properties
 
     @staticmethod
@@ -369,8 +343,8 @@ def analog(**kwargs):
             # "covIncrement": 0.15,
         },
         "presentValue": 0,
-        "is_commandable": False,
-        "relinquish_default": 0,
+        # "is_commandable": False,
+        # "relinquish_default": 0,
     }
     return _create(definition, **kwargs)
 
@@ -388,7 +362,7 @@ def analog_output(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "AO", **kwargs)
     kwargs["objectType"] = AnalogOutputObject
     kwargs["instance"] = set_default_if_not_provided("instance", 0, **kwargs)
-    kwargs["is_commandable"] = True
+    # kwargs["is_commandable"] = True
 
     return analog(**kwargs)
 
@@ -431,7 +405,7 @@ def binary_input(**kwargs):
 def binary_output(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "BO", **kwargs)
     kwargs["objectType"] = BinaryOutputObject
-    kwargs["is_commandable"] = True
+    # kwargs["is_commandable"] = True
     try:
         kwargs["properties"].update({"polarity": Polarity("normal")})
     except KeyError:
@@ -467,7 +441,7 @@ def multistate(**kwargs):
 def multistate_input(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "MSI", **kwargs)
     kwargs["objectType"] = MultiStateInputObject
-    kwargs["is_commandable"] = True
+    # kwargs["is_commandable"] = True
     kwargs["relinquish_default"] = Unsigned(1)
 
     return multistate(**kwargs)
@@ -476,7 +450,7 @@ def multistate_input(**kwargs):
 def multistate_output(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "MSO", **kwargs)
     kwargs["objectType"] = MultiStateOutputObject
-    kwargs["is_commandable"] = True
+    # kwargs["is_commandable"] = True
     kwargs["relinquish_default"] = Unsigned(1)
 
     return multistate(**kwargs)
@@ -535,10 +509,10 @@ def date_value(**kwargs):
         "objectType": DateValueObject,
         "instance": 0,
         "description": "No description",
-        "presentValue": Date(),
+        "presentValue": Date().now(),
         "properties": {},
         "is_commandable": False,
-        "relinquish_default": "inactive",
+        # "relinquish_default": "inactive",
     }
     return _create(definition, **kwargs)
 
@@ -549,10 +523,10 @@ def datetime_value(**kwargs):
         "objectType": DateTimeValueObject,
         "instance": 0,
         "description": "No description",
-        "presentValue": DateTime(date=Date().now().value, time=Time().now().value),
+        "presentValue": DateTime(date=Date().now(), time=Time().now()),
         "properties": {},
         "is_commandable": False,
-        "relinquish_default": "inactive",
+        # "relinquish_default": "inactive",
     }
     return _create(definition, **kwargs)
 

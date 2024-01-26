@@ -23,7 +23,7 @@ from bacpypes3.basetypes import (
     ProtocolLevel,
     Segmentation,
     ServicesSupported,
-    ObjectTypesSupported
+    ObjectTypesSupported,
 )
 from bacpypes3.json.util import sequence_to_json
 from bacpypes3.local.device import DeviceObject
@@ -42,8 +42,6 @@ from ..core.functions.TimeSync import TimeHandler
 from ..core.io.IOExceptions import InitializationError, UnknownObjectError
 from ..core.utils.notes import note_and_log
 from ..tasks.TaskManager import stopAllTasks
-
-from ..core.devices.local.object import MultiStateInputObject, MultiStateOutputObject, MultiStateValueObject, TrendLogObject
 
 # --- 3rd party modules ---
 
@@ -125,7 +123,9 @@ class Base:
         except RuntimeError:
             pass  # we are re-running the script... forgive us
             _BAC0_vendor = get_vendor_info(vendorId)
-        _BAC0_vendor.register_object_class(ObjectTypesSupported.networkPort, NetworkPortObject)
+        _BAC0_vendor.register_object_class(
+            ObjectTypesSupported.networkPort, NetworkPortObject
+        )
         _BAC0_vendor.register_object_class(ObjectTypesSupported.device, DeviceObject)
 
         self.timehandler = TimeHandler()
@@ -202,7 +202,6 @@ class Base:
         """
         self._log.debug("Create Local Device")
         try:
-
             app_type = "BACnet/IP App"
 
             class config(defaultdict):
@@ -229,17 +228,16 @@ class Base:
                 },
                 "device": {
                     "object-name": self.localObjName,
-                    #"firmware-revision": self.firmwareRevision,
+                    # "firmware-revision": self.firmwareRevision,
                     "vendor-identifier": self.vendorId,
                     "vendor-name": "Servisys inc.",
                     "object-identifier": f"device,{self.Boid}",
                     "object-list": [f"device,{self.Boid}", "network-port,1"],
                     "model-name": self.modelName,
-                    #"max-apdu-length-accepted": self.maxAPDULengthAccepted,
-                    #"max-segments-accepted": self.maxSegmentsAccepted,
-                    #"location": self.location,
-                    #"description": self.description
-
+                    # "max-apdu-length-accepted": self.maxAPDULengthAccepted,
+                    # "max-segments-accepted": self.maxSegmentsAccepted,
+                    # "location": self.location,
+                    # "description": self.description
                 },
                 "network-port": {
                     "ip-address": str(self.localIPAddr),
@@ -257,7 +255,6 @@ class Base:
             self._initialized = True
 
             try:
-                # self._startAppThread()
                 Base._used_ips.add(self.localIPAddr)
                 self._log.info("Registered as {}".format(app_type))
                 self._started = True
@@ -268,11 +265,10 @@ class Base:
         except OSError as error:
             self._log.error("an error has occurred: {}".format(error))
             raise InitializationError("Error starting app: {}".format(error))
-        finally:
             self._log.debug("finally")
 
     def register_foreign_device(self, addr=None, ttl=0):
-        #self.this_application.register_to_bbmd(addr, ttl)
+        # self.this_application.register_to_bbmd(addr, ttl)
         raise NotImplementedError()
 
     def unregister_foreign_device(self):
@@ -293,10 +289,6 @@ class Base:
         self._started = False
         Base._used_ips.discard(self.localIPAddr)
         self._log.info("BACnet stopped")
-
-    #    @property
-    #    def routing_table(self):
-    #        return self.this_application.nse._routing_table or {}
 
     @property
     def routing_table(self):

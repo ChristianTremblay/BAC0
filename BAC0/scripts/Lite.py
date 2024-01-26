@@ -5,20 +5,9 @@
 # Licensed under LGPLv3, see file LICENSE in this source tree.
 #
 """
-ReadWriteScript - extended version of BasicScript.py
-
-As everything is handled by the BasicScript, select the additional features you want::
-
-    # Create a class that implements a basic script with read and write functions
-    from BAC0.scripts.BasicScript import BasicScript
-    from BAC0.core.io.Read import ReadProperty
-    from BAC0.core.io.Write import WriteProperty
-    class ReadWriteScript(BasicScript,ReadProperty,WriteProperty)
-
-Once the class is created, create the local object and use it::
-
-    bacnet = ReadWriteScript(localIPAddr = '192.168.1.10')
-    bacnet.read('2:5 analogInput 1 presentValue)
+Lite is the base class to create a BACnet network
+It uses provided args to register itself as a device in the network
+and allow communication with other devices.
 
 """
 import typing as t
@@ -365,7 +354,7 @@ class Lite(
         )
 
     def __getitem__(self, boid_or_localobject):
-        item = self.this_application.objectName[boid_or_localobject]
+        item = self.this_application.app.objectName[boid_or_localobject]
         if item is None:
             for device in self._registered_devices:
                 if str(device.properties.device_id) == str(boid_or_localobject):

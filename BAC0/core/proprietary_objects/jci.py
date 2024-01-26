@@ -9,7 +9,7 @@ from bacpypes3.local.analog import AnalogOutputObject as _AnalogOutputObject
 from bacpypes3.local.analog import AnalogValueObject as _AnalogValueObject
 from bacpypes3.local.device import DeviceObject as _DeviceObject
 from bacpypes3.local.networkport import NetworkPortObject as _NetworkPortObject
-from bacpypes3.object import VendorInfo
+from bacpypes3.vendor import VendorInfo
 from bacpypes3.primitivedata import Boolean  # Signed,
 from bacpypes3.primitivedata import (
     Atomic,
@@ -29,10 +29,7 @@ _log = ModuleLogger(globals())
 
 # this vendor identifier reference is used when registering custom classes
 _vendor_id = 5
-#
-#   Proprietary Objects and their attributes
-#   https://cgproducts.johnsoncontrols.com/MET_PDF/12013102.pdf
-#
+_vendor_name = "Johnson Controls"
 
 
 class ProprietaryObjectType(ObjectType):
@@ -140,13 +137,6 @@ class ProprietaryPropertyIdentifier(PropertyIdentifier):
     MAX_OUT_VALUE = 653
     # polarity = polarity
     stroketime = 3478
-
-
-# create a VendorInfo object for this custom application before registering
-# specialize object classes
-custom_vendor_info = VendorInfo(
-    _vendor_id, ProprietaryObjectType, ProprietaryPropertyIdentifier
-)
 
 
 class DeviceObject(_DeviceObject):

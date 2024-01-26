@@ -12,7 +12,7 @@ from bacpypes3.object import (
 )
 from bacpypes3.primitivedata import Boolean, CharacterString, Date, Time
 
-from .mixins.CommandableMixin import LocalBinaryOutputObjectCmd
+from .CommandableMixin import LocalBinaryOutputObjectCmd
 
 
 # THIS IS DEPRECATED

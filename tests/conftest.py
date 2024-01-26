@@ -13,7 +13,7 @@ import pytest
 import pytest_asyncio
 
 import BAC0
-from BAC0.core.devices.local.models import (
+from BAC0.core.devices.local.factory import (
     analog_input,
     analog_output,
     analog_value,
@@ -32,7 +32,7 @@ from BAC0.core.devices.local.models import (
     temperature_input,
     temperature_value,
 )
-from BAC0.core.devices.local.object import ObjectFactory
+from BAC0.core.devices.local.factory_old import ObjectFactory
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio

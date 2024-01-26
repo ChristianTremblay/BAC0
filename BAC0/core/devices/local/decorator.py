@@ -1,9 +1,9 @@
 from functools import wraps
 
-from bacpypes3.basetypes import EngineeringUnits
-from bacpypes3.local.cmd import Commandable
+from bacpypes3.basetypes import EngineeringUnits, PriorityValue
+from bacpypes3.local.cmd import Commandable, PriorityArray
 from bacpypes3.local.oos import OutOfService
-from bacpypes3.object import TrendLogObject
+from bacpypes3.object import TrendLogObject, Object as _Object
 from bacpypes3.primitivedata import CharacterString
 
 _SHOULD_BE_COMMANDABLE = ["relinquishDefault", "outOfService", "lowLimit", "highLimit"]
@@ -62,7 +62,7 @@ This decorator works the same than commandable. Could serve as a way to add beha
 """
 
 
-def _allowed_prop(obj):
+"""def _allowed_prop(obj):
     allowed_prop = {}
     # print(obj.propertyList)
     for each in obj.propertyList:
@@ -73,17 +73,49 @@ def _allowed_prop(obj):
                 allowed_prop[each.identifier] = each.get_datatype()
         except AttributeError:
             pass
-    return allowed_prop
+    return allowed_prop"""
 
 
-def _mutable(property_name, force_mutable=False):
+"""def _mutable(property_name, force_mutable=False):
     if property_name in _SHOULD_BE_COMMANDABLE and not force_mutable:
         mutable = True
     elif force_mutable:
         mutable = force_mutable
     else:
         mutable = False
-    return mutable
+    return mutable"""
+
+_required_binary_input = (
+    "presentValue",
+    "statusFlags",
+    "eventState",
+    "outOfService",
+    "polarity",
+)
+
+_required_binary_output = (
+    "presentValue",
+    "statusFlags",
+    "eventState",
+    "outOfService",
+    "polarity",
+    "priorityArray",
+    "relinquishDefault",
+    "currentCommandPriority",
+)
+
+_required_analog_output = (
+    "presentValue",
+    "statusFlags",
+    "eventState",
+    "outOfService",
+    "polarity",
+    "priorityArray",
+    "relinquishDefault",
+    "currentCommandPriority",
+)
+
+_required_analog_value = ("priorityArray",)
 
 
 def make_commandable():
@@ -94,19 +126,20 @@ def make_commandable():
                 obj = func(*args, **kwargs)
             else:
                 obj = func
-            # allowed_prop = _allowed_prop(obj)
             _type = obj.get_property_type("presentValue")
             base_cls = obj.__class__
             base_cls_name = obj.__class__.__name__ + "Cmd"
-            new_type = type(base_cls_name, (base_cls, Commandable), {})
-            new_type.__name__ = base_cls_name
-            # register_object_type(new_type, vendor_id=842)
+            new_type = type(
+                base_cls_name,
+                (Commandable, base_cls),
+                {"_required": "priorityArray"},
+            )
             objectType, instance, objectName, presentValue, description = args
             new_object = new_type(
                 objectIdentifier=(base_cls.objectType, instance),
-                objectName="{}".format(objectName),
+                objectName=f"{objectName}",
                 presentValue=presentValue,
-                description=CharacterString("{}".format(description)),
+                description=CharacterString(f"{description}"),
             )
             return new_object
 
@@ -124,16 +157,18 @@ def make_outOfService():
             else:
                 obj = func
             base_cls = obj.__class__
-            base_cls_name = obj.__class__.__name__ + "Cmd"
-            new_type = type(base_cls_name, (base_cls, OutOfService), {})
-            new_type.__name__ = base_cls_name
-            # register_object_type(new_type, vendor_id=842)
+            base_cls_name = obj.__class__.__name__ + "OOS"
+            new_type = type(
+                base_cls_name,
+                (OutOfService, base_cls),
+                {},
+            )
             objectType, instance, objectName, presentValue, description = args
             new_object = new_type(
                 objectIdentifier=(base_cls.objectType, instance),
-                objectName="{}".format(objectName),
+                objectName=f"{objectName}",
                 presentValue=presentValue,
-                description=CharacterString("{}".format(description)),
+                description=CharacterString(f"{description}"),
             )
             return new_object
 
@@ -156,7 +191,7 @@ def add_feature(cls):
             instance, objectName, presentValue, description = args
             new_object = new_type(
                 objectIdentifier=(base_cls.objectType, instance),
-                objectName="{}".format(objectName),
+                objectName=f"{objectName}",
                 presentValue=presentValue,
                 description=CharacterString("{}".format(description)),
             )
@@ -188,13 +223,6 @@ def bacnet_properties(properties):
                     obj.__setattr__("units", new_prop)
                 else:
                     try:
-                        # mutable = _mutable(property_name)
-                        # new_prop = Property(
-                        #    property_name,
-                        #    allowed_prop[property_name],
-                        #    default=value,
-                        #    mutable=mutable,
-                        # )
                         property_type = obj.get_property_type(property_name)
                         print(
                             f"Adding {property_name} of type {property_type} with value {value} to {obj}"
@@ -204,7 +232,6 @@ def bacnet_properties(properties):
                         raise ValueError(
                             f"Invalid property ({property_name}) for object | {error}"
                         )
-                    # obj.add_property(new_prop)
             return obj
 
         return wrapper
@@ -216,15 +243,15 @@ def create(object_type, instance, objectName, value, description):
     if object_type is TrendLogObject:
         new_object = object_type(
             objectIdentifier=(object_type.objectType, instance),
-            objectName="{}".format(objectName),
+            objectName=f"{objectName}",
             logBuffer=value,
-            description=CharacterString("{}".format(description)),
+            description=CharacterString("{description}"),
         )
     else:
         new_object = object_type(
             objectIdentifier=(object_type.objectType, instance),
-            objectName="{}".format(objectName),
+            objectName=f"{objectName}",
             presentValue=value,
-            description=CharacterString("{}".format(description)),
+            description=CharacterString(f"{description}"),
         )
     return new_object

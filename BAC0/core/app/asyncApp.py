@@ -1,44 +1,8 @@
-import asyncio
 import json
 import os
-import sys
-from asyncio import AbstractEventLoop, Future
-from threading import Thread
-from typing import Coroutine
 
-from bacpypes3.apdu import ErrorRejectAbortNack
 from bacpypes3.app import Application
-from bacpypes3.basetypes import (
-    BDTEntry,
-    DeviceStatus,
-    HostNPort,
-    IPMode,
-    IPv4OctetString,
-    NetworkType,
-    ProtocolLevel,
-    Segmentation,
-    ServicesSupported,
-)
-from bacpypes3.comm import bind
-from bacpypes3.constructeddata import AnyAtomic
-from bacpypes3.ipv4 import IPv4DatagramServer
-from bacpypes3.ipv4.app import BBMDApplication, ForeignApplication, NormalApplication
-
-# for BVLL services
-from bacpypes3.ipv4.bvll import Result as IPv4BVLLResult
-from bacpypes3.ipv4.link import BBMDLinkLayer, ForeignLinkLayer, NormalLinkLayer
-from bacpypes3.ipv4.service import (
-    BIPBBMD,
-    BIPForeign,
-    BIPNormal,
-    BVLLServiceAccessPoint,
-    BVLLServiceElement,
-)
-from bacpypes3.pdu import Address, IPv4Address
-from bacpypes3.primitivedata import ObjectIdentifier, ObjectType
-from bacpypes3.vendor import get_vendor_info
-
-from BAC0.core.functions.GetIPAddr import HostIP
+from bacpypes3.basetypes import BDTEntry, HostNPort
 
 from ...core.utils.notes import note_and_log
 
@@ -48,15 +12,15 @@ class BAC0Application:
     """
     Use bacpypes3 helpers to generate a BACnet application following
     the arguments given to BAC0.
-    Everythign rely on the creation of the device object and the 
-    network port object. The BACnet mode in the network port object 
+    Everythign rely on the creation of the device object and the
+    network port object. The BACnet mode in the network port object
     will also create the correct version of the link layer (normal, foreign, bbmd)
 
-    I chose to keep the JSON file option over the arguments only and this way, 
+    I chose to keep the JSON file option over the arguments only and this way,
     I do not close the door to applications that could be entirely defined
     using a JSON file, instead of being dynamic-only.
 
-    This is why I read a JSON file, update it with information from BAC0 
+    This is why I read a JSON file, update it with information from BAC0
     command line, and use bacpypes3 from_json to generate the app.
 
     A very important thing is to use the bacpypes3.local.objects version
@@ -72,81 +36,15 @@ class BAC0Application:
 
     def __init__(self, cfg, addr, json_file=None):
         self._cfg = cfg  # backup what we wanted
-
         self.cfg = self.update_config(cfg, json_file)
         self.localIPAddr = addr
         self.bdt = self._cfg["BAC0"]["bdt"]
         self.device_cfg, self.networkport_cfg = self.cfg["application"]
-
-        # self.foreign_bbmd()
         self._log.info(f"Configuration sent to build application : {self.cfg}")
         self.app = Application.from_json(self.cfg["application"])
 
-    def bind_interface(self, addr):
-        self.app.link_layers = {}
-
-        self._log.info(f"Bind interface {addr} | {addr.netmask} | {addr.addrPort}")
-        np = self.app.get_object_name("NetworkPort-1")
-        link_address = np.address
-        if self.get_bacnet_ip_mode() == IPMode.foreign:
-            self.add_foreign_device_host(self._cfg["BAC0"]["bbmdAddress"])
-            link_layer = ForeignLinkLayer(link_address)
-            # start the registration process
-            self.app.link_layers[np.objectIdentifier] = link_layer
-            link_layer.register(np.fdBBMDAddress.address, np.fdSubscriptionLifetime)
-            # let the NSAP know about this link layer
-            self.app.nsap.bind(link_layer, address=link_address)
-        elif self.get_bacnet_ip_mode() == IPMode.bbmd:
-            link_layer = BBMDLinkLayer(link_address)
-            self.app.link_layers[np.objectIdentifier] = link_layer
-            for bdt_entry in np.bbmdBroadcastDistributionTable:
-                link_layer.add_peer(bdt_entry.address)
-            # let the NSAP know about this link layer
-            self.app.nsap.bind(link_layer, address=link_address)
-        else:
-            link_layer = NormalLinkLayer(link_address)
-            # let the NSAP know about this link layer
-            if np.networkNumber == 0:
-                self.app.nsap.bind(link_layer, address=link_address)
-            else:
-                self.app.nsap.bind(
-                    link_layer, net=np.networkNumber, address=link_address
-                )
-
-        """
-        # pick out the BVLL service access point from the local adapter
-        local_adapter = self.app.nsap.local_adapter
-
-        assert local_adapter
-        bvll_sap = local_adapter.clientPeer
-        
-
-        # only IPv4 for now
-        if isinstance(bvll_sap, BVLLServiceAccessPoint):
-            # create a BVLL application service element
-            bvll_ase = BVLLServiceElement()
-            bind(bvll_ase, bvll_sap)
-        """
-
-    def foreign_bbmd(self):
-        # maybe this is a foreign device
-        np = self.cfg["application"][1]
-        if self._cfg["BAC0"]["bbmdAddress"] is not None:
-            self._log.info("This application will act as a Foreign Device")
-            np["bacnet-ip-mode"] = "foreign"
-            _addr, _port = self._cfg["BAC0"]["bbmdAddress"].split(":")
-            hnp = HostNPort(self._cfg["BAC0"]["bbmdAddress"])
-            # np["fd-bbmd-address"] = {'host': {'ip-address': str(hnp.host.ipAddress)}, 'port': hnp.port}
-            np["fd-subscription-lifetime"] = self._cfg["BAC0"]["ttl"]
-
-        # maybe this is a BBMD
-        if self._cfg["BAC0"]["bdt"] is not None:
-            self._log.info("This application will act as a BBMD")
-            np["bacnet-ip-mode"] = "bbmd"
-            np["bbmd-accept-fd-registration"] = "true"
-            np["bbmd-foreign-device-table"] = []
-
     def add_foreign_device_host(self, host):
+        "TODO : Should be able to add to the existing list..."
         np = self.app.get_object_name("NetworkPort-1")
         hnp = HostNPort(host)
         np.fdBBMDAddress = hnp
