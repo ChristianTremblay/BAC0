@@ -1,5 +1,3 @@
-from bacpypes3.constructeddata import ArrayOf, ListOf
-from bacpypes3.local.cov import COVIncrementCriteria
 from bacpypes3.local.object import Object as _Object
 
 from bacpypes3.object import CharacterStringValueObject as _CharacterStringValueObject

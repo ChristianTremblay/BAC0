@@ -1,9 +1,9 @@
 from functools import wraps
 
-from bacpypes3.basetypes import EngineeringUnits, PriorityValue
-from bacpypes3.local.cmd import Commandable, PriorityArray
+from bacpypes3.basetypes import EngineeringUnits
+from bacpypes3.local.cmd import Commandable
 from bacpypes3.local.oos import OutOfService
-from bacpypes3.object import TrendLogObject, Object as _Object
+from bacpypes3.object import TrendLogObject
 from bacpypes3.primitivedata import CharacterString
 
 _SHOULD_BE_COMMANDABLE = ["relinquishDefault", "outOfService", "lowLimit", "highLimit"]

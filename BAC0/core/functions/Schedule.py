@@ -9,7 +9,7 @@ import typing as t
 # --- standard Python modules ---
 from datetime import time as dt_time
 
-from bacpypes3.apdu import SimpleAckPDU, WritePropertyRequest
+from bacpypes3.apdu import WritePropertyRequest
 from bacpypes3.app import Application
 from bacpypes3.basetypes import DailySchedule, TimeValue
 from bacpypes3.constructeddata import Any, ArrayOf
@@ -20,8 +20,6 @@ from bacpypes3.primitivedata import Enumerated, Integer, Real
 
 from ...core.app.asyncApp import BAC0Application
 from ...core.utils.notes import note_and_log
-from ..io.IOExceptions import NoResponseFromController
-from ..io.Read import find_reason
 
 
 @note_and_log

@@ -7,7 +7,6 @@ Test BAC0.connect
 
 import time
 
-import pytest
 
 import BAC0
 

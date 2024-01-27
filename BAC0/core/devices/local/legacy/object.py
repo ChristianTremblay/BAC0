@@ -72,7 +72,7 @@ class ObjectFactory(object):
             if not isinstance(presentValue, pv_datatype):
                 try:
                     presentValue = pv_datatype(presentValue)
-                except:
+                except Exception:
                     raise ValueError(
                         f"Wrong datatype provided for presentValue for {objectType} of type {type(objectType)}"
                     )

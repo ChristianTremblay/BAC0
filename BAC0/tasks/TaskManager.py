@@ -13,7 +13,6 @@ import asyncio
 import time
 from random import random
 
-from ..core.io.IOExceptions import DeviceNotConnected
 
 # --- 3rd party modules ---
 # --- this application's modules ---
@@ -83,7 +82,7 @@ class Task(object):
                 if self.previous_execution:
                     self._log.debug(f"Previous execution : {self.previous_execution}")
                 else:
-                    self._log.debug(f"First Run")
+                    self._log.debug("First Run")
 
                 self.average_latency = (
                     self.average_latency + (_start_time - self.next_execution)

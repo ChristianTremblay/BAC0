@@ -20,12 +20,10 @@ Read.py - creation of ReadProperty and ReadPropertyMultiple requests
 
 """
 
-import asyncio
 import re
 
 # --- standard Python modules ---
 import typing as t
-from collections import namedtuple
 
 # from bacpypes3.core import deferred
 # from bacpypes.iocb import IOCB, TimeoutError
@@ -37,10 +35,7 @@ from bacpypes3.apdu import (
     PropertyReference,
     Range,
     ReadAccessSpecification,
-    ReadPropertyACK,
-    ReadPropertyMultipleACK,
     ReadPropertyMultipleRequest,
-    ReadPropertyRequest,
     ReadRangeACK,
     ReadRangeRequest,
     RejectPDU,
@@ -49,20 +44,17 @@ from bacpypes3.apdu import (
 from bacpypes3.app import Application
 from bacpypes3.basetypes import (
     DateTime,
-    LogRecord,
-    LogRecordLogDatum,
     PropertyIdentifier,
     RangeByPosition,
     RangeBySequenceNumber,
     RangeByTime,
 )
-from bacpypes3.constructeddata import AnyAtomic, Array
-from bacpypes3.errors import ExecutionError, ObjectError, PropertyError
+from bacpypes3.errors import ObjectError, PropertyError
 from bacpypes3.object import get_vendor_info
 
 # --- 3rd party modules ---
 from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import Date, ObjectIdentifier, Tag, Time, Unsigned
+from bacpypes3.primitivedata import Date, ObjectIdentifier, Tag, Time
 
 from BAC0.core.app.asyncApp import BAC0Application
 
@@ -71,9 +63,6 @@ from ..utils.notes import note_and_log
 # --- this application's modules ---
 from .IOExceptions import (
     ApplicationNotStarted,
-    NoResponseFromController,
-    ReadPropertyException,
-    ReadPropertyMultipleException,
     ReadRangeException,
     SegmentationNotSupported,
     UnknownObjectError,
@@ -151,13 +140,13 @@ class ReadProperty:
         except ErrorRejectAbortNack as err:
             response = err
             self._log.error(f"Error : {err}")
-        except ObjectError as err:
+        except ObjectError:
             raise UnknownObjectError(f"Unknown object {args}")
 
         # except bufferOverflow
         # except NoResponseFromController
 
-        except PropertyError as err:
+        except PropertyError:
             if "description" in args:
                 self._log.warning(
                     "The description property is not implemented in the device. "
@@ -862,7 +851,7 @@ def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
             subtype_tag = propertyValue.tagList.tagList[0].tagList[0].tagNumber
             datatype = ArrayOf(Tag._app_tag_class[subtype_tag])
         value = {f"{obj_id}_{prop_id}": propertyValue.cast_out(datatype)}
-    except:
+    except Exception:
         value = {f"{obj_id}_{prop_id}": propertyValue}
     return value
 

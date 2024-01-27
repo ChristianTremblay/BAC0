@@ -13,16 +13,9 @@ import typing as t
 from collections import defaultdict
 
 # --- standard Python modules ---
-from bacpypes3.app import Application
 from bacpypes3.basetypes import (
-    BDTEntry,
     DeviceStatus,
     HostNPort,
-    IPMode,
-    NetworkType,
-    ProtocolLevel,
-    Segmentation,
-    ServicesSupported,
     ObjectTypesSupported,
 )
 from bacpypes3.json.util import sequence_to_json
@@ -33,7 +26,6 @@ from bacpypes3.primitivedata import CharacterString
 from bacpypes3.vendor import VendorInfo, get_vendor_info
 
 # --- this application's modules ---
-from .. import infos
 from ..core.app.asyncApp import (
     BAC0Application,
 )  # BAC0BBMDDeviceApplication,; BAC0ForeignDeviceApplication,
@@ -44,14 +36,6 @@ from ..core.utils.notes import note_and_log
 from ..tasks.TaskManager import stopAllTasks
 
 # --- 3rd party modules ---
-
-
-try:
-    import pandas
-
-    _COMPLETE = True
-except ImportError:
-    _COMPLETE = False
 
 # ------------------------------------------------------------------------------
 
@@ -129,14 +113,6 @@ class Base:
         _BAC0_vendor.register_object_class(ObjectTypesSupported.device, DeviceObject)
 
         self.timehandler = TimeHandler()
-
-        if not _COMPLETE:
-            self._log.debug(
-                "To be able to run the web server, you must install pandas, bokeh, flask and flask_bootstrap"
-            )
-            self._log.debug(
-                "Those are not all installed so BAC0 will work in Lite mode only."
-            )
 
         self.response = None
         self._initialized = False

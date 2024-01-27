@@ -287,7 +287,7 @@ class Discover:
                 )
             else:
                 request.pduDestination = LocalBroadcast()
-        except:
+        except Exception:
             self._log.error("WhoIsRouterToNetwork : invalid arguments")
             return
         iocb = IOCB((self.this_application.nsap.local_adapter, request))  # make an IOCB
@@ -312,7 +312,7 @@ class Discover:
         try:
             request = InitializeRoutingTable()
             request.pduDestination = Address(address)
-        except:
+        except Exception:
             self._log.error("invalid arguments")
             return
 

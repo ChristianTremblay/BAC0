@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import pytest
 
 
 def test_WhoHas(network_and_devices):

@@ -7,7 +7,6 @@ Test Bacnet communication with another device
 import time
 
 import pytest
-from bacpypes.primitivedata import CharacterString
 
 NEWCSVALUE = "New_Test"
 

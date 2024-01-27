@@ -1,6 +1,5 @@
 import time
 
-from bacpypes.primitivedata import Real
 
 import BAC0
 from BAC0.core.devices.local.models import analog_value

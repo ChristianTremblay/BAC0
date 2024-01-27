@@ -1,36 +1,9 @@
 import pytest
 from bacpypes.constructeddata import (
-    Any,
     Array,
-    ArrayOf,
-    Choice,
-    Element,
-    List,
-    ListOf,
-    Sequence,
 )
 from bacpypes.object import (
-    AnalogInputObject,
-    AnalogOutputObject,
-    AnalogValueObject,
-    BinaryInputObject,
-    BinaryOutputObject,
     BinaryValueObject,
-    DeviceObject,
-    Object,
-    Property,
-    register_object_type,
-)
-from bacpypes.primitivedata import (
-    Atomic,
-    Boolean,
-    CharacterString,
-    Date,
-    Enumerated,
-    OctetString,
-    Real,
-    Time,
-    Unsigned,
 )
 
 from BAC0.core.proprietary_objects.legacy.object import create_proprietary_object

@@ -1,14 +1,11 @@
-import asyncio
 
-from bacpypes3.apdu import SimpleAckPDU, WritePropertyRequest
+from bacpypes3.apdu import WritePropertyRequest
 from bacpypes3.app import Application
 from bacpypes3.constructeddata import Any
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import CharacterString
 
 from BAC0.core.app.asyncApp import BAC0Application
-from BAC0.core.io.IOExceptions import NoResponseFromController, WritePropertyException
-from BAC0.core.io.Read import find_reason
 
 
 class TextMixin:

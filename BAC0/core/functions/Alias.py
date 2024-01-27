@@ -1,9 +1,6 @@
 import asyncio
-import typing as t
 
 from bacpypes3.app import Application
-from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import ObjectIdentifier
 
 from BAC0.core.app.asyncApp import BAC0Application
 

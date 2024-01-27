@@ -1,12 +1,9 @@
 import asyncio
-import time
-from collections import namedtuple
 
 import BAC0
 from BAC0.core.devices.local.factory import (
     ObjectFactory,
     analog_input,
-    analog_output,
     analog_value,
     binary_input,
     binary_output,
@@ -14,14 +11,9 @@ from BAC0.core.devices.local.factory import (
     character_string,
     date_value,
     datetime_value,
-    humidity_input,
-    humidity_value,
     make_state_text,
     multistate_input,
     multistate_output,
-    multistate_value,
-    temperature_input,
-    temperature_value,
 )
 
 
@@ -93,10 +85,10 @@ async def main():
     test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
     test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
     while True:
-        await asyncio.sleep(10)
-        print(test_device.points)
-        (test_device_30.points)
-        (test_device_300.points)
+        await asyncio.sleep(0.01)
+        #print(test_device.points)
+        #(test_device_30.points)
+        #(test_device_300.points)
 
 
 if __name__ == "__main__":

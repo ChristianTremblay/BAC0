@@ -6,7 +6,6 @@ Test Bacnet communication with another device
 """
 
 import asyncio
-import time
 from collections import namedtuple
 
 import pytest
@@ -14,6 +13,7 @@ import pytest_asyncio
 
 import BAC0
 from BAC0.core.devices.local.factory import (
+    ObjectFactory,
     analog_input,
     analog_output,
     analog_value,
@@ -23,16 +23,11 @@ from BAC0.core.devices.local.factory import (
     character_string,
     date_value,
     datetime_value,
-    humidity_input,
-    humidity_value,
     make_state_text,
     multistate_input,
     multistate_output,
     multistate_value,
-    temperature_input,
-    temperature_value,
 )
-from BAC0.core.devices.local.factory_old import ObjectFactory
 
 # All test coroutines will be treated as marked.
 pytestmark = pytest.mark.asyncio

@@ -8,7 +8,6 @@
 TimeSync.py - creation of time synch requests
 
 """
-import asyncio
 
 # --- standard Python modules ---
 import datetime as dt

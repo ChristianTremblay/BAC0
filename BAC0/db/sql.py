@@ -233,7 +233,7 @@ class SQLMixin(object):
             try:
                 data = pd.read_sql("SELECT * FROM history", con)
                 df = pd.concat([data, df_to_backup], sort=True)
-            except:
+            except Exception:
                 df = df_to_backup
 
             sql.to_sql(

@@ -399,13 +399,7 @@ class Point:
 
             try:
                 await self.properties.device.properties.network.write(
-                    "{} {} {} {} {} {}".format(
-                        Address(self.properties.device.properties.address),
-                        ObjectIdentifier(self.properties.type, self.properties.address),
-                        PropertyIdentifier(prop),
-                        value,
-                        priority,
-                    ),
+                    f"{Address(self.properties.device.properties.address)} {ObjectIdentifier(self.properties.type, self.properties.address)} {PropertyIdentifier(prop)} {value} - {priority}",
                     vendor_id=self.properties.device.properties.vendor_id,
                 )
             except NoResponseFromController:

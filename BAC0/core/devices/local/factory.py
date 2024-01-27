@@ -2,14 +2,10 @@ import typing as t
 from collections import namedtuple
 
 from bacpypes3.basetypes import (
-    Boolean,
     Date,
     DateTime,
-    EventState,
     LogRecord,
     Polarity,
-    PriorityArray,
-    Reliability,
     Time,
     Unsigned,
 )
@@ -30,6 +26,7 @@ from bacpypes3.local.multistate import (
     MultiStateOutputObject,
     MultiStateValueObject,
 )
+from bacpypes3.local.cov import COVIncrementCriteria
 from bacpypes3.primitivedata import CharacterString
 
 from colorama import Fore
@@ -156,6 +153,8 @@ class ObjectFactory(object):
             self.objects[objectName]._local = LocalTrendLog(
                 self.objects[objectName], datatype=_localTrendLogDataType
             )  # this will need to be fed by another process.
+        else:
+            self.objects[objectName]._cov_criteria = COVIncrementCriteria
 
     def validate_instance(self, objectType, instance):
         _warning = True

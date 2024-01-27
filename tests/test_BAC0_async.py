@@ -5,8 +5,6 @@
 Test BAC0.lite
 """
 
-import asyncio
-import time
 
 import pytest
 

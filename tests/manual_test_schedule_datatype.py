@@ -1,9 +1,8 @@
 from datetime import datetime as dt
 from datetime import time as dt_time
 
-from bacpypes.basetypes import DailySchedule, DateTime, Time, TimeValue
+from bacpypes.basetypes import DailySchedule, Time, TimeValue
 from bacpypes.constructeddata import ArrayOf
-from bacpypes.primitivedata import Atomic, Enumerated, Integer, Null, Real, Unsigned
 
 sched = [
     {
@@ -69,5 +68,5 @@ class ArrayOfDailySchedule(ArrayOf(DailySchedule)):
                 return self.to_time_tuple(dt.datetime.strptime(val, "%H:%M:%S").time())
             else:
                 raise Exception("Unsupported time format encountered!")
-        except Exception as e:
+        except Exception:
             raise Exception("Error during parsing time format to bacnet!")

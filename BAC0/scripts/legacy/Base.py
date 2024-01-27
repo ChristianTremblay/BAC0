@@ -283,7 +283,7 @@ class Base:
         # Freeing socket
         try:
             self.this_application.mux.directPort.handle_close()
-        except:
+        except Exception:
             self.this_application.mux.broadcastPort.handle_close()
 
         stopBacnetIPApp()  # Stop Core

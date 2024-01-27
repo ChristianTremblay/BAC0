@@ -14,12 +14,10 @@ try:
 except ImportError:
     _PANDAS = False
 
-import asyncio
 from collections import namedtuple
 
 from bacpypes3.primitivedata import Date, Time
 
-from ...tasks.TaskManager import Task
 
 # --- this application's modules ---
 from ..utils.notes import note_and_log

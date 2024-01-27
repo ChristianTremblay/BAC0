@@ -12,7 +12,7 @@ from bacpypes3.object import (
 def create_proprietary_object(params: Dict[str, Any]) -> None:
     try:
         _validate_params(params)
-    except:
+    except Exception:
         raise
     # Prevent breaking change for existing code, since issue #311
     try:

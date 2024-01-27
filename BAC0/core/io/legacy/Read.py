@@ -508,7 +508,7 @@ class ReadProperty:
                             )
                         else:
                             break
-                    except:
+                    except Exception:
                         break
 
                 elif prop_id not in (
@@ -862,7 +862,7 @@ def cast_datatype_from_tag(propertyValue, obj_id, prop_id):
             subtype_tag = propertyValue.tagList.tagList[0].tagList[0].tagNumber
             datatype = ArrayOf(Tag._app_tag_class[subtype_tag])
         value = {"{}_{}".format(obj_id, prop_id): propertyValue.cast_out(datatype)}
-    except:
+    except Exception:
         value = {"{}_{}".format(obj_id, prop_id): propertyValue}
     return value
 

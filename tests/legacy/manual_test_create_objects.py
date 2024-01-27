@@ -1,25 +1,10 @@
-import bacpypes
-import pytest
 
 import BAC0
 from BAC0.core.devices.local.factory import (
     analog_input,
-    analog_output,
-    analog_value,
     binary_input,
-    binary_output,
-    binary_value,
-    character_string,
-    date_value,
-    datetime_value,
-    humidity_input,
-    humidity_value,
     make_state_text,
-    multistate_input,
-    multistate_output,
     multistate_value,
-    temperature_input,
-    temperature_value,
 )
 
 

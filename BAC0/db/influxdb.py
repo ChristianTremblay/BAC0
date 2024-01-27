@@ -65,7 +65,7 @@ class InfluxDB:
                 )
         try:
             self.health
-        except:
+        except Exception:
             raise ConnectionError("Error connecting to InfluxDB")
 
     @property
@@ -82,7 +82,7 @@ class InfluxDB:
         elif "binary" in object_type:
             try:
                 _string_value = "{}".format(units_state[int(val.split(":"[0]))])
-            except:
+            except Exception:
                 _string_value = "{}".format(val.split(":")[1])
             _value = int(val.split(":")[0])
         else:

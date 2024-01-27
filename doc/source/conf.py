@@ -14,7 +14,6 @@
 # serve to show the default.
 
 import os
-import shlex
 import sys
 
 # Magic: allowing sphinx to find the 'current source' vs the installed BAC0 library.

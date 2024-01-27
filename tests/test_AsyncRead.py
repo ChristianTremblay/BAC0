@@ -1,6 +1,5 @@
 #!/usr/BIn/env python
 # -*- coding utf-8 -*-
-import pytest
 
 """
 Test Bacnet communication with another device

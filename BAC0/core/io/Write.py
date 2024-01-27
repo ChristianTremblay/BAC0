@@ -26,23 +26,15 @@ from bacpypes3.apdu import (
     SimpleAckPDU,
     WriteAccessSpecification,
     WritePropertyMultipleRequest,
-    WritePropertyRequest,
 )
 from bacpypes3.app import Application
 from bacpypes3.basetypes import PropertyIdentifier, PropertyValue
-from bacpypes3.constructeddata import Any, Array
 
 # --- 3rd party modules ---
 from bacpypes3.debugging import ModuleLogger
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import (
-    Atomic,
-    Enumerated,
-    Integer,
-    Null,
     ObjectIdentifier,
-    Real,
-    Unsigned,
 )
 
 from ..app.asyncApp import BAC0Application
@@ -52,7 +44,6 @@ from ..utils.notes import note_and_log
 from .IOExceptions import (
     ApplicationNotStarted,
     NoResponseFromController,
-    WritePropertyCastError,
     WritePropertyException,
 )
 from .Read import find_reason
