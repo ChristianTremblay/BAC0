@@ -20,6 +20,7 @@ Write.py - creation of WriteProperty requests
 
 """
 import asyncio
+import re
 
 from bacpypes3.apdu import (
     ErrorRejectAbortNack,
@@ -33,7 +34,7 @@ from bacpypes3.basetypes import PropertyIdentifier, PropertyValue
 # --- 3rd party modules ---
 from bacpypes3.debugging import ModuleLogger
 from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import ObjectIdentifier
+from bacpypes3.primitivedata import ObjectIdentifier, Null
 
 from ..app.asyncApp import BAC0Application
 from ..utils.notes import note_and_log
@@ -86,7 +87,6 @@ class WriteProperty:
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
 
-        args = args.split()
         self.log_title("Write property", args)
 
         (
@@ -126,29 +126,35 @@ class WriteProperty:
         Utility to parse the string of the request.
         Supports @obj_ and @prop_ syntax for objest type and property id, useful with proprietary objects and properties.
         """
-        if not isinstance(args, list):
-            args = args.split()
-        obj_type, obj_inst, prop_id = args[:3]
+        pattern = r"(?P<address>\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b|(\b\d+:\d+\b)) (?P<objId>(@obj_)?\w*[: ]*\d*) (?P<propId>(@prop_)?\w*) (?P<value>\w*) (?P<indx>-|\d*) (?P<priority>(1[0-6]|[0-9]))"
+        matches = re.finditer(pattern, args)
+        for match in matches:
+            address = match.group("address")
+            objId = match.group("objId")
+            prop_id = match.group("propId")
+            value = match.group("value")
+            indx = match.group("indx")
+            priority = match.group("priority")
+        if ":" in objId:
+            obj_type, obj_inst = objId.split(":")
+        else:
+            obj_type, obj_inst = objId.split(" ")
         if obj_type.isdigit():
             obj_type = int(obj_type)
         elif "@obj_" in obj_type:
             obj_type = int(obj_type.split("_")[1])
         obj_inst = int(obj_inst)
         object_identifier = ObjectIdentifier((obj_type, obj_inst))
-        value = args[3]
-        indx = None
-        if len(args) >= 5 and args[4] != "-":
-            indx = int(args[4])
-        priority = None
-        if len(args) >= 6:
-            priority = int(args[5])
+        value = Null(()) if value == "null" else value
+        indx = None if indx == "-" else int(indx)
+        priority = int(priority)
         if "@prop_" in prop_id:
             prop_id = prop_id.split("_")[1]
         if prop_id.isdigit():
             prop_id = int(prop_id)
         property_identifier = PropertyIdentifier(prop_id)
 
-        return (object_identifier, property_identifier, value, priority, indx)
+        return (address, object_identifier, property_identifier, value, priority, indx)
 
     # TODO : Validate that I can let bp3 deal with this
     #    async def _validate_value_vs_datatype(self, obj_type, prop_id, indx, vendor_id, value):
@@ -216,9 +222,8 @@ class WriteProperty:
 
     def build_wp_request(self, args, vendor_id=0):
         vendor_id = vendor_id
-        addr = args[0]
-        args = args[1:]
         (
+            address,
             object_identifier,
             property_identifier,
             value,
@@ -226,15 +231,15 @@ class WriteProperty:
             indx,
         ) = WriteProperty._parse_wp_args(args)
 
-        device_address = Address(addr)
+        device_address = Address(address)
 
         request = (
             device_address,
             object_identifier,
             property_identifier,
             value,
-            priority,
             indx,
+            priority,
         )
 
         self.log_subtitle("Creating Request")
