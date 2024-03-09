@@ -1,91 +1,18 @@
 from functools import wraps
+from typing import Any, Callable, Dict, Tuple, Type, Union
 
-from bacpypes3.basetypes import EngineeringUnits
+from bacpypes3.basetypes import EngineeringUnits, LogRecord
+from bacpypes3.constructeddata import ListOf
 from bacpypes3.local.cmd import Commandable
 from bacpypes3.local.oos import OutOfService
-from bacpypes3.object import TrendLogObject
 from bacpypes3.primitivedata import CharacterString
+
+# from bacpypes3.object import TrendLogObject
+from BAC0.core.devices.local.object import TrendLogObject
 
 _SHOULD_BE_COMMANDABLE = ["relinquishDefault", "outOfService", "lowLimit", "highLimit"]
 
-"""
-Template
-
-Decorators is an effort to handle object creation without explicitly declare a new class
-depending on the properties or features required.
-
-
-
-# Usage
-
-## bacnet_properties
-This decorator takes a dict as argument defining supplmental properties
-
-## bacnet_property
-This decorator takes a simple property and its default value, adds it to object
-
-## Commandable
-This decoratore will modify the base class and create a new class that inherit from _commando (see local.object.py)
-
-## Add feature
-This decorator works the same than commandable. Could serve as a way to add behaviour like MinOnOff, events, limits, etc...
-
-## Example::
-
-    properties = {"outOfService" : False,
-                "relinquishDefault" : 0,
-                "units": "degreesCelsius",
-                "highLimit": 98}
-
-    @bacnet_properties(properties)
-    @commandable()
-    def av(instance, objectName, presentValue, description):
-        OBJECT_TYPE = AnalogValueObject
-        return create(OBJECT_TYPE,instance, objectName, presentValue, description)
-
-    @add_feature(MinOnOff)
-    @commandable()
-    def bv(instance, objectName, presentValue, description):
-        OBJECT_TYPE = BinaryValueObject
-        return create(OBJECT_TYPE,instance, objectName, presentValue, description)
-
-    @commandable()
-    def datepattern(instance, objectName, presentValue, description):
-        OBJECT_TYPE = DatePatternValueObject
-        return create(OBJECT_TYPE,instance, objectName, presentValue, description)
-
-    ### The creation takes place when the functions are called
-    a = av(1,'AnalogValueName',10,'AnalogValue Description')
-    b = bv(1,'BV Name','inactive','BinaryValue Description')
-    c = datepattern(1,'My Date Pattern',None,'DatePattern Description')
-
-"""
-
-
-"""def _allowed_prop(obj):
-    allowed_prop = {}
-    # print(obj.propertyList)
-    for each in obj.propertyList:
-        allowed_prop[each.identifier] = each.get_datatype()
-    for base in obj.__bases__:
-        try:
-            for each in base.propertyList:
-                allowed_prop[each.identifier] = each.get_datatype()
-        except AttributeError:
-            pass
-    return allowed_prop"""
-
-
-"""def _mutable(property_name, force_mutable=False):
-    if property_name in _SHOULD_BE_COMMANDABLE and not force_mutable:
-        mutable = True
-    elif force_mutable:
-        mutable = force_mutable
-    else:
-        mutable = False
-    return mutable"""
-
-_required_binary_input = (
+_required_binary_input: Tuple[str, ...] = (
     "presentValue",
     "statusFlags",
     "eventState",
@@ -93,7 +20,7 @@ _required_binary_input = (
     "polarity",
 )
 
-_required_binary_output = (
+_required_binary_output: Tuple[str, ...] = (
     "presentValue",
     "statusFlags",
     "eventState",
@@ -104,7 +31,7 @@ _required_binary_output = (
     "currentCommandPriority",
 )
 
-_required_analog_output = (
+_required_analog_output: Tuple[str, ...] = (
     "presentValue",
     "statusFlags",
     "eventState",
@@ -115,13 +42,13 @@ _required_analog_output = (
     "currentCommandPriority",
 )
 
-_required_analog_value = ("priorityArray",)
+_required_analog_value: Tuple[str, ...] = ("priorityArray",)
 
 
-def make_commandable():
-    def decorate(func):
+def make_commandable() -> Callable:
+    def decorate(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             if callable(func):
                 obj = func(*args, **kwargs)
             else:
@@ -132,7 +59,13 @@ def make_commandable():
             new_type = type(
                 base_cls_name,
                 (Commandable, base_cls),
-                {"_required": "priorityArray"},
+                {
+                    "_required": (
+                        "priorityArray",
+                        "relinquishDefault",
+                        "currentCommandPriority",
+                    )
+                },
             )
             objectType, instance, objectName, presentValue, description = args
             new_object = new_type(
@@ -148,10 +81,10 @@ def make_commandable():
     return decorate
 
 
-def make_outOfService():
-    def decorate(func):
+def make_outOfService() -> Callable:
+    def decorate(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             if callable(func):
                 obj = func(*args, **kwargs)
             else:
@@ -177,10 +110,10 @@ def make_outOfService():
     return decorate
 
 
-def add_feature(cls):
-    def decorate(func):
+def add_feature(cls: Type) -> Callable:
+    def decorate(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             if callable(func):
                 obj = func(*args, **kwargs)
             else:
@@ -202,31 +135,23 @@ def add_feature(cls):
     return decorate
 
 
-def bacnet_properties(properties):
-    """
-    Given a dict of properties, add them to the object
-    """
-
-    def decorate(func):
+def bacnet_properties(properties: Dict[str, Any]) -> Callable:
+    def decorate(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             if callable(func):
                 obj = func(*args, **kwargs)
             else:
                 obj = func
-            # allowed_prop = _allowed_prop(obj)
-
             for property_name, value in properties.items():
                 if property_name == "units":
                     new_prop = EngineeringUnits(value)
-                    # obj.units = new_prop
                     obj.__setattr__("units", new_prop)
                 else:
                     try:
                         property_type = obj.get_property_type(property_name)
-                        print(
-                            f"Adding {property_name} of type {property_type} with value {value} to {obj}"
-                        )
+                        print(f"Property Type : {property_type}")
+                        print(f"Value : {value}")
                         obj.__setattr__(property_name, property_type(value))
                     except (KeyError, AttributeError) as error:
                         raise ValueError(
@@ -239,7 +164,13 @@ def bacnet_properties(properties):
     return decorate
 
 
-def create(object_type, instance, objectName, value, description):
+def create(
+    object_type: Type,
+    instance: int,
+    objectName: str,
+    value: Union[int, str, ListOf],
+    description: str,
+) -> Any:
     if object_type is TrendLogObject:
         new_object = object_type(
             objectIdentifier=(object_type.objectType, instance),

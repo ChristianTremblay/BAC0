@@ -17,8 +17,7 @@ class Discover:
     """
 
     @property
-    # NEW VERSION WORKS DIFFERENTLY
-    def known_network_numbers(self):
+    def known_network_numbers(self) -> t.Set[int]:
         return self.this_application._learnedNetworks
 
     def discover(
@@ -27,7 +26,12 @@ class Discover:
         limits: t.Tuple[int, int] = (0, 4194303),
         global_broadcast: bool = False,
         reset: bool = False,
-    ):
+    ) -> None:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
         asyncio.create_task(
             self._discover(
                 networks=networks,
@@ -43,7 +47,7 @@ class Discover:
         limits: t.Tuple[int, int] = (0, 4194303),
         global_broadcast: bool = False,
         reset: bool = False,
-    ):
+    ) -> None:
         """
         Discover is meant to be the function used to explore the network when we
         connect.
@@ -95,7 +99,7 @@ class Discover:
             _networks.extend(_iamrtn.iartnNetworkList)
         for net in _networks:
             _this_application._learnedNetworks.add(net)
-        self._log.info("Found those networks : {}".format(self.known_network_numbers))
+        self._log.info(f"Found those networks : {self.known_network_numbers}")
 
         if networks:
             if isinstance(networks, list):
@@ -111,7 +115,7 @@ class Discover:
 
         if _networks:
             for network in _networks:
-                self._log.info("Discovering network {}".format(network))
+                self._log.info(f"Discovering network {network}")
                 _res = await self.this_application.app.who_is(
                     low_limit=deviceInstanceRangeLowLimit,
                     high_limit=deviceInstanceRangeHighLimit,

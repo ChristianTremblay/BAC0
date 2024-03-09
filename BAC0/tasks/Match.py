@@ -14,6 +14,8 @@ Example:
 # --- standard Python modules ---
 # --- 3rd party modules ---
 
+import asyncio
+
 from ..core.utils.notes import note_and_log
 
 # --- this application's modules ---
@@ -40,7 +42,7 @@ class Match(Task):
         self.status = status
         Task.__init__(self, delay=delay, name=name)
 
-    def task(self):
+    async def task(self):
         try:
             if self.status.history[-1] != self.command.history[-1]:
                 _val = (
@@ -48,7 +50,7 @@ class Match(Task):
                     if ":" in self.command.history[-1]
                     else self.command.history[-1]
                 )
-                self.status._setitem(_val)
+                await self.status._setitem(_val)
         except Exception:
             self._log.error(
                 "Something wrong matching {} and {}... try again next time...".format(
@@ -56,8 +58,8 @@ class Match(Task):
                 )
             )
 
-    def stop(self):
-        self.status._setitem("auto")
+    async def stop(self):
+        await self.status._setitem("auto")
         super().stop()
 
 
@@ -84,15 +86,17 @@ class Match_Value(Task):
             name = "Match_Value on " + point.properties.name
         Task.__init__(self, delay=delay, name=name)
 
-    def task(self):
+    async def task(self):
         try:
             if self.use_last_value:
                 _point = self.point.lastValue
             else:
-                _point = self.point.value
-            value = self.value() if hasattr(self.value, "__call__") else self.value
+                _point = await self.point.value
+            value = (
+                self.value() if hasattr(self.value, "__call__") else await self.value
+            )
             if value != _point:
-                self.point._set(value)
+                await self.point._set(value)
         except Exception:
             self._log.error(
                 "Something is wrong matching {} and {}... try again next time".format(
@@ -100,6 +104,9 @@ class Match_Value(Task):
                 )
             )
 
+    async def _before_stop(self):
+        await self.point._set("auto")
+
     def stop(self):
-        self.point._set("auto")
+        _t = asyncio.create_task(self._before_stop())
         super().stop()

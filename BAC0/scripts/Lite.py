@@ -43,6 +43,7 @@ from ..core.io.IOExceptions import (
 )
 from ..core.io.Read import ReadProperty
 from ..core.io.Write import WriteProperty
+from ..core.io.Simulate import Simulation
 
 # from ..core.io.asynchronous.Write import WriteProperty
 from ..core.utils.notes import note_and_log
@@ -73,7 +74,7 @@ class Lite(
     EventEnrollment,
     ReadProperty,
     WriteProperty,
-    # Simulation,
+    Simulation,
     TimeSync,
     # Reinitialize,
     # DeviceCommunicationControl,
@@ -106,6 +107,7 @@ class Lite(
         db_params: t.Optional[t.Dict[str, t.Any]] = None,
         **params,
     ) -> None:
+        self._initialized = False
         self._log.info(
             "Starting BAC0 version {} ({})".format(
                 version, self.__module__.split(".")[-1]
@@ -192,6 +194,7 @@ class Lite(
                 self._log.error(
                     "Unable to connect to InfluxDB. Please validate parameters"
                 )
+        self._initialized = True
 
     def register_device(
         self, device: t.Union[RPDeviceConnected, RPMDeviceConnected]

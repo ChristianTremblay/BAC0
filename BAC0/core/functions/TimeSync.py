@@ -9,9 +9,11 @@ TimeSync.py - creation of time synch requests
 
 """
 
-# --- standard Python modules ---
 import datetime as dt
 from datetime import datetime
+
+# --- standard Python modules ---
+from typing import Optional, Tuple, Union
 
 import pytz
 from bacpypes3.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest
@@ -53,7 +55,9 @@ class TimeSync:
     Mixin to support Time Synchronisation from BAC0 to other devices
     """
 
-    def time_sync(self, destination=None, datetime=None, UTC=False):
+    def time_sync(
+        self, destination: str = None, datetime: DateTime = None, UTC: bool = False
+    ) -> None:
         """
         Take local time and send it to devices. User can also provide
         a datetime value (constructed following bacpypes.basetypes.Datetime
@@ -146,7 +150,7 @@ class TimeHandler(object):
     def local_time(self):
         return self.now.time()
 
-    def local_date(self):
+    def local_date(self) -> datetime.date:
         return self.now.date()
 
     def utcOffset(self) -> float:
@@ -157,4 +161,4 @@ class TimeHandler(object):
         return self.timezone.dst(self.now) != dt.timedelta(0)
 
     def __repr__(self):
-        return "{}".format(self.__dict__)
+        return f"{self.__dict__}"

@@ -33,9 +33,7 @@ from bacpypes3.basetypes import PropertyIdentifier, PropertyValue
 # --- 3rd party modules ---
 from bacpypes3.debugging import ModuleLogger
 from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import (
-    ObjectIdentifier,
-)
+from bacpypes3.primitivedata import ObjectIdentifier
 
 from ..app.asyncApp import BAC0Application
 from ..utils.notes import note_and_log
@@ -122,7 +120,8 @@ class WriteProperty:
             # construction error
             self._log.exception(f"exception: {error!r}")
 
-    def _parse_wp_args(self, args):
+    @classmethod
+    def _parse_wp_args(cls, args):
         """
         Utility to parse the string of the request.
         Supports @obj_ and @prop_ syntax for objest type and property id, useful with proprietary objects and properties.
@@ -225,7 +224,7 @@ class WriteProperty:
             value,
             priority,
             indx,
-        ) = self._parse_wp_args(args)
+        ) = WriteProperty._parse_wp_args(args)
 
         device_address = Address(addr)
 
@@ -244,6 +243,8 @@ class WriteProperty:
         self._log.debug(f"{'REQUEST':<20} {request}")
         return request
 
+
+'''
     def writeMultiple(self, addr=None, args=None, vendor_id=0, timeout=10):
         """Build a WritePropertyMultiple request, wait for an answer
 
@@ -366,3 +367,4 @@ class WriteProperty:
 
         self._log.debug(f"{'REQUEST':<20} {request}")
         return request
+'''

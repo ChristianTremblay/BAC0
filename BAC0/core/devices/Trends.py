@@ -9,15 +9,15 @@
 # --- 3rd party modules ---
 try:
     import pandas as pd
+    from pandas import DataFrame
 
     _PANDAS = True
 except ImportError:
     _PANDAS = False
-
 from collections import namedtuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from bacpypes3.primitivedata import Date, Time
-
 
 # --- this application's modules ---
 from ..utils.notes import note_and_log
@@ -33,26 +33,26 @@ class TrendLogProperties(object):
     """
 
     def __init__(self):
-        self.device = None
-        self.oid = None
-        self.object_name = None
-        self.description = ""
-        self.log_device_object_property = None
-        self.buffer_size = 0
-        self.record_count = 0
-        self.total_record_count = 0
-        self.log_interval = 0
-        self.statusFlags = None
-        self.status_flags = {
+        self.device: Optional[Any] = None
+        self.oid: Optional[Any] = None
+        self.object_name: Optional[str] = None
+        self.description: str = ""
+        self.log_device_object_property: Optional[Any] = None
+        self.buffer_size: int = 0
+        self.record_count: int = 0
+        self.total_record_count: int = 0
+        self.log_interval: int = 0
+        self.statusFlags: Optional[Any] = None
+        self.status_flags: Dict[str, bool] = {
             "in_alarm": False,
             "fault": False,
             "overridden": False,
             "out_of_service": False,
         }
-        self._history_components = []
-        self._df = None
-        self.type = "TrendLog"
-        self.units_state = "None"
+        self._history_components: List[HistoryComponent] = []
+        self._df: Optional[DataFrame] = None
+        self.type: str = "TrendLog"
+        self.units_state: str = "None"
 
     def __repr__(self):
         return "{} | Descr : {} | Record count : {}".format(
@@ -60,12 +60,12 @@ class TrendLogProperties(object):
         )
 
     @property
-    def name(self):
+    def name(self) -> Optional[str]:
         return self.object_name
 
 
-def TrendLog(*args, **kwargs):
-    trend = TrendLog(*args, **kwargs)
+def TrendLog(*args: Tuple, **kwargs: Dict) -> "_TrendLog":
+    trend = _TrendLog(*args, **kwargs)
     # update_properties_task = Task(trend.update_properties())
     # update_properties_task.start()
     # while not update_properties_task.done:
@@ -77,31 +77,35 @@ def TrendLog(*args, **kwargs):
 
 
 @note_and_log
-class TrendLog(TrendLogProperties):
+class _TrendLog(TrendLogProperties):
     """
     BAC0 simplification of TrendLog Object
     """
 
     def __init__(
-        self, OID, device=None, read_log_on_creation=True, multiple_request=None
+        self,
+        OID: Any,
+        device: Optional[Any] = None,
+        read_log_on_creation: bool = True,
+        multiple_request: Optional[Any] = None,
     ):
-        self.properties = TrendLogProperties()
+        self.properties: TrendLogProperties = TrendLogProperties()
         self.properties.device = device
         self.properties.oid = OID
-        self.update_properties_task = None
-        self._last_index = 0
+        self.update_properties_task: Optional[Any] = None
+        self._last_index: int = 0
         if read_log_on_creation:
-            self.read_log_buffer_task = None
+            self.read_log_buffer_task: Optional[Any] = None
 
     @staticmethod
-    def read_logDatum(logDatum):
+    def read_logDatum(logDatum: Any) -> Tuple[str, Any]:
         for k, v in logDatum.__dict__.items():
             if v is None:
                 continue
             else:
                 return (k, v)
 
-    async def update_properties(self):
+    async def update_properties(self) -> None:
         try:
             (
                 self.properties.object_name,
@@ -120,7 +124,7 @@ class TrendLog(TrendLogProperties):
         except Exception as error:
             raise Exception("Problem reading trendLog informations: {}".format(error))
 
-    async def _total_record_count(self):
+    async def _total_record_count(self) -> int:
         self.properties.total_record_count = (
             await self.properties.device.properties.network.read(
                 "{addr} trendLog {oid} totalRecordCount".format(
@@ -131,7 +135,7 @@ class TrendLog(TrendLogProperties):
         )
         return self.properties.total_record_count
 
-    async def read_log_buffer(self):
+    async def read_log_buffer(self) -> None:
         RECORDS = 10
         log_buffer = set()
         _actual_index = await self._total_record_count()
@@ -156,7 +160,7 @@ class TrendLog(TrendLogProperties):
         self._last_index = _from
         self.create_dataframe(log_buffer)
 
-    def create_dataframe(self, log_buffer):
+    def create_dataframe(self, log_buffer: set) -> None:
         for each in log_buffer:
             year, month, day, dow = each.timestamp.date
             year = year + 1900
@@ -205,7 +209,7 @@ class TrendLog(TrendLogProperties):
             )
 
     @property
-    async def history(self):
+    async def history(self) -> Union[Dict, Any]:
         await self.read_log_buffer()
 
         if not _PANDAS or self.properties._df is None:
@@ -254,7 +258,7 @@ class TrendLog(TrendLogProperties):
 
         return serie.sort_index()
 
-    def chart(self, remove=False):
+    def chart(self, remove: bool = False) -> None:
         """
         Add point to the bacnet trending list
         """

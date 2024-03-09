@@ -46,7 +46,13 @@ class RecurringTask(Task):
 
     async def task(self) -> None:
         if self.fnc_args:
-            self.func(self.fnc_args)
+            if asyncio.iscoroutinefunction(self.func):
+                await self.func(self.fnc_args)
+            else:
+                self.func(self.fnc_args)
         else:
-            self.func()
+            if asyncio.iscoroutinefunction(self.func):
+                await self.func()
+            else:
+                self.func()
         await asyncio.sleep(self.delay)

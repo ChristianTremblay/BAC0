@@ -1,4 +1,6 @@
 from collections import namedtuple
+from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from bacpypes3.basetypes import (
     Date,
@@ -34,41 +36,45 @@ class LocalTrendLog(object):
 
     """
 
-    def __init__(self, obj, datatype):
+    def __init__(self, obj: Any, datatype: str):
         self.obj = obj
-        self.data = []
-        self.bufferSize = 250
+        self.data: List[Record] = []
+        self.bufferSize: int = 250
         self.statusFlags = StatusFlags([0, 0, 0, 0])
         self.datatype = datatype
 
     @staticmethod
-    def to_float(val):
+    def to_float(val: Union[int, float, str]) -> Optional[float]:
         try:
             return float(val)
         except ValueError:
             return None
 
     @staticmethod
-    def decompose_datetime(dt):
+    def decompose_datetime(dt: datetime) -> Tuple[int, int, int, int, int]:
         y = dt.year
         M = dt.month
         d = dt.day
         h = dt.hour
         m = dt.minute
-        return (y, M, d, h, m)
+        s = dt.second
+        ms = dt.microsecond
+        wk = dt.weekday()
+        return (y, M, d, wk, h, m, s, ms)
 
-    def to_bacpypes_datetime(self, dt):
-        _y, _M, _d, _h, _m = self.decompose_datetime(dt)
-        return DateTime(
-            date=Date(year=_y - 1900, month=_M, day=_d), time=Time(hour=_h, minute=_m)
-        )
+    def to_bacpypes_datetime(self, dt: datetime) -> DateTime:
+        _y, _M, _d, wk, _h, _m, _s, _ms = self.decompose_datetime(dt)
+        try:
+            result = DateTime(date=Date((_y, _M, _d, wk)), time=Time((_h, _m, _s, _ms)))
+        except TypeError:
+            raise TypeError(f"Error with {dt} {_y=}, {_M=}, {_d=}, {_h=}, {_m=}")
+        return result
 
-    def to_logDatum(self, value):
-        for each in LogRecordLogDatum.choiceElements:
-            if each.name == self.datatype:
-                return {self.datatype: each.klass(value)}
+    def to_logDatum(self, value: Union[int, float, str]) -> Dict[str, Any]:
+        _klass = getattr(LogRecordLogDatum, self.datatype)
+        return {self.datatype: _klass(value)}
 
-    def to_bacpypes_logrecord(self, record):
+    def to_bacpypes_logrecord(self, record: Record) -> LogRecord:
         """
         For now, only support real... make it work first
         """
@@ -84,12 +90,12 @@ class LocalTrendLog(object):
 
     def add_data(
         self,
-        timestamp,
-        value,
-        flags=StatusFlags([0, 0, 0, 0]),
-        interval=None,
-        update_after=True,
-    ):
+        timestamp: datetime,
+        value: Union[int, float, str],
+        flags: StatusFlags = StatusFlags([0, 0, 0, 0]),
+        interval: Optional[int] = None,
+        update_after: bool = True,
+    ) -> None:
         """
         each object will contain a dict of values that will be
         turned into log_record.
@@ -115,7 +121,7 @@ class LocalTrendLog(object):
         if update_after:
             self.update_properties()
 
-    def update_properties(self):
+    def update_properties(self) -> None:
         """
         Meant to update trendLog properties like logBuffer,
         startTime, stopTime, recordCount, totalRecordCount, statusFlags, etc...

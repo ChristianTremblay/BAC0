@@ -1,5 +1,6 @@
 #!/usr/BIn/env python
 # -*- coding utf-8 -*-
+import pytest
 
 """
 Test Bacnet communication with another device
@@ -13,8 +14,9 @@ BINARY_TEST_STATE = "inactive"
 CHARACTERSTRINGVALUE = "test"
 
 
-async def test_read(event_loop, async_network_and_devices):
-    test_device = async_network_and_devices.test_device
+@pytest.mark.asyncio
+async def test_read(network_and_devices):
+    test_device = network_and_devices.test_device
 
     async def test():
         assert (test_device["AV"] - CHANGE_DELTA_AV) < TOLERANCE
@@ -34,4 +36,4 @@ async def test_read(event_loop, async_network_and_devices):
 
         assert await test_device["CS_VALUE"].value == CHARACTERSTRINGVALUE
 
-    event_loop.run_until_complete(test())
+    await test()

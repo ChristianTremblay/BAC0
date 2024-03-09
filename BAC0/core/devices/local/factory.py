@@ -1,15 +1,8 @@
 import typing as t
 from collections import namedtuple
 
-from bacpypes3.basetypes import (
-    Date,
-    DateTime,
-    LogRecord,
-    Polarity,
-    Time,
-    Unsigned,
-)
 from bacpypes3.app import Application
+from bacpypes3.basetypes import Date, DateTime, LogRecord, Polarity, Time, Unsigned
 from bacpypes3.constructeddata import ArrayOf, ListOf
 from bacpypes3.local.analog import (
     AnalogInputObject,
@@ -21,14 +14,13 @@ from bacpypes3.local.binary import (
     BinaryOutputObject,
     BinaryValueObject,
 )
+from bacpypes3.local.cov import COVIncrementCriteria
 from bacpypes3.local.multistate import (
     MultiStateInputObject,
     MultiStateOutputObject,
     MultiStateValueObject,
 )
-from bacpypes3.local.cov import COVIncrementCriteria
 from bacpypes3.primitivedata import CharacterString
-
 from colorama import Fore
 
 from BAC0.core.devices.local.trendLogs import LocalTrendLog
@@ -149,7 +141,7 @@ class ObjectFactory(object):
             self.objects[objectName] = _create(
                 objectType, instance, objectName, presentValue, description
             )
-        if objectType is TrendLogObject:
+        if objectType is TrendLogObject:  # Add special internal object for trendlog
             self.objects[objectName]._local = LocalTrendLog(
                 self.objects[objectName], datatype=_localTrendLogDataType
             )  # this will need to be fed by another process.
@@ -538,7 +530,7 @@ def trendlog(**kwargs):
         "description": "No description",
         "properties": {
             "enable": True,
-            "logBuffer": ListOf(LogRecord),
+            "logBuffer": ListOf(LogRecord)([]),
             # "logDeviceObjectProperty": DeviceObjectPropertyReference(
             #    objectIdentifier=ObjectIdentifier("trendLog", 0),
             # ),

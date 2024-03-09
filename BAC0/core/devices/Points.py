@@ -16,7 +16,7 @@ from collections import namedtuple
 # --- standard Python modules ---
 from datetime import datetime, timedelta
 
-from bacpypes3.basetypes import PropertyIdentifier
+from bacpypes3.basetypes import BinaryPV, PropertyIdentifier
 from bacpypes3.pdu import Address
 
 # --- 3rd party modules ---
@@ -399,7 +399,7 @@ class Point:
 
             try:
                 await self.properties.device.properties.network.write(
-                    f"{Address(self.properties.device.properties.address)} {ObjectIdentifier(self.properties.type, self.properties.address)} {PropertyIdentifier(prop)} {value} - {priority}",
+                    f"{Address(self.properties.device.properties.address)} {ObjectIdentifier(f'{self.properties.type}:{self.properties.address}')} {PropertyIdentifier(prop)} {value} - {priority}",
                     vendor_id=self.properties.device.properties.vendor_id,
                 )
             except NoResponseFromController:
@@ -461,16 +461,16 @@ class Point:
         self.properties.simulated = (False, None)
 
     def ovr(self, value):
-        self.write(value, priority=8)
+        asyncio.create_task(self.write(value, priority=8))
         self.properties.overridden = (True, value)
 
     def auto(self):
-        self.write("null", priority=8)
+        asyncio.create_task(self.write("null", priority=8))
         self.properties.overridden = (False, 0)
 
     def release_ovr(self):
-        self.write("null", priority=1)
-        self.write("null", priority=8)
+        asyncio.create_task(self.write("null", priority=1))
+        asyncio.create_task(self.write("null", priority=8))
         self.properties.overridden = (False, None)
 
     async def _setitem(self, value):
@@ -482,17 +482,17 @@ class Point:
         AnalogOutput are overridden
         """
         if "characterstring" in self.properties.type:
-            self.write(value)
+            asyncio.create_task(self.write(value))
 
-        elif "Value" in self.properties.type:
+        elif "value" in self.properties.type:
             if str(value).lower() == "auto":
                 raise ValueError(
                     "Value was not simulated or overridden, cannot release to auto"
                 )
             # analog value must be written to
-            self.write(value)
+            asyncio.create_task(self.write(value))
 
-        elif "Output" in self.properties.type:
+        elif "output" in self.properties.type:
             # analog output must be overridden
             if str(value).lower() == "auto":
                 self.auto()
@@ -550,7 +550,7 @@ class Point:
     def match(self, point, *, delay=5):
         asyncio.create_task(self._match(point=point, delay=delay))
 
-    def _match(self, point, *, delay=5):
+    async def _match(self, point, *, delay=5):
         """
         This allow functions like :
             device['status'].match('command')
@@ -565,7 +565,7 @@ class Point:
         elif self._match_task.running and delay > 0:
             self._match_task.task.stop()
             self._match_task.running = False
-            time.sleep(1)
+            await asyncio.sleep(1)
 
             self._match_task.task = Match(command=point, status=self, delay=delay)
             self._match_task.task.start()
@@ -583,7 +583,7 @@ class Point:
             self._match_value(value=value, delay=delay, use_last_value=use_last_value)
         )
 
-    def _match_value(self, value, *, delay=5, use_last_value=False):
+    async def _match_value(self, value, *, delay=5, use_last_value=False):
         """
         This allow functions like :
             device['point'].match('value')
@@ -600,7 +600,7 @@ class Point:
         elif self._match_task.running and delay > 0:
             self._match_task.task.stop()
             self._match_task.running = False
-            time.sleep(1)
+            await asyncio.sleep(1)
 
             self._match_task.task = Match_Value(
                 value=value, point=self, delay=delay, use_last_value=use_last_value
@@ -831,7 +831,7 @@ class BooleanPoint(Point):
         )
 
     def _trend(self, res):
-        res = "1: active" if res == "active" else "0: inactive"
+        res = "1: active" if res == BinaryPV.active else "0: inactive"
         super()._trend(res)
 
     @property
@@ -842,7 +842,7 @@ class BooleanPoint(Point):
         res = await super().value
         self._trend(res)
 
-        if res == "inactive":
+        if res == BinaryPV.inactive:
             self._key = 0
             self._boolKey = False
         else:

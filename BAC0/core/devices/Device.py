@@ -13,6 +13,7 @@ import os.path
 
 # --- standard Python modules ---
 from collections import namedtuple
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 try:
     import pandas as pd
@@ -46,51 +47,39 @@ from ..io.IOExceptions import (
 )
 from ..utils.notes import note_and_log
 from .mixins.read_mixin import ReadProperty, ReadPropertyMultiple
-from .Points import BooleanPoint, EnumPoint, NumericPoint, OfflinePoint
+from .Points import BooleanPoint, EnumPoint, NumericPoint, OfflinePoint, Point
 from .Virtuals import VirtualPoint
 
 # ------------------------------------------------------------------------------
 
 
 class DeviceProperties(object):
-    """
-    This serves as a container for device properties
-    """
-
     def __init__(self):
-        self.name = "Unknown"
-        self.address = None
-        self.device_id = None
-        self.network = None
-        self.pollDelay = None
-        self.objects_list = None
-        self.pss = ServicesSupported()
-        self.multistates = None
-        self.db_name = None
-        self.segmentation_supported = True
-        self.history_size = None
-        self.save_resampling = "1s"
-        self.clear_history_on_save = None
-        self.bacnet_properties = {}
-        self.auto_save = None
-        self.fast_polling = False
-        self.vendor_id = 0
-        self.ping_failures = 0
+        self.name: str = "Unknown"
+        self.address: Optional[str] = None
+        self.device_id: Optional[int] = None
+        self.network: Optional[Any] = None
+        self.pollDelay: Optional[int] = None
+        self.objects_list: Optional[List] = None
+        self.pss: ServicesSupported = ServicesSupported()
+        self.multistates: Optional[Dict] = None
+        self.db_name: Optional[str] = None
+        self.segmentation_supported: bool = True
+        self.history_size: Optional[int] = None
+        self.save_resampling: str = "1s"
+        self.clear_history_on_save: Optional[bool] = None
+        self.bacnet_properties: Dict = {}
+        self.auto_save: Optional[bool] = None
+        self.fast_polling: bool = False
+        self.vendor_id: int = 0
+        self.ping_failures: int = 0
+
+    @property
+    def asdict(self) -> Dict:
+        return self.__dict__
 
     def __repr__(self):
         return "{}".format(self.asdict)
-
-    @property
-    def asdict(self):
-        return self.__dict__
-
-
-def device(*args, **kwargs):
-    dev = Device(*args, **kwargs)
-    t = asyncio.create_task(dev.new_state(DeviceDisconnected))
-    while not t.done:
-        pass
-    return dev
 
 
 @note_and_log
@@ -132,19 +121,19 @@ class Device(SQLMixin):
 
     def __init__(
         self,
-        address=None,
-        device_id=None,
-        network=None,
+        address: Optional[str] = None,
+        device_id: Optional[int] = None,
+        network: Optional[Any] = None,
         *,
-        poll=10,
-        from_backup=None,  # filename of backup
-        segmentation_supported=True,
-        object_list=None,
-        auto_save=False,
-        save_resampling="1s",
-        clear_history_on_save=False,
-        history_size=None,
-        reconnect_on_failure=True
+        poll: int = 10,
+        from_backup: Optional[str] = None,  # filename of backup
+        segmentation_supported: bool = True,
+        object_list: Optional[List] = None,
+        auto_save: bool = False,
+        save_resampling: str = "1s",
+        clear_history_on_save: bool = False,
+        history_size: Optional[int] = None,
+        reconnect_on_failure: bool = True
     ):
         self.properties = DeviceProperties()
 
@@ -206,7 +195,7 @@ class Device(SQLMixin):
                     "Please provide address, device id and network or specify from_backup argument"
                 )
 
-    async def new_state(self, newstate):
+    async def new_state(self, newstate: Any) -> None:
         """
         Base of the state machine mechanism.
         Used to make transitions between device states.
@@ -218,25 +207,25 @@ class Device(SQLMixin):
         self.__class__ = newstate
         await self._init_state()
 
-    async def _init_state(self):
+    async def _init_state(self) -> None:
         """
         Execute additional code upon state modification
         """
         raise NotImplementedError()
 
-    def connect(self):
+    def connect(self) -> None:
         """
         Connect the device to the network
         """
         raise NotImplementedError()
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         raise NotImplementedError()
 
-    def initialize_device_from_db(self):
+    def initialize_device_from_db(self) -> None:
         raise NotImplementedError()
 
-    def df(self, list_of_points, force_read=True):
+    def df(self, list_of_points: List[str], force_read: bool = True) -> pd.DataFrame:
         """
         Build a pandas DataFrame from a list of points.  DataFrames are used to present and analyze data.
 
@@ -246,7 +235,7 @@ class Device(SQLMixin):
         raise NotImplementedError()
 
     @property
-    def simulated_points(self):
+    def simulated_points(self) -> Iterator[Point]:
         """
         iterate over simulated points
 
@@ -257,14 +246,16 @@ class Device(SQLMixin):
             if each.properties.simulated[0]:
                 yield each
 
-    async def _buildPointList(self):
+    async def _buildPointList(self) -> None:
         """
         Read all points from a device into a (Pandas) dataframe (Pandas).  Items are
         accessible by point name.
         """
         raise NotImplementedError()
 
-    def __getitem__(self, point_name):
+    def __getitem__(
+        self, point_name: Union[str, List[str]]
+    ) -> Union[Point, pd.DataFrame]:
         """
         Get a point from its name.
         If a list is passed - a dataframe is returned.
@@ -275,30 +266,30 @@ class Device(SQLMixin):
         """
         raise NotImplementedError()
 
-    def __iter__(self):
+    def __iter__(self) -> Point:
         """
         When iterating a device, iterate points of it.
         """
         raise NotImplementedError()
 
-    def __contains__(self, value):
+    def __contains__(self, value: str) -> bool:
         "When using in..."
         raise NotImplementedError()
 
     @property
-    def points_name(self):
+    def points_name(self) -> List[str]:
         """
         When iterating a device, iterate points of it.
         """
         raise NotImplementedError()
 
-    def to_excel(self):
+    def to_excel(self) -> None:
         """
         Using xlwings, make a dataframe of all histories and save it
         """
         raise NotImplementedError()
 
-    def __setitem__(self, point_name, value):
+    def __setitem__(self, point_name: str, value: float) -> None:
         """
         Write, sim or ovr value
 
@@ -309,13 +300,13 @@ class Device(SQLMixin):
         """
         raise NotImplementedError()
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Will return number of points available
         """
         raise NotImplementedError()
 
-    def _parseArgs(self, arg):
+    def _parseArgs(self, arg: str) -> Tuple[str, str]:
         """
         Given a string, interpret the last word as the value, everything else is
         considered to be the point name.
@@ -325,35 +316,35 @@ class Device(SQLMixin):
         value = args[-1]
         return (pointName, value)
 
-    def clear_histories(self):
+    def clear_histories(self) -> None:
         for point in self.points:
             point.clear_history()
 
-    def update_history_size(self, size=None):
+    def update_history_size(self, size: Optional[int] = None) -> None:
         for point in self.points:
             point.properties.history_size = size
 
     @property
-    def analog_units(self):
+    def analog_units(self) -> Dict[str, str]:
         raise NotImplementedError()
 
     @property
-    def temperatures(self):
+    def temperatures(self) -> Dict[str, str]:
         raise NotImplementedError()
 
     @property
-    def percent(self):
+    def percent(self) -> Dict[str, str]:
         raise NotImplementedError()
 
     @property
-    def multi_states(self):
+    def multi_states(self) -> Dict[str, str]:
         raise NotImplementedError()
 
     @property
-    def binary_states(self):
+    def binary_states(self) -> Dict[str, str]:
         raise NotImplementedError()
 
-    def _findPoint(self, name, force_read=True):
+    def _findPoint(self, name: str, force_read: bool = True) -> Point:
         """
         Helper that retrieve point based on its name.
 
@@ -364,7 +355,7 @@ class Device(SQLMixin):
         """
         raise NotImplementedError()
 
-    def find_point(self, objectType, objectAddress):
+    def find_point(self, objectType: str, objectAddress: float) -> Point:
         """
         Find point based on type and address
         """
@@ -378,7 +369,7 @@ class Device(SQLMixin):
             "{} {} doesn't exist in controller".format(objectType, objectAddress)
         )
 
-    def find_overrides(self, force=False):
+    def find_overrides(self, force: bool = False) -> None:
         if self._find_overrides_running and not force:
             self._log.warning(
                 "Already running ({:.1%})... please wait.".format(
@@ -391,7 +382,7 @@ class Device(SQLMixin):
         self._find_overrides_running = True
         total = len(self.points)
 
-        def _find_overrides():
+        def _find_overrides() -> None:
             self._log.warning(
                 "Overrides are being checked, wait for completion message."
             )
@@ -411,7 +402,7 @@ class Device(SQLMixin):
     def find_overrides_progress(self) -> float:
         return self._find_overrides_progress
 
-    def release_all_overrides(self, force=False):
+    def release_all_overrides(self, force: bool = False) -> None:
         if self._release_overrides_running and not force:
             self._log.warning(
                 "Already running ({:.1%})... please wait.".format(
@@ -422,7 +413,7 @@ class Device(SQLMixin):
         self._release_overrides_running = True
         self._release_overrides_progress = 0.0
 
-        def _release_all_overrides():
+        def _release_all_overrides() -> None:
             self.find_overrides()
             while self._find_overrides_running:
                 self._release_overrides_progress = self._find_overrides_progress * 0.5
@@ -444,11 +435,19 @@ class Device(SQLMixin):
 
         self.do(_release_all_overrides)
 
-    def do(self, func):
+    def do(self, func: Any) -> None:
         DoOnce(func).start()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{} / Undefined".format(self.properties.name)
+
+
+def device(*args: Any, **kwargs: Any) -> Device:
+    dev = Device(*args, **kwargs)
+    t = asyncio.create_task(dev.new_state(DeviceDisconnected))
+    while not t.done:
+        pass
+    return dev
 
 
 # @fix_docs

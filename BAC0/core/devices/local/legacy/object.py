@@ -65,7 +65,7 @@ class ObjectFactory(object):
         self._properties = ObjectFactory.default_properties(
             objectType, properties, is_commandable, relinquish_default
         )
-        print(f"Obj {objectType} of type {type(objectType)}")
+        # print(f"Obj {objectType} of type {type(objectType)}")
         if objectType is not TrendLogObject:
             pv_datatype = ObjectFactory.get_pv_datatype(objectType)
 

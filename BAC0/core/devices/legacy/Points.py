@@ -354,7 +354,7 @@ class Point:
 
     def __getitem__(self, key):
         """
-        Way to get points... presentValue, status, flags, etc...
+        Way to get points... present-value, status, flags, etc...
 
         :param key: state
         :returns: list of enum states
@@ -376,7 +376,7 @@ class Point:
         Write to present value of a point
 
         :param value: (float) numeric value
-        :param prop: (str) property to write. Default = presentValue
+        :param prop: (str) property to write. Default = present-value
         :param priority: (int) priority to which write.
 
         """

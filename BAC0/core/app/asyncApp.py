@@ -1,5 +1,7 @@
+import asyncio
 import json
 import os
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 from bacpypes3.app import Application
 from bacpypes3.basetypes import BDTEntry, HostNPort
@@ -9,62 +11,43 @@ from ...core.utils.notes import note_and_log
 
 @note_and_log
 class BAC0Application:
-    """
-    Use bacpypes3 helpers to generate a BACnet application following
-    the arguments given to BAC0.
-    Everythign rely on the creation of the device object and the
-    network port object. The BACnet mode in the network port object
-    will also create the correct version of the link layer (normal, foreign, bbmd)
+    _learnedNetworks: Set = set()
+    _cfg: Optional[Dict[str, Any]] = None
 
-    I chose to keep the JSON file option over the arguments only and this way,
-    I do not close the door to applications that could be entirely defined
-    using a JSON file, instead of being dynamic-only.
-
-    This is why I read a JSON file, update it with information from BAC0
-    command line, and use bacpypes3 from_json to generate the app.
-
-    A very important thing is to use the bacpypes3.local.objects version
-    of the object. Or else, it fails.
-
-    It is also required to register the local objects in the vendor_id variable
-    (see base.py)
-
-    """
-
-    _learnedNetworks = set()
-    _cfg = None
-
-    def __init__(self, cfg, addr, json_file=None):
-        self._cfg = cfg  # backup what we wanted
-        self.cfg = self.update_config(cfg, json_file)
-        self.localIPAddr = addr
-        self.bdt = self._cfg["BAC0"]["bdt"]
+    def __init__(
+        self, cfg: Dict[str, Any], addr: str, json_file: Optional[str] = None
+    ) -> None:
+        self._cfg = cfg
+        self.cfg: Dict[str, Any] = self.update_config(cfg, json_file)
+        self.localIPAddr: str = addr
+        self.bdt: List[str] = self._cfg["BAC0"]["bdt"]
         self.device_cfg, self.networkport_cfg = self.cfg["application"]
         self._log.info(f"Configuration sent to build application : {self.cfg}")
-        self.app = Application.from_json(self.cfg["application"])
 
-    def add_foreign_device_host(self, host):
-        "TODO : Should be able to add to the existing list..."
+        self.app: Application = Application.from_json(self.cfg["application"])
+
+    def add_foreign_device_host(self, host: str) -> None:
         np = self.app.get_object_name("NetworkPort-1")
         hnp = HostNPort(host)
         np.fdBBMDAddress = hnp
 
-    def populate_bdt(self):
+    def populate_bdt(self) -> None:
         np = self.app.get_object_name("NetworkPort-1")
-        # populate the BDT
         bdt = []
         for addr in self.bdt:
             bdt_entry = BDTEntry(addr)
             bdt.append(bdt_entry)
         np.bbmdBroadcastDistributionTable = bdt
 
-    def get_bacnet_ip_mode(self):
+    def get_bacnet_ip_mode(self) -> str:
         return self.app.get_object_name("NetworkPort-1").bacnetIPMode
 
-    def unregister_from_bbmd(self):
+    def unregister_from_bbmd(self) -> None:
         self.app.unregister()
 
-    def update_config(self, cfg, json_file):
+    def update_config(
+        self, cfg: Dict[str, Any], json_file: Optional[str]
+    ) -> Dict[str, Any]:
         if json_file is None:
             if os.path.exists(
                 os.path.join(os.path.expanduser("~"), ".BAC0", "device.json")

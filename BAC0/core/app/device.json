@@ -71,7 +71,8 @@
                 "read-property",
                 "read-property-multiple",
                 "write-property",
-                "write-property-multiple"
+                "write-property-multiple",
+                "read-range"
             ],
             "protocol-version": 1,
             "segmentation-supported": "segmented-both",

@@ -8,6 +8,7 @@
 DoOnce.py - execute a task once
 """
 
+import asyncio
 from ..core.utils.notes import note_and_log
 from .TaskManager import OneShotTask
 
@@ -29,11 +30,23 @@ class DoOnce(OneShotTask):
 
         :returns: Nothing
         """
-        if hasattr(fnc, "__call__"):
+        self.fnc_args = None
+        if isinstance(fnc, tuple):
+            self.func, self.fnc_args = fnc
+        elif hasattr(fnc, "__call__"):
             self.func = fnc
             OneShotTask.__init__(self)
         else:
             raise ValueError("You must pass a function to this...")
 
-    def task(self):
-        self.func()
+    async def task(self):
+        if self.fnc_args:
+            if asyncio.iscoroutinefunction(self.func):
+                await self.func(self.fnc_args)
+            else:
+                self.func(self.fnc_args)
+        else:
+            if asyncio.iscoroutinefunction(self.func):
+                await self.func()
+            else:
+                self.func()

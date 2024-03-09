@@ -49,10 +49,10 @@ class LocalObjects(object):
         item = None
         if isinstance(obj, tuple):
             obj_type, instance = obj
-            item = self.device.this_application.get_object_id((obj_type, instance))
+            item = self.device.this_application.app.get_object_id((obj_type, instance))
         elif isinstance(obj, str):
             name = obj
-            item = self.device.this_application.get_object_name(name)
+            item = self.device.this_application.app.get_object_name(name)
         if item is None:
             raise UnknownObjectError("Can't find {} in local device".format(obj))
         else:
@@ -258,7 +258,7 @@ class Base:
         stopAllTasks()
         self._log.debug("Stopping BACnet stack")
         # Freeing socket
-        self.this_application.close()
+        self.this_application.app.close()
 
         self._stopped = True  # Stop stack thread
         self.t.join()
