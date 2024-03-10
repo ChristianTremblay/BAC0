@@ -36,6 +36,8 @@ from bacpypes3.debugging import ModuleLogger
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import ObjectIdentifier, Null
 
+from BAC0.tasks.DoOnce import DoOnce
+
 from ..app.asyncApp import BAC0Application
 from ..utils.notes import note_and_log
 
@@ -62,9 +64,13 @@ class WriteProperty:
     """
 
     def write(self, args, vendor_id=0, timeout=10):
-        asyncio.create_task(
-            self._write(args=args, vendor_id=vendor_id, timeout=timeout)
-        )
+        # asyncio.create_task(
+        #    self._write(args=args, vendor_id=vendor_id, timeout=timeout)
+        # )
+        # loop = asyncio.get_event_loop()
+        # loop.run_until_complete(self._write(args=args, vendor_id=vendor_id, timeout=timeout))
+        write_task = DoOnce((self._write, [args, vendor_id, timeout]))
+        write_task.start()
 
     async def _write(self, args, vendor_id=0, timeout=10):
         """Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
@@ -126,15 +132,17 @@ class WriteProperty:
         Utility to parse the string of the request.
         Supports @obj_ and @prop_ syntax for objest type and property id, useful with proprietary objects and properties.
         """
-        pattern = r"(?P<address>\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b|(\b\d+:\d+\b)) (?P<objId>(@obj_)?\w*[: ]*\d*) (?P<propId>(@prop_)?\w*) (?P<value>\w*) (?P<indx>-|\d*) (?P<priority>(1[0-6]|[0-9]))"
-        matches = re.finditer(pattern, args)
-        for match in matches:
+        pattern = r"(?P<address>\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b|(\b\d+:\d+\b)) (?P<objId>(@obj_)?[-\w]*[: ]*\d*) (?P<propId>(@prop_)?\w*)[ ]?(?P<value>\w*)?[ ]?(?P<indx>-|\d*)?[ ]?(?P<priority>(1[0-6]|[0-9]))?"
+        match = re.search(pattern, args)
+        try:
             address = match.group("address")
             objId = match.group("objId")
             prop_id = match.group("propId")
             value = match.group("value")
             indx = match.group("indx")
             priority = match.group("priority")
+        except AttributeError:
+            raise ValueError(f"Invalid request | {args}")
         if ":" in objId:
             obj_type, obj_inst = objId.split(":")
         else:
@@ -144,93 +152,31 @@ class WriteProperty:
         elif "@obj_" in obj_type:
             obj_type = int(obj_type.split("_")[1])
         obj_inst = int(obj_inst)
-        object_identifier = ObjectIdentifier((obj_type, obj_inst))
-        value = Null(()) if value == "null" else value
-        indx = None if indx == "-" else int(indx)
-        priority = int(priority)
         if "@prop_" in prop_id:
             prop_id = prop_id.split("_")[1]
         if prop_id.isdigit():
             prop_id = int(prop_id)
-        property_identifier = PropertyIdentifier(prop_id)
 
-        return (address, object_identifier, property_identifier, value, priority, indx)
+        value = Null(()) if value == "null" else value
+        indx = None if indx == "-" or indx is None or indx == "" else int(indx)
+        priority = None if priority is None else int(priority)
 
-    # TODO : Validate that I can let bp3 deal with this
-    #    async def _validate_value_vs_datatype(self, obj_type, prop_id, indx, vendor_id, value):
-    #        """
-    #        #This will ensure the value can be encoded and is valid in the context
-    #        """
-    #        _this_application: BAC0Application = self.this_application
-    #        _app: Application = _this_application.app
-    #        device_info = await _app.device_info_cache.get_device_info(address)####
-
-    # using the device info, look up the vendor information
-    #        if device_info:
-    #            vendor_info = get_vendor_info(device_info.vendor_identifier)
-    #        else:
-    #            vendor_info = get_vendor_info(0)
-    #        # get the datatype
-    #        datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
-    #        # change atomic values into something encodeable, null is a special
-    #        # case
-    #        if value == "null":
-    #            value = Null()
-    #        elif issubclass(datatype, Atomic):
-    #            if (
-    #                datatype is Integer
-    #                # or datatype is not Real
-    #                or datatype is Unsigned
-    #                or datatype is Enumerated
-    #            ):
-    #                value = int(value)
-    #            elif datatype is Real:
-    #                value = float(value)
-    #                # value = datatype(value)
-    #            else:
-    #                # value = float(value)
-    #                value = datatype(value)###
-
-    #            value = datatype(value)
-    #        elif issubclass(datatype, Array) and (indx is not None):
-    #            if indx == 0:
-    #                value = Integer(value)
-    #            elif issubclass(datatype.subtype, Atomic):
-    #                value = datatype.subtype(value)
-    #            elif not isinstance(value, datatype.subtype):
-    #                raise TypeError(
-    #                    "invalid result datatype, expecting {}".format(
-    #                        (datatype.subtype.__name__,)
-    #                    )
-    #                )
-
-    #        elif not isinstance(value, datatype):
-    #            raise TypeError(
-    #                "invalid result datatype, expecting {}".format((datatype.__name__,))
-    #            )
-
-    #        self._log.debug("{:<20} {!r} {}".format("Encodeable value", value, type(value)))
-
-    #        _value = Any()
-    #        try:
-    #            _value.cast_in(value)
-    #        except WritePropertyCastError as error:
-    #            self._log.error("WriteProperty cast error: {!r}".format(error))
-    #            raise
-
-    #        return _value
+        return (address, obj_type, obj_inst, prop_id, value, priority, indx)
 
     def build_wp_request(self, args, vendor_id=0):
         vendor_id = vendor_id
         (
             address,
-            object_identifier,
-            property_identifier,
+            obj_type,
+            obj_inst,
+            prop_id,
             value,
             priority,
             indx,
         ) = WriteProperty._parse_wp_args(args)
 
+        object_identifier = ObjectIdentifier((obj_type, obj_inst))
+        property_identifier = PropertyIdentifier(prop_id)
         device_address = Address(address)
 
         request = (

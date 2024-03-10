@@ -21,7 +21,7 @@ class DoOnce(OneShotTask):
         device['point_name'].poll(delay=60)
     """
 
-    def __init__(self, fnc):
+    def __init__(self, fnc, name="do_once"):
         """
         :param point: (BAC0.core.device.Points.Point) name of the point to read
         :param delay: (int) Delay between reads in seconds, defaults = 10sec
@@ -30,6 +30,7 @@ class DoOnce(OneShotTask):
 
         :returns: Nothing
         """
+        self.name = name
         self.fnc_args = None
         if isinstance(fnc, tuple):
             self.func, self.fnc_args = fnc
@@ -42,11 +43,15 @@ class DoOnce(OneShotTask):
     async def task(self):
         if self.fnc_args:
             if asyncio.iscoroutinefunction(self.func):
+                self._log.debug(
+                    f"Running {self.func.__name__} with args {self.fnc_args}"
+                )
                 await self.func(self.fnc_args)
             else:
                 self.func(self.fnc_args)
         else:
             if asyncio.iscoroutinefunction(self.func):
+                self._log.debug(f"Running {self.func.__name__}")
                 await self.func()
             else:
                 self.func()

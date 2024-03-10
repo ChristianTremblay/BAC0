@@ -177,7 +177,18 @@ class Point:
                     ),
                     vendor_id=self.properties.device.properties.vendor_id,
                 )
-                self.properties.priority_array = res
+                self.properties.priority_array = []
+                for i, each in enumerate(res):
+                    _t = each.__dict__["_choice"]
+                    val = each.__dict__[_t]
+                    self.properties.priority_array.append(
+                        {
+                            "priority": i + 1,
+                            "priorityValue": each,
+                            "value": val,
+                            "choice": _t,
+                        }
+                    )
             except (ValueError, UnknownPropertyError):
                 self.properties.priority_array = False
             except Exception as e:
@@ -245,21 +256,16 @@ class Point:
             return None
 
         await self.read_priority_array()
-        if not priority:
-            return self.properties.priority_array.debug_contents()
+        if priority is None:
+            return self.properties.priority_array
         if priority < 1 or priority > 16:
             raise IndexError("Please provide priority to read (1-16)")
 
         else:
-            pa = self.properties.priority_array.value[priority]
-            try:
-                key, value = zip(*pa.dict_contents().items())
-                if key[0] == "null":
-                    return None
-                else:
-                    return (key[0], value[0])
-            except ValueError:
+            val = self.properties.priority_array[priority - 1]["value"]._value
+            if isinstance(val, tuple) and len(val) == 0:
                 return None
+            return val
 
     def _trend(self, res: float) -> None:
         now = datetime.now().astimezone()
@@ -375,7 +381,9 @@ class Point:
             except Exception:
                 raise ValueError("Cannot find property named {}".format(key))
 
-    async def write(self, value, *, prop="presentValue", priority=""):
+    async def write(
+        self, value: t.Any, *, prop: str = "presentValue", priority: str = "16"
+    ):
         """
         Write to present value of a point
 
@@ -393,13 +401,14 @@ class Point:
                     and float(priority) >= 1
                     and float(priority) <= 16
                 ):
-                    priority = "- {}".format(priority)
+                    priority = "{}".format(priority)
                 else:
                     raise ValueError("Priority must be a number between 1 and 16")
-
+            req = f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} {prop} {value} - {priority}"
+            self._log.info(req)
             try:
-                await self.properties.device.properties.network.write(
-                    f"{Address(self.properties.device.properties.address)} {ObjectIdentifier(f'{self.properties.type}:{self.properties.address}')} {PropertyIdentifier(prop)} {value} - {priority}",
+                await self.properties.device.properties.network._write(
+                    req,
                     vendor_id=self.properties.device.properties.vendor_id,
                 )
             except NoResponseFromController:
@@ -408,8 +417,8 @@ class Point:
             # Read after the write so history gets updated.
             await self.value
 
-    def default(self, value):
-        self.write(value, prop="relinquishDefault")
+    async def default(self, value):
+        await self.write(value, prop="relinquishDefault")
 
     async def sim(self, value, *, force=False):
         """
@@ -425,12 +434,7 @@ class Point:
             or force is not False
         ):
             await self.properties.device.properties.network.sim(
-                "{} {} {} presentValue {}".format(
-                    self.properties.device.properties.address,
-                    self.properties.type,
-                    self.properties.address,
-                    str(value),
-                )
+                f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} presentValue {value}"
             )
             self.properties.simulated = (True, value)
 
@@ -439,24 +443,26 @@ class Point:
         Sets the Out_Of_Service property [to True].
         """
         await self.properties.device.properties.network.out_of_service(
-            "{} {} {}".format(
-                self.properties.device.properties.address,
-                self.properties.type,
-                str(self.properties.address),
-            )
+            f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} outOfService"
         )
         self.properties.simulated = (True, None)
+
+    async def is_out_of_service(self):
+        """
+        Check if the Out_Of_Service property is true.
+        """
+        res = await self.properties.device.properties.network.is_out_of_service(
+            f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} outOfService"
+        )
+        self.properties.simulated = (True, None)
+        return res
 
     async def release(self):
         """
         Clears the Out_Of_Service property [to False] - so the controller regains control of the point.
         """
         await self.properties.device.properties.network.release(
-            "{} {} {}".format(
-                self.properties.device.properties.address,
-                self.properties.type,
-                str(self.properties.address),
-            )
+            f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} outOfService inactive"
         )
         self.properties.simulated = (False, None)
 
@@ -501,7 +507,7 @@ class Point:
         else:
             # input are left... must be simulated
             if str(value).lower() == "auto":
-                self.release()
+                await self.release()
             else:
                 await self.sim(value)
 
@@ -893,7 +899,10 @@ class BooleanPoint(Point):
         polling = self.properties.device.properties.pollDelay
         if (polling >= 90 or polling <= 0) and not self.cov_registered:
             # Force reading
-            self.value
+            self._log.warning(
+                "Cannot read in __repr__ as it need an asynchronous call, using lastValue"
+            )
+            self.lastValue
         return "{}/{} : {}".format(
             self.properties.device.properties.name, self.properties.name, self.boolValue
         )

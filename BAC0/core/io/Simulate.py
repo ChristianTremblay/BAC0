@@ -8,10 +8,22 @@
 """
 Simulate.py - simulate the value of controller I/O values
 """
+import re
+from bacpypes3.app import Application
+from bacpypes3.basetypes import (
+    DateTime,
+    PropertyIdentifier,
+    RangeByPosition,
+    RangeBySequenceNumber,
+    RangeByTime,
+)
+from bacpypes3.primitivedata import ObjectIdentifier, Null
 
 # --- standard Python modules ---
 # --- 3rd party modules ---
 # --- this application's modules ---
+from .Write import WriteProperty
+from ..app.asyncApp import BAC0Application
 from .IOExceptions import (
     ApplicationNotStarted,
     NoResponseFromController,
@@ -37,34 +49,30 @@ class Simulation:
         """
         if not self._started:
             raise ApplicationNotStarted("BACnet stack not running - use startApp()")
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
+        (
+            address,
+            obj_type,
+            obj_inst,
+            prop_id,
+            value,
+            priority,
+            indx,
+        ) = WriteProperty._parse_wp_args(args)
 
-        # with self.this_application._lock: if use lock...won't be able to call read...
-        args = args.split()
-        addr, obj_type, obj_inst, value = args[:4]
-        prop_id = "presentValue"
-
-        if await self.read("{} {} {} outOfService".format(addr, obj_type, obj_inst)):
-            self.write(
-                "{} {} {} {} {}".format(addr, obj_type, obj_inst, prop_id, value)
-            )
+        if await self.is_out_of_service(args):
+            await self._write(args)
         else:
             try:
-                self.write(
-                    "{} {} {} outOfService True".format(addr, obj_type, obj_inst)
-                )
+                await self.out_of_service(args)
             except NoResponseFromController as e:
-                self._log.warning(
-                    "Failed to write to OutOfService property ({})".format(e)
-                )
+                self._log.warning(f"Failed to write to OutOfService property ({e})")
 
             try:
-                if await self.read(
-                    "{} {} {} outOfService".format(addr, obj_type, obj_inst)
-                ):
-                    self.write(
-                        "{} {} {} {} {}".format(
-                            addr, obj_type, obj_inst, prop_id, value
-                        )
+                if await self.is_out_of_service(args):
+                    await self._write(
+                        f"{address} {obj_type} {obj_inst} {prop_id} {value}"
                     )
                 else:
                     raise OutOfServiceNotSet()
@@ -73,7 +81,26 @@ class Simulation:
                     "Failed to write to OutOfService property ({})".format(e)
                 )
 
-    def out_of_service(self, args):
+    async def is_out_of_service(self, args):
+        if not self._started:
+            raise ApplicationNotStarted("BACnet stack not running - use startApp()")
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
+        (
+            address,
+            obj_type,
+            obj_inst,
+            prop_id,
+            value,
+            priority,
+            indx,
+        ) = WriteProperty._parse_wp_args(args)
+
+        oos = await self.read(f"{address} {obj_type} {obj_inst} outOfService")
+
+        return True if oos else False
+
+    async def out_of_service(self, args):
         """
         Set the Out_Of_Service property so the Present_Value of an I/O may be written.
 
@@ -82,12 +109,17 @@ class Simulation:
         """
         if not self._started:
             raise ApplicationNotStarted("BACnet stack not running - use startApp()")
-
-        # with self.this_application._lock: if use lock...won't be able to call read...
-        args = args.split()
-        addr, obj_type, obj_inst = args[:3]
+        (
+            address,
+            obj_type,
+            obj_inst,
+            prop_id,
+            value,
+            priority,
+            indx,
+        ) = WriteProperty._parse_wp_args(args)
         try:
-            self.write("{} {} {} outOfService True".format(addr, obj_type, obj_inst))
+            await self._write(f"{address} {obj_type} {obj_inst} outOfService True")
         except NoResponseFromController as e:
             self._log.warning("Failed to write to OutOfService property ({})".format(e))
 
@@ -102,17 +134,22 @@ class Simulation:
         if not self._started:
             raise ApplicationNotStarted("BACnet stack not running - use startApp()")
 
-        args = args.split()
-        addr, obj_type, obj_inst = args[:3]
+        (
+            address,
+            obj_type,
+            obj_inst,
+            prop_id,
+            value,
+            priority,
+            indx,
+        ) = WriteProperty._parse_wp_args(args)
         try:
-            self.write("{} {} {} outOfService False".format(addr, obj_type, obj_inst))
+            await self._write(f"{address} {obj_type} {obj_inst} outOfService False")
         except NoResponseFromController as e:
             self._log.warning("Failed to write to OutOfService property ({})".format(e))
 
         try:
-            if await self.read(
-                "{} {} {} outOfService".format(addr, obj_type, obj_inst)
-            ):
+            if await self.is_out_of_service(args) is True:
                 raise OutOfServiceSet()
             else:
                 pass  # Everything is ok"
