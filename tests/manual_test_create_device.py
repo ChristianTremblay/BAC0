@@ -86,9 +86,9 @@ async def main():
     test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
     while True:
         await asyncio.sleep(0.01)
-        #print(test_device.points)
-        #(test_device_30.points)
-        #(test_device_300.points)
+        # print(test_device.points)
+        # (test_device_30.points)
+        # (test_device_300.points)
 
 
 if __name__ == "__main__":

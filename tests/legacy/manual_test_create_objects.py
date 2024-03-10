@@ -1,4 +1,3 @@
-
 import BAC0
 from BAC0.core.devices.local.factory import (
     analog_input,

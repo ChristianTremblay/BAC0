@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 
-
 def test_WhoHas(network_and_devices):
     # Write to an object and validate new value is correct
     bacnet = network_and_devices.bacnet

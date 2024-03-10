@@ -7,7 +7,6 @@ from bacpypes3.pdu import Address
 from BAC0.core.app.asyncApp import BAC0Application
 
 
-
 # this class follows the same design as schedule/calendar
 class EventEnrollment:
     def __make_event_parameters_request(
