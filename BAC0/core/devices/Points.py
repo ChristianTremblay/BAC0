@@ -487,6 +487,7 @@ class Point:
         AnalogValue are written to
         AnalogOutput are overridden
         """
+        self._log.debug(f"Setting to {value}")
         if "characterstring" in self.properties.type:
             asyncio.create_task(self.write(value))
 
@@ -509,6 +510,7 @@ class Point:
             if str(value).lower() == "auto":
                 await self.release()
             else:
+                self._log.debug(f"Simulating to {value}")
                 await self.sim(value)
 
     def _set(self, value):
@@ -569,7 +571,7 @@ class Point:
             self._match_task.running = True
 
         elif self._match_task.running and delay > 0:
-            self._match_task.task.stop()
+            await self._match_task.task.stop()
             self._match_task.running = False
             await asyncio.sleep(1)
 
@@ -578,7 +580,7 @@ class Point:
             self._match_task.running = True
 
         elif self._match_task.running and delay == 0:
-            self._match_task.task.stop()
+            await self._match_task.task.stop()
             self._match_task.running = False
 
         else:

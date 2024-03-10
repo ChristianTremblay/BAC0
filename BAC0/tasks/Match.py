@@ -50,7 +50,8 @@ class Match(Task):
                     if ":" in self.command.history[-1]
                     else self.command.history[-1]
                 )
-                await self.status._setitem(_val)
+                self._log.debug(f"Match value is {_val}")
+                await self.status._setitem(_val.replace(" ", ""))
         except Exception:
             self._log.error(
                 "Something wrong matching {} and {}... try again next time...".format(
