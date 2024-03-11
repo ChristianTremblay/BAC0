@@ -14,7 +14,7 @@ import typing as t
 
 # --- standard Python modules ---
 import weakref
-
+import asyncio
 from BAC0.scripts.Base import Base
 
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
@@ -223,7 +223,7 @@ class Lite(
                             each.properties.name, each.properties.address
                         )
                     )
-                    each.ping()
+                    asyncio.create_task(each.ping()) 
                     if each.properties.ping_failures > 3:
                         raise NumerousPingFailures
 
