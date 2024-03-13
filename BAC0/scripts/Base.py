@@ -9,6 +9,7 @@ Doc here
 """
 import random
 import sys
+import asyncio
 import typing as t
 from collections import defaultdict
 
@@ -250,18 +251,22 @@ class Base:
     def unregister_foreign_device(self):
         self.this_application.unregister_from_bbmd()
 
-    def disconnect(self):
+    def disconnect(self) -> asyncio.Task:
+        task = asyncio.create_task(self._disconnect())
+        return task
+    
+    async def _disconnect(self):
         """
         Stop the BACnet stack.  Free the IP socket.
         """
         self._log.debug("Stopping All running tasks")
-        stopAllTasks()
+        await stopAllTasks()
         self._log.debug("Stopping BACnet stack")
         # Freeing socket
         self.this_application.app.close()
 
         self._stopped = True  # Stop stack thread
-        self.t.join()
+        #self.t.join()
         self._started = False
         Base._used_ips.discard(self.localIPAddr)
         self._log.info("BACnet stopped")
