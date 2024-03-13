@@ -10,7 +10,7 @@ Points.py - Definition of points so operations on Read results are more convenie
 
 import time
 from collections import namedtuple
-
+import asyncio
 # --- standard Python modules ---
 from datetime import datetime
 
@@ -162,7 +162,7 @@ class VirtualPoint(VirtualPointProperties):
                     self._log.exception("Can't append to history")
 
     @property
-    def value(self):
+    async def value(self):
         """
         Retrieve value of the point
         """
@@ -203,6 +203,11 @@ class VirtualPoint(VirtualPointProperties):
             return his_table
 
     def match_value(self, value, *, delay=5, use_last_value=False):
+        asyncio.create_task(
+            self._match_value(value=value, delay=delay, use_last_value=use_last_value)
+        )
+
+    async def _match_value(self, value, *, delay=5, use_last_value=False):
         """
         This allow functions like :
             device['point'].match('value')
@@ -217,9 +222,9 @@ class VirtualPoint(VirtualPointProperties):
             self._match_task.running = True
 
         elif self._match_task.running and delay > 0:
-            self._match_task.task.stop()
+            await self._match_task.task.stop()
             self._match_task.running = False
-            time.sleep(1)
+            await asyncio.sleep(1)
 
             self._match_task.task = Match_Value(
                 value=value, point=self, delay=delay, use_last_value=use_last_value
@@ -228,7 +233,7 @@ class VirtualPoint(VirtualPointProperties):
             self._match_task.running = True
 
         elif self._match_task.running and delay == 0:
-            self._match_task.task.stop()
+            await self._match_task.task.stop()
             self._match_task.running = False
 
         else:
@@ -238,43 +243,43 @@ class VirtualPoint(VirtualPointProperties):
         return "{}/{} : {:.2f} {}".format(
             self.properties.device.properties.name,
             self.properties.name,
-            float(self.value),
+            float(self.lastValue),
             self.properties.units_state,
         )
 
     def __add__(self, other):
-        return self.value + other
+        return self.lastValue + other
 
     __radd__ = __add__
 
     def __sub__(self, other):
-        return self.value - other
+        return self.lastValue - other
 
     def __rsub__(self, other):
-        return other - self.value
+        return other - self.lastValue
 
     def __mul__(self, other):
-        return self.value * other
+        return self.lastValue * other
 
     __rmul__ = __mul__
 
     def __truediv__(self, other):
-        return self.value / other
+        return self.lastValue / other
 
     def __rtruediv__(self, other):
-        return other / self.value
+        return other / self.lastValue
 
     def __lt__(self, other):
-        return self.value < other
+        return self.lastValue < other
 
     def __le__(self, other):
-        return self.value <= other
+        return self.lastValue <= other
 
     def __eq__(self, other):
-        return self.value == other
+        return self.lastValue == other
 
     def __gt__(self, other):
-        return self.value > other
+        return self.lastValue > other
 
     def __ge__(self, other):
-        return self.value >= other
+        return self.lastValue >= other
