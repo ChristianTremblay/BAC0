@@ -130,7 +130,11 @@ class Task(object):
         Task.tasks.append(self)
 
     def stop(self):
-        self._task.cancel()
+        for each in Task.tasks:
+            if each.id == self.id:
+                each.aio_task.cancel()
+                Task.tasks.remove(each)
+                return True
 
     @property
     def done(self):
