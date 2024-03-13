@@ -11,6 +11,7 @@ Points.py - Definition of points so operations on Read results are more convenie
 import time
 from collections import namedtuple
 import asyncio
+
 # --- standard Python modules ---
 from datetime import datetime
 

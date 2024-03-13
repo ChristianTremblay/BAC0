@@ -254,7 +254,7 @@ class Base:
     def disconnect(self) -> asyncio.Task:
         task = asyncio.create_task(self._disconnect())
         return task
-    
+
     async def _disconnect(self):
         """
         Stop the BACnet stack.  Free the IP socket.
@@ -266,7 +266,7 @@ class Base:
         self.this_application.app.close()
 
         self._stopped = True  # Stop stack thread
-        #self.t.join()
+        # self.t.join()
         self._started = False
         Base._used_ips.discard(self.localIPAddr)
         self._log.info("BACnet stopped")

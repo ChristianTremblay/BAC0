@@ -223,7 +223,7 @@ class Lite(
                             each.properties.name, each.properties.address
                         )
                     )
-                    asyncio.create_task(each.ping()) 
+                    asyncio.create_task(each.ping())
                     if each.properties.ping_failures > 3:
                         raise NumerousPingFailures
 

@@ -80,7 +80,7 @@ class Match_Value(Task):
         self, value=None, point=None, delay=5, name=None, use_last_value=False
     ):
         self._log.debug("Creating MatchValue task for {} and {}".format(value, point))
-        #if not isinstance(value, (float, int, str, bool)) or not hasattr(self.value, "__call__"):
+        # if not isinstance(value, (float, int, str, bool)) or not hasattr(self.value, "__call__"):
         #    raise ValueError("Value must be a float, int, str or bool OR must be a callable function that returns one of these types.")
         self.value = value
         self.point = point
@@ -95,9 +95,7 @@ class Match_Value(Task):
                 _point = self.point.lastValue
             else:
                 _point = await self.point.value
-            value = (
-                self.value() if hasattr(self.value, "__call__") else self.value
-            )
+            value = self.value() if hasattr(self.value, "__call__") else self.value
             if value != _point:
                 await self.point._set(value)
         except Exception as error:
@@ -110,7 +108,9 @@ class Match_Value(Task):
             await self.point._set("auto")
         except ValueError:
             self._log.warning(
-                "Could not set {} to auto. If this is a network input, it is normal as we didn't have to override or simulate".format(self.point)
+                "Could not set {} to auto. If this is a network input, it is normal as we didn't have to override or simulate".format(
+                    self.point
+                )
             )
 
     async def stop(self):

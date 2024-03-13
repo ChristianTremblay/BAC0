@@ -176,7 +176,7 @@ class Device(SQLMixin):
                 raise BadDeviceDefinition(
                     "Please provide address, device id and network or specify from_backup argument"
                 )
-            
+
         self.initialized = True
 
     async def new_state(self, newstate: Any) -> None:
