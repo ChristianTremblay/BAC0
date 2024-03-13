@@ -85,38 +85,20 @@ class DeviceProperties(object):
 @note_and_log
 class Device(SQLMixin):
     """
-    Represent a BACnet device.  Once defined, it allows use of read, write, sim, release
-    functions to communicate with the device on the network.
+    This class represents a BACnet device. It provides methods to read, write, simulate, and release
+    communication with the device on the network.
 
-    :param address: address of the device (ex. '2:5')
-    :param device_id: bacnet device ID (boid)
-    :param network: defined by BAC0.connect()
-    :param poll: (int) if > 0, will poll every points each x seconds.
-    :from_backup: sqlite backup file
-    :segmentation_supported: (boolean) When segmentation is not supported, BAC0
-                             will not use read property multiple to poll the
-                             device.
-    :object_list: (list) Use can provide a custom object_list to use for the
-                  the creation of the device. the object list must be built
-                  using the same pattern returned by bacpypes when polling the
-                  objectList property
-                  example ::
-                      my_obj_list = [('file', 1),
-                     ('analogInput', 2),
-                     ('analogInput', 3),
-                     ('analogInput', 5),
-                     ('analogInput', 4),
-                     ('analogInput', 0),
-                     ('analogInput', 1)]
-    :auto_save: (False or int) If False or 0, auto_save is disabled. To
-                Activate, pass an integer representing the number of polls
-                before auto_save is called. Will write the histories to
-                SQLite db locally.
-    :clear_history_on_save: (boolean) Will clear device history
+    Parameters:
+    address (str, optional): The address of the device (e.g., '2:5'). Defaults to None.
+    device_id (int, optional): The BACnet device ID (boid). Defaults to None.
+    network (BAC0.scripts.ReadWriteScript.ReadWriteScript, optional): Defined by BAC0.connect(). Defaults to None.
+    poll (int, optional): If greater than 0, the device will poll every point each x seconds. Defaults to None.
+    from_backup (str, optional): SQLite backup file. Defaults to None.
+    segmentation_supported (bool, optional): When set to False, BAC0 will not use read property multiple to poll the device. Defaults to None.
+    object_list (list, optional): User can provide a custom object list for the creation of the device. The object list must be built using the same pattern returned by bacpypes when polling the objectList property. Defaults to None.
+    auto_save (bool or int, optional): If False or 0, auto_save is disabled. To activate, pass an integer representing the number of polls before auto_save is called. Will write the histories to SQLite db locally. Defaults to None.
+    clear_history_on_save (bool, optional): If set to True, will clear device history. Defaults to None.
 
-    :type address: (str)
-    :type device_id: int
-    :type network: BAC0.scripts.ReadWriteScript.ReadWriteScript
     """
 
     def __init__(
@@ -136,7 +118,7 @@ class Device(SQLMixin):
         reconnect_on_failure: bool = True
     ):
         self.properties = DeviceProperties()
-
+        self.initialized = False
         self.properties.address = address
         self.properties.device_id = device_id
         self.properties.network = network
@@ -194,12 +176,19 @@ class Device(SQLMixin):
                 raise BadDeviceDefinition(
                     "Please provide address, device id and network or specify from_backup argument"
                 )
+            
+        self.initialized = True
 
     async def new_state(self, newstate: Any) -> None:
         """
-        Base of the state machine mechanism.
-        Used to make transitions between device states.
-        Take care to call the state init function.
+        Changes the state of the device.
+
+        This method forms the basis of the state machine mechanism and is used to transition between device states.
+        It also calls the state initialization function.
+
+        :param newstate: The new state to transition to.
+        :type newstate: Any
+        :return: None
         """
         self._log.info(
             "Changing device state to {}".format(str(newstate).split(".")[-1])
