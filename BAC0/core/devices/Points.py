@@ -20,7 +20,13 @@ from bacpypes3.basetypes import BinaryPV, PropertyIdentifier
 from bacpypes3.pdu import Address
 
 # --- 3rd party modules ---
-from bacpypes3.primitivedata import CharacterString, ObjectIdentifier
+from bacpypes3.primitivedata import (
+    CharacterString,
+    ObjectIdentifier,
+    Real,
+    Boolean,
+    Integer,
+)
 
 try:
     import pandas as pd
@@ -66,6 +72,7 @@ class PointProperties(object):
         self.priority_array = None
         self.history_size = None
         self.bacnet_properties = {}
+        self.status_flags = None
 
     def __repr__(self):
         return "{}".format(self.asdict)
@@ -88,6 +95,7 @@ class Point:
     """
 
     _cache_delta = timedelta(seconds=1)
+    _cov_identifier = 0
 
     def __init__(
         self,
@@ -362,6 +370,10 @@ class Point:
         else:
             self.properties.device.properties.network.add_trend(self)
 
+    @property
+    def status(self):
+        return self.properties.status_flags
+
     async def __getitem__(self, key):
         """
         Way to get points... presentValue, status, flags, etc...
@@ -629,25 +641,95 @@ class Point:
         """
         return len(self.history)
 
-    # TODO
-    def subscribe_cov(self, confirmed=True, lifetime=None, callback=None):
-        address = self.properties.device.properties.address
-        obj_tuple = (self.properties.type, int(self.properties.address))
-        self.properties.device.properties.network.cov(
-            address,
-            obj_tuple,
-            confirmed=confirmed,
-            lifetime=lifetime,
-            callback=callback,
+    def subscribe_cov(
+        self, confirmed: bool = True, lifetime: int = None, callback=None
+    ):
+        """
+        Subscribes to the Change of Value (COV) service for this point.
+
+        The COV service allows the device to notify the application of changes to the value of a property.
+        This method sets up the subscription and starts an asynchronous task to listen for these notifications.
+
+        Args:
+            confirmed (bool, optional): If True, the device will wait for a confirmation from the application
+                after sending a COV notification. Defaults to True.
+            lifetime (int, optional): The lifetime of the subscription in seconds. If None, the subscription
+                will last indefinitely. Defaults to None.
+            callback (function, optional): A function to be called when a COV notification is received.
+                The function should accept two arguments: the sender (the device) and the args (the notification).
+
+        Raises:
+            RuntimeError: If the task is already running, a RuntimeError will be raised.
+
+        Returns:
+            None
+        """
+        address = Address(self.properties.device.properties.address)
+        obj_identifier = ObjectIdentifier(
+            (self.properties.type, int(self.properties.address))
+        )
+        _app = self.properties.device.properties.network.this_application.app
+        process_identifier = Point._cov_identifier + 1
+        Point._cov_identifier = process_identifier
+        self.cov_registered = True
+
+        async def cov_ctxmgr(
+            address: Address = None,
+            obj_identifier: ObjectIdentifier = None,
+            confirmed: bool = False,
+            lifetime: int = None,
+            identifier: int = None,
+        ):
+            self._log.info(f"Subscribing to COV for {self.properties.name}")
+            try:
+                async with _app.change_of_value(
+                    address,
+                    obj_identifier,
+                    identifier,
+                    confirmed,
+                    lifetime,
+                ) as scm:
+                    while self.cov_registered is True:
+                        incoming = asyncio.ensure_future(scm.get_value())
+                        done, pending = await asyncio.wait(
+                            [incoming],
+                            return_when=asyncio.FIRST_COMPLETED,
+                        )
+                        for task in pending:
+                            self._log.info(
+                                f"Canceling COV subscription for {self.properties.name}"
+                            )
+                            task.cancel()
+                        if incoming in done:
+                            property_identifier, property_value = incoming.result()
+                            self._log.debug(
+                                f"COV notification received for {self.properties.name} | {property_identifier} -> {type(property_identifier)} with value {property_value} | {property_value} -> {type(property_value)}"
+                            )
+                            if property_identifier == PropertyIdentifier.presentValue:
+                                val = extract_value_from_primitive_data(property_value)
+                                self._trend(val)
+                            elif property_identifier == PropertyIdentifier.statusFlags:
+                                self.properties.status_flags = property_value
+                            else:
+                                self._log.warning(
+                                    f"Unsupported COV property identifier {property_identifier}"
+                                )
+            except Exception as e:
+                self._log.error(f"Error in COV subscription : {e}")
+
+        asyncio.create_task(
+            cov_ctxmgr(
+                address=address,
+                obj_identifier=obj_identifier,
+                confirmed=confirmed,
+                lifetime=lifetime,
+                identifier=process_identifier,
+            )
         )
 
-    # TODO
-    def cancel_cov(self, callback=None):
-        address = self.properties.device.properties.address
-        obj_tuple = (self.properties.type, int(self.properties.address))
-        self.properties.device.properties.network.cancel_cov(
-            address, obj_tuple, callback=callback
-        )
+    def cancel_cov(self):
+        self._log.info(f"Canceling COV subscription for {self.properties.name}")
+        self.cov_registered = False
 
     def update_description(self, value):
         asyncio.create_task(self._update_description(value=value))
@@ -711,10 +793,10 @@ class NumericPoint(Point):
             history_size=history_size,
         )
 
-    @property
-    def val(self):
-        res = asyncio.run_coroutine_threadsafe(self.value)
-        return res
+    #    @property
+    #    def val(self):
+    #        res = asyncio.run_coroutine_threadsafe(self.value)
+    #        return res.result()
 
     @property
     async def value(self):
@@ -1396,3 +1478,19 @@ class StringPointOffline(EnumPoint):
 
 class OfflineException(Exception):
     pass
+
+
+def extract_value_from_primitive_data(value):
+    if isinstance(value, float):
+        return float(value)
+    elif isinstance(value, Boolean):
+        if value == int(1):
+            return True
+        else:
+            return False
+    elif isinstance(value, int):
+        return int(value)
+    elif isinstance(value, str):
+        return str(value)
+    else:
+        return value

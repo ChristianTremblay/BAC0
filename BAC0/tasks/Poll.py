@@ -153,7 +153,7 @@ class DevicePoll(Task):
                     type(e),
                 )
             )
-            if self.device.ping():
+            if await self.device.ping():
                 self.failures = 0
 
 

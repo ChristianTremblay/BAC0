@@ -114,7 +114,7 @@ class ReadUtilsMixin:
     Handle ReadPropertyMultiple for a device
     """
 
-    def _rpm_request_by_name(self, point_list):
+    def _rpm_request_by_name(self, point_list, property_identifier="presentValue"):
         """
         :param point_list: a list of point
         :returns: (tuple) read request for each points, points
@@ -127,9 +127,7 @@ class ReadUtilsMixin:
             points.append(point)
 
             str_list.append(
-                " {} {} presentValue".format(
-                    point.properties.type, point.properties.address
-                )
+                f" {point.properties.type} {point.properties.address} {property_identifier}"
             )
             rpm_param = "".join(str_list)
             requests.append(rpm_param)
@@ -428,6 +426,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
         points_per_request=25,
         discover_request=(None, 6),
         force_single=False,
+        property_identifier="presentValue",
     ):
         """
         Read points from a device using a ReadPropertyMultiple request.
@@ -520,7 +519,9 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
 
             else:
                 self._log.debug("Read Multiple")
-                big_request = self._rpm_request_by_name(points_list)
+                big_request = self._rpm_request_by_name(
+                    points_list, property_identifier=property_identifier
+                )
                 i = 0
                 for request in batch_requests(big_request[0], points_per_request):
                     try:
