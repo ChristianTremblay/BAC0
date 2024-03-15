@@ -1,12 +1,16 @@
 try:
-    from influxdb_client import InfluxDBClient, Point, WriteOptions
-    from influxdb_client.client.write_api import WriteApi
+    from influxdb_client import Point, WriteOptions
+    from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 except ImportError:
     raise ImportError("Install influxdb to use this feature")
 
 import pytz
+import asyncio
+
+from ..core.utils.notes import note_and_log
 
 
+@note_and_log
 class InfluxDB:
     """
     Connection to InfluxDB to write to DB or to read from it
@@ -16,81 +20,93 @@ class InfluxDB:
     port = 8086
     token = None
     org = None
+    timeout = 6000
     bucket = None
     tags_file = None
     username = None
     password = None
-    client: InfluxDBClient
-    write_api: WriteApi
+    client: InfluxDBClientAsync
 
     def __init__(self, params):
-        # params should be a dict with name=InfluxDB and bucket=valid_bucket_to_use.
-        # optional params : url, port, token and org may be provided
-        # if they are not provided, BAC0 will try to get them from environment
-        # variables that shoudl have been provided in a .env file, which is loaded
-        # when BAC0 is imported.
         for k, v in params.items():
             setattr(self, k, v)
         if self.bucket is None:
             raise ValueError("Missing bucket name, please provide one in db_params")
-        self.connect_to_db()
+        # self.connect_to_db()
 
-        self.write_api = self.client.write_api(
-            write_options=WriteOptions(
-                batch_size=getattr(self, "batch_size", 25),
-                flush_interval=getattr(self, "flush_interval", 10_000),
-                jitter_interval=getattr(self, "jitter_interval", 2_000),
-                retry_interval=getattr(self, "retry_interval", 5_000),
-                max_retries=getattr(self, "max_retries", 5),
-                max_retry_delay=getattr(self, "max_retry_delay", 30_000),
-                exponential_base=getattr(self, "exponential_base", 2),
-            )
+        self.write_options = WriteOptions(
+            batch_size=getattr(self, "batch_size", 25),
+            flush_interval=getattr(self, "flush_interval", 10_000),
+            jitter_interval=getattr(self, "jitter_interval", 2_000),
+            retry_interval=getattr(self, "retry_interval", 5_000),
+            max_retries=getattr(self, "max_retries", 5),
+            max_retry_delay=getattr(self, "max_retry_delay", 30_000),
+            exponential_base=getattr(self, "exponential_base", 2),
         )
-        self.query_api = self.client.query_api()
 
-    def connect_to_db(self):
-        if self.url is None:
-            # Will try environment variables
-            self.client = InfluxDBClient.from_env_properties()
-        else:
-            _url = "{}:{}".format(self.url, self.port)
-            if self.token:
-                self.client = InfluxDBClient(url=_url, token=self.token)
-            else:
-                self.client = InfluxDBClient(
-                    url=_url,
-                    token="{}:{}".format(self.username, self.password),
-                    bucket=self.bucket,
-                    org="-",
+    async def write(self, bucket, record):
+        async with InfluxDBClientAsync.from_env_properties() as client:
+            try:
+                self._log.info(f"Write called for record: {record}")
+                write_api = client.write_api()
+                response = await write_api.write(
+                    bucket=bucket, org=self.org, record=record
                 )
-        try:
-            self.health
-        except Exception:
-            raise ConnectionError("Error connecting to InfluxDB")
+                self._log.info(f"Write response: {response}")
+            except Exception as error:
+                self._log.error(f"Error while writing to db: {error}")
 
-    @property
-    def health(self):
-        return self.client.health()
+    async def query(self, query):
+        async with InfluxDBClientAsync.from_env_properties() as client:
+            query_api = client.query_api()
+            records = await query_api.query_stream(query)
+            async for record in records:
+                yield record
+
+    async def _health(self):
+        async with InfluxDBClientAsync.from_env_properties() as client:
+            ready = await client.ping()
+            if ready:
+                self._log.info("InfluxDB connection is ready")
 
     def clean_value(self, object_type, val, units_state):
-        if "analog" in object_type:
-            _string_value = "{:.3f} {}".format(val, units_state)
-            _value = val
-        elif "multi" in object_type:
-            _string_value = "{}".format(val.split(":")[1])
-            _value = int(val.split(":")[0])
-        elif "binary" in object_type:
-            try:
-                _string_value = "{}".format(units_state[int(val.split(":"[0]))])
-            except Exception:
+        try:
+            if "analog" in object_type:
+                _string_value = "{:.3f} {}".format(val, units_state)
+                _value = val
+            elif "multi" in object_type:
                 _string_value = "{}".format(val.split(":")[1])
-            _value = int(val.split(":")[0])
-        else:
-            _string_value = "{}".format(val)
-            _value = val
-        return (_value, _string_value)
+                _value = int(val.split(":")[0])
+            elif "binary" in object_type:
+                try:
+                    _string_value = "{}".format(units_state[int(val.split(":"[0]))])
+                except Exception:
+                    try:
+                        _value, _string_value = val.split(":")
+                        _value = int(_value)
+                    except Exception as error:
+                        self._log.error(
+                            f"Error while cleaning value {val} of object type {object_type}: {error}"
+                        )
+            else:
+                _string_value = "{}".format(val)
+                _value = val
+            return (_value, _string_value)
+        except AttributeError as error:
+            self._log.error(
+                f"Error while cleaning value {val} of object type {object_type}: {error}"
+            )
 
-    def write_points_lastvalue_to_db(self, list_of_points):
+    async def write_points_lastvalue_to_db(self, list_of_points):
+        """
+        Writes a list of points to the InfluxDB database.
+
+        Args:
+            list_of_points (list): A list of points to be written to the database.
+
+        Returns:
+            None
+        """
         _points = []
 
         for point in list_of_points:
@@ -122,64 +138,8 @@ class InfluxDB:
                 _tag_id, _tag_value = each
                 _point.tag(_tag_id, _tag_value)
             _points.append(_point)
-        self.write_api.write(self.bucket, self.org, _points)
-
-    def write_all_to_db(self, device):
-        # This is probably not useful... keeping that here in case
-        try:
-            import pandas as pd
-        except ImportError:
-            raise ImportError("You need pandas and numpy to write all histories to db")
-        _value = None
-
-        for each in device:
-            _object = "{}:{}".format(each.properties.type, each.properties.address)
-            _object_name = each.properties.name
-            _description = each.properties.description
-            _units_state = each.properties.units_state
-            _devicename = each.properties.device.properties.name
-            _device_id = each.properties.device.properties.device_id
-            _name = "{}/{}".format(_devicename, _object_name)
-            _data = {"value": each.history}
-            _df = pd.DataFrame(_data)
-            _df.index = _df.index.tz_convert(pytz.utc)
-            _df["value"] = _df.apply(
-                lambda x: self.clean_value(
-                    each.properties.type, x["value"], each.properties.units_state
-                )[0],
-                axis=1,
-            )
-            _df["string_value"] = _df.apply(
-                lambda x: self.clean_value(
-                    each.properties.type, x["value"], each.properties.units_state
-                )[1],
-                axis=1,
-            )
-            _df["object_name"] = _object_name
-            _df["description"] = _description
-            _df["units_state"] = "{}".format(_units_state)
-            _df["object"] = _object
-            _df["device"] = _devicename
-            _df["device_id"] = _device_id
-            try:
-                # print(_name)
-                self.write_api.write(
-                    self.bucket,
-                    org=self.org,
-                    record=_df,
-                    data_frame_measurement_name=_name,
-                    data_frame_tag_columns=[
-                        "object_name",
-                        "description",
-                        "units_state",
-                        "object",
-                        "device",
-                        "device_id",
-                    ],
-                )
-            except Exception:
-                # print('Oups', _name, error)
-                continue
+        self._log.info(f"Writing to db: {_points}")
+        await self.write(self.bucket, _points)
 
     def read_last_value_from_db(self, id=None):
         # example id : Device_5004/analogInput:1

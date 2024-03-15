@@ -457,6 +457,7 @@ class DeviceConnected(Device):
             self.properties.network.unregister_device(self)
             self.properties.network = None
         if save_on_disconnect:
+            self._log.info("Savig device to database...")
             self.save()
         if self.properties.db_name:
             await self.new_state(DeviceFromDB)

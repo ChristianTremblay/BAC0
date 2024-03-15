@@ -257,7 +257,11 @@ class Point:
             except ValueError:
                 return None
 
-    def _trend(self, res: float) -> None:
+    def _trend(self, res: t.Union[float, int, str]) -> None:
+        if not isinstance(res, (float, int, str)):
+            raise ValueError(
+                f"Value {res} must be a number or a string but is {type(res)}"
+            )
         now = datetime.now().astimezone()
         self._history.timestamp.append(now)
         self._history.value.append(res)

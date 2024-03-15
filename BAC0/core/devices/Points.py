@@ -17,6 +17,13 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 
 from bacpypes3.basetypes import BinaryPV, PropertyIdentifier
+from bacpypes3.primitivedata import (
+    CharacterString,
+    ObjectIdentifier,
+    Real,
+    Boolean,
+    Integer,
+)
 from bacpypes3.pdu import Address
 
 # --- 3rd party modules ---
@@ -121,8 +128,9 @@ class Point:
         self._match_task.running = False
 
         self._history.timestamp = []
-        self._history.value = [presentValue]
-        self._history.timestamp.append(datetime.now().astimezone())
+        self._history.value = []
+        # self._history.value = [presentValue]
+        # self._history.timestamp.append(datetime.now().astimezone())
 
         self.properties.history_size = history_size
 
@@ -275,14 +283,11 @@ class Point:
                 return None
             return val
 
-    def _trend(self, res: float) -> None:
+    def _trend(self, res: t.Union[float, int, str]) -> None:
         now = datetime.now().astimezone()
         self._history.timestamp.append(now)
         self._history.value.append(res)
-        if self.properties.device.properties.network.database:
-            self.properties.device.properties.network.database.write_points_lastvalue_to_db(
-                [self]
-            )
+
         if self.properties.history_size is None:
             return
         else:

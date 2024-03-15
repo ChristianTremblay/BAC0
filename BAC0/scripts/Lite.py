@@ -185,16 +185,26 @@ class Lite(
                     if db_params["name"].lower() == "influxdb"
                     else None
                 )
-                self._log.info(
-                    "Connection made to InfluxDB bucket : {}".format(
-                        self.database.bucket
-                    )
+                asyncio.create_task(
+                    asyncio.wait_for(self.database._health(), timeout=5)
                 )
-            except ConnectionError:
+            except TimeoutError:
                 self._log.error(
                     "Unable to connect to InfluxDB. Please validate parameters"
                 )
+        if self.database:
+            self._write_to_db = RecurringTask(
+                self.save_registered_devices_to_db,
+                delay=60,
+                name="Write to DB Task",
+            )
+            self._write_to_db.start()
         self._initialized = True
+
+    async def save_registered_devices_to_db(self):
+        if len(self.registered_devices) > 0:
+            for each in self.registered_devices:
+                await self.database.write_points_lastvalue_to_db(each.points)
 
     def register_device(
         self, device: t.Union[RPDeviceConnected, RPMDeviceConnected]
@@ -343,10 +353,13 @@ class Lite(
         return list(self._points_to_trend.values())
 
     def disconnect(self) -> None:
+        asyncio.create_task(self._disconnect())
+
+    async def _disconnect(self) -> None:
         self._log.debug("Disconnecting")
         for each in self.registered_devices:
-            each.disconnect()
-        super().disconnect()
+            await each.disconnect()
+        await super()._disconnect()
 
     def __repr__(self) -> str:
         return "Bacnet Network using ip {} with device id {}".format(
