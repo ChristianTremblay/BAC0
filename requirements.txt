@@ -1,3 +1,0 @@
-bacpypes3
-colorama
-pytz

@@ -1,3 +1,0 @@
-recursive-include BAC0/web/templates *
-recursive-include BAC0/web/static *
-
