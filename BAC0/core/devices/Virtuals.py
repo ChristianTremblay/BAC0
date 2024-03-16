@@ -260,6 +260,7 @@ class VirtualPoint:
             float(self.lastValue),
             self.properties.units_state,
         )
+
     @property
     def asdict(self):
         return self.__dict__

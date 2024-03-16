@@ -10,6 +10,7 @@ import asyncio
 from ..core.utils.notes import note_and_log
 from ..core.devices.Virtuals import VirtualPoint
 
+
 @note_and_log
 class InfluxDB:
     """
@@ -145,7 +146,6 @@ class InfluxDB:
         success = await self.write(self.bucket, self.points)
         if success:
             self.points = []
-
 
     def read_last_value_from_db(self, id=None):
         # example id : Device_5004/analogInput:1
