@@ -55,9 +55,10 @@ class Match(Task):
         except Exception:
             self._log.error(
                 "Something wrong matching {} and {}... try again next time...".format(
-                    self.command, self.status
+                    self.command.properties.name, self.status.properties.name
                 )
             )
+            await asyncio.sleep(1)
 
     async def stop(self):
         await self.status._setitem("auto")
@@ -100,7 +101,7 @@ class Match_Value(Task):
                 await self.point._set(value)
         except Exception as error:
             self._log.error(
-                f"Something is wrong matching {self.value} and {self.point}... try again next time {error}"
+                f"Something is wrong matching {self.value} and {self.point.properties.name}... try again next time {error}"
             )
 
     async def _before_stop(self):

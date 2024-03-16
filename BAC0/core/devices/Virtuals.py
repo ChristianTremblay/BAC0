@@ -75,20 +75,30 @@ class VirtualPointProperties(object):
     """
 
     def __init__(self):
+        self.device = None
         self.name = None
-        self.device = VirtualDevice()
+        self.type = "virtual"
+        self.address = None
         self.description = ""
         self.units_state = ""
-        self.type = "virtual"
+        self.simulated = False
+        self.overridden = False
+        self.priority_array = None
         self.history_size = None
+        self.bacnet_properties = {}
+        self.status_flags = None
         self._df = None
 
     def __repr__(self):
-        return "VIRTUAL POINT-- {} | Descr : {}".format(self.name, self.description)
+        return "{}".format(self.asdict)
+
+    @property
+    def asdict(self):
+        return self.__dict__
 
 
 @note_and_log
-class VirtualPoint(VirtualPointProperties):
+class VirtualPoint:
     """
     Virtual points could be used to show calculation result on Bokeh
     A function is passed at creation time and this function must return a pandas Serie
@@ -97,17 +107,20 @@ class VirtualPoint(VirtualPointProperties):
     def __init__(
         self,
         name,
+        device=None,
         initial_value=None,
         history_fn=None,
         description=None,
         units="No Units",
     ):
+        self.properties = VirtualPointProperties()
+        self.properties.device = VirtualDevice() if device is None else device
         if description is None:
             raise ValueError("Please provide description")
         if not _PANDAS:
             raise ImportError("Pandas required to use VirtualPoints")
         self.name = name
-        self.properties = VirtualPointProperties()
+        self.properties.address = None
         self.properties.name = name
         self.properties.description = description
         self.properties.units_state = units
@@ -247,6 +260,9 @@ class VirtualPoint(VirtualPointProperties):
             float(self.lastValue),
             self.properties.units_state,
         )
+    @property
+    def asdict(self):
+        return self.__dict__
 
     def __add__(self, other):
         return self.lastValue + other

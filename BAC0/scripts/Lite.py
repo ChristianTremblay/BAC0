@@ -22,6 +22,7 @@ from ..core.devices.Points import Point
 from ..core.devices.Trends import TrendLog
 from ..core.devices.Virtuals import VirtualPoint
 from ..core.functions.Alias import Alias
+from ..tasks.TaskManager import Task
 
 # from ..core.functions.legacy.cov import CoV
 # from ..core.functions.legacy.DeviceCommunicationControl import (
@@ -192,19 +193,28 @@ class Lite(
                 self._log.error(
                     "Unable to connect to InfluxDB. Please validate parameters"
                 )
-        if self.database:
-            self._write_to_db = RecurringTask(
-                self.save_registered_devices_to_db,
-                delay=60,
-                name="Write to DB Task",
-            )
-            self._write_to_db.start()
+        if self.database:   
+            self.create_save_to_influxdb_task(delay=20)
         self._initialized = True
+
+    def create_save_to_influxdb_task(self, delay: int = 60) -> None:
+        self._write_to_db = RecurringTask(
+            self.save_registered_devices_to_db,
+            delay=60,
+            name="Write to InfluxDB Task",
+        )
+        self._write_to_db.start()
 
     async def save_registered_devices_to_db(self):
         if len(self.registered_devices) > 0:
             for each in self.registered_devices:
-                await self.database.write_points_lastvalue_to_db(each.points)
+                try:
+                    await self.database.write_points_lastvalue_to_db(each.points)
+                except Exception as error:
+                    self._log.error(f"Error writing points of {each} to InfluxDB : {error}. Stopping task.")
+                    await self._write_to_db.stop()
+                    self._log.warning("Write to InfluxDB Task stopped. Restarting")
+                    self.create_save_to_influxdb_task(delay=20)
 
     def register_device(
         self, device: t.Union[RPDeviceConnected, RPMDeviceConnected]
@@ -351,7 +361,14 @@ class Lite(
         This will present a list of all registered trends used by Bokeh Server
         """
         return list(self._points_to_trend.values())
-
+    
+    @property
+    def tasks(self) -> t.List[Task]:
+        """
+        This will present a list of all registered tasks
+        """
+        return Task.tasks
+    
     def disconnect(self) -> None:
         asyncio.create_task(self._disconnect())
 

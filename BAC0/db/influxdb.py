@@ -8,7 +8,7 @@ import pytz
 import asyncio
 
 from ..core.utils.notes import note_and_log
-
+from ..core.devices.Virtuals import VirtualPoint
 
 @note_and_log
 class InfluxDB:
@@ -33,7 +33,7 @@ class InfluxDB:
         if self.bucket is None:
             raise ValueError("Missing bucket name, please provide one in db_params")
         # self.connect_to_db()
-
+        self.points = []
         self.write_options = WriteOptions(
             batch_size=getattr(self, "batch_size", 25),
             flush_interval=getattr(self, "flush_interval", 10_000),
@@ -97,16 +97,7 @@ class InfluxDB:
                 f"Error while cleaning value {val} of object type {object_type}: {error}"
             )
 
-    async def write_points_lastvalue_to_db(self, list_of_points):
-        """
-        Writes a list of points to the InfluxDB database.
-
-        Args:
-            list_of_points (list): A list of points to be written to the database.
-
-        Returns:
-            None
-        """
+    def prepare_point(self, list_of_points):
         _points = []
 
         for point in list_of_points:
@@ -137,9 +128,24 @@ class InfluxDB:
             for each in point.tags:
                 _tag_id, _tag_value = each
                 _point.tag(_tag_id, _tag_value)
-            _points.append(_point)
-        self._log.info(f"Writing to db: {_points}")
-        await self.write(self.bucket, _points)
+            self.points.append(_point)
+
+    async def write_points_lastvalue_to_db(self, list_of_points):
+        """
+        Writes a list of points to the InfluxDB database.
+
+        Args:
+            list_of_points (list): A list of points to be written to the database.
+
+        Returns:
+            None
+        """
+
+        self._log.debug(f"Writing to db: {self.points}")
+        success = await self.write(self.bucket, self.points)
+        if success:
+            self.points = []
+
 
     def read_last_value_from_db(self, id=None):
         # example id : Device_5004/analogInput:1

@@ -287,6 +287,10 @@ class Point:
         now = datetime.now().astimezone()
         self._history.timestamp.append(now)
         self._history.value.append(res)
+        if self.properties.device.properties.network.database:
+            self.properties.device.properties.network.database.prepare_point(
+                [self]
+            )
 
         if self.properties.history_size is None:
             return
@@ -422,7 +426,7 @@ class Point:
                 else:
                     raise ValueError("Priority must be a number between 1 and 16")
             req = f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} {prop} {value} - {priority}"
-            self._log.info(req)
+            #self._log.info(req)
             try:
                 await self.properties.device.properties.network._write(
                     req,
