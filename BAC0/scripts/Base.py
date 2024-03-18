@@ -121,11 +121,12 @@ class Base:
         description="http://christiantremblay.github.io/BAC0/",
         location="Bromont, Québec",
         spin=None,
+        timezone="America/Montreal",
     ):
 
         self._log.debug("Configurating app")
 
-        self.timehandler = TimeHandler()
+        self.timehandler = TimeHandler(tz=timezone)
 
         if not _COMPLETE:
             self._log.debug(
