@@ -4,17 +4,34 @@ try:
 except ImportError:
     raise ImportError("Install influxdb to use this feature")
 
-import pytz
 import asyncio
+from datetime import datetime
 
-from ..core.utils.notes import note_and_log
+import pytz
+
 from ..core.devices.Virtuals import VirtualPoint
+from ..core.utils.notes import note_and_log
 
 
 @note_and_log
 class InfluxDB:
     """
-    Connection to InfluxDB to write to DB or to read from it
+    This class provides a connection to an InfluxDB database.
+
+    It allows for writing to and reading from the database. The connection parameters such as the URL, port, token, organization,
+    and bucket are specified as class attributes.
+
+    Attributes:
+    url (str): The URL of the InfluxDB server.
+    port (int): The port on which the InfluxDB server is listening.
+    token (str): The token for authentication with the InfluxDB server.
+    org (str): The organization for the InfluxDB server.
+    timeout (int): The timeout for requests to the InfluxDB server, in milliseconds.
+    bucket (str): The default bucket to use for operations.
+    tags_file (str): The file containing tags for the InfluxDB server.
+    username (str): The username for authentication with the InfluxDB server.
+    password (str): The password for authentication with the InfluxDB server.
+    client (InfluxDBClientAsync): The client for interacting with the InfluxDB server.
     """
 
     url = None
@@ -45,15 +62,30 @@ class InfluxDB:
             exponential_base=getattr(self, "exponential_base", 2),
         )
 
-    async def write(self, bucket, record):
+    async def write(self, bucket: str, record):
+        """
+        Asynchronously writes a record to the specified bucket in the InfluxDB database.
+
+        This method establishes a connection with the InfluxDB client and attempts to write the provided record to the specified bucket.
+
+        Parameters:
+        bucket (str): The name of the bucket to which the record will be written.
+        record: The record to be written to the bucket. The record should be in a format acceptable by the InfluxDB write API.
+
+        Example:
+        await bacnet.database.write(bucket="BAC0_Test", record=my_record)
+
+        Raises:
+        Exception: If an error occurs while writing to the database.
+        """
         async with InfluxDBClientAsync.from_env_properties() as client:
             try:
-                self._log.info(f"Write called for record: {record}")
+                self._log.debug(f"Write called for record: {record}")
                 write_api = client.write_api()
                 response = await write_api.write(
                     bucket=bucket, org=self.org, record=record
                 )
-                self._log.info(f"Write response: {response}")
+                self._log.debug(f"Write response: {response}")
             except Exception as error:
                 self._log.error(f"Error while writing to db: {error}")
 
@@ -64,13 +96,89 @@ class InfluxDB:
             async for record in records:
                 yield record
 
+    async def delete(
+        self,
+        predicate: str,
+        value: str,
+        start: datetime = datetime.utcfromtimestamp(0),
+        stop: datetime = datetime.now(),
+        bucket: str = None,
+    ):
+        """
+         Asynchronously delete data from the specified bucket in the InfluxDB database.
+
+        This method deletes all records that match the specified predicate and value
+        within the given time range (start and stop).
+
+        Parameters:
+        predicate (str): The field to match for deletion.
+        value (str): The value that the predicate field should have for a record to be deleted.
+        start (datetime, optional): The start of the time range for deletion. Defaults to the Unix epoch.
+        stop (datetime, optional): The end of the time range for deletion. Defaults to the current time.
+        bucket (str, optional): The name of the bucket from which to delete. If not provided, defaults to the instance's bucket.
+
+        Example:
+        await bacnet.database.delete(predicate="object", value="virtual:73195493", bucket="BAC0_Test")
+
+        Returns:
+        bool: True if the deletion was successful, False otherwise.
+
+        Raises:
+        Exception: If an error occurs while deleting.
+        """
+        if bucket is None:
+            bucket = self.bucket
+        async with InfluxDBClientAsync.from_env_properties() as client:
+            try:
+                start = start
+                stop = stop
+                # Delete data with location = 'Prague'
+                successfully = await client.delete_api().delete(
+                    start=start,
+                    stop=stop,
+                    bucket=bucket,
+                    predicate=f'{predicate} = "{value}"',
+                )
+            except Exception as error:
+                self._log.error(f"Error while deleting from db: {error}")
+
     async def _health(self):
+        """
+        Asynchronously checks the health of the connection to the InfluxDB server.
+
+        This method establishes a connection with the InfluxDB client and sends a ping request. If the server responds,
+        it logs that the connection is ready.
+
+        Example:
+        await self._health()
+
+        Raises:
+        Exception: If an error occurs while pinging the server.
+        """
         async with InfluxDBClientAsync.from_env_properties() as client:
             ready = await client.ping()
             if ready:
                 self._log.info("InfluxDB connection is ready")
 
     def clean_value(self, object_type, val, units_state):
+        """
+        Cleans and formats the value based on the object type.
+
+        This method checks the object type and formats the value accordingly. If the object type contains "analog",
+        the value is formatted to a string with three decimal places and the units state. If the object type contains "multi",
+        the value is split on ":" and the second part is used.
+
+        Parameters:
+        object_type (str): The type of the object.
+        val: The value to be cleaned.
+        units_state: The units state of the object.
+
+        Returns:
+        tuple: A tuple containing the cleaned string value and the original value.
+
+        Raises:
+        Exception: If an error occurs while cleaning the value.
+        """
         try:
             if "analog" in object_type:
                 _string_value = "{:.3f} {}".format(val, units_state)
