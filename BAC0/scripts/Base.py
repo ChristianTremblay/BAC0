@@ -7,18 +7,14 @@
 """
 Doc here
 """
+import asyncio
 import random
 import sys
-import asyncio
 import typing as t
 from collections import defaultdict
 
 # --- standard Python modules ---
-from bacpypes3.basetypes import (
-    DeviceStatus,
-    HostNPort,
-    ObjectTypesSupported,
-)
+from bacpypes3.basetypes import DeviceStatus, HostNPort, ObjectTypesSupported
 from bacpypes3.json.util import sequence_to_json
 from bacpypes3.local.device import DeviceObject
 from bacpypes3.local.networkport import NetworkPortObject
@@ -82,23 +78,23 @@ class Base:
 
     def __init__(
         self,
-        localIPAddr="127.0.0.1",
-        networkNumber=None,
-        localObjName="BAC0",
-        deviceId=None,
-        firmwareRevision="".join(sys.version.split("|")[:2]),
-        maxAPDULengthAccepted="1024",
-        maxSegmentsAccepted="1024",
-        segmentationSupported="segmentedBoth",
-        bbmdAddress=None,
-        bbmdTTL=0,
-        bdtable=None,
-        modelName="BAC0 Scripting Tool",
-        vendorId=842,
-        vendorName="SERVISYS inc.",
-        description="http://christiantremblay.github.io/BAC0/",
-        location="Bromont, Québec",
-        spin=None,
+        localIPAddr: str = "127.0.0.1",
+        networkNumber: int = None,
+        localObjName: str = "BAC0",
+        deviceId: int = None,
+        firmwareRevision: str = "".join(sys.version.split("|")[:2]),
+        maxAPDULengthAccepted: str = "1024",
+        maxSegmentsAccepted: str = "1024",
+        segmentationSupported: str = "segmentedBoth",
+        bbmdAddress: str = None,
+        bbmdTTL: int = 0,
+        bdtable: dict = None,
+        modelName: str = "BAC0 Scripting Tool",
+        vendorId: int = 842,
+        vendorName: str = "SERVISYS inc.",
+        description: str = "http://christiantremblay.github.io/BAC0/",
+        location: str = "Bromont, Québec",
+        timezone: str = "America/Montreal",
     ):
         self._log.debug("Configurating app")
 
@@ -113,7 +109,7 @@ class Base:
         )
         _BAC0_vendor.register_object_class(ObjectTypesSupported.device, DeviceObject)
 
-        self.timehandler = TimeHandler()
+        self.timehandler = TimeHandler(tz=timezone)
 
         self.response = None
         self._initialized = False
