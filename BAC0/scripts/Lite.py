@@ -19,6 +19,7 @@ import asyncio
 try:
     from rich.table import Table
     from rich.console import Console
+
     RICH = True
 except ImportError:
     RICH = False
@@ -333,7 +334,9 @@ class Lite(
             del self._points_to_trend[oid]
 
     @property
-    async def devices(self) -> t.List[t.Tuple[str, str, str, int]]:
+    async def devices(
+        self, _return_list: bool = False
+    ) -> t.List[t.Tuple[str, str, str, int]]:
         """
         This property will create a good looking table of all the discovered devices
         seen on the network.
@@ -342,25 +345,35 @@ class Lite(
         manufacturer, etc and in big network, this could be a long process.
         """
         lst = []
-        for each in list(self.discoveredDevices or {}):
-            objid, device_address, network_number = each
+        for k, v in self.discoveredDevices.items():
+            objid, device_address, network_number, vendor_id, vendor_name = (
+                v["object_instance"],
+                v["address"],
+                v["network_number"],
+                v["vendor_id"],
+                v["vendor_name"],
+            )
             devId = objid[1]
             try:
                 deviceName, vendorName = await self.readMultiple(
-                    f"{device_address} device {devId} objectName vendorName")
+                    f"{device_address} device {devId} objectName vendorName"
+                )
             except (UnrecognizedService, ValueError):
                 self._log.warning(
-                    f"Unrecognized service for {devId} | {device_address}")
+                    f"Unrecognized service for {devId} | {device_address}"
+                )
                 try:
                     deviceName = await self.read(
-                        f"{device_address} device {devId} objectName")
+                        f"{device_address} device {devId} objectName"
+                    )
                     vendorName = await self.read(
-                        f"{device_address} device {devId} vendorName")
+                        f"{device_address} device {devId} vendorName"
+                    )
                 except NoResponseFromController:
-                    self._log.warning(f"No response from {each}")
+                    self._log.warning(f"No response from {k}")
                     continue
             except (NoResponseFromController, Timeout):
-                self._log.warning(f"No response from {each}")
+                self._log.warning(f"No response from {k}")
                 continue
             lst.append((deviceName, vendorName, devId, device_address, network_number))
         if RICH:
@@ -373,9 +386,16 @@ class Lite(
             table.add_column("Vendor Name")
             for each in lst:
                 deviceName, vendorName, devId, device_address, network_number = each
-                table.add_row(f"{network_number}", f"{deviceName}", f"{device_address}", f"{devId}", f"{vendorName}") 
+                table.add_row(
+                    f"{network_number}",
+                    f"{deviceName}",
+                    f"{device_address}",
+                    f"{devId}",
+                    f"{vendorName}",
+                )
             console.print(table)
-        return lst  # type: ignore[return-value]
+        if _return_list:
+            return lst  # type: ignore[return-value]
 
     @property
     def trends(self) -> t.List[t.Any]:
