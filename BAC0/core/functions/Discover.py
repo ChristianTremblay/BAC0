@@ -8,7 +8,12 @@ from bacpypes3.primitivedata import ObjectIdentifier
 from BAC0.core.app.asyncApp import BAC0Application
 
 from ...core.utils.notes import note_and_log
-
+try:
+    from rich.table import Table
+    from rich.console import Console
+    RICH = True
+except ImportError:
+    RICH = False
 
 @note_and_log
 class Discover:
@@ -122,7 +127,7 @@ class Discover:
                     # global_broadcast=global_broadcast, if not address -> global
                 )
                 for each in _res:
-                    found.append(each)
+                    found.append((each,network))
 
         else:
             self._log.info(
@@ -136,12 +141,24 @@ class Discover:
                 # global_broadcast=global_broadcast,
             )
             for each in _res:
-                found.append(each)
-        for each in found:
+                found.append((each, _this_network))
+
+
+        for dev, network_number in found:
             if not self.discoveredDevices:
                 self.discoveredDevices = set()  # we can add device as we found some...
-            device_address: Address = each.pduSource
-            objid: ObjectIdentifier = each.iAmDeviceIdentifier
-            print(f"{objid} @ {device_address}")
-            self.discoveredDevices.add((objid, device_address))
+            device_address: Address = dev.pduSource
+            objid: ObjectIdentifier = dev.iAmDeviceIdentifier
+            self.discoveredDevices.add((objid, device_address, network_number))
+
+        if RICH:
+            console = Console()
+            table = Table(show_header=True, header_style="bold magenta")
+            table.add_column("Device Instance")
+            table.add_column("Network Number")
+            table.add_column("Address")
+            for each in self.discoveredDevices:
+                objid, device_address, network_number = each
+                table.add_row(f"{objid}",f"{network_number}",f"{device_address}")
+            console.print(table)
         return found

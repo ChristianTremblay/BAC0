@@ -15,6 +15,13 @@ import typing as t
 # --- standard Python modules ---
 import weakref
 import asyncio
+
+try:
+    from rich.table import Table
+    from rich.console import Console
+    RICH = True
+except ImportError:
+    RICH = False
 from BAC0.scripts.Base import Base
 
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
@@ -335,26 +342,39 @@ class Lite(
         manufacturer, etc and in big network, this could be a long process.
         """
         lst = []
-        for device in list(self.discoveredDevices or {}):
-            objId, addr = device
-            devId = objId[1]  # you can do better
-
+        for each in list(self.discoveredDevices or {}):
+            objid, device_address, network_number = each
+            devId = objid[1]
             try:
                 deviceName, vendorName = await self.readMultiple(
-                    f"{addr} device {devId} objectName vendorName"
-                )
+                    f"{device_address} device {devId} objectName vendorName")
             except (UnrecognizedService, ValueError):
-                self._log.warning(f"Unrecognized service for {addr} | {devId}")
+                self._log.warning(
+                    f"Unrecognized service for {devId} | {device_address}")
                 try:
-                    deviceName = await self.read(f"{addr} device {devId} objectName")
-                    vendorName = await self.read(f"{addr} device {devId} vendorName")
+                    deviceName = await self.read(
+                        f"{device_address} device {devId} objectName")
+                    vendorName = await self.read(
+                        f"{device_address} device {devId} vendorName")
                 except NoResponseFromController:
-                    self._log.warning(f"No response from {addr} | {devId}")
+                    self._log.warning(f"No response from {each}")
                     continue
             except (NoResponseFromController, Timeout):
-                self._log.warning(f"No response from {addr} | {devId}")
+                self._log.warning(f"No response from {each}")
                 continue
-            lst.append((deviceName, vendorName, str(addr), devId))
+            lst.append((deviceName, vendorName, devId, device_address, network_number))
+        if RICH:
+            console = Console()
+            table = Table(show_header=True, header_style="bold magenta")
+            table.add_column("Network_number")
+            table.add_column("Device Name")
+            table.add_column("Address")
+            table.add_column("Device Instance")
+            table.add_column("Vendor Name")
+            for each in lst:
+                deviceName, vendorName, devId, device_address, network_number = each
+                table.add_row(f"{network_number}", f"{deviceName}", f"{device_address}", f"{devId}", f"{vendorName}") 
+            console.print(table)
         return lst  # type: ignore[return-value]
 
     @property
