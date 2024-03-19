@@ -150,8 +150,8 @@ def bacnet_properties(properties: Dict[str, Any]) -> Callable:
                 else:
                     try:
                         property_type = obj.get_property_type(property_name)
-                        print(f"Property Type : {property_type}")
-                        print(f"Value : {value}")
+                        #print(f"Property Type : {property_type}")
+                        #print(f"Value : {value}")
                         obj.__setattr__(property_name, property_type(value))
                     except (KeyError, AttributeError) as error:
                         raise ValueError(
