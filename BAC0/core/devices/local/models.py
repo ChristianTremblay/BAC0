@@ -178,7 +178,6 @@ def multistate_input(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "MSI", **kwargs)
     kwargs["objectType"] = MultiStateInputObject
     kwargs["is_commandable"] = True
-    kwargs["relinquish_default"] = Unsigned(1)
 
     return multistate(**kwargs)
 
@@ -187,7 +186,6 @@ def multistate_output(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "MSO", **kwargs)
     kwargs["objectType"] = MultiStateOutputObject
     kwargs["is_commandable"] = True
-    kwargs["relinquish_default"] = Unsigned(1)
 
     return multistate(**kwargs)
 
@@ -196,7 +194,6 @@ def multistate_value(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "MSV", **kwargs)
     kwargs["objectType"] = MultiStateValueObject
     kwargs["is_commandable"] = True
-    kwargs["relinquish_default"] = Unsigned(1)
 
     return multistate(**kwargs)
 
