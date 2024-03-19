@@ -8,9 +8,10 @@
 Points.py - Definition of points so operations on Read results are more convenient.
 """
 
+import asyncio
+import hashlib
 import time
 from collections import namedtuple
-import asyncio
 
 # --- standard Python modules ---
 from datetime import datetime
@@ -28,6 +29,7 @@ try:
 except ImportError:
     _PANDAS = False
 
+from bacpypes3.basetypes import EngineeringUnits
 
 from ...tasks.Match import Match_Value
 
@@ -77,7 +79,7 @@ class VirtualPointProperties(object):
     def __init__(self):
         self.device = None
         self.name = None
-        self.type = "virtual"
+        self.type = "analog-virtual"
         self.address = None
         self.description = ""
         self.units_state = ""
@@ -102,28 +104,41 @@ class VirtualPoint:
     """
     Virtual points could be used to show calculation result on Bokeh
     A function is passed at creation time and this function must return a pandas Serie
+
+    I chose to create those points without using BACnet classes because Virtual
+    points are meant to be used on BAC0.device and creating fake BACnet objects
+    could lead to potential confusion.
     """
 
     def __init__(
         self,
         name,
         device=None,
+        object_type="analogVirtual",
         initial_value=None,
         history_fn=None,
         description=None,
         units="No Units",
+        tags=[],
     ):
         self.properties = VirtualPointProperties()
+        self.properties.type = object_type
         self.properties.device = VirtualDevice() if device is None else device
         if description is None:
             raise ValueError("Please provide description")
         if not _PANDAS:
             raise ImportError("Pandas required to use VirtualPoints")
         self.name = name
-        self.properties.address = None
         self.properties.name = name
+        self.properties.address = int(hashlib.sha256(name.encode()).hexdigest(), 16) % (
+            10**8
+        )
+        # 8 digits address based on the name. this way I don't have to keep track of numbers and if the same name is used, we should get something similar and the InfluxDB trend will mark the point as the same.
         self.properties.description = description
-        self.properties.units_state = units
+        self.properties.units_state = (
+            EngineeringUnits(units) if object_type == "analogVirtual" else units
+        )
+        self.tags = tags
         self._history_fn = history_fn
 
         self._history = namedtuple("_history", ["timestamp", "value"])
@@ -158,6 +173,9 @@ class VirtualPoint:
     def _trend(self, res):
         self._history.timestamp.append(datetime.now().astimezone())
         self._history.value.append(res)
+        if self.properties.device.properties.network.database:
+            self.properties.device.properties.network.database.prepare_point([self])
+
         if self.properties.history_size is None:
             return
         else:
@@ -174,6 +192,18 @@ class VirtualPoint:
                     assert len(self._history.timestamp) == len(self._history.value)
                 except Exception:
                     self._log.exception("Can't append to history")
+
+    @property
+    def lastTimestamp(self):
+        """
+        returns: last timestamp read
+        """
+        if _PANDAS:
+            last_val = self.history.dropna()
+            last_val_clean = None if len(last_val) == 0 else last_val.index[-1]
+            return last_val_clean
+        else:
+            return self._history.timestamp[-1]
 
     @property
     async def value(self):
@@ -252,6 +282,19 @@ class VirtualPoint:
 
         else:
             raise RuntimeError("Stop task before redefining it")
+
+    def tag(self, tag_id, tag_value, lst=None):
+        """
+        Add tag to point. Those tags can be used to make queries,
+        add information, etc.
+        They will be included if InfluxDB is used.
+        """
+        if lst is None:
+            self.tag.append((tag_id, tag_value))
+        else:
+            for each in lst:
+                tag_id, tag_value = each
+                self.tag.append((tag_id, tag_value))
 
     def __repr__(self):
         return "{}/{} : {:.2f} {}".format(
