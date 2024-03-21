@@ -49,7 +49,7 @@ from bacpypes3.basetypes import (
     RangeBySequenceNumber,
     RangeByTime,
 )
-from bacpypes3.errors import ObjectError, PropertyError
+from bacpypes3.errors import NoResponse, ObjectError, PropertyError
 from bacpypes3.object import get_vendor_info
 
 # --- 3rd party modules ---
@@ -63,6 +63,7 @@ from ..utils.notes import note_and_log
 # --- this application's modules ---
 from .IOExceptions import (
     ApplicationNotStarted,
+    NoResponseFromController,
     ReadRangeException,
     SegmentationNotSupported,
     UnknownObjectError,
@@ -144,7 +145,8 @@ class ReadProperty:
             raise UnknownObjectError(f"Unknown object {args}")
 
         # except bufferOverflow
-        # except NoResponseFromController
+        except NoResponse:
+            raise NoResponseFromController
 
         except PropertyError:
             if "description" in args:

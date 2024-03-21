@@ -10,19 +10,22 @@ It uses provided args to register itself as a device in the network
 and allow communication with other devices.
 
 """
+import asyncio
 import typing as t
 
 # --- standard Python modules ---
 import weakref
-import asyncio
+
+from bacpypes3.app import Application
 
 try:
-    from rich.table import Table
     from rich.console import Console
+    from rich.table import Table
 
     RICH = True
 except ImportError:
     RICH = False
+from BAC0.core.app.asyncApp import BAC0Application
 from BAC0.scripts.Base import Base
 
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
@@ -30,7 +33,6 @@ from ..core.devices.Points import Point
 from ..core.devices.Trends import TrendLog
 from ..core.devices.Virtuals import VirtualPoint
 from ..core.functions.Alias import Alias
-from ..tasks.TaskManager import Task
 
 # from ..core.functions.legacy.cov import CoV
 # from ..core.functions.legacy.DeviceCommunicationControl import (
@@ -51,8 +53,8 @@ from ..core.io.IOExceptions import (
     UnrecognizedService,
 )
 from ..core.io.Read import ReadProperty
-from ..core.io.Write import WriteProperty
 from ..core.io.Simulate import Simulation
+from ..core.io.Write import WriteProperty
 
 # from ..core.io.asynchronous.Write import WriteProperty
 from ..core.utils.notes import note_and_log
@@ -60,6 +62,7 @@ from ..infos import __version__ as version
 
 # --- this application's modules ---
 from ..tasks.RecurringTask import RecurringTask
+from ..tasks.TaskManager import Task
 
 # from ..tasks.legacy.UpdateCOV import Update_local_COV
 
@@ -172,9 +175,6 @@ class Lite(
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
 
-        # Announce yourself
-        # self.iam()
-
         # Do what's needed to support COV
         # self._update_local_cov_task = namedtuple(
         #    "_update_local_cov_task", ["task", "running"]
@@ -204,6 +204,16 @@ class Lite(
         if self.database:
             self.create_save_to_influxdb_task(delay=20)
         self._initialized = True
+        # Announce yourself
+        self.i_am()
+
+    def i_am(self):
+        asyncio.create_task(self._i_am())
+
+    async def _i_am(self) -> None:
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
+        _res = await _app.i_am()
 
     def create_save_to_influxdb_task(self, delay: int = 60) -> None:
         self._write_to_db = RecurringTask(
@@ -419,6 +429,7 @@ class Lite(
         for each in self.registered_devices:
             await each.disconnect()
         await super()._disconnect()
+        self._initialized = False
 
     def __repr__(self) -> str:
         return "Bacnet Network using ip {} with device id {}".format(

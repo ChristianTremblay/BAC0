@@ -32,6 +32,7 @@ except ImportError:
 
 # --- this application's modules ---
 from bacpypes3.basetypes import ServicesSupported
+from bacpypes3.errors import NoResponse
 
 # from ...bokeh.BokehRenderer import BokehPlot
 from ...db.sql import SQLMixin
@@ -899,7 +900,7 @@ class DeviceDisconnected(Device):
                 await self.new_state(RPDeviceConnected)
 
             except (NoResponseFromController, AttributeError) as error:
-                self._log.warning("Error connecting: %s", error)
+                self._log.warning("BAC0 got no response from controller: %s", error)
                 if self.properties.db_name:
                     await self.new_state(DeviceFromDB)
                 else:
@@ -1034,7 +1035,7 @@ class DeviceFromDB(DeviceConnected):
                         await self.new_state(RPDeviceConnected)
                     # self.db.close()
 
-            except NoResponseFromController:
+            except (NoResponseFromController, NoResponse):
                 self._log.error("Unable to connect, keeping DB mode active")
 
         else:
