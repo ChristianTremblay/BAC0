@@ -203,17 +203,24 @@ class Lite(
                 )
         if self.database:
             self.create_save_to_influxdb_task(delay=20)
-        self._initialized = True
+        
         # Announce yourself
+        
         self.i_am()
+        
 
     def i_am(self):
-        asyncio.create_task(self._i_am())
+        loop = asyncio.get_event_loop()
+        loop.create_task(self._i_am())
 
     async def _i_am(self) -> None:
+        while self.this_application.app is None or not asyncio.iscoroutinefunction(self.this_application.app.i_am):
+            await asyncio.sleep(0.01)
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
-        _res = await _app.i_am()
+
+        _res = await self.this_application.app.i_am()
+        self._initialized = True
 
     def create_save_to_influxdb_task(self, delay: int = 60) -> None:
         self._write_to_db = RecurringTask(
@@ -344,7 +351,10 @@ class Lite(
             del self._points_to_trend[oid]
 
     @property
-    async def devices(
+    async def devices(self):
+        await self._devices(_return_list=False)
+
+    async def _devices(
         self, _return_list: bool = False
     ) -> t.List[t.Tuple[str, str, str, int]]:
         """
