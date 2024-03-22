@@ -95,6 +95,7 @@ class Base:
         description: str = "http://christiantremblay.github.io/BAC0/",
         location: str = "Bromont, Québec",
         timezone: str = "America/Montreal",
+        json_file: str = None,
     ):
         self._log.debug("Configurating app")
 
@@ -160,6 +161,7 @@ class Base:
         self._ric = {}
         self.subscription_contexts = {}
         self.database = None
+        self.json_file = json_file
 
         try:
             self.startApp()
@@ -223,7 +225,7 @@ class Base:
                 },
             }
 
-            self.this_application = BAC0Application(config(cfg), self.localIPAddr)
+            self.this_application = BAC0Application(config(cfg), self.localIPAddr, json_file=self.json_file)
             self._log.debug("Starting")
             self._initialized = True
 
