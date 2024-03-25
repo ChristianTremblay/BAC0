@@ -178,8 +178,6 @@ class Device(SQLMixin):
                     "Please provide address, device id and network or specify from_backup argument"
                 )
 
-        self.initialized = True
-
     async def new_state(self, newstate: Any) -> None:
         """
         Changes the state of the device.
@@ -209,7 +207,10 @@ class Device(SQLMixin):
         """
         raise NotImplementedError()
 
-    def disconnect(self) -> None:
+    def disconnect(self, save_on_disconnect=True, unregister=True) -> None:
+        asyncio.create_task(self._disconnect(save_on_disconnect, unregister))
+
+    async def _disconnect(self, save_on_disconnect=True, unregister=True) -> None:
         raise NotImplementedError()
 
     def initialize_device_from_db(self) -> None:
@@ -450,8 +451,9 @@ class DeviceConnected(Device):
     async def _init_state(self):
         await self._buildPointList()
         self.properties.network.register_device(self)
+        self.initialized = True
 
-    async def disconnect(self, save_on_disconnect=True, unregister=True):
+    async def _disconnect(self, save_on_disconnect=True, unregister=True):
         self._log.info("Wait while stopping polling")
         self.poll(command="stop")
         if unregister:
@@ -852,6 +854,7 @@ class DeviceDisconnected(Device):
     """
 
     async def _init_state(self):
+        self.initialized = False
         await self.connect()
 
     async def connect(self, *, db=None, network=None):
