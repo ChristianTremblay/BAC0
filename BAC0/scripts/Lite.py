@@ -203,18 +203,19 @@ class Lite(
                 )
         if self.database:
             self.create_save_to_influxdb_task(delay=20)
-        
+
         # Announce yourself
-        
+
         self.i_am()
-        
 
     def i_am(self):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         loop.create_task(self._i_am())
 
     async def _i_am(self) -> None:
-        while self.this_application.app is None or not asyncio.iscoroutinefunction(self.this_application.app.i_am):
+        while self.this_application.app is None or not asyncio.iscoroutinefunction(
+            self.this_application.app.i_am
+        ):
             await asyncio.sleep(0.01)
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
