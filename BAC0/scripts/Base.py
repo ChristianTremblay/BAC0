@@ -12,6 +12,7 @@ import random
 import sys
 import typing as t
 from collections import defaultdict
+from enum import Enum
 
 # --- standard Python modules ---
 from bacpypes3.basetypes import DeviceStatus, HostNPort, ObjectTypesSupported
@@ -225,7 +226,9 @@ class Base:
                 },
             }
 
-            self.this_application = BAC0Application(config(cfg), self.localIPAddr, json_file=self.json_file)
+            self.this_application = BAC0Application(
+                config(cfg), self.localIPAddr, json_file=self.json_file
+            )
             self._log.debug("Starting")
             self._initialized = True
 
@@ -280,13 +283,18 @@ class Base:
         Returns a dict with the address of routers as key.
         """
 
+        class RouterState(Enum):
+            AVAILABLE = 0
+            BUSY = 1
+            DISCONNECTED = 2
+            UNREACHABLE = 3
+
         class Router:
-            def __init__(self, router_info, index=None, path=None):
-                self.source_network = router_info.snet
-                self.address = router_info.address
-                self.destination_networks = router_info.dnets
-                self.index = index
-                self.path = path
+            def __init__(self, snet, address, dnets, path=None):
+                self.source_network:int = snet
+                self.address:Address = address
+                self.destination_networks:set = dnets
+                self.path:list = path
 
             def __repr__(self):
                 return "Source Network: {} | Address: {} | Destination Networks: {} | Path: {}".format(
@@ -298,13 +306,14 @@ class Base:
 
         self._routers = {}
 
-        self._ric = {}
-        ric = self.this_application.app.nsap.router_info_cache
+        self._ric = self.this_application.app.nsap.router_info_cache
 
-        for networks, routers in ric.routers.items():
-            for address, router in routers.items():
-                self._routers[str(address)] = Router(router, index=networks)
-        for path, router in ric.path_info.items():
-            self._routers[str(router.address)].path = path
+        for router, dnets in self._ric.router_dnets.items():
+            snet, address = router
+            self._routers[str(address)] = Router(snet, address, dnets, path=[])
+        for path, router_info in self._ric.path_info.items():
+            router_address, router_status = router_info
+            snet, dnet = path
+            self._routers[str(router_address)].path.append((path, RouterState(router_status)))    
 
         return self._routers
