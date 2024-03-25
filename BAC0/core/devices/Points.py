@@ -101,7 +101,7 @@ class Point:
     is added to a history table. Histories capture the changes to point values over time.
     """
 
-    _cache_delta = timedelta(seconds=1)
+    _cache_delta = timedelta(seconds=5)
     _cov_identifier = 0
 
     def __init__(
@@ -767,7 +767,29 @@ class Point:
             for each in lst:
                 tag_id, tag_value = each
                 self.tag.append((tag_id, tag_value))
+    
+    async def _update_value(self):
+        await asyncio.wait_for(self.value, timeout=1.0)
 
+    def _update_value_if_required(self):
+        value_too_old = (
+            self._history.timestamp[-1]
+            > datetime.now().astimezone() - Point._cache_delta
+        )
+        if value_too_old:
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self._update_value())
+            except Exception as e:
+                self._log.error(f"Error updating value : {e}")
+                return self.lastValue
+        if datetime.now().astimezone() - self._history.timestamp[-1] > timedelta(
+            seconds=60
+        ):
+            self._log.warning(
+                f"Last known value {self._history.value[-1]} with timestamp of {self._history.timestamp[-1]}, older than 10sec {datetime.now().astimezone()}. Consider using dev['point'].lastValue if you trust polling of device of manage a up to date read in asynchronous side of your app for better precision"
+            )
+        return self.lastValue
 
 # ------------------------------------------------------------------------------
 
@@ -857,43 +879,44 @@ class NumericPoint(Point):
             val,
             self.properties.units_state,
         )
-
-    async def __add__(self, other):
-        return await self.value + other
+    
+    def __add__(self, other):
+        self._update_value_if_required()
+        return self.lastValue + other
 
     __radd__ = __add__
 
-    async def __sub__(self, other):
-        return await self.value - other
+    def __sub__(self, other):
+        return self._update_value_if_required() - other
 
-    async def __rsub__(self, other):
-        return other - await self.value
+    def __rsub__(self, other):
+        return other - self._update_value_if_required()
 
-    async def __mul__(self, other):
-        return await self.value * other
+    def __mul__(self, other):
+        return self._update_value_if_required() * other
 
     __rmul__ = __mul__
 
-    async def __truediv__(self, other):
-        return await self.value / other
+    def __truediv__(self, other):
+        return self._update_value_if_required() / other
 
-    async def __rtruediv__(self, other):
-        return other / await self.value
+    def __rtruediv__(self, other):
+        return other / self._update_value_if_required()
 
-    async def __lt__(self, other):
-        return await self.value < other
+    def __lt__(self, other):
+        return self._update_value_if_required() < other
 
-    async def __le__(self, other):
-        return await self.value <= other
+    def __le__(self, other):
+        return self._update_value_if_required() <= other
 
-    async def __eq__(self, other):
-        return await self.value == other
+    def __eq__(self, other):
+        return self._update_value_if_required() == other
 
-    async def __gt__(self, other):
-        return await self.value > other
+    def __gt__(self, other):
+        return self._update_value_if_required() > other
 
-    async def __ge__(self, other):
-        return await self.value >= other
+    def __ge__(self, other):
+        return self._update_value_if_required() >= other
 
 
 # ------------------------------------------------------------------------------
@@ -999,15 +1022,19 @@ class BooleanPoint(Point):
         )
 
     def __or__(self, other):
+        self._update_value_if_required()
         return self.boolValue | other
 
     def __and__(self, other):
+        self._update_value_if_required()
         return self.boolValue & other
 
     def __xor__(self, other):
+        self._update_value_if_required()
         return self.boolValue ^ other
 
     def __eq__(self, other):
+        self._update_value_if_required()
         return self.boolValue == other
 
 
@@ -1112,8 +1139,9 @@ class EnumPoint(Point):
             self.properties.device.properties.name, self.properties.name, self.enumValue
         )
 
-    async def __eq__(self, other):
-        return await self.value == self.properties.units_state.index(other) + 1
+    def __eq__(self, other):
+        self._update_value_if_required()
+        return self.lastValue == self.properties.units_state.index(other) + 1
 
 
 class StringPoint(Point):
@@ -1185,8 +1213,9 @@ class StringPoint(Point):
             self.properties.device.properties.name, self.properties.name, val
         )
 
-    async def __eq__(self, other):
-        return await self.value == other.value
+    def __eq__(self, other):
+        self._update_value_if_required()
+        return self.lastValue == other.value
 
 
 class DateTimePoint(Point):
@@ -1263,20 +1292,25 @@ class DateTimePoint(Point):
             self.properties.device.properties.name, self.properties.name, val
         )
 
-    async def __eq__(self, other):
-        return await self.value == other.value
+    def __eq__(self, other):
+        self._update_value_if_required()
+        return self.lastValue == other.value
 
-    async def __ge__(self, other):
-        return await self.value >= other.value
+    def __ge__(self, other):
+        self._update_value_if_required()
+        return self.lastValue >= other.value
 
-    async def __le__(self, other):
-        return await self.value <= other.value
+    def __le__(self, other):
+        self._update_value_if_required()
+        return self.lastValue <= other.value
 
-    async def __gt__(self, other):
-        return await self.value > other.value
+    def __gt__(self, other):
+        self._update_value_if_required()
+        return self.lastValue > other.value
 
-    async def __lt__(self, other):
-        return await self.value < other.value
+    def __lt__(self, other):
+        self._update_value_if_required()
+        return self.lastValue < other.value
 
 
 # ------------------------------------------------------------------------------
