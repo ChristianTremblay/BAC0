@@ -1035,7 +1035,19 @@ class BooleanPoint(Point):
 
     def __eq__(self, other):
         self._update_value_if_required()
-        return self.boolValue == other
+        if isinstance(other, str):
+            if ':' in other:
+                return self.lastValue == other
+            elif other in ('inactive', 'active'):
+                return self.lastValue.split(':')[1] == other
+            else:
+                return False
+        elif isinstance(other, bool):
+            return self.boolValue == other
+        elif isinstance(other, int):
+            return int(self.lastValue.split(':')[0]) == other
+        else:
+            return False
 
 
 # ------------------------------------------------------------------------------
@@ -1141,7 +1153,15 @@ class EnumPoint(Point):
 
     def __eq__(self, other):
         self._update_value_if_required()
-        return self.lastValue == self.properties.units_state.index(other) + 1
+        if isinstance(other, str):
+            if ':' in other:
+                return self.lastValue == other
+            else:
+                return self.enumValue == other
+        elif isinstance(other, int):
+            return int(self.lastValue.split(':')[0]) == other
+        else:
+            return self.lastValue == other
 
 
 class StringPoint(Point):
