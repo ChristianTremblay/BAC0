@@ -28,7 +28,7 @@ class Update_local_COV(Task):
         :returns: Nothing
         """
         self._device = weakref.ref(device)
-        Task.__init__(self, name="{}_{}".format(prefix, name), delay=delay)
+        Task.__init__(self, name=f"{prefix}_{name}", delay=delay)
         self._counter = 0
 
     @property
@@ -46,15 +46,15 @@ class Update_local_COV(Task):
                 )
                 if (not cov_detection) or (len(cov_detection.cov_subscriptions) == 0):
                     self._log.debug(
-                        "no subscriptions for that object : {}".format(objName)
+                        f"no subscriptions for that object : {objName}"
                     )
                     continue
 
                 # tell it to send out notifications
-                self._log.info("Sending COV for {}".format(objName))
+                self._log.info(f"Sending COV for {objName}")
                 deferred(cov_detection.send_cov_notifications)
 
         except Exception as error:
             self.device._log.error(
-                "Something is wrong with update_local_cov : {}".format(error)
+                f"Something is wrong with update_local_cov : {error}"
             )

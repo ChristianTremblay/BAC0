@@ -126,7 +126,7 @@ def add_feature(cls: Type) -> Callable:
                 objectIdentifier=(base_cls.objectType, instance),
                 objectName=f"{objectName}",
                 presentValue=presentValue,
-                description=CharacterString("{}".format(description)),
+                description=CharacterString(f"{description}"),
             )
             return new_object
 

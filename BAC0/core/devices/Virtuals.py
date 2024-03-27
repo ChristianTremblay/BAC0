@@ -59,7 +59,7 @@ class VirtualDeviceProperties(object):
         self.bacnet_properties = None
 
     def __repr__(self):
-        return "{}".format(self.asdict)
+        return f"{self.asdict}"
 
     @property
     def asdict(self):
@@ -92,7 +92,7 @@ class VirtualPointProperties(object):
         self._df = None
 
     def __repr__(self):
-        return "{}".format(self.asdict)
+        return f"{self.asdict}"
 
     @property
     def asdict(self):

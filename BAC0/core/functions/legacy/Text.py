@@ -60,8 +60,8 @@ class TextMixin:
             if iocb.ioError:  # unsuccessful: error/reject/abort
                 apdu = iocb.ioError
                 reason = find_reason(apdu)
-                raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
+                raise NoResponseFromController(f"APDU Abort Reason : {reason}")
 
         except WritePropertyException as error:
             # construction error
-            self._log.error(("exception: {!r}".format(error)))
+            self._log.error(f"exception: {error!r}")

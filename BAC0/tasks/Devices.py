@@ -34,7 +34,7 @@ class AddDevice(Task):
         else:
             self.address, self.boid = self.find_address(address, boid)
 
-        name = "Adding_Device_{}|{}".format(self.address, self.boid)
+        name = f"Adding_Device_{self.address}|{self.boid}"
         self.callback = callback
         self._kwargs["address"] = self.address
         self._kwargs["device_id"] = self.boid
@@ -54,7 +54,7 @@ class AddDevice(Task):
             for each in self.network.discoveredDevices:
                 address, boid = each
                 if address in str(address) or boid in str(boid):
-                    self._log.info("Found {}".format(each))
+                    self._log.info(f"Found {each}")
                     return each
         self._log.error(
             "Device not discovered yet, use bacnet.discover() or provide both address and Boid"
@@ -72,10 +72,10 @@ class AddDevice(Task):
                 )
             )
             if self.callback is not None:
-                self._log.info("Executing callback for {}".format(dev.properties.name))
+                self._log.info(f"Executing callback for {dev.properties.name}")
                 self.callback()
         except BadDeviceDefinition as error:
-            self._log.error("Bad device definition ({})".format(error))
+            self._log.error(f"Bad device definition ({error})")
 
 
 class DeviceNotFoundError(Exception):

@@ -110,7 +110,7 @@ class TimeSync:
         else:
             request.pduDestination = LocalBroadcast()
 
-        self._log.debug("{:>12} {}".format("- request:", request))
+        self._log.debug(f"{'- request:':>12} {request}")
 
         iocb = IOCB(request)  # make an IOCB
 
@@ -123,7 +123,7 @@ class TimeSync:
         year = year + 1900
         hour, minutes, sec, msec = _datetime.time
         d = dt.datetime(year, month, day, hour, minutes, sec, msec)
-        self._log.info("Time Sync Request sent to network : {}".format(d.isoformat()))
+        self._log.info(f"Time Sync Request sent to network : {d.isoformat()}")
 
 
 class TimeHandler(object):
@@ -157,4 +157,4 @@ class TimeHandler(object):
         return self.timezone.dst(self.now) != dt.timedelta(0)
 
     def __repr__(self):
-        return "{}".format(self.__dict__)
+        return f"{self.__dict__}"

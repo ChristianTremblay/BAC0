@@ -76,12 +76,12 @@ class Stats_Mixin:
         if total == 0:
             return (["No Devices"], ["0"], ["0%%"])
         labels = ["IP"]
-        series_pct = ["%.2f %%" % (len(self.network_stats["ip_devices"]) / total * 100)]
+        series_pct = [f"{len(self.network_stats['ip_devices']) / total * 100:.2f} %"]
         series = [len(self.network_stats["ip_devices"]) / total * 100]
         for each in self.network_stats["mstp_map"].keys():
-            labels.append("MSTP #{}".format(each))
+            labels.append(f"MSTP #{each}")
             series_pct.append(
-                "%.2f %%" % (len(self.network_stats["mstp_map"][each]) / total * 100)
+                f"{len(self.network_stats['mstp_map'][each]) / total * 100:.2f} %"
             )
             series.append(len(self.network_stats["mstp_map"][each]) / total * 100)
         return (labels, series, series_pct)
@@ -192,17 +192,17 @@ class Complete(Lite, Stats_Mixin):
         for device in list(self.discoveredDevices or {}):
             try:
                 deviceName, vendorName = self.readMultiple(
-                    "{} device {} objectName vendorName".format(device[0], device[1])
+                    f"{device[0]} device {device[1]} objectName vendorName"
                 )
             except UnrecognizedService:
                 deviceName = self.read(
-                    "{} device {} objectName".format(device[0], device[1])
+                    f"{device[0]} device {device[1]} objectName"
                 )
                 vendorName = self.read(
-                    "{} device {} vendorName".format(device[0], device[1])
+                    f"{device[0]} device {device[1]} vendorName"
                 )
             except NoResponseFromController:
-                self._log.info("No response from {}".format(device))
+                self._log.info(f"No response from {device}")
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
         df = pd.DataFrame(

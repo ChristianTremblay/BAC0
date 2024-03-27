@@ -87,11 +87,11 @@ class WriteProperty:
             iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
-            self._log.debug("{:<20} {!r}".format("iocb", iocb))
+            self._log.debug(f"{'iocb':<20} {iocb!r}")
 
         except WritePropertyException as error:
             # construction error
-            self._log.exception("exception: {!r}".format(error))
+            self._log.exception(f"exception: {error!r}")
 
         iocb.wait()  # Wait for BACnet response
 
@@ -100,13 +100,13 @@ class WriteProperty:
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
+                self._log.debug(f"Not an ack. | APDU : {apdu} / {type(apdu)}")
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
-            raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
+            raise NoResponseFromController(f"APDU Abort Reason : {reason}")
 
     def _parse_wp_args(self, args):
         """
@@ -168,23 +168,21 @@ class WriteProperty:
                 value = datatype.subtype(value)
             elif not isinstance(value, datatype.subtype):
                 raise TypeError(
-                    "invalid result datatype, expecting {}".format(
-                        (datatype.subtype.__name__,)
-                    )
+                    f"invalid result datatype, expecting {datatype.subtype.__name__,}"
                 )
 
         elif not isinstance(value, datatype):
             raise TypeError(
-                "invalid result datatype, expecting {}".format((datatype.__name__,))
+                f"invalid result datatype, expecting {datatype.__name__,}"
             )
 
-        self._log.debug("{:<20} {!r} {}".format("Encodeable value", value, type(value)))
+        self._log.debug(f"{'Encodeable value':<20} {value!r} {type(value)}")
 
         _value = Any()
         try:
             _value.cast_in(value)
         except WritePropertyCastError as error:
-            self._log.error("WriteProperty cast error: {!r}".format(error))
+            self._log.error(f"WriteProperty cast error: {error!r}")
             raise
 
         return _value
@@ -217,19 +215,15 @@ class WriteProperty:
 
         self.log_subtitle("Creating Request")
         self._log.debug(
-            "{:<20} {:<20} {:<20} {:<20}".format(
-                "indx", "priority", "datatype", "value"
-            )
+            f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}"
         )
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
 
         self._log.debug(
-            "{!r:<20} {!r:<20} {!r:<20} {!r:<20}".format(
-                indx, priority, datatype, value
-            )
+            f"{indx!r:<20} {priority!r:<20} {datatype!r:<20} {value!r:<20}"
         )
 
-        self._log.debug("{:<20} {}".format("REQUEST", request))
+        self._log.debug(f"{'REQUEST':<20} {request}")
         return request
 
     def writeMultiple(self, addr=None, args=None, vendor_id=0, timeout=10):
@@ -262,11 +256,11 @@ class WriteProperty:
             iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
-            self._log.debug("{:<20} {!r}".format("iocb", iocb))
+            self._log.debug(f"{'iocb':<20} {iocb!r}")
 
         except WritePropertyException as error:
             # construction error
-            self._log.exception("exception: {!r}".format(error))
+            self._log.exception(f"exception: {error!r}")
 
         iocb.wait()  # Wait for BACnet response
 
@@ -275,13 +269,13 @@ class WriteProperty:
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
+                self._log.debug(f"Not an ack. | APDU : {apdu} / {type(apdu)}")
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
-            raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
+            raise NoResponseFromController(f"APDU Abort Reason : {reason}")
 
     def build_wpm_request(self, args, vendor_id=0, addr=None):
         if not addr:
@@ -289,9 +283,7 @@ class WriteProperty:
 
         self.log_subtitle("Creating Write Multiple Request")
         self._log.debug(
-            "{:<20} {:<20} {:<20} {:<20}".format(
-                "indx", "priority", "datatype", "value"
-            )
+            f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}"
         )
 
         was = []
@@ -350,14 +342,12 @@ class WriteProperty:
             datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
 
             self._log.debug(
-                "{!r:<20} {!r:<20} {!r:<20} {!r:<20}".format(
-                    indx, priority, datatype, value
-                )
+                f"{indx!r:<20} {priority!r:<20} {datatype!r:<20} {value!r:<20}"
             )
 
         # build a request
         request = WritePropertyMultipleRequest(listOfWriteAccessSpecs=was)
         request.pduDestination = Address(addr)
 
-        self._log.debug("{:<20} {}".format("REQUEST", request))
+        self._log.debug(f"{'REQUEST':<20} {request}")
         return request

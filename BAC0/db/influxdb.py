@@ -158,7 +158,7 @@ class InfluxDB:
         async with InfluxDBClientAsync.from_env_properties() as client:
             ready = await client.ping()
             if ready:
-                self._log.info("InfluxDB connection is ready")
+                self.log("InfluxDB connection is ready", level="info")
 
     def clean_value(self, object_type, val, units_state):
         """
@@ -181,14 +181,14 @@ class InfluxDB:
         """
         try:
             if "analog" in object_type:
-                _string_value = "{:.3f} {}".format(val, units_state)
+                _string_value = f"{val:.3f} {units_state}"
                 _value = val
             elif "multi" in object_type:
-                _string_value = "{}".format(val.split(":")[1])
+                _string_value = f"{val.split(':')[1]}"
                 _value = int(val.split(":")[0])
             elif "binary" in object_type:
                 try:
-                    _string_value = "{}".format(units_state[int(val.split(":"[0]))])
+                    _string_value = f"{units_state[int(val.split(':'[0]))]}"
                 except Exception:
                     try:
                         _value, _string_value = val.split(":")
@@ -198,7 +198,7 @@ class InfluxDB:
                             f"Error while cleaning value {val} of object type {object_type}: {error}"
                         )
             else:
-                _string_value = "{}".format(val)
+                _string_value = f"{val}"
                 _value = val
             return (_value, _string_value)
         except AttributeError as error:
@@ -213,14 +213,14 @@ class InfluxDB:
             _object_name = point.properties.name
             _devicename = point.properties.device.properties.name
             _device_id = point.properties.device.properties.device_id
-            _units_state = "{}".format(point.properties.units_state)
+            _units_state = f"{point.properties.units_state}"
             _description = point.properties.description
-            _object = "{}:{}".format(point.properties.type, point.properties.address)
+            _object = f"{point.properties.type}:{point.properties.address}"
             _value, _string_value = self.clean_value(
                 point.properties.type, point.lastValue, point.properties.units_state
             )
-            _name = "{}/{}".format(_devicename, _object_name)
-            _id = "Device_{}/{}".format(_device_id, _object)
+            _name = f"{_devicename}/{_object_name}"
+            _id = f"Device_{_device_id}/{_object}"
             _point = (
                 Point(_id)
                 .tag("object_name", _object_name)
@@ -260,16 +260,14 @@ class InfluxDB:
         # maybe use device name and object name ?
         # This must be easy
 
-        """
-        from(bucket: {}")
+        f"""
+        from(bucket: {self.bucket}")
         |> range(start: -100y)
         |> filter(fn: (r) => r["description"] == "DA-T")
         |> filter(fn: (r) => r["_field"] == "value")
         |> last()
         |> yield(name: "last")
-        """.format(
-            self.bucket
-        )
+        """
         pass
 
     #    def example(self, device_name, object_name):

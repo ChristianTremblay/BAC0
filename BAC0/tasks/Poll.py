@@ -85,7 +85,7 @@ class DevicePoll(Task):
         self.failures = 0
         self.MAX_FAILURES = 3
         self._device = weakref.ref(device)
-        Task.__init__(self, name="{}_{}".format(prefix, name), delay=delay)
+        Task.__init__(self, name=f"{prefix}_{name}", delay=delay)
         self._counter = 0
 
     @property
@@ -177,7 +177,7 @@ class DeviceNormalPoll(DevicePoll):
         if delay < 10:
             delay = 10
         self._log.info(
-            "Device defined for normal polling with a delay of {}sec".format(delay)
+            f"Device defined for normal polling with a delay of {delay}sec"
         )
         DevicePoll.__init__(
             self, device=device, name=name, delay=delay, prefix="rpm_normal_poll"
@@ -208,7 +208,7 @@ class DeviceFastPoll(DevicePoll):
         elif delay > 10:
             delay = 10
         self._log.warning(
-            "Device defined for fast polling with a delay of {}sec".format(delay)
+            f"Device defined for fast polling with a delay of {delay}sec"
         )
         DevicePoll.__init__(
             self, device=device, name=name, delay=delay, prefix="rpm_fast_poll"

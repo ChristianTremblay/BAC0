@@ -164,7 +164,7 @@ class ObjectFactory(object):
                 instance += 1
             if _warning:
                 self._log.warning(
-                    "Instance alreaday taken, using {} instead".format(instance)
+                    f"Instance alreaday taken, using {instance} instead"
                 )
 
         _set.add(instance)
@@ -177,8 +177,8 @@ class ObjectFactory(object):
             name_must_be_changed = True
         instance = self.validate_instance(objectType, instance)
         if name_must_be_changed:
-            objectName = "{}-{}".format(objectName, instance)
-            self._log.warning("Name already taken, using {} instead".format(objectName))
+            objectName = f"{objectName}-{instance}"
+            self._log.warning(f"Name already taken, using {objectName} instead")
 
         return (objectName, instance)
 
@@ -212,14 +212,14 @@ class ObjectFactory(object):
         for k, v in self.objects.items():
             try:
                 app.add_object(v)
-                self._log.info("Adding {} to application.".format(k))
+                self._log.info(f"Adding {k} to application.")
             except RuntimeError:
                 self._log.warning(
-                    "There is already an object named {} in application.".format(k)
+                    f"There is already an object named {k} in application."
                 )
 
     def __repr__(self):
-        return "{}".format(self.objects)
+        return f"{self.objects}"
 
     @staticmethod
     def default_properties(
@@ -252,13 +252,13 @@ class ObjectFactory(object):
         """
         objectType = bacnet_object.__name__
         _repr = Fore.YELLOW + "*" * 100
-        _repr += "\n| " + Fore.CYAN + "{}".format(objectType)
+        _repr += "\n| " + Fore.CYAN + f"{objectType}"
         _repr += Fore.YELLOW + "\n|" + "*" * 99
         _repr += "\n"
         _repr += (
             "| "
             + Fore.WHITE
-            + "Support COV : {}\n".format(bacnet_object._object_supports_cov)
+            + f"Support COV : {bacnet_object._object_supports_cov}\n"
         )
         _repr += Fore.YELLOW + "|" + "=" * 99
         _repr += "\n\x1b[33m| {:30} \x1b[33m| {:26} \x1b[33m| {:8} \x1b[33m| {:8} \x1b[33m| {:8}".format(

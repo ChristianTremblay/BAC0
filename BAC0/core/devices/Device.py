@@ -80,7 +80,7 @@ class DeviceProperties(object):
         return self.__dict__
 
     def __repr__(self):
-        return "{}".format(self.asdict)
+        return f"{self.asdict}"
 
 
 @note_and_log
@@ -166,7 +166,7 @@ class Device(SQLMixin):
                 self.properties.db_name = db_name
 
             else:
-                raise FileNotFoundError("Can't find {} on drive".format(filename))
+                raise FileNotFoundError(f"Can't find {filename} on drive")
         else:
             if (
                 self.properties.network
@@ -191,7 +191,7 @@ class Device(SQLMixin):
         :return: None
         """
         self._log.info(
-            "Changing device state to {}".format(str(newstate).split(".")[-1])
+            f"Changing device state to {str(newstate).split('.')[-1]}"
         )
         self.__class__ = newstate
         await self._init_state()
@@ -358,7 +358,7 @@ class Device(SQLMixin):
             ):
                 return point
         raise ValueError(
-            "{} {} doesn't exist in controller".format(objectType, objectAddress)
+            f"{objectType} {objectAddress} doesn't exist in controller"
         )
 
     def find_overrides(self, force: bool = False) -> None:
@@ -412,15 +412,15 @@ class Device(SQLMixin):
 
             if self.properties.points_overridden:
                 total = len(self.properties.points_overridden)
-                self._log.info("=================================")
-                self._log.info("Overrides found... releasing them")
-                self._log.info("=================================")
+                self.log("=================================", level="info")
+                self.log("Overrides found... releasing them", level="info")
+                self.log("=================================", level="info")
                 for idx, point in enumerate(self.properties.points_overridden):
-                    self._log.info("Releasing {}".format(point))
+                    self._log.info(f"Releasing {point}")
                     point.release_ovr()
                     self._release_overrides_progress = (idx / total) / 2 + 0.5
             else:
-                self._log.info("No override found")
+                self.log("No override found", level="info")
 
             self._release_overrides_running = False
             self._release_overrides_progress = 1
@@ -431,7 +431,7 @@ class Device(SQLMixin):
         DoOnce(func).start()
 
     def __repr__(self) -> str:
-        return "{} / Undefined".format(self.properties.name)
+        return f"{self.properties.name} / Undefined"
 
 
 def device(*args: Any, **kwargs: Any) -> Device:
@@ -456,13 +456,13 @@ class DeviceConnected(Device):
         self.initialized = True
 
     async def _disconnect(self, save_on_disconnect=True, unregister=True):
-        self._log.info("Wait while stopping polling")
+        self.log("Wait while stopping polling", level="info")
         self.poll(command="stop")
         if unregister:
             self.properties.network.unregister_device(self)
             self.properties.network = None
         if save_on_disconnect:
-            self._log.info("Savig device to database...")
+            self.log("Savig device to database...", level="info")
             self.save()
         if self.properties.db_name:
             await self.new_state(DeviceFromDB)
@@ -494,7 +494,7 @@ class DeviceConnected(Device):
             try:
                 his.append(self._findPoint(point, force_read=force_read).history)
             except ValueError as ve:
-                self._log.error("{}".format(ve))
+                self.log("{ve}", level=logging.DEBUG)
                 continue
         if not _PANDAS:
             return dict(zip(list_of_points, his))
@@ -512,7 +512,7 @@ class DeviceConnected(Device):
             )
 
         except NoResponseFromController as error:
-            self._log.error("Controller not found, aborting. ({})".format(error))
+            self.log(f"Controller not found, aborting. ({error})", level='error')
             return ("Not Found", "", [], [])
 
         except SegmentationNotSupported:
@@ -521,9 +521,7 @@ class DeviceConnected(Device):
             await self.new_state(DeviceDisconnected)
 
         self.properties.name = await self.properties.network.read(
-            "{} device {} objectName".format(
-                self.properties.address, self.properties.device_id
-            )
+            f"{self.properties.address} device {self.properties.device_id} objectName"
         )
         self.properties.vendor_id = await self.properties.network.read(
             "{} device {} vendorIdentifier".format(
@@ -546,15 +544,15 @@ class DeviceConnected(Device):
             self.update_history_size(size=self.properties.history_size)
             # self.clear_histories()
         except NoResponseFromController:
-            self._log.error("Cannot retrieve object list, disconnecting...")
+            self.log("Cannot retrieve object list, disconnecting...", level='error')
             self.segmentation_supported = False
             await self.new_state(DeviceDisconnected)
         except IndexError:
             if self._reconnect_on_failure:
-                self._log.error("Device creation failed... re-connecting")
+                self.log("Device creation failed... re-connecting", level='error')
                 await self.new_state(DeviceDisconnected)
             else:
-                self._log.error("Device creation failed... disconnecting")
+                self.log("Device creation failed... disconnecting", level='error')
 
     def __getitem__(self, point_name):
         """
@@ -592,7 +590,7 @@ class DeviceConnected(Device):
                         except ValueError:
                             raise ValueError()
         except ValueError as ve:
-            self._log.error("{}".format(ve))
+            self.log(f"{ve}", level='error')
 
     def __iter__(self):
         yield from self.points
@@ -625,7 +623,7 @@ class DeviceConnected(Device):
         try:
             asyncio.create_task(self._findPoint(point_name)._set(value))
         except WritePropertyException as ve:
-            self._log.error("{}".format(ve))
+            self.log(f"{ve}", level='error')
 
     def __len__(self):
         """
@@ -694,7 +692,7 @@ class DeviceConnected(Device):
                 if force_read:
                     point.value
                 return point
-        raise ValueError("{} doesn't exist in controller".format(name))
+        raise ValueError(f"{name} doesn't exist in controller")
 
     def _trendlogs(self):
         for k, v in self._list_of_trendlogs.items():
@@ -714,7 +712,7 @@ class DeviceConnected(Device):
         for trend in self._trendlogs():
             if trend.properties.object_name == name:
                 return trend
-        raise ValueError("{} doesn't exist in controller".format(name))
+        raise ValueError(f"{name} doesn't exist in controller")
 
     async def read_property(self, prop):
         # if instance == -1:
@@ -730,14 +728,12 @@ class DeviceConnected(Device):
                 "Please provide property using tuple with object, instance and property"
             )
         try:
-            request = "{} {} {} {}".format(
-                self.properties.address, _obj, _instance, _prop
-            )
+            request = f"{self.properties.address} {_obj} {_instance} {_prop}"
             val = await self.properties.network.read(
                 request, vendor_id=self.properties.vendor_id
             )
         except KeyError as error:
-            raise Exception("Unknown property : {}".format(error))
+            raise Exception(f"Unknown property : {error}")
         return val
 
     async def write_property(self, prop, value, priority=None):
@@ -745,7 +741,7 @@ class DeviceConnected(Device):
             self.update_description(value)
         else:
             if priority is not None:
-                priority = "- {}".format(priority)
+                priority = f"- {priority}"
             if isinstance(prop, tuple):
                 _obj, _instance, _prop = prop
             else:
@@ -760,7 +756,7 @@ class DeviceConnected(Device):
                     request, vendor_id=self.properties.vendor_id
                 )
             except KeyError as error:
-                raise Exception("Unknown property : {}".format(error))
+                raise Exception(f"Unknown property : {error}")
             return val
 
     async def update_bacnet_properties(self):
@@ -783,7 +779,7 @@ class DeviceConnected(Device):
                 self.properties.bacnet_properties[prop] = v
 
         except Exception as e:
-            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+            raise Exception(f"Problem reading : {self.properties.name} | {e}")
 
     def _bacnet_properties(self, update=False):
         if not self.properties.bacnet_properties or update:
@@ -813,16 +809,13 @@ class DeviceConnected(Device):
                 self.properties.ping_failures += 1
                 return False
         except NoResponseFromController as e:
-            self._log.error(
-                "{} ({})| Ping failure ({}).".format(
-                    self.properties.name, self.properties.address, e
-                )
-            )
+            self.log(f"{self.properties.name} ({self.properties.address})| Ping failure ({e}).", level='error')
+            
             self.properties.ping_failures += 1
             return False
 
     def __repr__(self):
-        return "{} / Connected".format(self.properties.name)
+        return f"{self.properties.name} / Connected"
 
 
 # ------------------------------------------------------------------------------
@@ -867,7 +860,7 @@ class DeviceDisconnected(Device):
         if network:
             self.properties.network = network
         if not self.properties.network:
-            self._log.debug("No network...calling DeviceFromDB")
+            self.log("No network...calling DeviceFromDB", level="debug")
             if db:
                 await self.new_state(DeviceFromDB)
             self._log.info(
@@ -984,7 +977,7 @@ class DeviceDisconnected(Device):
         raise DeviceNotConnected("Must connect to BACnet or database")
 
     def __repr__(self):
-        return "{} / Disconnected".format(self.properties.name)
+        return f"{self.properties.name} / Disconnected"
 
 
 # ------------------------------------------------------------------------------
@@ -1002,7 +995,7 @@ class DeviceFromDB(DeviceConnected):
         try:
             await self.initialize_device_from_db()
         except ValueError as e:
-            self._log.error("Problem with DB initialization : {}".format(e))
+            self.log(f"Problem with DB initialization : {e}", level='error')
             # self.new_state(DeviceDisconnected)
             raise
 
@@ -1015,7 +1008,7 @@ class DeviceFromDB(DeviceConnected):
             raise WrongParameter("Please provide network OR from_backup")
 
         elif network:
-            self._log.debug("Network provided... trying to connect")
+            self.log("Network provided... trying to connect", level="debug")
             self.properties.network = network
             try:
                 name = await self.properties.network.read(
@@ -1033,29 +1026,29 @@ class DeviceFromDB(DeviceConnected):
 
                 if name:
                     if segmentation_supported:
-                        self._log.debug("Segmentation supported, connecting...")
+                        self.log("Segmentation supported, connecting...", level="debug")
                         await self.new_state(RPMDeviceConnected)
                     else:
-                        self._log.debug("Segmentation not supported, connecting...")
+                        self.log("Segmentation not supported, connecting...", level="debug")
                         await self.new_state(RPDeviceConnected)
                     # self.db.close()
 
             except (NoResponseFromController, NoResponse):
-                self._log.error("Unable to connect, keeping DB mode active")
+                self.log("Unable to connect, keeping DB mode active", level="error")
 
         else:
-            self._log.debug("Not connected, open DB")
+            self.log("Not connected, open DB", level="debug")
             if from_backup:
                 self.properties.db_name = from_backup.split(".")[0]
             await self._init_state()
 
     async def initialize_device_from_db(self):
-        self._log.info("Initializing DB")
+        self.log("Initializing DB", level="info")
         # Save important properties for reuse
         if self.properties.db_name:
             dbname = self.properties.db_name
         else:
-            self._log.info("Missing argument DB")
+            self.log("Missing argument DB", level="info")
             raise ValueError("Please provide db name using device.load_db('name')")
 
         # network = self.properties.network
@@ -1085,7 +1078,7 @@ class DeviceFromDB(DeviceConnected):
         self.properties.save_resampling = self._props["save_resampling"]
         self.properties.clear_history_on_save = self._props["clear_history_on_save"]
         self.properties.default_history_size = self._props["history_size"]
-        self._log.info("Device restored from db")
+        self.log("Device restored from db", level="info")
         self._log.info(
             'You can reconnect to network using : "device.connect(network=bacnet)"'
         )
@@ -1119,7 +1112,7 @@ class DeviceFromDB(DeviceConnected):
         raise DeviceNotConnected("Must connect to BACnet or database")
 
     def __repr__(self):
-        return "{} / Disconnected".format(self.properties.name)
+        return f"{self.properties.name} / Disconnected"
 
 
 # ------------------------------------------------------------------------------

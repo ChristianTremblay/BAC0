@@ -97,12 +97,12 @@ class Calendar:
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
 
-        self._log.debug("{:>12} {}".format("- request:", request))
+        self._log.debug(f"{'- request:':>12} {request}")
 
         _app.request(request)
 
         self._log.info(
-            "Calendar Write request sent to device : {}".format(request.pduDestination)
+            f"Calendar Write request sent to device : {request.pduDestination}"
         )
 
     def write_calendar_dateList(self, destination, calendar_instance, dates):
@@ -122,11 +122,11 @@ class Calendar:
 
         try:
             dateList_object = await self.read(
-                "{} calendar {} dateList".format(address, calendar_instance)
+                f"{address} calendar {calendar_instance} dateList"
             )
             dict_calendar = self.decode_dateList(dateList_object)
         except Exception as error:
-            self._log.error("exception: {!r}".format(error))
+            self._log.error(f"exception: {error!r}")
             return {}
 
         return dict_calendar

@@ -28,7 +28,7 @@ class Alias:
         """
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
-        self._log.debug("do_iam")
+        self.log("do_iam", level="debug")
 
         await _app.i_am()
 
@@ -46,7 +46,7 @@ class Alias:
         will return an acknowledgement with its routing table configuration.
         """
         # build a request
-        self._log.info("Addr : {}".format(address))
+        self._log.info(f"Addr : {address}")
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
         await _app.nse.initialize_routing_table()

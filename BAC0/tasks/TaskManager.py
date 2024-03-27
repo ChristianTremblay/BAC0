@@ -82,7 +82,7 @@ class Task(object):
                 if self.previous_execution:
                     self._log.debug(f"Previous execution : {self.previous_execution}")
                 else:
-                    self._log.debug("First Run")
+                    self.log("First Run", level="debug")
 
                 self.average_latency = (
                     self.average_latency + (_start_time - self.next_execution)
@@ -106,8 +106,8 @@ class Task(object):
 
                 # self._log.info('Stat for task {}'.format(self))
                 if self.average_latency > Task.high_latency:
-                    self._log.warning("High latency for {}".format(self.name))
-                    self._log.warning("Stats : {}".format(self))
+                    self._log.warning(f"High latency for {self.name}")
+                    self._log.warning(f"Stats : {self}")
 
                 self.execution_time = time.time() - _start_time
                 self._log.debug(f"Execution Time : {self.execution_time}")

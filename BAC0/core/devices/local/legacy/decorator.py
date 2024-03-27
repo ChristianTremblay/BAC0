@@ -103,9 +103,9 @@ def make_commandable():
             objectType, instance, objectName, presentValue, description = args
             new_object = new_type(
                 objectIdentifier=(base_cls.objectType, instance),
-                objectName="{}".format(objectName),
+                objectName=f"{objectName}",
                 presentValue=presentValue,
-                description=CharacterString("{}".format(description)),
+                description=CharacterString(f"{description}"),
             )
             return new_object
 
@@ -129,9 +129,9 @@ def add_feature(cls):
             instance, objectName, presentValue, description = args
             new_object = new_type(
                 objectIdentifier=(base_cls.objectType, instance),
-                objectName="{}".format(objectName),
+                objectName=f"{objectName}",
                 presentValue=presentValue,
-                description=CharacterString("{}".format(description)),
+                description=CharacterString(f"{description}"),
             )
             return new_object
 
@@ -167,7 +167,7 @@ def bacnet_property(property_name, value, *, force_mutable=None):
                     )
                 except KeyError:
                     raise ValueError(
-                        "Invalid property ({}) for object".format(property_name)
+                        f"Invalid property ({property_name}) for object"
                     )
                 obj.add_property(new_prop)
             return obj
@@ -206,7 +206,7 @@ def bacnet_properties(properties):
                         )
                     except KeyError:
                         raise ValueError(
-                            "Invalid property ({}) for object".format(property_name)
+                            f"Invalid property ({property_name}) for object"
                         )
                     obj.add_property(new_prop)
             return obj
@@ -220,15 +220,15 @@ def create(object_type, instance, objectName, value, description):
     if object_type is TrendLogObject:
         new_object = object_type(
             objectIdentifier=(object_type.objectType, instance),
-            objectName="{}".format(objectName),
+            objectName=f"{objectName}",
             logBuffer=value,
-            description=CharacterString("{}".format(description)),
+            description=CharacterString(f"{description}"),
         )
     else:
         new_object = object_type(
             objectIdentifier=(object_type.objectType, instance),
-            objectName="{}".format(objectName),
+            objectName=f"{objectName}",
             presentValue=value,
-            description=CharacterString("{}".format(description)),
+            description=CharacterString(f"{description}"),
         )
     return new_object

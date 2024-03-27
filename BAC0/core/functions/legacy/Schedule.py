@@ -133,15 +133,15 @@ class Schedule:
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
+                self._log.debug(f"Not an ack. | APDU : {apdu} / {type(apdu)}")
                 return
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
-            raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
+            raise NoResponseFromController(f"APDU Abort Reason : {reason}")
 
         self._log.info(
-            "Schedule Write request sent to device : {}".format(request.pduDestination)
+            f"Schedule Write request sent to device : {request.pduDestination}"
         )
 
     def write_weeklySchedule(self, destination, schedule_instance, schedule):
@@ -177,7 +177,7 @@ class Schedule:
             # Read Multiple not supported... try single prop read
             def _read(prop):
                 return self.read(
-                    "{} schedule {} {}".format(address, schedule_instance, prop)
+                    f"{address} schedule {schedule_instance} {prop}"
                 )
 
             try:
@@ -201,7 +201,7 @@ class Schedule:
                 _state_text = ["inactive", "active"]
             elif "multi" in obj_type:
                 _state_text = self.read(
-                    "{} {} {} stateText".format(address, obj_type, obj_instance)
+                    f"{address} {obj_type} {obj_instance} stateText"
                 )
             elif "analog" in obj_type:
                 _state_text = "analog"
@@ -218,7 +218,7 @@ class Schedule:
                 for each in object_references
             ]
         except Exception as error:
-            self._log.error("Error {}".format(error))
+            self._log.error(f"Error {error}")
             # Not used in device, not linked...
             _state_text = range(255)
             schedule["object_references"] = []
@@ -238,7 +238,7 @@ class Schedule:
         elif _state_text == "analog":
             sched_states = _state_text  # type: ignore[assignment]
             if presentValue is not None:
-                presentValue = "{}".format(presentValue.value)
+                presentValue = f"{presentValue.value}"
         else:
             try:
                 for i, each in enumerate(_state_text):  # type: ignore[arg-type]
@@ -280,5 +280,5 @@ class Schedule:
                         _value = states[int(each.value.value) - offset_MV]
                 events.append((_time, _value))
             except IndexError:
-                events.append((_time, "??? ({})".format(each.value.value)))
+                events.append((_time, f"??? ({each.value.value})"))
         return events

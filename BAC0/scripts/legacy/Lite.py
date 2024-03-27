@@ -113,9 +113,7 @@ class Lite(
         **params,
     ) -> None:
         self._log.info(
-            "Starting BAC0 version {} ({})".format(
-                version, self.__module__.split(".")[-1]
-            )
+            f"Starting BAC0 version {version} ({self.__module__.split('.')[-1]})"
         )
         self._log.info("Use BAC0.log_level to adjust verbosity of the app.")
         self._log.info("Ex. BAC0.log_level('silence') or BAC0.log_level('error')")
@@ -150,7 +148,7 @@ class Lite(
                 mask = 24
             if not port:
                 port = 47808
-            ip_addr = Address("{}/{}:{}".format(ip, mask, port))
+            ip_addr = Address(f"{ip}/{mask}:{port}")
         self._log.info(
             f"Using ip : {ip_addr} on port {ip_addr.addrPort} | broadcast : {ip_addr.addrBroadcastTuple[0]}"
         )
@@ -163,7 +161,7 @@ class Lite(
             bdtable=bdtable,
             **params,
         )
-        self._log.info("Device instance (id) : {boid}".format(boid=self.Boid))
+        self._log.info(f"Device instance (id) : {self.Boid}")
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
 
@@ -190,9 +188,7 @@ class Lite(
                     else None
                 )
                 self._log.info(
-                    "Connection made to InfluxDB bucket : {}".format(
-                        self.database.bucket
-                    )
+                    f"Connection made to InfluxDB bucket : {self.database.bucket}"
                 )
             except ConnectionError:
                 self._log.error(
@@ -267,7 +263,7 @@ class Lite(
         self.what_is_network_number()
         # Try to find local routers...
         self.whois_router_to_network()
-        self._log.info("Found those networks : {}".format(self.known_network_numbers))
+        self._log.info(f"Found those networks : {self.known_network_numbers}")
 
         if networks:
             if isinstance(networks, list):
@@ -283,7 +279,7 @@ class Lite(
 
         if _networks:
             for network in _networks:
-                self._log.info("Discovering network {}".format(network))
+                self._log.info(f"Discovering network {network}")
                 _res = self.whois(
                     "{}:* {} {}".format(
                         network,
@@ -303,9 +299,7 @@ class Lite(
                 )
             )
             _res = self.whois(
-                "{} {}".format(
-                    deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
-                ),
+                f"{deviceInstanceRangeLowLimit} {deviceInstanceRangeHighLimit}",
                 global_broadcast=global_broadcast,
                 sleep_ms=whois_sleep_ms,
             )
@@ -336,9 +330,7 @@ class Lite(
             ):
                 try:
                     self._log.debug(
-                        "Ping {}|{}".format(
-                            each.properties.name, each.properties.address
-                        )
+                        f"Ping {each.properties.name}|{each.properties.address}"
                     )
                     each.ping()
                     if each.properties.ping_failures > 3:
@@ -355,7 +347,7 @@ class Lite(
             else:
                 device_id = each.properties.device_id
                 addr = each.properties.address
-                name = self.read("{} device {} objectName".format(addr, device_id))
+                name = self.read(f"{addr} device {device_id} objectName")
                 if name == each.properties.name:
                     each.properties.ping_failures = 0
                     self._log.info(
@@ -433,24 +425,24 @@ class Lite(
         for device in list(self.discoveredDevices or {}):
             try:
                 deviceName, vendorName = self.readMultiple(
-                    "{} device {} objectName vendorName".format(device[0], device[1])
+                    f"{device[0]} device {device[1]} objectName vendorName"
                 )
             except (UnrecognizedService, ValueError):
                 self._log.warning(
-                    "Unrecognized service for {} | {}".format(device[0], device[1])
+                    f"Unrecognized service for {device[0]} | {device[1]}"
                 )
                 try:
                     deviceName = self.read(
-                        "{} device {} objectName".format(device[0], device[1])
+                        f"{device[0]} device {device[1]} objectName"
                     )
                     vendorName = self.read(
-                        "{} device {} vendorName".format(device[0], device[1])
+                        f"{device[0]} device {device[1]} vendorName"
                     )
                 except NoResponseFromController:
-                    self._log.warning("No response from {}".format(device))
+                    self._log.warning(f"No response from {device}")
                     continue
             except (NoResponseFromController, Timeout):
-                self._log.warning("No response from {}".format(device))
+                self._log.warning(f"No response from {device}")
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
         return lst  # type: ignore[return-value]
@@ -469,9 +461,7 @@ class Lite(
         super().disconnect()
 
     def __repr__(self) -> str:
-        return "Bacnet Network using ip {} with device id {}".format(
-            self.localIPAddr, self.Boid
-        )
+        return f"Bacnet Network using ip {self.localIPAddr} with device id {self.Boid}"
 
     def __getitem__(self, boid_or_localobject):
         item = self.this_application.objectName[boid_or_localobject]
@@ -479,6 +469,6 @@ class Lite(
             for device in self._registered_devices:
                 if str(device.properties.device_id) == str(boid_or_localobject):
                     return device
-            self._log.error("{} not found".format(boid_or_localobject))
+            self._log.error(f"{boid_or_localobject} not found")
         else:
             return item

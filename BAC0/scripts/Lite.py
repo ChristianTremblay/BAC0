@@ -121,14 +121,12 @@ class Lite(
     ) -> None:
         self._initialized = False
         self._log.info(
-            "Starting BAC0 version {} ({})".format(
-                version, self.__module__.split(".")[-1]
-            )
+            f"Starting BAC0 version {version} ({self.__module__.split('.')[-1]})"
         )
-        self._log.info("Use BAC0.log_level to adjust verbosity of the app.")
-        self._log.info("Ex. BAC0.log_level('silence') or BAC0.log_level('error')")
+        self.log("Use BAC0.log_level to adjust verbosity of the app.", level="info")
+        self.log("Ex. BAC0.log_level('silence') or BAC0.log_level('error')", level="info")
 
-        self._log.debug("Configurating app")
+        self.log("Configurating app", level="debug")
         self._registered_devices = weakref.WeakValueDictionary()
 
         # Ping task will deal with all registered device and disconnect them if they do not respond.
@@ -158,7 +156,7 @@ class Lite(
                 mask = 24
             if not port:
                 port = 47808
-            ip_addr = Address("{}/{}:{}".format(ip, mask, port))
+            ip_addr = Address(f"{ip}/{mask}:{port}")
         self._log.info(
             f"Using ip : {ip_addr} on port {ip_addr.addrPort} | broadcast : {ip_addr.addrBroadcastTuple[0]}"
         )
@@ -171,7 +169,7 @@ class Lite(
             bdtable=bdtable,
             **params,
         )
-        self._log.info("Device instance (id) : {boid}".format(boid=self.Boid))
+        self._log.info(f"Device instance (id) : {self.Boid}")
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
 
@@ -184,7 +182,7 @@ class Lite(
         # )
         # self._update_local_cov_task.task.start()
         # self._update_local_cov_task.running = True
-        # self._log.info("Update Local COV Task started (required to support COV)")
+        # self.log("Update Local COV Task started (required to support COV)", level="info")
 
         # Activate InfluxDB if params are available
         if db_params and INFLUXDB:
@@ -267,9 +265,7 @@ class Lite(
             ):
                 try:
                     self._log.debug(
-                        "Ping {}|{}".format(
-                            each.properties.name, each.properties.address
-                        )
+                        f"Ping {each.properties.name}|{each.properties.address}"
                     )
                     asyncio.create_task(each.ping())
                     if each.properties.ping_failures > 3:
@@ -286,7 +282,7 @@ class Lite(
             else:
                 device_id = each.properties.device_id
                 addr = each.properties.address
-                name = self.read("{} device {} objectName".format(addr, device_id))
+                name = self.read(f"{addr} device {device_id} objectName")
                 if name == each.properties.name:
                     each.properties.ping_failures = 0
                     self._log.info(
@@ -436,16 +432,14 @@ class Lite(
         asyncio.create_task(self._disconnect())
 
     async def _disconnect(self) -> None:
-        self._log.debug("Disconnecting")
+        self.log("Disconnecting", level="debug")
         for each in self.registered_devices:
             await each.disconnect()
         await super()._disconnect()
         self._initialized = False
 
     def __repr__(self) -> str:
-        return "Bacnet Network using ip {} with device id {}".format(
-            self.localIPAddr, self.Boid
-        )
+        return f"Bacnet Network using ip {self.localIPAddr} with device id {self.Boid}"
 
     def __getitem__(self, boid_or_localobject):
         item = self.this_application.app.objectName[boid_or_localobject]
@@ -453,7 +447,7 @@ class Lite(
             for device in self._registered_devices:
                 if str(device.properties.device_id) == str(boid_or_localobject):
                     return device
-            self._log.error("{} not found".format(boid_or_localobject))
+            self._log.error(f"{boid_or_localobject} not found")
         else:
             return item
         

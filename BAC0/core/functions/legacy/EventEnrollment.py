@@ -43,12 +43,10 @@ class EventEnrollment:
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
-            raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
+            raise NoResponseFromController(f"APDU Abort Reason : {reason}")
 
         self._log.info(
-            "Event Parameters Write request sent to device : {}".format(
-                request.pduDestination
-            )
+            f"Event Parameters Write request sent to device : {request.pduDestination}"
         )
 
     # external interface
@@ -98,7 +96,7 @@ class EventEnrollment:
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
-            raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
+            raise NoResponseFromController(f"APDU Abort Reason : {reason}")
 
         self._log.info(
             "Object Property Reference Write request sent to device : {}".format(

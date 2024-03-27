@@ -148,7 +148,7 @@ class Discover:
                     "Issuing a global Broadcast can create network flood. Use with care."
                 )
             else:
-                self._log.info("Issuing a local broadcast whois request.")
+                self.log("Issuing a local broadcast whois request.", level="info")
             _address = None if global_broadcast is True else LocalBroadcast()
             _res = await _app.who_is(
                 low_limit=deviceInstanceRangeLowLimit,

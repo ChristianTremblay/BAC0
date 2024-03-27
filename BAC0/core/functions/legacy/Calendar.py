@@ -107,16 +107,16 @@ class Calendar:
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug("Not an ack. | APDU : {} / {}".format(apdu, type(apdu)))
+                self._log.debug(f"Not an ack. | APDU : {apdu} / {type(apdu)}")
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
-            raise NoResponseFromController("APDU Abort Reason : {}".format(reason))
+            raise NoResponseFromController(f"APDU Abort Reason : {reason}")
 
         self._log.info(
-            "Calendar Write request sent to device : {}".format(request.pduDestination)
+            f"Calendar Write request sent to device : {request.pduDestination}"
         )
 
     def write_calendar_dateList(self, destination, calendar_instance, dates):
@@ -136,11 +136,11 @@ class Calendar:
 
         try:
             dateList_object = self.read(
-                "{} calendar {} dateList".format(address, calendar_instance)
+                f"{address} calendar {calendar_instance} dateList"
             )
             dict_calendar = self.decode_dateList(dateList_object)
         except Exception as error:
-            self._log.error("exception: {!r}".format(error))
+            self._log.error(f"exception: {error!r}")
             return {}
 
         return dict_calendar

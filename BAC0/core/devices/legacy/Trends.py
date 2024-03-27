@@ -105,7 +105,7 @@ class TrendLog(TrendLogProperties):
                 )
             )
         except Exception as error:
-            raise Exception("Problem reading trendLog informations: {}".format(error))
+            raise Exception(f"Problem reading trendLog informations: {error}")
 
     def _total_record_count(self):
         self.properties.total_record_count = (
@@ -126,7 +126,7 @@ class TrendLog(TrendLogProperties):
         _count = max(_actual_index - start, 0)
         steps = int(_count / RECORDS) + int(1 if (_count % RECORDS) > 0 else 0)
 
-        self._log.debug("Reading log : {} {} {}".format(start, _count, steps))
+        self._log.debug(f"Reading log : {start} {_count} {steps}")
 
         _from = start
         for each in range(steps):
@@ -151,9 +151,7 @@ class TrendLog(TrendLogProperties):
             seconds = 0 if seconds == 255 else seconds
             ms = 0 if ms == 255 else ms
             _index = pd.to_datetime(
-                "{}-{}-{} {}:{}:{}.{}".format(
-                    year, month, day, hours, minutes, seconds, ms
-                ),
+                f"{year}-{month}-{day} {hours}:{minutes}:{seconds}.{ms}",
                 format="%Y-%m-%d %H:%M:%S.%f",
             )
             _choice, _logDatum = self.read_logDatum(each.logDatum)

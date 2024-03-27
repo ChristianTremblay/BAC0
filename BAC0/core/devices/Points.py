@@ -82,7 +82,7 @@ class PointProperties(object):
         self.status_flags = None
 
     def __repr__(self):
-        return "{}".format(self.asdict)
+        return f"{self.asdict}"
 
     @property
     def asdict(self):
@@ -209,7 +209,7 @@ class Point:
                 self.properties.priority_array = False
             except Exception as e:
                 raise Exception(
-                    "Problem reading : {} | {}".format(self.properties.name, e)
+                    f"Problem reading : {self.properties.name} | {e}"
                 )
 
     async def read_property(self, prop):
@@ -224,7 +224,7 @@ class Point:
                 vendor_id=self.properties.device.properties.vendor_id,
             )
         except Exception as e:
-            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+            raise Exception(f"Problem reading : {self.properties.name} | {e}")
 
     async def update_bacnet_properties(self):
         """
@@ -248,7 +248,7 @@ class Point:
                 self.properties.bacnet_properties[prop] = v
 
         except Exception as e:
-            raise Exception("Problem reading : {} | {}".format(self.properties.name, e))
+            raise Exception(f"Problem reading : {self.properties.name} | {e}")
 
     @property
     async def bacnet_properties(self):
@@ -398,7 +398,7 @@ class Point:
                     key = key.split("prop_")[1]
                 return await self.read_property(key)
             except Exception:
-                raise ValueError("Cannot find property named {}".format(key))
+                raise ValueError(f"Cannot find property named {key}")
 
     async def write(
         self, value: t.Any, *, prop: str = "presentValue", priority: str = "16"
@@ -420,7 +420,7 @@ class Point:
                     and float(priority) >= 1
                     and float(priority) <= 16
                 ):
-                    priority = "{}".format(priority)
+                    priority = f"{priority}"
                 else:
                     raise ValueError("Priority must be a number between 1 and 16")
             req = f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} {prop} {value} - {priority}"
@@ -849,7 +849,7 @@ class NumericPoint(Point):
                     await self._setitem(value)
             except Exception as error:
                 raise WritePropertyException(
-                    "Problem writing to device : {}".format(error)
+                    f"Problem writing to device : {error}"
                 )
 
     def __repr__(self):
@@ -1007,7 +1007,7 @@ class BooleanPoint(Point):
                     'Value must be boolean True, False or "active"/"inactive"'
                 )
         except (Exception, ValueError) as error:
-            raise WritePropertyException("Problem writing to device : {}".format(error))
+            raise WritePropertyException(f"Problem writing to device : {error}")
 
     def __repr__(self):
         polling = self.properties.device.properties.pollDelay
@@ -1082,7 +1082,7 @@ class EnumPoint(Point):
         )
 
     def _trend(self, res):
-        res = "{}: {}".format(res, self.get_state(res))
+        res = f"{res}: {self.get_state(res)}"
         super()._trend(res)
 
     @property
@@ -1140,7 +1140,7 @@ class EnumPoint(Point):
                     )
                 )
         except (Exception, ValueError) as error:
-            raise WritePropertyException("Problem writing to device : {}".format(error))
+            raise WritePropertyException(f"Problem writing to device : {error}")
 
     def __repr__(self):
         polling = self.properties.device.properties.pollDelay
@@ -1216,7 +1216,7 @@ class StringPoint(Point):
             else:
                 raise ValueError("Value must be string or CharacterString")
         except (Exception, ValueError) as error:
-            raise WritePropertyException("Problem writing to device : {}".format(error))
+            raise WritePropertyException(f"Problem writing to device : {error}")
 
     def __repr__(self):
         try:
@@ -1226,7 +1226,7 @@ class StringPoint(Point):
             else:
                 val = str(self.value)
         except ValueError:
-            self._log.error("Cannot convert value. Device probably disconnected")
+            self.log("Cannot convert value. Device probably disconnected", level="error")
             # Probably disconnected
             val = None
         return "{}/{} : {}".format(
@@ -1305,7 +1305,7 @@ class DateTimePoint(Point):
             # else:
             val = await self.value
         except ValueError:
-            self._log.error("Cannot convert value. Device probably disconnected")
+            self.log("Cannot convert value. Device probably disconnected", level="error")
             # Probably disconnected
             val = None
         return "{}/{} : {}".format(
@@ -1379,7 +1379,7 @@ class NumericPointOffline(NumericPoint):
     @property
     def history(self):
         his = self.properties.device._read_from_sql(
-            'select * from "{}"'.format("history"),
+            'select * from "history"',
             self.properties.device.properties.db_name,
         )
         his.index = his["index"].apply(Timestamp)
@@ -1425,7 +1425,7 @@ class BooleanPointOffline(BooleanPoint):
     @property
     def history(self):
         his = self.properties.device._read_from_sql(
-            'select * from "{}"'.format("history"),
+            'select * from "history"',
             self.properties.device.properties.db_name,
         )
         his.index = his["index"].apply(Timestamp)
@@ -1456,7 +1456,7 @@ class EnumPointOffline(EnumPoint):
     @property
     def history(self):
         his = self.properties.device._read_from_sql(
-            'select * from "{}"'.format("history"),
+            'select * from "history"',
             self.properties.device.properties.db_name,
         )
         his.index = his["index"].apply(Timestamp)
@@ -1505,7 +1505,7 @@ class StringPointOffline(EnumPoint):
     @property
     def history(self):
         his = self.properties.device._read_from_sql(
-            'select * from "{}"'.format("history"),
+            'select * from "history"',
             self.properties.device.properties.db_name,
         )
         his.index = his["index"].apply(Timestamp)

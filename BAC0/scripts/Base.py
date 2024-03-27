@@ -52,7 +52,7 @@ class LocalObjects(object):
             name = obj
             item = self.device.this_application.app.get_object_name(name)
         if item is None:
-            raise UnknownObjectError("Can't find {} in local device".format(obj))
+            raise UnknownObjectError(f"Can't find {obj} in local device")
         else:
             return item
 
@@ -98,7 +98,7 @@ class Base:
         timezone: str = "America/Montreal",
         json_file: str = None,
     ):
-        self._log.debug("Configurating app")
+        self.log("Configurating app", level="debug")
 
         # Register Servisys
         try:
@@ -168,7 +168,7 @@ class Base:
             self.startApp()
         except InitializationError as error:
             raise InitializationError(
-                "Gros probleme : {}. Address requested : {}".format(error, localIPAddr)
+                f"Gros probleme : {error}. Address requested : {localIPAddr}"
             )
 
     def startApp(self):
@@ -176,7 +176,7 @@ class Base:
         Define the local device, including services supported.
         Once defined, start the BACnet stack in its own thread.
         """
-        self._log.debug("Create Local Device")
+        self.log("Create Local Device", level="debug")
         try:
             app_type = "BACnet/IP App"
 
@@ -229,21 +229,21 @@ class Base:
             self.this_application = BAC0Application(
                 config(cfg), self.localIPAddr, json_file=self.json_file
             )
-            self._log.debug("Starting")
+            self.log("Starting", level="debug")
             self._initialized = True
 
             try:
                 Base._used_ips.add(self.localIPAddr)
-                self._log.info("Registered as {}".format(app_type))
+                self._log.info(f"Registered as {app_type}")
                 self._started = True
             except OSError as error:
-                self._log.warning("Error opening socket: {}".format(error))
-                raise InitializationError("Error opening socket: {}".format(error))
-            self._log.debug("Running")
+                self._log.warning(f"Error opening socket: {error}")
+                raise InitializationError(f"Error opening socket: {error}")
+            self.log("Running", level="debug")
         except OSError as error:
-            self._log.error("an error has occurred: {}".format(error))
-            raise InitializationError("Error starting app: {}".format(error))
-            self._log.debug("finally")
+            self._log.error(f"an error has occurred: {error}")
+            raise InitializationError(f"Error starting app: {error}")
+            self.log("finally", level="debug")
 
     def register_foreign_device(self, addr=None, ttl=0):
         # self.this_application.register_to_bbmd(addr, ttl)
@@ -260,9 +260,9 @@ class Base:
         """
         Stop the BACnet stack.  Free the IP socket.
         """
-        self._log.debug("Stopping All running tasks")
+        self.log("Stopping All running tasks", level="debug")
         await stopAllTasks()
-        self._log.debug("Stopping BACnet stack")
+        self.log("Stopping BACnet stack", level="debug")
         # Freeing socket
         self.this_application.app.close()
 
@@ -270,7 +270,7 @@ class Base:
         # self.t.join()
         self._started = False
         Base._used_ips.discard(self.localIPAddr)
-        self._log.info("BACnet stopped")
+        self.log("BACnet stopped", level="info")
 
     @property
     def routing_table(self):

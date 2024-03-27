@@ -37,7 +37,7 @@ class HostIP:
             self._port = port
         else:
             self._port = DEFAULT_PORT
-        self.interface = ipaddress.IPv4Interface("{}/{}".format(ip, mask))
+        self.interface = ipaddress.IPv4Interface(f"{ip}/{mask}")
 
     @property
     def ip_address_subnet(self):
@@ -53,7 +53,7 @@ class HostIP:
         """
         IP Address/subnet
         """
-        return "{}".format(self.interface.ip.compressed)
+        return f"{self.interface.ip.compressed}"
 
     @property
     def address(self) -> Address:
@@ -62,7 +62,7 @@ class HostIP:
         """
         port = ""
         if self._port:
-            port = ":{}".format(self._port)
+            port = f":{self._port}"
         return Address(
             "{}/{}{}".format(
                 self.interface.ip.compressed,

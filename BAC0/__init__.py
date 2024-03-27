@@ -28,7 +28,7 @@ try:
         #
         import os
 
-        if os.path.isfile("{}/.env".format(os.getcwd())):
+        if os.path.isfile(f"{os.getcwd()}/.env"):
             from dotenv import load_dotenv
 
             load_dotenv(os.path.join(os.getcwd(), ".env"))

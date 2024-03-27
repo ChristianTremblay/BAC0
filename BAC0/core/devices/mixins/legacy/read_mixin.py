@@ -74,12 +74,12 @@ def create_trendlogs(objList, device):
                     ldop_addr,
                 ) = tl.properties.log_device_object_property.objectIdentifier
                 ldop_prop = tl.properties.log_device_object_property.propertyIdentifier
-            trendlogs["{}_{}_{}".format(ldop_type, ldop_addr, ldop_prop)] = (
+            trendlogs[f"{ldop_type}_{ldop_addr}_{ldop_prop}"] = (
                 tl.properties.object_name,
                 tl,
             )
         except TrendLogCreationException:
-            device._log.error("Problem creating {}".format(each))
+            device._log.error(f"Problem creating {each}")
             continue
     return trendlogs
 
@@ -125,9 +125,7 @@ class ReadUtilsMixin:
             points.append(point)
 
             str_list.append(
-                " {} {} presentValue".format(
-                    point.properties.type, point.properties.address
-                )
+                f" {point.properties.type} {point.properties.address} presentValue"
             )
             rpm_param = "".join(str_list)
             requests.append(rpm_param)
@@ -226,19 +224,19 @@ class DiscoveryUtilsMixin:
         values = []
         info_length = discover_request[1]
         big_request = discover_request[0]
-        self._log.debug("Discover : %s" % big_request)
-        self._log.debug("Length : %s" % info_length)
+        self._log.debug(f"Discover : {big_request}")
+        self._log.debug(f"Length : {info_length}")
 
         for request in batch_requests(big_request, points_per_request):
             try:
-                request = "{} {}".format(self.properties.address, "".join(request))
-                self._log.debug("RP_Request: %s " % request)
+                request = f"{self.properties.address} {''.join(request)}"
+                self._log.debug(f"RP_Request: {request} ")
                 val = self.properties.network.read(
                     request, vendor_id=self.properties.vendor_id
                 )
 
             except KeyError as error:
-                raise Exception("Unknown point name : {}".format(error))
+                raise Exception(f"Unknown point name : {error}")
 
             # Save each value to history of each point
             for points_info in batch_requests(val, info_length):
@@ -272,17 +270,17 @@ class RPMObjectsProcessing:
             raise ValueError("Unsupported objectType")
 
         for points, address in retrieve_type(objList, obj_type):
-            request.append("{} {} {} ".format(points, address, prop_list))
+            request.append(f"{points} {address} {prop_list} ")
 
         def _find_propid_index(key):
             _prop_list = prop_list.split(" ")
             for i, each in enumerate(_prop_list):
                 if key == each:
                     return i
-            raise KeyError("{} not part of property list".format(key))
+            raise KeyError(f"{key} not part of property list")
 
         try:
-            self._log.debug("Request : %s" % request)
+            self._log.debug(f"Request : {request}")
             points_info = self.read_multiple(
                 "",
                 discover_request=(request, len(prop_list.split(" "))),
@@ -361,26 +359,26 @@ class RPObjectsProcessing:
 
             if obj_type == "analog":
                 units_state = self.read_single(
-                    "{} {} units ".format(point_type, point_address)
+                    f"{point_type} {point_address} units "
                 )
             elif obj_type == "multi":
                 units_state = self.read_single(
-                    "{} {} stateText ".format(point_type, point_address)
+                    f"{point_type} {point_address} stateText "
                 )
             elif obj_type == "loop":
                 units_state = self.read_single(
-                    "{} {} units ".format(point_type, point_address)
+                    f"{point_type} {point_address} units "
                 )
             elif obj_type == "binary":
                 units_state = (
                     (
                         self.read_single(
-                            "{} {} inactiveText ".format(point_type, point_address)
+                            f"{point_type} {point_address} inactiveText "
                         )
                     ),
                     (
                         self.read_single(
-                            "{} {} activeText ".format(point_type, point_address)
+                            f"{point_type} {point_address} activeText "
                         )
                     ),
                 )
@@ -388,7 +386,7 @@ class RPObjectsProcessing:
                 units_state = None
 
             presentValue = self.read_single(
-                "{} {} presentValue ".format(point_type, point_address)
+                f"{point_type} {point_address} presentValue "
             )
             if (obj_type == "analog" or obj_type == "loop") and presentValue:
                 presentValue = float(presentValue)
@@ -398,10 +396,10 @@ class RPObjectsProcessing:
                     pointType=point_type,
                     pointAddress=point_address,
                     pointName=self.read_single(
-                        "{} {} objectName ".format(point_type, point_address)
+                        f"{point_type} {point_address} objectName "
                     ),
                     description=self.read_single(
-                        "{} {} description ".format(point_type, point_address)
+                        f"{point_type} {point_address} description "
                     ),
                     presentValue=presentValue,
                     units_state=units_state,
@@ -448,15 +446,13 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                 values = []
                 info_length = discover_request[1]
                 big_request = discover_request[0]
-                self._log.debug("Discover : %s" % big_request)
-                self._log.debug("Length : %s" % info_length)
+                self._log.debug(f"Discover : {big_request}")
+                self._log.debug(f"Length : {info_length}")
 
                 for request in batch_requests(big_request, points_per_request):
                     try:
-                        request = "{} {}".format(
-                            self.properties.address, "".join(request)
-                        )
-                        self._log.debug("RPM_Request: {} ".format(request))
+                        request = f"{self.properties.address} {''.join(request)}"
+                        self._log.debug(f"RPM_Request: {request} ")
                         try:
                             val = self.properties.network.readMultiple(
                                 request, vendor_id=self.properties.vendor_id
@@ -470,7 +466,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                             raise SegmentationNotSupported
 
                     except KeyError as error:
-                        raise Exception("Unknown point name : {}".format(error))
+                        raise Exception(f"Unknown point name : {error}")
 
                     except SegmentationNotSupported:
                         self.properties.segmentation_supported = False
@@ -496,9 +492,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                 i = 0
                 for request in batch_requests(big_request[0], points_per_request):
                     try:
-                        request = "{} {}".format(
-                            self.properties.address, "".join(request)
-                        )
+                        request = f"{self.properties.address} {''.join(request)}"
                         self._log.debug(request)
                         val = self.properties.network.readMultiple(
                             request, vendor_id=self.properties.vendor_id
@@ -513,7 +507,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                         )
 
                     except KeyError as error:
-                        raise Exception("Unknown point name : {}".format(error))
+                        raise Exception(f"Unknown point name : {error}")
 
                     else:
                         points_values = zip(big_request[1][i : i + len(val)], val)
@@ -534,7 +528,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             i = 0
             for request in batch_requests(big_request[0], points_per_request):
                 try:
-                    request = "{} {}".format(self.properties.address, "".join(request))
+                    request = f"{self.properties.address} {''.join(request)}"
                     val = self.properties.network.read(
                         request, vendor_id=self.properties.vendor_id
                     )
@@ -544,7 +538,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                         each[0]._trend(each[1])
 
                 except KeyError as error:
-                    raise Exception("Unknown point name : {}".format(error))
+                    raise Exception(f"Unknown point name : {error}")
 
     def poll(self, command="start", *, delay=10):
         """
@@ -601,7 +595,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info(
-                "Polling started, values read every {} seconds".format(delay)
+                f"Polling started, values read every {delay} seconds"
             )
 
         elif self._polling_task.running:
@@ -615,7 +609,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info(
-                "Polling started, every values read each {} seconds".format(delay)
+                f"Polling started, every values read each {delay} seconds"
             )
 
         else:
@@ -656,13 +650,13 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
 
     def read_single(self, request, *, points_per_request=1, discover_request=(None, 4)):
         try:
-            request = "{} {}".format(self.properties.address, "".join(request))
-            self._log.debug("RP_Request: %s " % request)
+            request = f"{self.properties.address} {''.join(request)}"
+            self._log.debug(f"RP_Request: {request} ")
             return self.properties.network.read(
                 request, vendor_id=self.properties.vendor_id
             )
         except KeyError as error:
-            raise Exception("Unknown point name: {}".format(error))
+            raise Exception(f"Unknown point name: {error}")
 
         except NoResponseFromController:
             return ""
@@ -713,7 +707,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info(
-                "Polling started, values read every {} seconds".format(delay)
+                f"Polling started, values read every {delay} seconds"
             )
 
         elif self._polling_task.running:
@@ -727,7 +721,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
             self._polling_task.task.start()
             self._polling_task.running = True
             self._log.info(
-                "Polling started, every values read each {} seconds".format(delay)
+                f"Polling started, every values read each {delay} seconds"
             )
 
         else:

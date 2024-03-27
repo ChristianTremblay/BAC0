@@ -55,13 +55,13 @@ class BAC0Application:
                 json_file = os.path.join(
                     os.path.expanduser("~"), ".BAC0", "device.json"
                 )
-                self._log.info("Using JSON Stored in user folder ~/.BAC0")
+                self.log("Using JSON Stored in user folder ~/.BAC0", level="info")
 
             else:
                 json_file = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), "device.json"
                 )
-                self._log.info("Using default JSON configuration file")
+                self.log("Using default JSON configuration file", level="info")
         with open(json_file, "r") as file:
             base_cfg = json.load(file)
 

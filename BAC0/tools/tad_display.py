@@ -48,7 +48,7 @@ def convert(d, device_name=None):
         data: t.Dict[str, t.Union[str, int]] = {}
         name = device_name if device_name else d.properties.name
         obj_type = OBJECT_TYPE[each.properties.type]
-        data["name"] = "{}/{}".format(name, each.properties.name)
+        data["name"] = f"{name}/{each.properties.name}"
         data["group"] = ""
         data["object_type"] = obj_type
         data["object_instance"] = each.properties.address
@@ -72,5 +72,5 @@ def convert(d, device_name=None):
 
 
 def write_tags_import_file(name, file):
-    with open("{}.xml".format(name), "w") as xml_file:
+    with open(f"{name}.xml", "w") as xml_file:
         xml_file.write(file)

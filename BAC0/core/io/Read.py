@@ -253,8 +253,8 @@ class ReadProperty:
             if "unrecognized-service" in str(err.reason):
                 raise UnrecognizedService()
             if "unknown-object" in str(err.reason):
-                self._log.warning("Unknown object {}".format(args))
-                raise UnknownObjectError("Unknown object {}".format(args))
+                self._log.warning(f"Unknown object {args}")
+                raise UnknownObjectError(f"Unknown object {args}")
             if "unknown-property" in str(err.reason):
                 values.append("")  # type: ignore[arg-type]
                 return values

@@ -74,9 +74,9 @@ class CoV:
     """
 
     def send_cov_subscription(self, request):
-        self._log.debug("Request : {}".format(request))
+        self._log.debug(f"Request : {request}")
         iocb = IOCB(request)
-        self._log.debug("IOCB : {}".format(iocb))
+        self._log.debug(f"IOCB : {iocb}")
 
         iocb.add_callback(self.subscription_acknowledged)
 
@@ -88,7 +88,7 @@ class CoV:
             self._log.info("Subscription success")
 
         if iocb.ioError:
-            self._log.error("Subscription failed. {}".format(iocb.ioError))
+            self._log.error(f"Subscription failed. {iocb.ioError}")
 
     def cov(self, address, objectID, confirmed=True, lifetime=0, callback=None):
         address = Address(address)
@@ -141,7 +141,7 @@ class CoV:
 
     # def context_callback(self, elements, callback=None):
     def context_callback(self, elements):
-        self._log.info("Received COV Notification for {}".format(elements))
+        self._log.info(f"Received COV Notification for {elements}")
         # if callback:
         #    callback()
         for device in self.registered_devices:

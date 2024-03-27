@@ -165,9 +165,9 @@ def create_object(
 ):
     new_object = object_class(
         objectIdentifier=(object_class.objectType, oid),
-        objectName="{}".format(objectName),
+        objectName=f"{objectName}",
         presentValue=presentValue,
-        description=CharacterString("{}".format(description)),
+        description=CharacterString(f"{description}"),
         statusFlags=StatusFlags(),
     )
     deprecate_msg()

@@ -55,26 +55,24 @@ class Manager:
                         cls.schedule_task(task)
 
                     cls._log.debug(
-                        "Task {} | {} executed. {}".format(task.id, task.name, task)
+                        f"Task {task.id} | {task.name} executed. {task}"
                     )
             except IndexError:
                 cls._log.debug("Task Manager waiting for tasks...")
                 time.sleep(1)
             except DeviceNotConnected as error:
                 cls._log.warning(
-                    "Device disconnected with error {}. Removing task ({}).".format(
-                        error, task
-                    )
+                    f"Device disconnected with error {error}. Removing task ({task})."
                 )
                 cls.tasks.remove(task.id)
             except Exception as error:
                 if task.name == "Ping Task":
                     cls._log.warning(
-                        "Ping failed with error {} ({}).".format(error, task)
+                        f"Ping failed with error {error} ({task})."
                     )
                 else:
                     cls._log.error(
-                        "Super Mega Giga big error {}. Removing task.".format(error)
+                        f"Super Mega Giga big error {error}. Removing task."
                     )
                     cls.tasks.remove(task.id)
             else:
@@ -186,10 +184,10 @@ class Task(object):
 
         # self._log.info('Stat for task {}'.format(self))
         if self.average_latency > Task.high_latency:
-            self._log.warning("High latency for {}".format(self.name))
-            self._log.warning("Stats : {}".format(self))
+            self._log.warning(f"High latency for {self.name}")
+            self._log.warning(f"Stats : {self}")
 
-        self._log.debug("Executing : {}".format(self.name))
+        self._log.debug(f"Executing : {self.name}")
         self.execution_time = time.time() - _start_time
 
     def start(self):

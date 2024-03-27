@@ -7,6 +7,7 @@ Goal is to be able to access quickly to important informations for
 the web interface.
 """
 import logging
+import inspect
 import os
 import sys
 import typing as t
@@ -53,7 +54,7 @@ def convert_level(level):
     elif level.lower() == "critical":
         return logging.CRITICAL
     raise ValueError(
-        "Wrong log level use one of the following : {}".format(_valid_levels)
+        f"Wrong log level use one of the following : {_valid_levels}"
     )
 
 
@@ -182,8 +183,8 @@ def note_and_log(cls):
     cls._notes.notes = []
 
     # Defining log object
-    cls.logname = "{} | {}".format(cls.__module__, cls.__name__)
-    cls._log = logging.getLogger("BAC0_Root.{}.{}".format(cls.__module__, cls.__name__))
+    cls.logname = f"{cls.__module__} | {cls.__name__}"
+    cls._log = logging.getLogger(f"BAC0_Root.{cls.__module__}.{cls.__name__}")
 
     # Set level to debug so filter is done by handler
     cls._log.setLevel(logging.DEBUG)
@@ -230,28 +231,36 @@ def note_and_log(cls):
     def log_title(self, title, args=None, width=35):
         cls._log.debug("")
         cls._log.debug("#" * width)
-        cls._log.debug("# {}".format(title))
+        cls._log.debug(f"# {title}")
         cls._log.debug("#" * width)
         if args:
-            cls._log.debug("{!r}".format(args))
+            cls._log.debug(f"{args!r}")
             cls._log.debug("#" * 35)
 
     def log_subtitle(self, subtitle, args=None, width=35):
         cls._log.debug("")
         cls._log.debug("=" * width)
-        cls._log.debug("{}".format(subtitle))
+        cls._log.debug(f"{subtitle}")
         cls._log.debug("=" * width)
         if args:
-            cls._log.debug("{!r}".format(args))
+            cls._log.debug(f"{args!r}")
             cls._log.debug("=" * width)
 
-    def log(self, note, *, level=logging.DEBUG):
+    def log(self, note, *, level:t.Union[str,int]=logging.DEBUG):
         """
         Add a log entry...no note
         """
         if not note:
             raise ValueError("Provide something to log")
-        note = "{} | {}".format(cls.logname, note)
+        if isinstance(level, str):
+            level = convert_level(level)
+        if level == logging.INFO:
+            note = f"{note}"
+        else:
+            caller_frame = inspect.stack()[1]
+            module = inspect.getmodule(caller_frame[0])
+            module_name = module.__name__ if module else 'unknown'
+            note = f"{cls.logname} | {module_name} | {note}"
         cls._log.log(level, note)
 
     def note(self, note, *, level=logging.INFO, log=True):
@@ -264,7 +273,7 @@ def note_and_log(cls):
         """
         if not note:
             raise ValueError("Provide something to log")
-        note = "{} | {}".format(cls.logname, note)
+        note = f"{cls.logname} | {note}"
         cls._notes.timestamp.append(datetime.now().astimezone())
         cls._notes.notes.append(note)
         if log:

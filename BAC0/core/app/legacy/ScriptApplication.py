@@ -68,7 +68,7 @@ class common_mixin:
 
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
-        self._log.debug("do_IAmRequest {!r}".format(apdu))
+        self._log.debug(f"do_IAmRequest {apdu!r}")
 
         # build a key from the source, just use the instance number
         key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
@@ -77,7 +77,7 @@ class common_mixin:
 
     def do_IHaveRequest(self, apdu):
         """Given an I-Have request, cache it."""
-        self._log.debug("do_IHaveRequest {!r}".format(apdu))
+        self._log.debug(f"do_IHaveRequest {apdu!r}")
 
         # build a key from the source, using object name
         key = (str(apdu.pduSource), apdu.objectName)
@@ -94,7 +94,7 @@ class common_mixin:
             apdu.deviceInstanceRangeHighLimit,
         )
         self._log.debug(
-            "do_WhoIsRequest from {} | {} to {}".format(key[0], key[1], key[2])
+            f"do_WhoIsRequest from {key[0]} | {key[1]} to {key[2]}"
         )
 
         # count the times this has been received
@@ -135,7 +135,7 @@ class common_mixin:
 
             # send a confirmation
             self.response(response)
-            self._log.debug("Confirmed COV Notification: {}".format(elements))
+            self._log.debug(f"Confirmed COV Notification: {elements}")
             self.subscription_contexts["context_callback"](elements)
 
             # execute callback
@@ -150,7 +150,7 @@ class common_mixin:
 
         # now tell the context object
         elements = context.cov_notification(apdu)
-        self._log.debug("Unconfirmed COV Notification: {}".format(elements))
+        self._log.debug(f"Unconfirmed COV Notification: {elements}")
         self.subscription_contexts["context_callback"](elements)
 
         # execute callback

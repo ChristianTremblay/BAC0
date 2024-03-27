@@ -32,9 +32,7 @@ class Match(Task):
 
     def __init__(self, status=None, command=None, delay=5, name=None):
         self._log.debug(
-            "Creating Match task for {} and {}. Delay : {}".format(
-                command, status, delay
-            )
+            f"Creating Match task for {command} and {status}. Delay : {delay}"
         )
         if not name:
             name = "Match on " + status.properties.name
@@ -80,7 +78,7 @@ class Match_Value(Task):
     def __init__(
         self, value=None, point=None, delay=5, name=None, use_last_value=False
     ):
-        self._log.debug("Creating MatchValue task for {} and {}".format(value, point))
+        self._log.debug(f"Creating MatchValue task for {value} and {point}")
         # if not isinstance(value, (float, int, str, bool)) or not hasattr(self.value, "__call__"):
         #    raise ValueError("Value must be a float, int, str or bool OR must be a callable function that returns one of these types.")
         self.value = value

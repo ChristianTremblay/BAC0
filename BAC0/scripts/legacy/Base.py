@@ -77,7 +77,7 @@ class LocalObjects(object):
             name = obj
             item = self.device.this_application.get_object_name(name)
         if item is None:
-            raise UnknownObjectError("Can't find {} in local device".format(obj))
+            raise UnknownObjectError(f"Can't find {obj} in local device")
         else:
             return item
 
@@ -189,7 +189,7 @@ class Base:
             self.startApp()
         except InitializationError as error:
             raise InitializationError(
-                "Gros probleme : {}. Address requested : {}".format(error, localIPAddr)
+                f"Gros probleme : {error}. Address requested : {localIPAddr}"
             )
 
     def startApp(self):
@@ -256,14 +256,14 @@ class Base:
             try:
                 self._startAppThread()
                 Base._used_ips.add(self.localIPAddr)
-                self._log.info("Registered as {}".format(app_type))
+                self._log.info(f"Registered as {app_type}")
             except OSError as error:
-                self._log.warning("Error opening socket: {}".format(error))
-                raise InitializationError("Error opening socket: {}".format(error))
+                self._log.warning(f"Error opening socket: {error}")
+                raise InitializationError(f"Error opening socket: {error}")
             self._log.debug("Running")
         except OSError as error:
-            self._log.error("an error has occurred: {}".format(error))
-            raise InitializationError("Error starting app: {}".format(error))
+            self._log.error(f"an error has occurred: {error}")
+            raise InitializationError(f"Error starting app: {error}")
         finally:
             self._log.debug("finally")
 

@@ -49,7 +49,7 @@ class SQLMixin(object):
         Using the contextlib, I hope to close the connection to database when
         not in use
         """
-        with contextlib.closing(sqlite3.connect("{}.db".format(db_name))) as con:
+        with contextlib.closing(sqlite3.connect(f"{db_name}.db")) as con:
             return sql.read_sql(sql=request, con=con)
 
     def dev_properties_df(self):
@@ -93,7 +93,7 @@ class SQLMixin(object):
         the merge of old data and new data.
         """
         if not _PANDAS:
-            self._log.error("Pandas is required to create dataframe.")
+            self.log("Pandas is required to create dataframe.", level="error")
             return
         backup = {}
         if isinstance(resampling, str):
@@ -121,7 +121,7 @@ class SQLMixin(object):
                     "binary" in point.properties.type
                     or "multi" in point.properties.type
                 ):
-                    backup["{}_str".format(_name)] = (
+                    backup[f"{_name}_str"] = (
                         point.history.apply(lambda x: extract_value_and_string(x)[1])
                         .resample(resampling_freq)
                         .last()
@@ -154,12 +154,12 @@ class SQLMixin(object):
                     "binary" in point.properties.type
                     or "multi" in point.properties.type
                 ):
-                    backup["{}.str".format(_name)] = (
+                    backup[f"{_name}.str"] = (
                         point.history.apply(lambda x: extract_value_and_string(x)[1])
                         .resample(resampling_freq)
                         .last()
                     )
-                    backup["{}.val".format(_name)] = (
+                    backup[f"{_name}.val"] = (
                         point.history.apply(lambda x: extract_value_and_string(x)[0])
                         .resample(resampling_freq)
                         .last()
@@ -187,7 +187,7 @@ class SQLMixin(object):
         Resampling : valid Pandas resampling frequency. If 0 or False, dataframe will not be resampled on save.
         """
         if not _PANDAS:
-            self._log.error("Pandas is required to save to SQLite.")
+            self.log("Pandas is required to save to SQLite.", level="error")
             return
 
         if filename:
@@ -195,7 +195,7 @@ class SQLMixin(object):
                 filename = filename.split(".")[0]
             self.properties.db_name = filename
         else:
-            self.properties.db_name = "Device_{}".format(self.properties.device_id)
+            self.properties.db_name = f"Device_{self.properties.device_id}"
 
         if resampling is None:
             resampling = self.properties.save_resampling
@@ -206,12 +206,12 @@ class SQLMixin(object):
             try:
                 return self.backup_histories_df(resampling=resampling)
             except (DataError, NoResponseFromController):
-                self._log.error("Impossible to save right now, error in data")
+                self.log("Impossible to save right now, error in data", level="error")
                 return None
 
-        if os.path.isfile("{}.db".format(self.properties.db_name)):
+        if os.path.isfile(f"{self.properties.db_name}.db"):
             his = self._read_from_sql(
-                'select * from "{}"'.format("history"), self.properties.db_name
+                'select * from "history"', self.properties.db_name
             )
             his.index = his["index"].apply(Timestamp)
             try:
@@ -221,14 +221,14 @@ class SQLMixin(object):
                 df_to_backup = _df_to_backup()
 
         else:
-            self._log.debug("Creating a new backup database")
+            self.log("Creating a new backup database", level="debug")
             df_to_backup = _df_to_backup()
 
         if df_to_backup is None:
             return
         # DataFrames that will be saved to SQL
         with contextlib.closing(
-            sqlite3.connect("{}.db".format(self.properties.db_name))
+            sqlite3.connect(f"{self.properties.db_name}.db")
         ) as con:
             try:
                 data = pd.read_sql("SELECT * FROM history", con)
@@ -248,13 +248,13 @@ class SQLMixin(object):
         # Saving other properties to a pickle file...
         prop_backup = {"device": self.dev_properties_df()}
         prop_backup["points"] = self.points_properties_df()
-        with open("{}.bin".format(self.properties.db_name), "wb") as file:
+        with open(f"{self.properties.db_name}.bin", "wb") as file:
             pickle.dump(prop_backup, file)
 
         if self.properties.clear_history_on_save:
             self.clear_histories()
 
-        self._log.info("Device saved to {}.db".format(self.properties.db_name))
+        self._log.info(f"Device saved to {self.properties.db_name}.db")
 
     def points_from_sql(self, db_name):
         """
@@ -267,7 +267,7 @@ class SQLMixin(object):
         """
         Retrive point histories from SQL database
         """
-        his = self._read_from_sql('select * from "{}"'.format("history"), db_name)
+        his = self._read_from_sql('select * from "history"', db_name)
         his.index = his["index"].apply(Timestamp)
         return his.set_index("index")[point]
 
@@ -281,12 +281,12 @@ class SQLMixin(object):
         """
         Points properties retrieved from pickle
         """
-        with open("{}.bin".format(device_name), "rb") as file:
+        with open(f"{device_name}.bin", "rb") as file:
             try:
                 _point = pickle.load(file)["points"][point]
             except KeyError:
                 raise RemovedPointException(
-                    "{} not found (probably deleted)".format(point)
+                    f"{point} not found (probably deleted)"
                 )
             return _point
 
@@ -294,6 +294,6 @@ class SQLMixin(object):
         """
         Device properties retrieved from pickle
         """
-        self._log.debug("Reading prop from DB file")
-        with open("{}.bin".format(device_name), "rb") as file:
+        self.log("Reading prop from DB file", level="debug")
+        with open(f"{device_name}.bin", "rb") as file:
             return pickle.load(file)["device"]
