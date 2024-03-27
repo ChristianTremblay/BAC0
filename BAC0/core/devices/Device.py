@@ -154,6 +154,7 @@ class Device(SQLMixin):
         self._find_overrides_running = False
         self._release_overrides_progress = 0.0
         self._release_overrides_running = False
+        self.creation_task = None # when sent to asyncio.create_tasks, it will be stored here
 
         self.note("Controller initialized")
 
@@ -436,6 +437,7 @@ class Device(SQLMixin):
 def device(*args: Any, **kwargs: Any) -> Device:
     dev = Device(*args, **kwargs)
     t = asyncio.create_task(dev.new_state(DeviceDisconnected))
+    dev.creation_task = t
     while not t.done:
         pass
     return dev
