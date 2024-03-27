@@ -15,7 +15,7 @@ build-backend = "setuptools.build_meta"
 Homepage = "https://github.com/ChristianTremblay/BAC0"
 
 [project.optional-dependencies]
-extras = ["pandas", "influxdb_client[async]", "rich"]
+extras = ["pandas", "influxdb_client[async]", "rich", "pytest-ordering", "pytest-asyncio"]
 
 [tool.setuptools.packages.find]
 include = [
