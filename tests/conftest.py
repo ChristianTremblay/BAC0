@@ -6,10 +6,13 @@ Test Bacnet communication with another device
 """
 
 import asyncio
+import time
 from collections import namedtuple
+from signal import SIGINT, SIGTERM, signal
 
 import pytest
 import pytest_asyncio
+from pytest_asyncio import is_async_test
 
 import BAC0
 from BAC0.core.devices.local.factory import (
@@ -28,6 +31,20 @@ from BAC0.core.devices.local.factory import (
     multistate_output,
     multistate_value,
 )
+
+bacnet = None
+device_app = None
+device30_app = None
+test_device = None
+test_device_30 = None
+# loop = asyncio.get_running_loop()
+
+
+def pytest_collection_modifyitems(items):
+    pytest_asyncio_tests = (item for item in items if is_async_test(item))
+    session_scope_marker = pytest.mark.asyncio(scope="session")
+    for async_test in pytest_asyncio_tests:
+        async_test.add_marker(session_scope_marker, append=False)
 
 
 def add_points(qty_per_type, device):
@@ -72,64 +89,77 @@ def add_points(qty_per_type, device):
     _new_objects.add_objects_to_application(device)
 
 
-# @pytest.mark.asyncio
-# @pytest_asyncio.fixture(scope="session")
+class NetworkAndDevices:
+    def __init__(
+        self, loop, bacnet, device_app, device30_app, test_device, test_device_30
+    ):
+        self.loop = loop
+        self.bacnet = bacnet
+        self.device_app = device_app
+        self.device30_app = device30_app
+        self.test_device = test_device
+        self.test_device_30 = test_device_30
+
+    def __repr__(self):
+        return "NetworkAndDevices({!r}, {!r}, {!r}, {!r}, {!r}, {!r})".format(
+            self.loop,
+            self.bacnet,
+            self.device_app,
+            self.device30_app,
+            self.test_device,
+            self.test_device_30,
+        )
+
+
 @pytest.fixture(scope="session")
-def network_and_devices():
-    loop = asyncio.get_event_loop()
-    # assert event_loop is asyncio.get_running_loop()
-    # This is the BACnet network and the "client" instance used to interact with
-    # devices that will be created.
-    loop.run_until_complete(BAC0.lite())
+async def network_and_devices():
+    global loop
+    global bacnet
+    global device_app
+    global device30_app
+    global test_device
+    global test_device_30
 
+    loop = asyncio.get_running_loop()
+    # await create_applications()
 
-"""   bacnet = BAC0.lite()
-    #await bacnet.iam()
+    # Create BAC0.lite() instances
+    # bacnet = BAC0.lite()
+    # device_app = BAC0.lite(port=47809)
+    # device30_app = BAC0.lite(port=47810)
 
-    # We'll use 3 devices with our first instance
-    device_app = BAC0.lite(port=47809, deviceId=101)
-    #await device_app.iam()
-    device30_app = BAC0.lite(port=47810, deviceId=102)
-    #await device30_app.iam()
-    # device300_app = BAC0.lite(port=47811, deviceId=103)
-    # time.sleep(0.01)
+    # Wait for the instances to be initialized
+    # while not bacnet._initialized or not device_app._initialized or not device30_app._initialized:
+    #    #await asyncio.sleep(0.1)  # Sleep for a short time to prevent busy waiting
+    #    time.sleep(0.1)
 
-    add_points(2, device_app)
-    add_points(5, device30_app)
-    # add_points(10, device300_app)
+    # Once the instances are initialized, yield them to the test functions
+    async with BAC0.lite(localObjName="bacnet") as bacnet:
+        async with BAC0.lite(port=47809, localObjName="device_app") as device_app:
+            async with BAC0.lite(port=47810,localObjName="device30_app") as device30_app:
+                #await asyncio.sleep(5) # let all the objects be valid before continuing
+                add_points(2, device_app)
+                add_points(5, device30_app)
+                # add_points(10, device300_app)
 
-    ip = device_app.localIPAddr.addrTuple[0]
-    boid = device_app.Boid
+                ip = device_app.localIPAddr.addrTuple[0]
+                boid = device_app.Boid
 
-    ip_30 = device30_app.localIPAddr.addrTuple[0]
-    boid_30 = device30_app.Boid
+                ip_30 = device30_app.localIPAddr.addrTuple[0]
+                boid_30 = device30_app.Boid
+                # Connect to test device using main network
+                test_device = BAC0.device("{}:47809".format(ip), boid, bacnet, poll=10)
+                test_device_30 = BAC0.device(
+                    "{}:47810".format(ip_30), boid_30, bacnet, poll=0
+                )
+                t1 = test_device.creation_task
+                t2 = test_device_30.creation_task
+                await asyncio.gather(t1, t2)
+                # Wait for the instances to be initialized
+                net_and_dev = (
+                    loop, bacnet, device_app, device30_app, test_device, test_device_30
+                )
+                yield net_and_dev
+                await test_device._disconnect(save_on_disconnect=False)
+                await test_device_30._disconnect(save_on_disconnect=False)
 
-    # ip_300 = device300_app.localIPAddr.addrTuple[0]
-    # boid_300 = device300_app.Boid
-
-    # Connect to test device using main network
-    test_device = BAC0.device("{}:47809".format(ip), boid, bacnet, poll=10)
-    test_device_30 = BAC0.device("{}:47810".format(ip_30), boid_30, bacnet, poll=0)
-    # test_device_300 = BAC0.device("{}:47811".format(ip_300), boid_300, bacnet, poll=0)
-
-    params = namedtuple(
-        "devices",
-        ["bacnet", "device_app", "test_device", "test_device_30", "test_device_300"],
-    )
-    params.bacnet = bacnet
-    params.device_app = device_app
-    params.test_device = test_device
-    params.test_device_30 = test_device_30
-    params.test_device_300 = None
-
-    yield params
-
-    # Close when done
-    params.test_device.disconnect()
-    params.test_device_30.disconnect()
-    # params.test_device_300.disconnect()
-
-    params.bacnet.disconnect()
-    # If too quick, we may encounter socket issues...
-
-"""

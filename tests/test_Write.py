@@ -5,39 +5,46 @@
 Test Bacnet communication with another device
 """
 import time
-
+import asyncio
 import pytest
 
 NEWCSVALUE = "New_Test"
 
+@pytest.mark.asyncio
+async def test_WriteAV(network_and_devices):
+    async for resources in network_and_devices:
+        loop, bacnet, device_app, device30_app, test_device, test_device_30 = resources
+        # Write to an object and validate new value is correct
+        old_value = await test_device["AV"].value
+        test_device["AV"] = 11.2
+        await asyncio.sleep(1.5)  # or cache will play a trick on you
+        new_value = await test_device["AV"].value
+        assert (new_value - 11.2) < 0.01
 
-def test_WriteAV(network_and_devices):
+@pytest.mark.asyncio
+async def test_RelinquishDefault(network_and_devices):
+    async for resources in network_and_devices:
+        loop, bacnet, device_app, device30_app, test_device, test_device_30 = resources
+        test_device = test_device
+        # Write to an object and validate new value is correct
+        old_value = await test_device["AV"].value
+        test_device["AV"].default(90)
+        # time.sleep(1)
+        new_value = await test_device["AV"].value
+        assert (new_value - 90) < 0.01
+
+
+@pytest.mark.asyncio
+async def test_WriteCharStr(network_and_devices):
     # Write to an object and validate new value is correct
-    test_device = network_and_devices.test_device
-    old_value = test_device["AV"].value
-    test_device["AV"] = 11.2
-    time.sleep(1.5)  # or cache will play a trick on you
-    new_value = test_device["AV"].value
-    assert (new_value - 11.2) < 0.01
+    async for resources in network_and_devices:
+        loop, bacnet, device_app, device30_app, test_device, test_device_30 = resources
+        test_device = test_device
+        test_device["CS_VALUE"] = NEWCSVALUE
+        # time.sleep(1)
+        new_value = await test_device["CS_VALUE"].value
+        assert new_value == NEWCSVALUE
 
-
-def test_RelinquishDefault(network_and_devices):
-    # Write to an object and validate new value is correct
-    test_device = network_and_devices.test_device
-    old_value = test_device["AV"].value
-    test_device["AV"].default(90)
-    # time.sleep(1)
-    new_value = test_device["AV"].value
-    assert (new_value - 90) < 0.01
-
-
-def test_WriteCharStr(network_and_devices):
-    # Write to an object and validate new value is correct
-    test_device = network_and_devices.test_device
-    test_device["CS_VALUE"] = NEWCSVALUE
-    # time.sleep(1)
-    new_value = test_device["CS_VALUE"].value
-    assert new_value == NEWCSVALUE
 
 
 @pytest.mark.skip(
