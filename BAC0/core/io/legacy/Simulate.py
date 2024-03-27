@@ -48,7 +48,7 @@ class Simulation:
             try:
                 self.write(f"{addr} {obj_type} {obj_inst} outOfService True")
             except NoResponseFromController as e:
-                self._log.warning(f"Failed to write to OutOfService property ({e})")
+                self.log(f"Failed to write to OutOfService property ({e})", level='warning')
 
             try:
                 if self.read(f"{addr} {obj_type} {obj_inst} outOfService"):
@@ -56,7 +56,7 @@ class Simulation:
                 else:
                     raise OutOfServiceNotSet()
             except NoResponseFromController as e:
-                self._log.warning(f"Failed to write to OutOfService property ({e})")
+                self.log(f"Failed to write to OutOfService property ({e})", level='warning')
 
     def out_of_service(self, args):
         """
@@ -74,7 +74,7 @@ class Simulation:
         try:
             self.write(f"{addr} {obj_type} {obj_inst} outOfService True")
         except NoResponseFromController as e:
-            self._log.warning(f"Failed to write to OutOfService property ({e})")
+            self.log(f"Failed to write to OutOfService property ({e})", level='warning')
 
     def release(self, args):
         """
@@ -92,7 +92,7 @@ class Simulation:
         try:
             self.write(f"{addr} {obj_type} {obj_inst} outOfService False")
         except NoResponseFromController as e:
-            self._log.warning(f"Failed to write to OutOfService property ({e})")
+            self.log(f"Failed to write to OutOfService property ({e})", level='warning')
 
         try:
             if self.read(f"{addr} {obj_type} {obj_inst} outOfService"):
@@ -100,4 +100,4 @@ class Simulation:
             else:
                 pass  # Everything is ok"
         except NoResponseFromController as e:
-            self._log.warning(f"Failed to read OutOfService property ({e})")
+            self.log(f"Failed to read OutOfService property ({e})", level='warning')

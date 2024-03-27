@@ -115,11 +115,11 @@ class WriteProperty:
             )
 
         except ErrorRejectAbortNack as err:
-            self._log.error(f"exception: {err!r}")
+            self.log(f"exception: {err!r}", level='error')
             raise NoResponseFromController(f"APDU Abort Reason : {response}")
 
         except ValueError as err:
-            self._log.error(f"exception: {err!r}")
+            self.log(f"exception: {err!r}", level='error')
             raise ValueError(f"Invalid value for property : {err} | {response}")
 
         except WritePropertyException as error:
@@ -189,9 +189,9 @@ class WriteProperty:
         )
 
         self.log_subtitle("Creating Request")
-        self._log.debug(f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}")
+        self.log(f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}", level='debug')
 
-        self._log.debug(f"{'REQUEST':<20} {request}")
+        self.log(f"{'REQUEST':<20} {request}", level='debug')
         return request
 
 
@@ -226,7 +226,7 @@ class WriteProperty:
             iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
-            self._log.debug(f"{'iocb':<20} {iocb!r}")
+            self.log(f"{'iocb':<20} {iocb!r}", level='debug')
 
         except WritePropertyException as error:
             # construction error
@@ -238,8 +238,8 @@ class WriteProperty:
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
-                self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug(f"Not an ack. | APDU : {apdu} / {type(apdu)}")
+                self.log("Not an ack, see debug for more infos.", level='warning')
+                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level='debug')
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -254,7 +254,7 @@ class WriteProperty:
         address = Address(addr)
 
         self.log_subtitle("Creating Write Multiple Request")
-        self._log.debug(f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}")
+        self.log(f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}", level='debug')
 
         was = []
         listOfObjects = []
@@ -316,6 +316,6 @@ class WriteProperty:
         request = WritePropertyMultipleRequest(listOfWriteAccessSpecs=was)
         request.pduDestination = Address(addr)
 
-        self._log.debug(f"{'REQUEST':<20} {request}")
+        self.log(f"{'REQUEST':<20} {request}", level='debug')
         return request
 '''

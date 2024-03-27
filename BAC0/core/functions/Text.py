@@ -57,6 +57,6 @@ class TextMixin:
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
 
-        self._log.debug(f"{'- request:':>12} {request}")
+        self.log(f"{'- request:':>12} {request}", level='debug')
 
         _app.request(request)

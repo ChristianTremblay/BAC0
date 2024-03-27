@@ -217,20 +217,20 @@ class DiscoveryUtilsMixin:
         # TrendLogs
         trendlogs = create_trendlogs(objList, self)
 
-        self._log.info("Ready!")
+        self.log("Ready!", level='info')
         return (objList, points, trendlogs)
 
     def rp_discovered_values(self, discover_request, points_per_request):
         values = []
         info_length = discover_request[1]
         big_request = discover_request[0]
-        self._log.debug(f"Discover : {big_request}")
-        self._log.debug(f"Length : {info_length}")
+        self.log(f"Discover : {big_request}", level='debug')
+        self.log(f"Length : {info_length}", level='debug')
 
         for request in batch_requests(big_request, points_per_request):
             try:
                 request = f"{self.properties.address} {''.join(request)}"
-                self._log.debug(f"RP_Request: {request} ")
+                self.log(f"RP_Request: {request} ", level='debug')
                 val = self.properties.network.read(
                     request, vendor_id=self.properties.vendor_id
                 )
@@ -280,7 +280,7 @@ class RPMObjectsProcessing:
             raise KeyError(f"{key} not part of property list")
 
         try:
-            self._log.debug(f"Request : {request}")
+            self.log(f"Request : {request}", level='debug')
             points_info = self.read_multiple(
                 "",
                 discover_request=(request, len(prop_list.split(" "))),
@@ -422,7 +422,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
         device.read_multiple(['point1', 'point2', 'point3'], points_per_request = 10)
         """
         if not self.properties.pss["readPropertyMultiple"] or force_single:
-            self._log.warning("Read property Multiple Not supported")
+            self.log("Read property Multiple Not supported", level='warning')
             self.read_single(
                 points_list, points_per_request=1, discover_request=discover_request
             )
@@ -434,13 +434,13 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                 values = []
                 info_length = discover_request[1]
                 big_request = discover_request[0]
-                self._log.debug(f"Discover : {big_request}")
-                self._log.debug(f"Length : {info_length}")
+                self.log(f"Discover : {big_request}", level='debug')
+                self.log(f"Length : {info_length}", level='debug')
 
                 for request in batch_requests(big_request, points_per_request):
                     try:
                         request = f"{self.properties.address} {''.join(request)}"
-                        self._log.debug(f"RPM_Request: {request} ")
+                        self.log(f"RPM_Request: {request} ", level='debug')
                         try:
                             val = self.properties.network.readMultiple(
                                 request, vendor_id=self.properties.vendor_id
@@ -459,8 +459,8 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                     except SegmentationNotSupported:
                         self.properties.segmentation_supported = False
                         # self.read_multiple(points_list,points_per_request=1, discover_request=discover_request)
-                        self._log.warning("Segmentation not supported")
-                        self._log.warning("Request too big...will reduce it")
+                        self.log("Segmentation not supported", level='warning')
+                        self.log("Request too big...will reduce it", level='warning')
                         if points_per_request == 1:
                             raise
                         self.read_multiple(
@@ -475,13 +475,13 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                 return values
 
             else:
-                self._log.debug("Read Multiple")
+                self.log("Read Multiple", level='debug')
                 big_request = self._rpm_request_by_name(points_list)
                 i = 0
                 for request in batch_requests(big_request[0], points_per_request):
                     try:
                         request = f"{self.properties.address} {''.join(request)}"
-                        self._log.debug(request)
+                        self.log(request, level='debug')
                         val = self.properties.network.readMultiple(
                             request, vendor_id=self.properties.vendor_id
                         )
@@ -574,7 +574,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
 
                 self._polling_task.task = None
                 self._polling_task.running = False
-                self._log.info("Polling stopped")
+                self.log("Polling stopped", level='info')
 
         elif self._polling_task.task is None:
             self._polling_task.task = _poll_cls(
@@ -582,7 +582,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(f"Polling started, values read every {delay} seconds")
+            self.log(f"Polling started, values read every {delay} seconds", level='info')
 
         elif self._polling_task.running:
             self._polling_task.task.stop()
@@ -594,7 +594,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(f"Polling started, every values read each {delay} seconds")
+            self.log(f"Polling started, every values read each {delay} seconds", level='info')
 
         else:
             raise RuntimeError("Stop polling before redefining it")
@@ -635,7 +635,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
     def read_single(self, request, *, points_per_request=1, discover_request=(None, 4)):
         try:
             request = f"{self.properties.address} {''.join(request)}"
-            self._log.debug(f"RP_Request: {request} ")
+            self.log(f"RP_Request: {request} ", level='debug')
             return self.properties.network.read(
                 request, vendor_id=self.properties.vendor_id
             )
@@ -682,7 +682,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
 
                 self._polling_task.task = None
                 self._polling_task.running = False
-                self._log.info("Polling stopped")
+                self.log("Polling stopped", level='info')
 
         elif self._polling_task.task is None:
             self._polling_task.task = DeviceNormalPoll(
@@ -690,7 +690,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(f"Polling started, values read every {delay} seconds")
+            self.log(f"Polling started, values read every {delay} seconds", level='info')
 
         elif self._polling_task.running:
             self._polling_task.task.stop()
@@ -702,7 +702,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(f"Polling started, every values read each {delay} seconds")
+            self.log(f"Polling started, every values read each {delay} seconds", level='info')
 
         else:
             raise RuntimeError("Stop polling before redefining it")

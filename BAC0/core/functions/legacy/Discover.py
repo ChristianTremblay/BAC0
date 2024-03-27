@@ -118,19 +118,19 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
         if isinstance(npdu, IAmRouterToNetwork):
             # if isinstance(self._request, WhoIsRouterToNetwork):
             address, netlist = str(npdu.pduSource), npdu.iartnNetworkList
-            self._log.info(f"{address} router to {netlist}")
+            self.log(f"{address} router to {netlist}", level='info')
             self._iartn.append(address)
             self._routing_table[address] = netlist
             for each in npdu.iartnNetworkList:
                 self._learnedNetworks.add(int(each))
 
         elif isinstance(npdu, InitializeRoutingTableAck):
-            self._log.info(f"{npdu.pduSource} routing table")
+            self.log(f"{npdu.pduSource} routing table", level='info')
             for rte in npdu.irtaTable:
-                self._log.info(f"    {rte.rtDNET} {rte.rtPortID} {rte.rtPortInfo}")
+                self.log(f"    {rte.rtDNET} {rte.rtPortID} {rte.rtPortInfo}", level='info')
 
         elif isinstance(npdu, NetworkNumberIs):
-            self._log.info(f"{npdu.pduSource} network number is {npdu.nniNet}")
+            self.log(f"{npdu.pduSource} network number is {npdu.nniNet}", level='info')
             self._learnedNetworks.add(int(npdu.nniNet))
 
         elif isinstance(npdu, RejectMessageToNetwork):
@@ -181,12 +181,12 @@ class Discover:
             args = args[0].split()
         msg = args if args else "any"
 
-        self._log.debug(f"do_whois {msg!r}")
+        self.log(f"do_whois {msg!r}", level='debug')
 
         # build a request
         request = WhoIsRequest()
         if (len(args) == 1) or (len(args) == 3):
-            self._log.info(f"{'- discovered addr:':>12} {args}")
+            self.log(f"{'- discovered addr:':>12} {args}", level='info')
             request.pduDestination = Address(args[0])
             del args[0]
         else:
@@ -201,7 +201,7 @@ class Discover:
                 request.deviceInstanceRangeHighLimit = int(args[1])
             except ValueError:
                 pass
-        self._log.debug(f"{'- request:':>12} {request}")
+        self.log(f"{'- request:':>12} {request}", level='debug')
 
         if destination:
             request.pduDestination = Address(destination)
@@ -235,12 +235,12 @@ class Discover:
             request.maxAPDULengthAccepted = self.this_device.maxApduLengthAccepted
             request.segmentationSupported = self.this_device.segmentationSupported
             request.vendorID = self.this_device.vendorIdentifier
-            self._log.debug(f"{'- request:':>12} {request}")
+            self.log(f"{'- request:':>12} {request}", level='debug')
 
             return request
 
         except Exception as error:
-            self._log.error(f"exception: {error!r}")
+            self.log(f"exception: {error!r}", level='error')
             raise
 
     def iam(self, destination=None):
@@ -256,7 +256,7 @@ class Discover:
             iam()
         """
 
-        self._log.debug("do_iam")
+        self.log("do_iam", level='debug')
 
         try:
             # build a response
@@ -267,7 +267,7 @@ class Discover:
             return True
 
         except Exception as error:
-            self._log.error(f"exception: {error!r}")
+            self.log(f"exception: {error!r}", level='error')
             return False
 
     def whois_router_to_network(self, network=None, *, destination=None):
@@ -278,11 +278,11 @@ class Discover:
                 request.wirtnNetwork = int(network)
             if destination:
                 request.pduDestination = Address(destination)
-                self._log.debug(f"WhoIsRouterToNetwork Destination : {destination}")
+                self.log(f"WhoIsRouterToNetwork Destination : {destination}", level='debug')
             else:
                 request.pduDestination = LocalBroadcast()
         except Exception:
-            self._log.error("WhoIsRouterToNetwork : invalid arguments")
+            self.log("WhoIsRouterToNetwork : invalid arguments", level='error')
             return
         iocb = IOCB((self.this_application.nsap.local_adapter, request))  # make an IOCB
         iocb.set_timeout(2)
@@ -302,12 +302,12 @@ class Discover:
         will return an acknowledgement with its routing table configuration.
         """
         # build a request
-        self._log.info(f"Addr : {address}")
+        self.log(f"Addr : {address}", level='info')
         try:
             request = InitializeRoutingTable()
             request.pduDestination = Address(address)
         except Exception:
-            self._log.error("invalid arguments")
+            self.log("invalid arguments", level='error')
             return
 
         iocb = IOCB((self.this_application.nsap.local_adapter, request))  # make an IOCB

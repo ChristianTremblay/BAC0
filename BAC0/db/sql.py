@@ -254,7 +254,7 @@ class SQLMixin(object):
         if self.properties.clear_history_on_save:
             self.clear_histories()
 
-        self._log.info(f"Device saved to {self.properties.db_name}.db")
+        self.log(f"Device saved to {self.properties.db_name}.db", level='info')
 
     def points_from_sql(self, db_name):
         """

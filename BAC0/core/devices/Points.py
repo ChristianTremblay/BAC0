@@ -415,7 +415,7 @@ class Point:
                 else:
                     raise ValueError("Priority must be a number between 1 and 16")
             req = f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} {prop} {value} - {priority}"
-            # self._log.info(req)
+            # self.log(req, level='info')
             try:
                 await self.properties.device.properties.network._write(
                     req,
@@ -497,7 +497,7 @@ class Point:
         AnalogValue are written to
         AnalogOutput are overridden
         """
-        self._log.debug(f"Setting to {value}")
+        self.log(f"Setting to {value}", level='debug')
         if "characterstring" in self.properties.type:
             asyncio.create_task(self.write(value))
 
@@ -520,7 +520,7 @@ class Point:
             if str(value).lower() == "auto":
                 await self.release()
             else:
-                self._log.debug(f"Simulating to {value}")
+                self.log(f"Simulating to {value}", level='debug')
                 await self.sim(value)
 
     def _set(self, value):
@@ -678,7 +678,7 @@ class Point:
             lifetime: int = None,
             identifier: int = None,
         ):
-            self._log.info(f"Subscribing to COV for {self.properties.name}")
+            self.log(f"Subscribing to COV for {self.properties.name}", level='info')
             try:
                 async with _app.change_of_value(
                     address,
@@ -713,7 +713,7 @@ class Point:
                                     f"Unsupported COV property identifier {property_identifier}"
                                 )
             except Exception as e:
-                self._log.error(f"Error in COV subscription : {e}")
+                self.log(f"Error in COV subscription : {e}", level='error')
 
         asyncio.create_task(
             cov_ctxmgr(
@@ -726,7 +726,7 @@ class Point:
         )
 
     def cancel_cov(self):
-        self._log.info(f"Canceling COV subscription for {self.properties.name}")
+        self.log(f"Canceling COV subscription for {self.properties.name}", level='info')
         self.cov_registered = False
 
     def update_description(self, value):
@@ -772,7 +772,7 @@ class Point:
                 loop = asyncio.get_running_loop()
                 loop.create_task(self._update_value())
             except Exception as e:
-                self._log.error(f"Error updating value : {e}")
+                self.log(f"Error updating value : {e}", level='error')
                 return self.lastValue
         if datetime.now().astimezone() - self._history.timestamp[-1] > timedelta(
             seconds=60
@@ -1078,8 +1078,8 @@ class EnumPoint(Point):
     @property
     async def value(self):
         res = await super().value
-        # self._log.info("Value : {}".format(res))
-        # self._log.info("EnumValue : {}".format(self.get_state(res)))
+        # self.log("Value : {}".format(res), level='info')
+        # self.log("EnumValue : {}".format(self.get_state(res)), level='info')
         self._trend(res)
         return res
 

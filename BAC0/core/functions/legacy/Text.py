@@ -54,7 +54,7 @@ class TextMixin:
                 apdu = iocb.ioResponse
 
                 if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
-                    self._log.error("Not an ack, see debug for more infos.")
+                    self.log("Not an ack, see debug for more infos.", level='error')
                     return
 
             if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -64,4 +64,4 @@ class TextMixin:
 
         except WritePropertyException as error:
             # construction error
-            self._log.error(f"exception: {error!r}")
+            self.log(f"exception: {error!r}", level='error')

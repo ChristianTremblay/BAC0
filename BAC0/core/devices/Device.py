@@ -192,7 +192,7 @@ class Device(SQLMixin):
         :type newstate: Any
         :return: None
         """
-        self._log.info(f"Changing device state to {str(newstate).split('.')[-1]}")
+        self.log(f"Changing device state to {str(newstate).split('.')[-1]}", level='info')
         self.__class__ = newstate
         await self._init_state()
 
@@ -414,7 +414,7 @@ class Device(SQLMixin):
                 self.log("Overrides found... releasing them", level="info")
                 self.log("=================================", level="info")
                 for idx, point in enumerate(self.properties.points_overridden):
-                    self._log.info(f"Releasing {point}")
+                    self.log(f"Releasing {point}", level='info')
                     point.release_ovr()
                     self._release_overrides_progress = (idx / total) / 2 + 0.5
             else:
@@ -514,7 +514,7 @@ class DeviceConnected(Device):
             return ("Not Found", "", [], [])
 
         except SegmentationNotSupported:
-            self._log.warning("Segmentation not supported")
+            self.log("Segmentation not supported", level='warning')
             self.segmentation_supported = False
             await self.new_state(DeviceDisconnected)
 
@@ -899,14 +899,14 @@ class DeviceDisconnected(Device):
                 await self.new_state(RPDeviceConnected)
 
             except (NoResponseFromController, AttributeError) as error:
-                self._log.warning("BAC0 got no response from controller: %s", error)
+                self.log("BAC0 got no response from controller: %s", error, level='warning')
                 if self.properties.db_name:
                     await self.new_state(DeviceFromDB)
                 else:
                     self._log.warning(
                         "Offline: provide database name to load stored data."
                     )
-                    self._log.warning("Ex. controller.connect(db = 'backup')")
+                    self.log("Ex. controller.connect(db = 'backup')", level='warning')
 
     def df(self, list_of_points, force_read=True):
         raise DeviceNotConnected("Must connect to BACnet or database")

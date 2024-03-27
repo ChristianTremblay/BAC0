@@ -51,7 +51,7 @@ class Update_local_COV(Task):
                     continue
 
                 # tell it to send out notifications
-                self._log.info(f"Sending COV for {objName}")
+                self.log(f"Sending COV for {objName}", level='info')
                 deferred(cov_detection.send_cov_notifications)
 
         except Exception as error:

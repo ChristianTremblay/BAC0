@@ -34,7 +34,7 @@ class Manager:
         if not Manager.enable:
             self.start_service()
 
-        self._log.debug("Task Manager Initiated")
+        self.log("Task Manager Initiated", level='debug')
 
     @classmethod
     def process(cls):
@@ -182,12 +182,12 @@ class Task(object):
         else:
             self.average_execution_delay = self.delay
 
-        # self._log.info('Stat for task {}'.format(self))
+        # self.log('Stat for task {}'.format(self), level='info')
         if self.average_latency > Task.high_latency:
-            self._log.warning(f"High latency for {self.name}")
-            self._log.warning(f"Stats : {self}")
+            self.log(f"High latency for {self.name}", level='warning')
+            self.log(f"Stats : {self}", level='warning')
 
-        self._log.debug(f"Executing : {self.name}")
+        self.log(f"Executing : {self.name}", level='debug')
         self.execution_time = time.time() - _start_time
 
     def start(self):

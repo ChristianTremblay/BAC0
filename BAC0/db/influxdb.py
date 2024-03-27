@@ -80,14 +80,14 @@ class InfluxDB:
         """
         async with InfluxDBClientAsync.from_env_properties() as client:
             try:
-                self._log.debug(f"Write called for record: {record}")
+                self.log(f"Write called for record: {record}", level='debug')
                 write_api = client.write_api()
                 response = await write_api.write(
                     bucket=bucket, org=self.org, record=record
                 )
-                self._log.debug(f"Write response: {response}")
+                self.log(f"Write response: {response}", level='debug')
             except Exception as error:
-                self._log.error(f"Error while writing to db: {error}")
+                self.log(f"Error while writing to db: {error}", level='error')
 
     async def query(self, query):
         async with InfluxDBClientAsync.from_env_properties() as client:
@@ -140,7 +140,7 @@ class InfluxDB:
                     predicate=f'{predicate} = "{value}"',
                 )
             except Exception as error:
-                self._log.error(f"Error while deleting from db: {error}")
+                self.log(f"Error while deleting from db: {error}", level='error')
 
     async def _health(self):
         """
@@ -250,7 +250,7 @@ class InfluxDB:
             None
         """
 
-        self._log.debug(f"Writing to db: {self.points}")
+        self.log(f"Writing to db: {self.points}", level='debug')
         success = await self.write(self.bucket, self.points)
         if success:
             self.points = []

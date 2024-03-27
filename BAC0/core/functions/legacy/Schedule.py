@@ -132,8 +132,8 @@ class Schedule:
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
-                self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug(f"Not an ack. | APDU : {apdu} / {type(apdu)}")
+                self.log("Not an ack, see debug for more infos.", level='warning')
+                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level='debug')
                 return
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
@@ -216,7 +216,7 @@ class Schedule:
                 for each in object_references
             ]
         except Exception as error:
-            self._log.error(f"Error {error}")
+            self.log(f"Error {error}", level='error')
             # Not used in device, not linked...
             _state_text = range(255)
             schedule["object_references"] = []

@@ -157,7 +157,7 @@ class VirtualPoint:
         """
         Add point to the bacnet trending list
         """
-        self._log.warning("Use bacnet.add_trend(point) instead")
+        self.log("Use bacnet.add_trend(point) instead", level='warning')
 
     def _set(self, value):
         if value == "auto":

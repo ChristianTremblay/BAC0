@@ -51,7 +51,7 @@ class Reinitialize:
         request.pduDestination = Address(address)
         request.password = CharacterString(password)
 
-        self._log.debug(f"{'- request:':>12} {request}")
+        self.log(f"{'- request:':>12} {request}", level='debug')
 
         iocb = IOCB(request)  # make an IOCB
 
@@ -65,8 +65,8 @@ class Reinitialize:
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
-                self._log.warning("Not an ack, see debug for more infos.")
-                self._log.debug(f"Not an ack. | APDU : {apdu} / {type(apdu)}")
+                self.log("Not an ack, see debug for more infos.", level='warning')
+                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level='debug')
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -74,4 +74,4 @@ class Reinitialize:
             reason = find_reason(apdu)
             raise NoResponseFromController(f"APDU Abort Reason : {reason}")
 
-        self._log.info(f"Reinitialize request sent to device : {address}")
+        self.log(f"Reinitialize request sent to device : {address}", level='info')

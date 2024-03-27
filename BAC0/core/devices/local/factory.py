@@ -87,7 +87,7 @@ class ObjectFactory(object):
         # print(f"Obj {objectType} of type {type(objectType)}")
         if objectType is not TrendLogObject:
             pv_datatype = ObjectFactory.get_pv_datatype(objectType)
-            self._log.info(f"pv datatype : {pv_datatype}")
+            self.log(f"pv datatype : {pv_datatype}", level='info')
 
             def enforce_datatype(val, datatype):
                 if not isinstance(val, datatype):
@@ -163,7 +163,7 @@ class ObjectFactory(object):
             while instance in _set:
                 instance += 1
             if _warning:
-                self._log.warning(f"Instance alreaday taken, using {instance} instead")
+                self.log(f"Instance alreaday taken, using {instance} instead", level='warning')
 
         _set.add(instance)
         self.instances[objectType.__name__] = _set
@@ -176,7 +176,7 @@ class ObjectFactory(object):
         instance = self.validate_instance(objectType, instance)
         if name_must_be_changed:
             objectName = f"{objectName}-{instance}"
-            self._log.warning(f"Name already taken, using {objectName} instead")
+            self.log(f"Name already taken, using {objectName} instead", level='warning')
 
         return (objectName, instance)
 
@@ -210,7 +210,7 @@ class ObjectFactory(object):
         for k, v in self.objects.items():
             try:
                 app.add_object(v)
-                self._log.info(f"Adding {k} to application.")
+                self.log(f"Adding {k} to application.", level='info')
             except RuntimeError:
                 self._log.warning(
                     f"There is already an object named {k} in application."

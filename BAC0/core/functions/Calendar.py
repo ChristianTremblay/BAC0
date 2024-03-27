@@ -97,7 +97,7 @@ class Calendar:
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
 
-        self._log.debug(f"{'- request:':>12} {request}")
+        self.log(f"{'- request:':>12} {request}", level='debug')
 
         _app.request(request)
 
@@ -126,7 +126,7 @@ class Calendar:
             )
             dict_calendar = self.decode_dateList(dateList_object)
         except Exception as error:
-            self._log.error(f"exception: {error!r}")
+            self.log(f"exception: {error!r}", level='error')
             return {}
 
         return dict_calendar

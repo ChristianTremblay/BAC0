@@ -48,7 +48,7 @@ class Match(Task):
                     if ":" in self.command.history[-1]
                     else self.command.history[-1]
                 )
-                self._log.debug(f"Match value is {_val}")
+                self.log(f"Match value is {_val}", level='debug')
                 await self.status._setitem(_val.replace(" ", ""))
         except Exception:
             self._log.error(
@@ -78,7 +78,7 @@ class Match_Value(Task):
     def __init__(
         self, value=None, point=None, delay=5, name=None, use_last_value=False
     ):
-        self._log.debug(f"Creating MatchValue task for {value} and {point}")
+        self.log(f"Creating MatchValue task for {value} and {point}", level='debug')
         # if not isinstance(value, (float, int, str, bool)) or not hasattr(self.value, "__call__"):
         #    raise ValueError("Value must be a float, int, str or bool OR must be a callable function that returns one of these types.")
         self.value = value

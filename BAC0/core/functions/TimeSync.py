@@ -119,7 +119,7 @@ class TimeSync:
         else:
             request.pduDestination = LocalBroadcast()
 
-        self._log.debug(f"{'- request:':>12} {request}")
+        self.log(f"{'- request:':>12} {request}", level='debug')
 
         _app.request(request)
 
@@ -127,7 +127,7 @@ class TimeSync:
         year = year + 1900
         hour, minutes, sec, msec = _datetime.time
         d = dt.datetime(year, month, day, hour, minutes, sec, msec)
-        self._log.info(f"Time Sync Request sent to network : {d.isoformat()}")
+        self.log(f"Time Sync Request sent to network : {d.isoformat()}", level='info')
 
 
 class TimeHandler(object):

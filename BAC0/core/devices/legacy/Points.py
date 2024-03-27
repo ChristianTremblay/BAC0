@@ -930,8 +930,8 @@ class EnumPoint(Point):
     @property
     def value(self):
         res = super().value
-        # self._log.info("Value : {}".format(res))
-        # self._log.info("EnumValue : {}".format(self.get_state(res)))
+        # self.log("Value : {}".format(res), level='info')
+        # self.log("EnumValue : {}".format(self.get_state(res)), level='info')
         self._trend(res)
         return res
 
@@ -1059,7 +1059,7 @@ class StringPoint(Point):
             else:
                 val = str(self.value)
         except ValueError:
-            self._log.error("Cannot convert value. Device probably disconnected")
+            self.log("Cannot convert value. Device probably disconnected", level='error')
             # Probably disconnected
             val = None
         return "{}/{} : {}".format(
@@ -1137,7 +1137,7 @@ class DateTimePoint(Point):
             # else:
             val = self.value
         except ValueError:
-            self._log.error("Cannot convert value. Device probably disconnected")
+            self.log("Cannot convert value. Device probably disconnected", level='error')
             # Probably disconnected
             val = None
         return "{}/{} : {}".format(

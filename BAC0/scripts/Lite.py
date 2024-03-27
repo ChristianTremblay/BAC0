@@ -171,7 +171,7 @@ class Lite(
             bdtable=bdtable,
             **params,
         )
-        self._log.info(f"Device instance (id) : {self.Boid}")
+        self.log(f"Device instance (id) : {self.Boid}", level='info')
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
 
@@ -241,7 +241,7 @@ class Lite(
                         f"Error writing points of {each} to InfluxDB : {error}. Stopping task."
                     )
                     await self._write_to_db.stop()
-                    self._log.warning("Write to InfluxDB Task stopped. Restarting")
+                    self.log("Write to InfluxDB Task stopped. Restarting", level='warning')
                     self.create_save_to_influxdb_task(delay=20)
 
     def register_device(
@@ -389,10 +389,10 @@ class Lite(
                         f"{device_address} device {devId} vendorName"
                     )
                 except NoResponseFromController:
-                    self._log.warning(f"No response from {k}")
+                    self.log(f"No response from {k}", level='warning')
                     continue
             except (NoResponseFromController, Timeout):
-                self._log.warning(f"No response from {k}")
+                self.log(f"No response from {k}", level='warning')
                 continue
             lst.append((deviceName, vendorName, devId, device_address, network_number))
         if RICH:
@@ -449,7 +449,7 @@ class Lite(
             for device in self._registered_devices:
                 if str(device.properties.device_id) == str(boid_or_localobject):
                     return device
-            self._log.error(f"{boid_or_localobject} not found")
+            self.log(f"{boid_or_localobject} not found", level='error')
         else:
             return item
 

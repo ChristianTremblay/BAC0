@@ -126,7 +126,7 @@ class TrendLog(TrendLogProperties):
         _count = max(_actual_index - start, 0)
         steps = int(_count / RECORDS) + int(1 if (_count % RECORDS) > 0 else 0)
 
-        self._log.debug(f"Reading log : {start} {_count} {steps}")
+        self.log(f"Reading log : {start} {_count} {steps}", level='debug')
 
         _from = start
         for each in range(steps):
