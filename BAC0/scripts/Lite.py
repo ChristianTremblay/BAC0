@@ -456,3 +456,15 @@ class Lite(
             self._log.error("{} not found".format(boid_or_localobject))
         else:
             return item
+        
+    async def __aenter__(self):
+        while not self._initialized:
+            await asyncio.sleep(0.1)
+        self._log.info(f'{self.localObjName}|{self.Boid} connected. Entering context manager.')
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self._disconnect()
+        while self._initialized:
+            await asyncio.sleep(0.1)
+        self._log.info(f'{self.localObjName}|{self.Boid} disconnected. Exiting context manager.')
