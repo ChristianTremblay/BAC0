@@ -101,10 +101,8 @@ class TimeSync:
                 try:
                     request.pduDestination = Address(destination)
                 except (TypeError, ValueError):
-                    self._log.warning(
-                        "Destination unrecognized ({}), setting local broadcast".format(
-                            destination
-                        )
+                    self.log(
+                        f"Destination unrecognized ({destination}), setting local broadcast", level='warning'
                     )
                     request.pduDestination = LocalBroadcast()
         else:

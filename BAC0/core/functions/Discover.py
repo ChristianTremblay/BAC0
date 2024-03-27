@@ -140,8 +140,8 @@ class Discover:
                 if global_broadcast
                 else "No BACnet network found"
             )
-            self._log.info(
-                f"{msg}, attempting a simple whois using provided device instances limits ({deviceInstanceRangeLowLimit} - {deviceInstanceRangeHighLimit})"
+            self.log(
+                f"{msg}, attempting a simple whois using provided device instances limits ({deviceInstanceRangeLowLimit} - {deviceInstanceRangeHighLimit})", level='info'
             )
             if global_broadcast is True:
                 self._log.warning(
@@ -185,6 +185,6 @@ class Discover:
                     "vendor_name": "unknown",
                 }
 
-        self._log.info(
-            f"Discovery done. Found {len(self.discoveredDevices)} devices on {len(_networks)} BACnet networks."
+        self.log(
+            f"Discovery done. Found {len(self.discoveredDevices)} devices on {len(_networks)} BACnet networks.", level='info'
         )

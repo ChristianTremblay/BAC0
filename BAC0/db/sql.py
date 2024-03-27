@@ -142,13 +142,8 @@ class SQLMixin(object):
                     continue
 
             except Exception as error:
-                self._log.error(
-                    "{} ({}) | Error in resampling {} | {} (probably not enough points)".format(
-                        self.properties.device.properties.name,
-                        self.properties.device.properties.address,
-                        point.properties.name,
-                        error,
-                    )
+                self.log(
+                    f"{self.properties.device.properties.name} ({self.properties.device.properties.address}) | Error in resampling {point.properties.name} | {error} (probably not enough points)", level='error'
                 )
                 if (
                     "binary" in point.properties.type

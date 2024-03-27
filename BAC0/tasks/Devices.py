@@ -44,8 +44,8 @@ class AddDevice(Task):
 
     def find_address(self, address, boid):
         if self.network.discoveredDevices is None:
-            self._log.error(
-                "Device cannot be created yet, use bacnet.discover() or provide both address and Boid"
+            self.log(
+                "Device cannot be created yet, use bacnet.discover() or provide both address and Boid", level='error'
             )
             raise DeviceNotFoundError(
                 "Device cannot be created yet, use bacnet.discover() or provide both address and Boid"
@@ -56,20 +56,16 @@ class AddDevice(Task):
                 if address in str(address) or boid in str(boid):
                     self.log(f"Found {each}", level='info')
                     return each
-        self._log.error(
-            "Device not discovered yet, use bacnet.discover() or provide both address and Boid"
+        self.log(
+            "Device not discovered yet, use bacnet.discover() or provide both address and Boid", level='error'
         )
 
     def task(self, **kwargs):
         try:
             self.log(kwargs, level='info')
             dev = Device(kwargs)
-            self._log.info(
-                "Device named {} ({}/{}) created. Retrieve it using bacnet[boid]".format(
-                    dev.properties.name,
-                    dev.properties.address,
-                    dev.properties.device_id,
-                )
+            self.log(
+                f"Device named {dev.properties.name} ({dev.properties.address}/{dev.properties.device_id}) created. Retrieve it using bacnet[boid]", level='info'
             )
             if self.callback is not None:
                 self.log(f"Executing callback for {dev.properties.name}", level='info')

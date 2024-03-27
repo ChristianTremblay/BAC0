@@ -89,8 +89,8 @@ class EventEnrollment:
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
                 self.log("Not an ack, see debug for more infos.", level='warning')
-                self._log.debug(
-                    "Not an ack. | APDU : {} / {}".format((apdu, type(apdu)))
+                self.log(
+                    f"Not an ack. | APDU : {apdu} / {type(apdu)}", level='debug'
                 )
                 return
         if iocb.ioError:  # unsuccessful: error/reject/abort

@@ -117,10 +117,8 @@ class common_mixin:
         # look up the process identifier
         context = self.subscription_contexts.get(apdu.subscriberProcessIdentifier, None)
         if not context or apdu.pduSource != context.address:
-            self._log.warning(
-                "Unsollicited COV Notification received from {} ({}). Have you restarted the application recently ?".format(
-                    apdu.pduSource, apdu
-                )
+            self.log(
+                f"Unsollicited COV Notification received from {apdu.pduSource} ({apdu}). Have you restarted the application recently ?", level='warning'
             )
             # this is turned into cancel_cov request and sent back to the client
 

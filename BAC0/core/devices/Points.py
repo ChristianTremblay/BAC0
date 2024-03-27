@@ -700,8 +700,8 @@ class Point:
                             task.cancel()
                         if incoming in done:
                             property_identifier, property_value = incoming.result()
-                            self._log.debug(
-                                f"COV notification received for {self.properties.name} | {property_identifier} -> {type(property_identifier)} with value {property_value} | {property_value} -> {type(property_value)}"
+                            self.log(
+                                f"COV notification received for {self.properties.name} | {property_identifier} -> {type(property_identifier)} with value {property_value} | {property_value} -> {type(property_value)}", level='debug'
                             )
                             if property_identifier == PropertyIdentifier.presentValue:
                                 val = extract_value_from_primitive_data(property_value)
@@ -777,8 +777,8 @@ class Point:
         if datetime.now().astimezone() - self._history.timestamp[-1] > timedelta(
             seconds=60
         ):
-            self._log.warning(
-                f"Last known value {self._history.value[-1]} with timestamp of {self._history.timestamp[-1]}, older than 10sec {datetime.now().astimezone()}. Consider using dev['point'].lastValue if you trust polling of device of manage a up to date read in asynchronous side of your app for better precision"
+            self.log(
+                f"Last known value {self._history.value[-1]} with timestamp of {self._history.timestamp[-1]}, older than 10sec {datetime.now().astimezone()}. Consider using dev['point'].lastValue if you trust polling of device of manage a up to date read in asynchronous side of your app for better precision", level='warning'
             )
         return self.lastValue
 

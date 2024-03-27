@@ -242,8 +242,8 @@ class Complete(Lite, Stats_Mixin):
 
         except OSError as error:
             self.bokehserver = False
-            self._log.error(
-                "[bokeh serve] required for trending (controller.chart) features"
+            self.log(
+                "[bokeh serve] required for trending (controller.chart) features", level='error'
             )
             self.log(error, level='error')
 

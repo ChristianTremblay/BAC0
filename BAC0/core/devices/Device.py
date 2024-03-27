@@ -361,10 +361,8 @@ class Device(SQLMixin):
 
     def find_overrides(self, force: bool = False) -> None:
         if self._find_overrides_running and not force:
-            self._log.warning(
-                "Already running ({:.1%})... please wait.".format(
-                    self._find_overrides_progress
-                )
+            self.log(
+                f"Already running ({self._find_overrides_progress:.1%})... please wait.", level='warning'
             )
             return
         lst = []
@@ -394,10 +392,8 @@ class Device(SQLMixin):
 
     def release_all_overrides(self, force: bool = False) -> None:
         if self._release_overrides_running and not force:
-            self._log.warning(
-                "Already running ({:.1%})... please wait.".format(
-                    self._release_overrides_progress
-                )
+            self.log(
+                f"Already running ({self._release_overrides_progress:.1%})... please wait.", level='warning'
             )
             return
         self._release_overrides_running = True
@@ -864,8 +860,8 @@ class DeviceDisconnected(Device):
             self.log("No network...calling DeviceFromDB", level="debug")
             if db:
                 await self.new_state(DeviceFromDB)
-            self._log.info(
-                'You can reconnect to network using : "device.connect(network=bacnet)"'
+            self.log(
+                'You can reconnect to network using : "device.connect(network=bacnet)"', level='info'
             )
 
         else:
@@ -1082,8 +1078,8 @@ class DeviceFromDB(DeviceConnected):
         self.properties.clear_history_on_save = self._props["clear_history_on_save"]
         self.properties.default_history_size = self._props["history_size"]
         self.log("Device restored from db", level="info")
-        self._log.info(
-            'You can reconnect to network using : "device.connect(network=bacnet)"'
+        self.log(
+            'You can reconnect to network using : "device.connect(network=bacnet)"', level='info'
         )
 
     @property

@@ -120,8 +120,8 @@ class Lite(
         **params,
     ) -> None:
         self._initialized = False
-        self._log.info(
-            f"Starting BAC0 version {version} ({self.__module__.split('.')[-1]})"
+        self.log(
+            f"Starting BAC0 version {version} ({self.__module__.split('.')[-1]})", level='info'
         )
         self.log("Use BAC0.log_level to adjust verbosity of the app.", level="info")
         self.log(

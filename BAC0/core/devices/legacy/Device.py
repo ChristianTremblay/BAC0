@@ -367,10 +367,8 @@ class Device(SQLMixin):
 
     def find_overrides(self, force=False):
         if self._find_overrides_running and not force:
-            self._log.warning(
-                "Already running ({:.1%})... please wait.".format(
-                    self._find_overrides_progress
-                )
+            self.log(
+                "Already running ({self._find_overrides_progress:.1%})... please wait.", level='warning'
             )
             return
         lst = []
@@ -400,10 +398,8 @@ class Device(SQLMixin):
 
     def release_all_overrides(self, force=False):
         if self._release_overrides_running and not force:
-            self._log.warning(
-                "Already running ({:.1%})... please wait.".format(
-                    self._release_overrides_progress
-                )
+            self.log(
+                "Already running ({self._release_overrides_progress:.1%})... please wait.", level='warning'
             )
             return
         self._release_overrides_running = True
@@ -802,10 +798,8 @@ class DeviceConnected(Device):
                 self.properties.ping_failures += 1
                 return False
         except NoResponseFromController as e:
-            self._log.error(
-                "{} ({})| Ping failure ({}).".format(
-                    self.properties.name, self.properties.address, e
-                )
+            self.log(
+                f"{self.properties.name} ({self.properties.address})| Ping failure ({e}).", level='error'
             )
             self.properties.ping_failures += 1
             return False
@@ -858,8 +852,8 @@ class DeviceDisconnected(Device):
             self.log("No network...calling DeviceFromDB", level='debug')
             if db:
                 self.new_state(DeviceFromDB)
-            self._log.info(
-                'You can reconnect to network using : "device.connect(network=bacnet)"'
+            self.log(
+                'You can reconnect to network using : "device.connect(network=bacnet)"', level='info'
             )
 
         else:
@@ -1087,8 +1081,8 @@ class DeviceFromDB(DeviceConnected):
         self.properties.clear_history_on_save = self._props["clear_history_on_save"]
         self.properties.default_history_size = self._props["history_size"]
         self.log("Device restored from db", level="info")
-        self._log.info(
-            'You can reconnect to network using : "device.connect(network=bacnet)"'
+        self.log(
+            'You can reconnect to network using : "device.connect(network=bacnet)"', level='info'
         )
 
     @property

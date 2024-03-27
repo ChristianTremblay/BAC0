@@ -112,8 +112,8 @@ class Lite(
         db_params: t.Optional[t.Dict[str, t.Any]] = None,
         **params,
     ) -> None:
-        self._log.info(
-            f"Starting BAC0 version {version} ({self.__module__.split('.')[-1]})"
+        self.log(
+            f"Starting BAC0 version {version} ({self.__module__.split('.')[-1]})", level='info'
         )
         self.log("Use BAC0.log_level to adjust verbosity of the app.", level='info')
         self.log("Ex. BAC0.log_level('silence') or BAC0.log_level('error')", level='info')
@@ -293,10 +293,8 @@ class Lite(
                     found.append(each)
 
         else:
-            self._log.info(
-                "No BACnet network found, attempting a simple whois using provided device instances limits ({} - {})".format(
-                    deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit
-                )
+            self.log(
+                f"No BACnet network found, attempting a simple whois using provided device instances limits ({deviceInstanceRangeLowLimit} - {deviceInstanceRangeHighLimit})", level='info'
             )
             _res = self.whois(
                 f"{deviceInstanceRangeLowLimit} {deviceInstanceRangeHighLimit}",

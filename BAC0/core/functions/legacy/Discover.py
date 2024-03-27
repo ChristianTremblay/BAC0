@@ -134,11 +134,8 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
             self._learnedNetworks.add(int(npdu.nniNet))
 
         elif isinstance(npdu, RejectMessageToNetwork):
-            self._log.warning(
-                "{} Rejected message to network (reason : {})".format(
-                    npdu.pduSource,
-                    rejectMessageToNetworkReasons[npdu.rmtnRejectionReason],
-                )
+            self.log(
+                f"{npdu.pduSource} Rejected message to network (reason : {rejectMessageToNetworkReasons[npdu.rmtnRejectionReason]})", lecvel='warning'
             )
         # forward it along
         NetworkServiceElement.indication(self, adapter, npdu)
