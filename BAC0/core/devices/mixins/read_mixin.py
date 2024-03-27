@@ -625,9 +625,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(
-                f"Polling started, values read every {delay} seconds"
-            )
+            self._log.info(f"Polling started, values read every {delay} seconds")
 
         elif self._polling_task.running:
             self._polling_task.task.stop()
@@ -639,9 +637,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(
-                f"Polling started, every values read each {delay} seconds"
-            )
+            self._log.info(f"Polling started, every values read each {delay} seconds")
 
         else:
             raise RuntimeError("Stop polling before redefining it")
@@ -739,9 +735,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(
-                f"Polling started, values read every {delay} seconds"
-            )
+            self._log.info(f"Polling started, values read every {delay} seconds")
 
         elif self._polling_task.running:
             self._polling_task.task.stop()
@@ -753,9 +747,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(
-                f"Polling started, every values read each {delay} seconds"
-            )
+            self._log.info(f"Polling started, every values read each {delay} seconds")
 
         else:
             raise RuntimeError("Stop polling before redefining it")

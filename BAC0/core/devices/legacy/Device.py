@@ -135,7 +135,7 @@ class Device(SQLMixin):
         save_resampling="1s",
         clear_history_on_save=False,
         history_size=None,
-        reconnect_on_failure=True
+        reconnect_on_failure=True,
     ):
         self.properties = DeviceProperties()
 
@@ -203,9 +203,7 @@ class Device(SQLMixin):
         Used to make transitions between device states.
         Take care to call the state init function.
         """
-        self._log.info(
-            f"Changing device state to {str(newstate).split('.')[-1]}"
-        )
+        self._log.info(f"Changing device state to {str(newstate).split('.')[-1]}")
         self.__class__ = newstate
         self._init_state()
 
@@ -365,9 +363,7 @@ class Device(SQLMixin):
                 and float(point.properties.address) == objectAddress
             ):
                 return point
-        raise ValueError(
-            f"{objectType} {objectAddress} doesn't exist in controller"
-        )
+        raise ValueError(f"{objectType} {objectAddress} doesn't exist in controller")
 
     def find_overrides(self, force=False):
         if self._find_overrides_running and not force:

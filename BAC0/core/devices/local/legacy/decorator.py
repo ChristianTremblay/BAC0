@@ -166,9 +166,7 @@ def bacnet_property(property_name, value, *, force_mutable=None):
                         mutable=mutable,
                     )
                 except KeyError:
-                    raise ValueError(
-                        f"Invalid property ({property_name}) for object"
-                    )
+                    raise ValueError(f"Invalid property ({property_name}) for object")
                 obj.add_property(new_prop)
             return obj
 

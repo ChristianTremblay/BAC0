@@ -116,7 +116,7 @@ class Device(SQLMixin):
         save_resampling: str = "1s",
         clear_history_on_save: bool = False,
         history_size: Optional[int] = None,
-        reconnect_on_failure: bool = True
+        reconnect_on_failure: bool = True,
     ):
         self.properties = DeviceProperties()
         self.initialized = False
@@ -154,7 +154,9 @@ class Device(SQLMixin):
         self._find_overrides_running = False
         self._release_overrides_progress = 0.0
         self._release_overrides_running = False
-        self.creation_task = None # when sent to asyncio.create_tasks, it will be stored here
+        self.creation_task = (
+            None  # when sent to asyncio.create_tasks, it will be stored here
+        )
 
         self.note("Controller initialized")
 
@@ -190,9 +192,7 @@ class Device(SQLMixin):
         :type newstate: Any
         :return: None
         """
-        self._log.info(
-            f"Changing device state to {str(newstate).split('.')[-1]}"
-        )
+        self._log.info(f"Changing device state to {str(newstate).split('.')[-1]}")
         self.__class__ = newstate
         await self._init_state()
 
@@ -357,9 +357,7 @@ class Device(SQLMixin):
                 and float(point.properties.address) == objectAddress
             ):
                 return point
-        raise ValueError(
-            f"{objectType} {objectAddress} doesn't exist in controller"
-        )
+        raise ValueError(f"{objectType} {objectAddress} doesn't exist in controller")
 
     def find_overrides(self, force: bool = False) -> None:
         if self._find_overrides_running and not force:
@@ -512,7 +510,7 @@ class DeviceConnected(Device):
             )
 
         except NoResponseFromController as error:
-            self.log(f"Controller not found, aborting. ({error})", level='error')
+            self.log(f"Controller not found, aborting. ({error})", level="error")
             return ("Not Found", "", [], [])
 
         except SegmentationNotSupported:
@@ -544,15 +542,15 @@ class DeviceConnected(Device):
             self.update_history_size(size=self.properties.history_size)
             # self.clear_histories()
         except NoResponseFromController:
-            self.log("Cannot retrieve object list, disconnecting...", level='error')
+            self.log("Cannot retrieve object list, disconnecting...", level="error")
             self.segmentation_supported = False
             await self.new_state(DeviceDisconnected)
         except IndexError:
             if self._reconnect_on_failure:
-                self.log("Device creation failed... re-connecting", level='error')
+                self.log("Device creation failed... re-connecting", level="error")
                 await self.new_state(DeviceDisconnected)
             else:
-                self.log("Device creation failed... disconnecting", level='error')
+                self.log("Device creation failed... disconnecting", level="error")
 
     def __getitem__(self, point_name):
         """
@@ -590,7 +588,7 @@ class DeviceConnected(Device):
                         except ValueError:
                             raise ValueError()
         except ValueError as ve:
-            self.log(f"{ve}", level='error')
+            self.log(f"{ve}", level="error")
 
     def __iter__(self):
         yield from self.points
@@ -623,7 +621,7 @@ class DeviceConnected(Device):
         try:
             asyncio.create_task(self._findPoint(point_name)._set(value))
         except WritePropertyException as ve:
-            self.log(f"{ve}", level='error')
+            self.log(f"{ve}", level="error")
 
     def __len__(self):
         """
@@ -809,8 +807,11 @@ class DeviceConnected(Device):
                 self.properties.ping_failures += 1
                 return False
         except NoResponseFromController as e:
-            self.log(f"{self.properties.name} ({self.properties.address})| Ping failure ({e}).", level='error')
-            
+            self.log(
+                f"{self.properties.name} ({self.properties.address})| Ping failure ({e}).",
+                level="error",
+            )
+
             self.properties.ping_failures += 1
             return False
 
@@ -995,7 +996,7 @@ class DeviceFromDB(DeviceConnected):
         try:
             await self.initialize_device_from_db()
         except ValueError as e:
-            self.log(f"Problem with DB initialization : {e}", level='error')
+            self.log(f"Problem with DB initialization : {e}", level="error")
             # self.new_state(DeviceDisconnected)
             raise
 
@@ -1029,7 +1030,9 @@ class DeviceFromDB(DeviceConnected):
                         self.log("Segmentation supported, connecting...", level="debug")
                         await self.new_state(RPMDeviceConnected)
                     else:
-                        self.log("Segmentation not supported, connecting...", level="debug")
+                        self.log(
+                            "Segmentation not supported, connecting...", level="debug"
+                        )
                         await self.new_state(RPDeviceConnected)
                     # self.db.close()
 

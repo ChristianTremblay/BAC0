@@ -43,30 +43,20 @@ class Simulation:
         addr, obj_type, obj_inst, prop_id, value = args[:5]
 
         if self.read(f"{addr} {obj_type} {obj_inst} outOfService"):
-            self.write(
-                f"{addr} {obj_type} {obj_inst} {prop_id} {value}"
-            )
+            self.write(f"{addr} {obj_type} {obj_inst} {prop_id} {value}")
         else:
             try:
-                self.write(
-                    f"{addr} {obj_type} {obj_inst} outOfService True"
-                )
+                self.write(f"{addr} {obj_type} {obj_inst} outOfService True")
             except NoResponseFromController as e:
-                self._log.warning(
-                    f"Failed to write to OutOfService property ({e})"
-                )
+                self._log.warning(f"Failed to write to OutOfService property ({e})")
 
             try:
                 if self.read(f"{addr} {obj_type} {obj_inst} outOfService"):
-                    self.write(
-                        f"{addr} {obj_type} {obj_inst} {prop_id} {value}"
-                    )
+                    self.write(f"{addr} {obj_type} {obj_inst} {prop_id} {value}")
                 else:
                     raise OutOfServiceNotSet()
             except NoResponseFromController as e:
-                self._log.warning(
-                    f"Failed to write to OutOfService property ({e})"
-                )
+                self._log.warning(f"Failed to write to OutOfService property ({e})")
 
     def out_of_service(self, args):
         """

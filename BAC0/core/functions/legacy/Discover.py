@@ -127,14 +127,10 @@ class NetworkServiceElementWithRequests(IOController, NetworkServiceElement):
         elif isinstance(npdu, InitializeRoutingTableAck):
             self._log.info(f"{npdu.pduSource} routing table")
             for rte in npdu.irtaTable:
-                self._log.info(
-                    f"    {rte.rtDNET} {rte.rtPortID} {rte.rtPortInfo}"
-                )
+                self._log.info(f"    {rte.rtDNET} {rte.rtPortID} {rte.rtPortInfo}")
 
         elif isinstance(npdu, NetworkNumberIs):
-            self._log.info(
-                f"{npdu.pduSource} network number is {npdu.nniNet}"
-            )
+            self._log.info(f"{npdu.pduSource} network number is {npdu.nniNet}")
             self._learnedNetworks.add(int(npdu.nniNet))
 
         elif isinstance(npdu, RejectMessageToNetwork):
@@ -282,9 +278,7 @@ class Discover:
                 request.wirtnNetwork = int(network)
             if destination:
                 request.pduDestination = Address(destination)
-                self._log.debug(
-                    f"WhoIsRouterToNetwork Destination : {destination}"
-                )
+                self._log.debug(f"WhoIsRouterToNetwork Destination : {destination}")
             else:
                 request.pduDestination = LocalBroadcast()
         except Exception:

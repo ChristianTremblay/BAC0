@@ -172,9 +172,7 @@ class WriteProperty:
                 )
 
         elif not isinstance(value, datatype):
-            raise TypeError(
-                f"invalid result datatype, expecting {datatype.__name__,}"
-            )
+            raise TypeError(f"invalid result datatype, expecting {datatype.__name__,}")
 
         self._log.debug(f"{'Encodeable value':<20} {value!r} {type(value)}")
 
@@ -214,14 +212,10 @@ class WriteProperty:
             request.priority = priority
 
         self.log_subtitle("Creating Request")
-        self._log.debug(
-            f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}"
-        )
+        self._log.debug(f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}")
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
 
-        self._log.debug(
-            f"{indx!r:<20} {priority!r:<20} {datatype!r:<20} {value!r:<20}"
-        )
+        self._log.debug(f"{indx!r:<20} {priority!r:<20} {datatype!r:<20} {value!r:<20}")
 
         self._log.debug(f"{'REQUEST':<20} {request}")
         return request
@@ -282,9 +276,7 @@ class WriteProperty:
             raise ValueError("Please provide addr")
 
         self.log_subtitle("Creating Write Multiple Request")
-        self._log.debug(
-            f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}"
-        )
+        self._log.debug(f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}")
 
         was = []
         for each in args:

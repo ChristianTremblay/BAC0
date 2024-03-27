@@ -291,10 +291,10 @@ class Base:
 
         class Router:
             def __init__(self, snet, address, dnets, path=None):
-                self.source_network:int = snet
-                self.address:Address = address
-                self.destination_networks:set = dnets
-                self.path:list = path
+                self.source_network: int = snet
+                self.address: Address = address
+                self.destination_networks: set = dnets
+                self.path: list = path
 
             def __repr__(self):
                 return "Source Network: {} | Address: {} | Destination Networks: {} | Path: {}".format(
@@ -314,6 +314,8 @@ class Base:
         for path, router_info in self._ric.path_info.items():
             router_address, router_status = router_info
             snet, dnet = path
-            self._routers[str(router_address)].path.append((path, RouterState(router_status)))    
+            self._routers[str(router_address)].path.append(
+                (path, RouterState(router_status))
+            )
 
         return self._routers

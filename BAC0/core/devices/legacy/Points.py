@@ -177,9 +177,7 @@ class Point:
             except (ValueError, UnknownPropertyError):
                 self.properties.priority_array = False
             except Exception as e:
-                raise Exception(
-                    f"Problem reading : {self.properties.name} | {e}"
-                )
+                raise Exception(f"Problem reading : {self.properties.name} | {e}")
 
     def read_property(self, prop):
         try:
@@ -715,9 +713,7 @@ class NumericPoint(Point):
                 if isinstance(val, float):
                     self._setitem(value)
             except Exception as error:
-                raise WritePropertyException(
-                    f"Problem writing to device : {error}"
-                )
+                raise WritePropertyException(f"Problem writing to device : {error}")
 
     def __repr__(self):
         try:

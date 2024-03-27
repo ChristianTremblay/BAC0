@@ -163,9 +163,7 @@ class ObjectFactory(object):
             while instance in _set:
                 instance += 1
             if _warning:
-                self._log.warning(
-                    f"Instance alreaday taken, using {instance} instead"
-                )
+                self._log.warning(f"Instance alreaday taken, using {instance} instead")
 
         _set.add(instance)
         self.instances[objectType.__name__] = _set
@@ -256,9 +254,7 @@ class ObjectFactory(object):
         _repr += Fore.YELLOW + "\n|" + "*" * 99
         _repr += "\n"
         _repr += (
-            "| "
-            + Fore.WHITE
-            + f"Support COV : {bacnet_object._object_supports_cov}\n"
+            "| " + Fore.WHITE + f"Support COV : {bacnet_object._object_supports_cov}\n"
         )
         _repr += Fore.YELLOW + "|" + "=" * 99
         _repr += "\n\x1b[33m| {:30} \x1b[33m| {:26} \x1b[33m| {:8} \x1b[33m| {:8} \x1b[33m| {:8}".format(

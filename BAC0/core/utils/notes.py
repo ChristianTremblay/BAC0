@@ -6,8 +6,8 @@ logging feature at the same time.
 Goal is to be able to access quickly to important informations for
 the web interface.
 """
-import logging
 import inspect
+import logging
 import os
 import sys
 import typing as t
@@ -53,9 +53,7 @@ def convert_level(level):
         return logging.ERROR
     elif level.lower() == "critical":
         return logging.CRITICAL
-    raise ValueError(
-        f"Wrong log level use one of the following : {_valid_levels}"
-    )
+    raise ValueError(f"Wrong log level use one of the following : {_valid_levels}")
 
 
 def update_log_level(
@@ -246,7 +244,7 @@ def note_and_log(cls):
             cls._log.debug(f"{args!r}")
             cls._log.debug("=" * width)
 
-    def log(self, note, *, level:t.Union[str,int]=logging.DEBUG):
+    def log(self, note, *, level: t.Union[str, int] = logging.DEBUG):
         """
         Add a log entry...no note
         """
@@ -259,7 +257,7 @@ def note_and_log(cls):
         else:
             caller_frame = inspect.stack()[1]
             module = inspect.getmodule(caller_frame[0])
-            module_name = module.__name__ if module else 'unknown'
+            module_name = module.__name__ if module else "unknown"
             note = f"{cls.logname} | {module_name} | {note}"
         cls._log.log(level, note)
 

@@ -206,16 +206,12 @@ class ReadProperty:
                     self._log.warning(f"Unknown object {args}")
                     raise UnknownObjectError(f"Unknown object {args}")
                 elif reason == "bufferOverflow":
-                    self._log.warning(
-                        f"Buffer capacity exceeded in device {args}"
-                    )
+                    self._log.warning(f"Buffer capacity exceeded in device {args}")
                     return self._split_the_read_request(args, arr_index)
                 else:
                     # Other error... consider NoResponseFromController (65)
                     # even if the real reason is another one
-                    raise NoResponseFromController(
-                        f"APDU Abort Reason : {reason}"
-                    )
+                    raise NoResponseFromController(f"APDU Abort Reason : {reason}")
         return None
 
     def _split_the_read_request(self, args, arr_index):
@@ -290,9 +286,7 @@ class ReadProperty:
             # not sure if this is a real problem or not, leaving as-is and ignoring errors
             if not isinstance(apdu, ReadPropertyMultipleACK):  # expecting an ACK
                 self._log.debug(f"{'not an ack':<20}")
-                self._log.warning(
-                    f"Not an Ack. | APDU : {apdu} / {type(apdu)}"
-                )
+                self._log.warning(f"Not an Ack. | APDU : {apdu} / {type(apdu)}")
                 return  # type: ignore[return-value]
 
             # loop through the results
@@ -803,9 +797,7 @@ class ReadProperty:
                 else:
                     # Other error... consider NoResponseFromController (65)
                     # even if the realy reason is another one
-                    raise NoResponseFromController(
-                        f"APDU Abort Reason : {reason}"
-                    )
+                    raise NoResponseFromController(f"APDU Abort Reason : {reason}")
 
     def read_priority_array(self, addr, obj, obj_instance) -> t.List:
         pa = self.read(f"{addr} {obj} {obj_instance} priorityArray")

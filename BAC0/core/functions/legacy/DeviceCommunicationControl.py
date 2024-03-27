@@ -80,6 +80,4 @@ class DeviceCommunicationControl:
             reason = find_reason(apdu)
             raise NoResponseFromController(f"APDU Abort Reason : {reason}")
 
-        self._log.info(
-            f"DeviceCommunicationControl request sent to device : {address}"
-        )
+        self._log.info(f"DeviceCommunicationControl request sent to device : {address}")

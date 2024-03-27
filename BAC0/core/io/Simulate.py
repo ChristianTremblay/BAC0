@@ -9,6 +9,7 @@
 Simulate.py - simulate the value of controller I/O values
 """
 import re
+
 from bacpypes3.app import Application
 from bacpypes3.basetypes import (
     DateTime,
@@ -17,12 +18,8 @@ from bacpypes3.basetypes import (
     RangeBySequenceNumber,
     RangeByTime,
 )
-from bacpypes3.primitivedata import ObjectIdentifier, Null
+from bacpypes3.primitivedata import Null, ObjectIdentifier
 
-# --- standard Python modules ---
-# --- 3rd party modules ---
-# --- this application's modules ---
-from .Write import WriteProperty
 from ..app.asyncApp import BAC0Application
 from .IOExceptions import (
     ApplicationNotStarted,
@@ -30,6 +27,11 @@ from .IOExceptions import (
     OutOfServiceNotSet,
     OutOfServiceSet,
 )
+
+# --- standard Python modules ---
+# --- 3rd party modules ---
+# --- this application's modules ---
+from .Write import WriteProperty
 
 # ------------------------------------------------------------------------------
 
@@ -77,9 +79,7 @@ class Simulation:
                 else:
                     raise OutOfServiceNotSet()
             except NoResponseFromController as e:
-                self._log.warning(
-                    f"Failed to write to OutOfService property ({e})"
-                )
+                self._log.warning(f"Failed to write to OutOfService property ({e})")
 
     async def is_out_of_service(self, args):
         if not self._started:

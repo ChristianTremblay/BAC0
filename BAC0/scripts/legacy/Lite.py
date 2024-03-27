@@ -428,16 +428,10 @@ class Lite(
                     f"{device[0]} device {device[1]} objectName vendorName"
                 )
             except (UnrecognizedService, ValueError):
-                self._log.warning(
-                    f"Unrecognized service for {device[0]} | {device[1]}"
-                )
+                self._log.warning(f"Unrecognized service for {device[0]} | {device[1]}")
                 try:
-                    deviceName = self.read(
-                        f"{device[0]} device {device[1]} objectName"
-                    )
-                    vendorName = self.read(
-                        f"{device[0]} device {device[1]} vendorName"
-                    )
+                    deviceName = self.read(f"{device[0]} device {device[1]} objectName")
+                    vendorName = self.read(f"{device[0]} device {device[1]} vendorName")
                 except NoResponseFromController:
                     self._log.warning(f"No response from {device}")
                     continue

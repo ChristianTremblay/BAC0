@@ -358,29 +358,17 @@ class RPObjectsProcessing:
             point_address = str(each[1])
 
             if obj_type == "analog":
-                units_state = self.read_single(
-                    f"{point_type} {point_address} units "
-                )
+                units_state = self.read_single(f"{point_type} {point_address} units ")
             elif obj_type == "multi":
                 units_state = self.read_single(
                     f"{point_type} {point_address} stateText "
                 )
             elif obj_type == "loop":
-                units_state = self.read_single(
-                    f"{point_type} {point_address} units "
-                )
+                units_state = self.read_single(f"{point_type} {point_address} units ")
             elif obj_type == "binary":
                 units_state = (
-                    (
-                        self.read_single(
-                            f"{point_type} {point_address} inactiveText "
-                        )
-                    ),
-                    (
-                        self.read_single(
-                            f"{point_type} {point_address} activeText "
-                        )
-                    ),
+                    (self.read_single(f"{point_type} {point_address} inactiveText ")),
+                    (self.read_single(f"{point_type} {point_address} activeText ")),
                 )
             else:
                 units_state = None
@@ -416,7 +404,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
         *,
         points_per_request=25,
         discover_request=(None, 6),
-        force_single=False
+        force_single=False,
     ):
         """
         Read points from a device using a ReadPropertyMultiple request.
@@ -594,9 +582,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(
-                f"Polling started, values read every {delay} seconds"
-            )
+            self._log.info(f"Polling started, values read every {delay} seconds")
 
         elif self._polling_task.running:
             self._polling_task.task.stop()
@@ -608,9 +594,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(
-                f"Polling started, every values read each {delay} seconds"
-            )
+            self._log.info(f"Polling started, every values read each {delay} seconds")
 
         else:
             raise RuntimeError("Stop polling before redefining it")
@@ -706,9 +690,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(
-                f"Polling started, values read every {delay} seconds"
-            )
+            self._log.info(f"Polling started, values read every {delay} seconds")
 
         elif self._polling_task.running:
             self._polling_task.task.stop()
@@ -720,9 +702,7 @@ class ReadProperty(ReadUtilsMixin, DiscoveryUtilsMixin, RPObjectsProcessing):
             )
             self._polling_task.task.start()
             self._polling_task.running = True
-            self._log.info(
-                f"Polling started, every values read each {delay} seconds"
-            )
+            self._log.info(f"Polling started, every values read each {delay} seconds")
 
         else:
             raise RuntimeError("Stop polling before redefining it")

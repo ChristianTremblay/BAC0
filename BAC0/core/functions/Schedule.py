@@ -163,9 +163,7 @@ class Schedule:
         except Exception:
             # Read Multiple not supported... try single prop read
             def _read(prop):
-                return self.read(
-                    f"{address} schedule {schedule_instance} {prop}"
-                )
+                return self.read(f"{address} schedule {schedule_instance} {prop}")
 
             try:
                 _schedule = _read("weeklySchedule")

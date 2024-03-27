@@ -165,7 +165,7 @@ class Complete(Lite, Stats_Mixin):
         bokeh_server=True,
         flask_port=8111,
         spin=None,
-        **params
+        **params,
     ):
         Lite.__init__(
             self,
@@ -176,7 +176,7 @@ class Complete(Lite, Stats_Mixin):
             bbmdTTL=bbmdTTL,
             ping=ping,
             spin=spin,
-            **params
+            **params,
         )
         self.flask_port = flask_port
         if bokeh_server:
@@ -195,12 +195,8 @@ class Complete(Lite, Stats_Mixin):
                     f"{device[0]} device {device[1]} objectName vendorName"
                 )
             except UnrecognizedService:
-                deviceName = self.read(
-                    f"{device[0]} device {device[1]} objectName"
-                )
-                vendorName = self.read(
-                    f"{device[0]} device {device[1]} vendorName"
-                )
+                deviceName = self.read(f"{device[0]} device {device[1]} objectName")
+                vendorName = self.read(f"{device[0]} device {device[1]} vendorName")
             except NoResponseFromController:
                 self._log.info(f"No response from {device}")
                 continue

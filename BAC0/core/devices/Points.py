@@ -17,22 +17,15 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 
 from bacpypes3.basetypes import BinaryPV, PropertyIdentifier
-from bacpypes3.primitivedata import (
-    CharacterString,
-    ObjectIdentifier,
-    Real,
-    Boolean,
-    Integer,
-)
 from bacpypes3.pdu import Address
 
 # --- 3rd party modules ---
 from bacpypes3.primitivedata import (
+    Boolean,
     CharacterString,
+    Integer,
     ObjectIdentifier,
     Real,
-    Boolean,
-    Integer,
 )
 
 try:
@@ -208,9 +201,7 @@ class Point:
             except (ValueError, UnknownPropertyError):
                 self.properties.priority_array = False
             except Exception as e:
-                raise Exception(
-                    f"Problem reading : {self.properties.name} | {e}"
-                )
+                raise Exception(f"Problem reading : {self.properties.name} | {e}")
 
     async def read_property(self, prop):
         try:
@@ -767,7 +758,7 @@ class Point:
             for each in lst:
                 tag_id, tag_value = each
                 self.tag.append((tag_id, tag_value))
-    
+
     async def _update_value(self):
         await asyncio.wait_for(self.value, timeout=1.0)
 
@@ -790,6 +781,7 @@ class Point:
                 f"Last known value {self._history.value[-1]} with timestamp of {self._history.timestamp[-1]}, older than 10sec {datetime.now().astimezone()}. Consider using dev['point'].lastValue if you trust polling of device of manage a up to date read in asynchronous side of your app for better precision"
             )
         return self.lastValue
+
 
 # ------------------------------------------------------------------------------
 
@@ -848,9 +840,7 @@ class NumericPoint(Point):
                 if isinstance(val, float):
                     await self._setitem(value)
             except Exception as error:
-                raise WritePropertyException(
-                    f"Problem writing to device : {error}"
-                )
+                raise WritePropertyException(f"Problem writing to device : {error}")
 
     def __repr__(self):
         try:
@@ -879,7 +869,7 @@ class NumericPoint(Point):
             val,
             self.properties.units_state,
         )
-    
+
     def __add__(self, other):
         self._update_value_if_required()
         return self.lastValue + other
@@ -1036,16 +1026,16 @@ class BooleanPoint(Point):
     def __eq__(self, other):
         self._update_value_if_required()
         if isinstance(other, str):
-            if ':' in other:
+            if ":" in other:
                 return self.lastValue == other
-            elif other in ('inactive', 'active'):
-                return self.lastValue.split(':')[1] == other
+            elif other in ("inactive", "active"):
+                return self.lastValue.split(":")[1] == other
             else:
                 return False
         elif isinstance(other, bool):
             return self.boolValue == other
         elif isinstance(other, int):
-            return int(self.lastValue.split(':')[0]) == other
+            return int(self.lastValue.split(":")[0]) == other
         else:
             return False
 
@@ -1154,12 +1144,12 @@ class EnumPoint(Point):
     def __eq__(self, other):
         self._update_value_if_required()
         if isinstance(other, str):
-            if ':' in other:
+            if ":" in other:
                 return self.lastValue == other
             else:
                 return self.enumValue == other
         elif isinstance(other, int):
-            return int(self.lastValue.split(':')[0]) == other
+            return int(self.lastValue.split(":")[0]) == other
         else:
             return self.lastValue == other
 
@@ -1226,7 +1216,9 @@ class StringPoint(Point):
             else:
                 val = str(self.value)
         except ValueError:
-            self.log("Cannot convert value. Device probably disconnected", level="error")
+            self.log(
+                "Cannot convert value. Device probably disconnected", level="error"
+            )
             # Probably disconnected
             val = None
         return "{}/{} : {}".format(
@@ -1305,7 +1297,9 @@ class DateTimePoint(Point):
             # else:
             val = await self.value
         except ValueError:
-            self.log("Cannot convert value. Device probably disconnected", level="error")
+            self.log(
+                "Cannot convert value. Device probably disconnected", level="error"
+            )
             # Probably disconnected
             val = None
         return "{}/{} : {}".format(

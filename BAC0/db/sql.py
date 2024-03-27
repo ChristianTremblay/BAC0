@@ -285,9 +285,7 @@ class SQLMixin(object):
             try:
                 _point = pickle.load(file)["points"][point]
             except KeyError:
-                raise RemovedPointException(
-                    f"{point} not found (probably deleted)"
-                )
+                raise RemovedPointException(f"{point} not found (probably deleted)")
             return _point
 
     def read_dev_prop(self, device_name):

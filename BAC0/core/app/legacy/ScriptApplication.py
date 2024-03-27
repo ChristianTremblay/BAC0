@@ -93,9 +93,7 @@ class common_mixin:
             apdu.deviceInstanceRangeLowLimit,
             apdu.deviceInstanceRangeHighLimit,
         )
-        self._log.debug(
-            f"do_WhoIsRequest from {key[0]} | {key[1]} to {key[2]}"
-        )
+        self._log.debug(f"do_WhoIsRequest from {key[0]} | {key[1]} to {key[2]}")
 
         # count the times this has been received
         self.who_is_counter[key] += 1
