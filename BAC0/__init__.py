@@ -1,9 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import importlib.util
+import os
 
-try:
+if importlib.util.find_spec("bacpypes3") is not None:
     import bacpypes3
-except ImportError:
+
+else:
     # Using print here or setup.py will fail
     print("=" * 80)
     print(
@@ -11,6 +14,13 @@ except ImportError:
     )
     print("\nDiscard this message if you are actually installing BAC0.")
     print("=" * 80)
+
+if importlib.util.find_spec("dotenv") is not None:
+    from dotenv import load_dotenv
+
+    load_dotenv(os.path.join(os.getcwd(), ".env"))
+else:
+    print("You need to pip install python-dotenv to use your .env file")
 
 try:
     from . import core, tasks
@@ -23,17 +33,6 @@ try:
     from .tasks.Devices import AddDevice as add_device
     from .tasks.Match import Match as match
     from .tasks.Poll import SimplePoll as poll
-
-    try:
-        #
-        import os
-
-        if os.path.isfile(f"{os.getcwd()}/.env"):
-            from dotenv import load_dotenv
-
-            load_dotenv(os.path.join(os.getcwd(), ".env"))
-    except ImportError:
-        print("You need to pip install python-dotenv to use your .env file")
 
     from .scripts.Lite import Lite as lite  # to maintain compatibility with old code
 
