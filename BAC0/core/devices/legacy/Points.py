@@ -1059,7 +1059,9 @@ class StringPoint(Point):
             else:
                 val = str(self.value)
         except ValueError:
-            self.log("Cannot convert value. Device probably disconnected", level='error')
+            self.log(
+                "Cannot convert value. Device probably disconnected", level="error"
+            )
             # Probably disconnected
             val = None
         return "{}/{} : {}".format(
@@ -1137,7 +1139,9 @@ class DateTimePoint(Point):
             # else:
             val = self.value
         except ValueError:
-            self.log("Cannot convert value. Device probably disconnected", level='error')
+            self.log(
+                "Cannot convert value. Device probably disconnected", level="error"
+            )
             # Probably disconnected
             val = None
         return "{}/{} : {}".format(

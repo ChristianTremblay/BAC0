@@ -108,7 +108,7 @@ class Discover:
             _networks.extend(_iamrtn.iartnNetworkList)
         for net in _networks:
             _this_application._learnedNetworks.add(net)
-        self.log(f"Found those networks : {self.known_network_numbers}", level='info')
+        self.log(f"Found those networks : {self.known_network_numbers}", level="info")
 
         if networks:
             if isinstance(networks, list):
@@ -124,7 +124,7 @@ class Discover:
 
         if _networks and not global_broadcast:
             for each_network in _networks:
-                self.log(f"Discovering network {each_network}", level='info')
+                self.log(f"Discovering network {each_network}", level="info")
                 _res = await self.this_application.app.who_is(
                     low_limit=deviceInstanceRangeLowLimit,
                     high_limit=deviceInstanceRangeHighLimit,
@@ -141,7 +141,8 @@ class Discover:
                 else "No BACnet network found"
             )
             self.log(
-                f"{msg}, attempting a simple whois using provided device instances limits ({deviceInstanceRangeLowLimit} - {deviceInstanceRangeHighLimit})", level='info'
+                f"{msg}, attempting a simple whois using provided device instances limits ({deviceInstanceRangeLowLimit} - {deviceInstanceRangeHighLimit})",
+                level="info",
             )
             if global_broadcast is True:
                 self._log.warning(
@@ -160,13 +161,15 @@ class Discover:
                 found.append((each, _this_network))
 
         for iam_request, network_number in found:
-            self.log(f"Found device {iam_request} on network {network_number}", level='debug')
+            self.log(
+                f"Found device {iam_request} on network {network_number}", level="debug"
+            )
             if not self.discoveredDevices:
                 self.discoveredDevices = {}  # we can add device as we found some...
             device_address: Address = iam_request.pduSource
             objid: ObjectIdentifier = iam_request.iAmDeviceIdentifier
-            self.log(str(objid), level='debug')
-            self.log(self.discoveredDevices.keys(), level='debug')
+            self.log(str(objid), level="debug")
+            self.log(self.discoveredDevices.keys(), level="debug")
             key = str(objid)
             if key in self.discoveredDevices:
                 self._log.debug(
@@ -186,5 +189,6 @@ class Discover:
                 }
 
         self.log(
-            f"Discovery done. Found {len(self.discoveredDevices)} devices on {len(_networks)} BACnet networks.", level='info'
+            f"Discovery done. Found {len(self.discoveredDevices)} devices on {len(_networks)} BACnet networks.",
+            level="info",
         )

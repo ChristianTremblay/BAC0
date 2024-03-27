@@ -115,11 +115,11 @@ class WriteProperty:
             )
 
         except ErrorRejectAbortNack as err:
-            self.log(f"exception: {err!r}", level='error')
+            self.log(f"exception: {err!r}", level="error")
             raise NoResponseFromController(f"APDU Abort Reason : {response}")
 
         except ValueError as err:
-            self.log(f"exception: {err!r}", level='error')
+            self.log(f"exception: {err!r}", level="error")
             raise ValueError(f"Invalid value for property : {err} | {response}")
 
         except WritePropertyException as error:
@@ -189,9 +189,12 @@ class WriteProperty:
         )
 
         self.log_subtitle("Creating Request")
-        self.log(f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}", level='debug')
+        self.log(
+            f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}",
+            level="debug",
+        )
 
-        self.log(f"{'REQUEST':<20} {request}", level='debug')
+        self.log(f"{'REQUEST':<20} {request}", level="debug")
         return request
 
 

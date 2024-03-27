@@ -87,7 +87,7 @@ class WriteProperty:
             iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
-            self.log(f"{'iocb':<20} {iocb!r}", level='debug')
+            self.log(f"{'iocb':<20} {iocb!r}", level="debug")
 
         except WritePropertyException as error:
             # construction error
@@ -99,8 +99,8 @@ class WriteProperty:
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
-                self.log("Not an ack, see debug for more infos.", level='warning')
-                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level='debug')
+                self.log("Not an ack, see debug for more infos.", level="warning")
+                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level="debug")
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -174,13 +174,13 @@ class WriteProperty:
         elif not isinstance(value, datatype):
             raise TypeError(f"invalid result datatype, expecting {datatype.__name__,}")
 
-        self.log(f"{'Encodeable value':<20} {value!r} {type(value)}", level='debug')
+        self.log(f"{'Encodeable value':<20} {value!r} {type(value)}", level="debug")
 
         _value = Any()
         try:
             _value.cast_in(value)
         except WritePropertyCastError as error:
-            self.log(f"WriteProperty cast error: {error!r}", level='error')
+            self.log(f"WriteProperty cast error: {error!r}", level="error")
             raise
 
         return _value
@@ -212,12 +212,18 @@ class WriteProperty:
             request.priority = priority
 
         self.log_subtitle("Creating Request")
-        self.log(f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}", level='debug')
+        self.log(
+            f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}",
+            level="debug",
+        )
         datatype = get_datatype(obj_type, prop_id, vendor_id=vendor_id)
 
-        self.log(f"{indx!r:<20} {priority!r:<20} {datatype!r:<20} {value!r:<20}", level='debug')
+        self.log(
+            f"{indx!r:<20} {priority!r:<20} {datatype!r:<20} {value!r:<20}",
+            level="debug",
+        )
 
-        self.log(f"{'REQUEST':<20} {request}", level='debug')
+        self.log(f"{'REQUEST':<20} {request}", level="debug")
         return request
 
     def writeMultiple(self, addr=None, args=None, vendor_id=0, timeout=10):
@@ -250,7 +256,7 @@ class WriteProperty:
             iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
-            self.log(f"{'iocb':<20} {iocb!r}", level='debug')
+            self.log(f"{'iocb':<20} {iocb!r}", level="debug")
 
         except WritePropertyException as error:
             # construction error
@@ -262,8 +268,8 @@ class WriteProperty:
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
-                self.log("Not an ack, see debug for more infos.", level='warning')
-                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level='debug')
+                self.log("Not an ack, see debug for more infos.", level="warning")
+                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level="debug")
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -276,7 +282,10 @@ class WriteProperty:
             raise ValueError("Please provide addr")
 
         self.log_subtitle("Creating Write Multiple Request")
-        self.log(f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}", level='debug')
+        self.log(
+            f"{'indx':<20} {'priority':<20} {'datatype':<20} {'value':<20}",
+            level="debug",
+        )
 
         was = []
         for each in args:
@@ -341,5 +350,5 @@ class WriteProperty:
         request = WritePropertyMultipleRequest(listOfWriteAccessSpecs=was)
         request.pduDestination = Address(addr)
 
-        self.log(f"{'REQUEST':<20} {request}", level='debug')
+        self.log(f"{'REQUEST':<20} {request}", level="debug")
         return request

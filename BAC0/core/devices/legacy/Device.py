@@ -203,7 +203,9 @@ class Device(SQLMixin):
         Used to make transitions between device states.
         Take care to call the state init function.
         """
-        self.log(f"Changing device state to {str(newstate).split('.')[-1]}", level='info')
+        self.log(
+            f"Changing device state to {str(newstate).split('.')[-1]}", level="info"
+        )
         self.__class__ = newstate
         self._init_state()
 
@@ -368,7 +370,8 @@ class Device(SQLMixin):
     def find_overrides(self, force=False):
         if self._find_overrides_running and not force:
             self.log(
-                "Already running ({self._find_overrides_progress:.1%})... please wait.", level='warning'
+                "Already running ({self._find_overrides_progress:.1%})... please wait.",
+                level="warning",
             )
             return
         lst = []
@@ -399,7 +402,8 @@ class Device(SQLMixin):
     def release_all_overrides(self, force=False):
         if self._release_overrides_running and not force:
             self.log(
-                "Already running ({self._release_overrides_progress:.1%})... please wait.", level='warning'
+                "Already running ({self._release_overrides_progress:.1%})... please wait.",
+                level="warning",
             )
             return
         self._release_overrides_running = True
@@ -416,7 +420,7 @@ class Device(SQLMixin):
                 self.log("Overrides found... releasing them", level="info")
                 self.log("=================================", level="info")
                 for idx, point in enumerate(self.properties.points_overridden):
-                    self.log(f"Releasing {point}", level='info')
+                    self.log(f"Releasing {point}", level="info")
                     point.release_ovr()
                     self._release_overrides_progress = (idx / total) / 2 + 0.5
             else:
@@ -483,7 +487,7 @@ class DeviceConnected(Device):
             try:
                 his.append(self._findPoint(point, force_read=force_read).history)
             except ValueError as ve:
-                self.log(f"{ve}", level='error')
+                self.log(f"{ve}", level="error")
                 continue
         if not _PANDAS:
             return dict(zip(list_of_points, his))
@@ -501,11 +505,11 @@ class DeviceConnected(Device):
             )
 
         except NoResponseFromController as error:
-            self.log(f"Controller not found, aborting. ({error})", level='error')
+            self.log(f"Controller not found, aborting. ({error})", level="error")
             return ("Not Found", "", [], [])
 
         except SegmentationNotSupported:
-            self.log("Segmentation not supported", level='warning')
+            self.log("Segmentation not supported", level="warning")
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
 
@@ -533,15 +537,15 @@ class DeviceConnected(Device):
             self.update_history_size(size=self.properties.history_size)
             # self.clear_histories()
         except NoResponseFromController:
-            self.log("Cannot retrieve object list, disconnecting...", level='error')
+            self.log("Cannot retrieve object list, disconnecting...", level="error")
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
         except IndexError:
             if self._reconnect_on_failure:
-                self.log("Device creation failed... re-connecting", level='error')
+                self.log("Device creation failed... re-connecting", level="error")
                 self.new_state(DeviceDisconnected)
             else:
-                self.log("Device creation failed... disconnecting", level='error')
+                self.log("Device creation failed... disconnecting", level="error")
 
     def __getitem__(self, point_name):
         """
@@ -579,7 +583,7 @@ class DeviceConnected(Device):
                         except ValueError:
                             raise ValueError()
         except ValueError as ve:
-            self.log(f"{ve}", level='error')
+            self.log(f"{ve}", level="error")
 
     def __iter__(self):
         yield from self.points
@@ -612,7 +616,7 @@ class DeviceConnected(Device):
         try:
             self._findPoint(point_name)._set(value)
         except WritePropertyException as ve:
-            self.log(f"{ve}", level='error')
+            self.log(f"{ve}", level="error")
 
     def __len__(self):
         """
@@ -799,7 +803,8 @@ class DeviceConnected(Device):
                 return False
         except NoResponseFromController as e:
             self.log(
-                f"{self.properties.name} ({self.properties.address})| Ping failure ({e}).", level='error'
+                f"{self.properties.name} ({self.properties.address})| Ping failure ({e}).",
+                level="error",
             )
             self.properties.ping_failures += 1
             return False
@@ -849,11 +854,12 @@ class DeviceDisconnected(Device):
         if network:
             self.properties.network = network
         if not self.properties.network:
-            self.log("No network...calling DeviceFromDB", level='debug')
+            self.log("No network...calling DeviceFromDB", level="debug")
             if db:
                 self.new_state(DeviceFromDB)
             self.log(
-                'You can reconnect to network using : "device.connect(network=bacnet)"', level='info'
+                'You can reconnect to network using : "device.connect(network=bacnet)"',
+                level="info",
             )
 
         else:
@@ -875,7 +881,7 @@ class DeviceDisconnected(Device):
                     "segmentedBoth",
                 ):
                     segmentation_supported = False
-                    self.log("Segmentation not supported", level='debug')
+                    self.log("Segmentation not supported", level="debug")
                 else:
                     segmentation_supported = True
 
@@ -892,14 +898,14 @@ class DeviceDisconnected(Device):
                 self.new_state(RPDeviceConnected)
 
             except (NoResponseFromController, AttributeError) as error:
-                self.log("Error connecting: %s", error, level='warning')
+                self.log("Error connecting: %s", error, level="warning")
                 if self.properties.db_name:
                     self.new_state(DeviceFromDB)
                 else:
                     self._log.warning(
                         "Offline: provide database name to load stored data."
                     )
-                    self.log("Ex. controller.connect(db = 'backup')", level='warning')
+                    self.log("Ex. controller.connect(db = 'backup')", level="warning")
 
     def df(self, list_of_points, force_read=True):
         raise DeviceNotConnected("Must connect to BACnet or database")
@@ -989,7 +995,7 @@ class DeviceFromDB(DeviceConnected):
         try:
             self.initialize_device_from_db()
         except ValueError as e:
-            self.log(f"Problem with DB initialization : {e}", level='error')
+            self.log(f"Problem with DB initialization : {e}", level="error")
             # self.new_state(DeviceDisconnected)
             raise
 
@@ -1002,7 +1008,7 @@ class DeviceFromDB(DeviceConnected):
             raise WrongParameter("Please provide network OR from_backup")
 
         elif network:
-            self.log("Network provided... trying to connect", level='debug')
+            self.log("Network provided... trying to connect", level="debug")
             self.properties.network = network
             try:
                 name = self.properties.network.read(
@@ -1022,24 +1028,26 @@ class DeviceFromDB(DeviceConnected):
                     "segmentedBoth",
                 ):
                     segmentation_supported = False
-                    self.log("Segmentation not supported", level='debug')
+                    self.log("Segmentation not supported", level="debug")
                 else:
                     segmentation_supported = True
 
                 if name:
                     if segmentation_supported:
-                        self.log("Segmentation supported, connecting...", level='debug')
+                        self.log("Segmentation supported, connecting...", level="debug")
                         self.new_state(RPMDeviceConnected)
                     else:
-                        self.log("Segmentation not supported, connecting...", level='debug')
+                        self.log(
+                            "Segmentation not supported, connecting...", level="debug"
+                        )
                         self.new_state(RPDeviceConnected)
                     # self.db.close()
 
             except NoResponseFromController:
-                self.log("Unable to connect, keeping DB mode active", level='error')
+                self.log("Unable to connect, keeping DB mode active", level="error")
 
         else:
-            self.log("Not connected, open DB", level='debug')
+            self.log("Not connected, open DB", level="debug")
             if from_backup:
                 self.properties.db_name = from_backup.split(".")[0]
             self._init_state()
@@ -1082,7 +1090,8 @@ class DeviceFromDB(DeviceConnected):
         self.properties.default_history_size = self._props["history_size"]
         self.log("Device restored from db", level="info")
         self.log(
-            'You can reconnect to network using : "device.connect(network=bacnet)"', level='info'
+            'You can reconnect to network using : "device.connect(network=bacnet)"',
+            level="info",
         )
 
     @property

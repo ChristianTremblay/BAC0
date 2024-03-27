@@ -102,13 +102,14 @@ class TimeSync:
                     request.pduDestination = Address(destination)
                 except (TypeError, ValueError):
                     self.log(
-                        f"Destination unrecognized ({destination}), setting local broadcast", level='warning'
+                        f"Destination unrecognized ({destination}), setting local broadcast",
+                        level="warning",
                     )
                     request.pduDestination = LocalBroadcast()
         else:
             request.pduDestination = LocalBroadcast()
 
-        self.log(f"{'- request:':>12} {request}", level='debug')
+        self.log(f"{'- request:':>12} {request}", level="debug")
 
         iocb = IOCB(request)  # make an IOCB
 
@@ -121,7 +122,7 @@ class TimeSync:
         year = year + 1900
         hour, minutes, sec, msec = _datetime.time
         d = dt.datetime(year, month, day, hour, minutes, sec, msec)
-        self.log(f"Time Sync Request sent to network : {d.isoformat()}", level='info')
+        self.log(f"Time Sync Request sent to network : {d.isoformat()}", level="info")
 
 
 class TimeHandler(object):

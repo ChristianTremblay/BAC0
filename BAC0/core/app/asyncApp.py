@@ -22,7 +22,7 @@ class BAC0Application:
         self.localIPAddr: str = addr
         self.bdt: List[str] = self._cfg["BAC0"]["bdt"]
         self.device_cfg, self.networkport_cfg = self.cfg["application"]
-        self.log(f"Configuration sent to build application : {self.cfg}", level='debug')
+        self.log(f"Configuration sent to build application : {self.cfg}", level="debug")
 
         self.app: Application = Application.from_json(self.cfg["application"])
 

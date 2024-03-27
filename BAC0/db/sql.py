@@ -143,7 +143,8 @@ class SQLMixin(object):
 
             except Exception as error:
                 self.log(
-                    f"{self.properties.device.properties.name} ({self.properties.device.properties.address}) | Error in resampling {point.properties.name} | {error} (probably not enough points)", level='error'
+                    f"{self.properties.device.properties.name} ({self.properties.device.properties.address}) | Error in resampling {point.properties.name} | {error} (probably not enough points)",
+                    level="error",
                 )
                 if (
                     "binary" in point.properties.type
@@ -249,7 +250,7 @@ class SQLMixin(object):
         if self.properties.clear_history_on_save:
             self.clear_histories()
 
-        self.log(f"Device saved to {self.properties.db_name}.db", level='info')
+        self.log(f"Device saved to {self.properties.db_name}.db", level="info")
 
     def points_from_sql(self, db_name):
         """

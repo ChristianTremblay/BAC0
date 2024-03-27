@@ -234,14 +234,14 @@ class Base:
 
             try:
                 Base._used_ips.add(self.localIPAddr)
-                self.log(f"Registered as {app_type}", level='info')
+                self.log(f"Registered as {app_type}", level="info")
                 self._started = True
             except OSError as error:
-                self.log(f"Error opening socket: {error}", level='warning')
+                self.log(f"Error opening socket: {error}", level="warning")
                 raise InitializationError(f"Error opening socket: {error}")
             self.log("Running", level="debug")
         except OSError as error:
-            self.log(f"an error has occurred: {error}", level='error')
+            self.log(f"an error has occurred: {error}", level="error")
             raise InitializationError(f"Error starting app: {error}")
             self.log("finally", level="debug")
 

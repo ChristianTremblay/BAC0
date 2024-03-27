@@ -122,7 +122,7 @@ class ReadProperty:
             iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
-            self.log(f"{'iocb':<20} {iocb!r}", level='debug')
+            self.log(f"{'iocb':<20} {iocb!r}", level="debug")
 
         except ReadPropertyException as error:
             # construction error
@@ -134,8 +134,8 @@ class ReadProperty:
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, ReadPropertyACK):  # expecting an ACK
-                self.log("Not an ack, see debug for more infos.", level='warning')
-                self.log(f"Not an ack. | APDU : {apdu}", level='debug')
+                self.log("Not an ack, see debug for more infos.", level="warning")
+                self.log(f"Not an ack. | APDU : {apdu}", level="debug")
                 return None
 
             # find the datatype
@@ -161,8 +161,8 @@ class ReadProperty:
                 else:
                     value = apdu.propertyValue.cast_out(datatype)
 
-                self.log(f"{'value':<20} {'datatype':<20}", level='debug')
-                self.log(f"{value!r:<20} {datatype!r:<20}", level='debug')
+                self.log(f"{'value':<20} {'datatype':<20}", level="debug")
+                self.log(f"{value!r:<20} {datatype!r:<20}", level="debug")
             if not show_property_name:
                 return value
 
@@ -203,10 +203,12 @@ class ReadProperty:
                     else:
                         raise UnknownPropertyError(f"Unknown property {args}")
                 elif reason == "unknownObject":
-                    self.log(f"Unknown object {args}", level='warning')
+                    self.log(f"Unknown object {args}", level="warning")
                     raise UnknownObjectError(f"Unknown object {args}")
                 elif reason == "bufferOverflow":
-                    self.log(f"Buffer capacity exceeded in device {args}", level='warning')
+                    self.log(
+                        f"Buffer capacity exceeded in device {args}", level="warning"
+                    )
                     return self._split_the_read_request(args, arr_index)
                 else:
                     # Other error... consider NoResponseFromController (65)
@@ -271,7 +273,7 @@ class ReadProperty:
             iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
-            self.log(f"{'iocb':<20} {iocb!r}", level='debug')
+            self.log(f"{'iocb':<20} {iocb!r}", level="debug")
 
         except ReadPropertyMultipleException as error:
             # construction error
@@ -285,8 +287,8 @@ class ReadProperty:
             # note: the return types along this pass don't appear to be consistent
             # not sure if this is a real problem or not, leaving as-is and ignoring errors
             if not isinstance(apdu, ReadPropertyMultipleACK):  # expecting an ACK
-                self.log(f"{'not an ack':<20}", level='debug')
-                self.log(f"Not an Ack. | APDU : {apdu} / {type(apdu)}", level='warning')
+                self.log(f"{'not an ack':<20}", level="debug")
+                self.log(f"Not an Ack. | APDU : {apdu} / {type(apdu)}", level="warning")
                 return  # type: ignore[return-value]
 
             # loop through the results
@@ -303,7 +305,7 @@ class ReadProperty:
                         "propertyIdentifier", "propertyArrayIndex", "value", "datatype"
                     )
                 )
-                self.log("-" * 114, level='debug')
+                self.log("-" * 114, level="debug")
                 dict_values[objectIdentifier] = []
                 # now come the property values per object
                 for element in result.listOfResults:
@@ -401,8 +403,8 @@ class ReadProperty:
         if iocb.ioError:  # unsuccessful: error/reject/abort
             apdu = iocb.ioError
             reason = find_reason(apdu)
-            self.log(f"APDU Abort Reject Reason : {reason}", level='warning')
-            self.log(f"The Request was : {args}", level='debug')
+            self.log(f"APDU Abort Reject Reason : {reason}", level="warning")
+            self.log(f"The Request was : {args}", level="debug")
             if reason == "unrecognizedService":
                 raise UnrecognizedService()
             elif reason == "segmentationNotSupported":
@@ -411,14 +413,14 @@ class ReadProperty:
                 self.segmentation_supported = False
                 raise SegmentationNotSupported()
             elif reason == "unknownObject":
-                self.log(f"Unknown object {args}", level='warning')
+                self.log(f"Unknown object {args}", level="warning")
                 raise UnknownObjectError(f"Unknown object {args}")
             elif reason == "unknownProperty":
-                self.log(f"Unknown property {args}", level='warning')
+                self.log(f"Unknown property {args}", level="warning")
                 values.append("")  # type: ignore[arg-type]
                 return values
             else:
-                self.log(f"No response from controller {reason}", level='warning')
+                self.log(f"No response from controller {reason}", level="warning")
                 values.append("")  # type: ignore[arg-type]
                 return values
 
@@ -460,7 +462,7 @@ class ReadProperty:
 
         if len(args) == 5:
             request.propertyArrayIndex = int(args[4])
-        self.log(f"{'REQUEST':<20} {request!r}", level='debug')
+        self.log(f"{'REQUEST':<20} {request!r}", level="debug")
         return request
 
     def build_rpm_request(
@@ -469,7 +471,7 @@ class ReadProperty:
         """
         Build request from args
         """
-        self.log(args, level='debug')
+        self.log(args, level="debug")
         i = 0
         addr = args[i]
         i += 1
@@ -651,7 +653,7 @@ class ReadProperty:
 
         if len(args) == 5:
             request.propertyArrayIndex = int(args[4])
-        self.log(f"{'REQUEST':<20} {request!r}", level='debug')
+        self.log(f"{'REQUEST':<20} {request!r}", level="debug")
         return request
 
     def readRange(
@@ -725,7 +727,7 @@ class ReadProperty:
             iocb.set_timeout(timeout)
             # pass to the BACnet stack
             deferred(self.this_application.request_io, iocb)
-            self.log(f"{'iocb':<20} {iocb!r}", level='debug')
+            self.log(f"{'iocb':<20} {iocb!r}", level="debug")
 
         except ReadRangeException as error:
             # construction error
@@ -737,8 +739,8 @@ class ReadProperty:
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, ReadRangeACK):  # expecting an ACK
-                self.log("Not an ack, see debug for more infos.", level='warning')
-                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level='debug')
+                self.log("Not an ack, see debug for more infos.", level="warning")
+                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level="debug")
                 return
 
             # find the datatype
@@ -763,8 +765,8 @@ class ReadProperty:
                 )
                 return apdu
 
-            self.log(f"{'value':<20} {'datatype':<20}", level='debug')
-            self.log(f"{value!r:<20} {datatype!r:<20}", level='debug')
+            self.log(f"{'value':<20} {'datatype':<20}", level="debug")
+            self.log(f"{value!r:<20} {datatype!r:<20}", level="debug")
             return value
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -774,15 +776,15 @@ class ReadProperty:
                 self._log.warning(
                     "Segmentation not supported... will read properties one by one..."
                 )
-                self.log(f"The Request was : {args_split}", level='debug')
+                self.log(f"The Request was : {args_split}", level="debug")
                 value = self._split_the_read_request(args, arr_index)
                 return value
             else:
                 if reason == "unknownProperty":
                     if "priorityArray" in args:
-                        self.log(f"Unknown property {args}", level='debug')
+                        self.log(f"Unknown property {args}", level="debug")
                     else:
-                        self.log(f"Unknown property {args}", level='warning')
+                        self.log(f"Unknown property {args}", level="warning")
                     if "description" in args:
                         return ""
                     elif "inactiveText" in args:
@@ -792,7 +794,7 @@ class ReadProperty:
                     else:
                         raise UnknownPropertyError(f"Unknown property {args}")
                 elif reason == "unknownObject":
-                    self.log(f"Unknown object {args}", level='warning')
+                    self.log(f"Unknown object {args}", level="warning")
                     raise UnknownObjectError(f"Unknown object {args}")
                 else:
                     # Other error... consider NoResponseFromController (65)

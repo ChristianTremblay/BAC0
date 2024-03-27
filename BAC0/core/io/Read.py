@@ -140,7 +140,7 @@ class ReadProperty:
 
         except ErrorRejectAbortNack as err:
             response = err
-            self.log(f"Error : {err}", level='error')
+            self.log(f"Error : {err}", level="error")
         except ObjectError:
             raise UnknownObjectError(f"Unknown object {args}")
 
@@ -238,11 +238,11 @@ class ReadProperty:
         values = []
         dict_values = {}
 
-        self.log(f"Parameter list : {parameter_list}", level='debug')
+        self.log(f"Parameter list : {parameter_list}", level="debug")
         try:
             # build an ReadPropertyMultiple request
             response = await _app.read_property_multiple(address, parameter_list)
-            self.log(f"Response : {response}", level='debug')
+            self.log(f"Response : {response}", level="debug")
 
         except ErrorRejectAbortNack as err:
             # construction error
@@ -253,7 +253,7 @@ class ReadProperty:
             if "unrecognized-service" in str(err.reason):
                 raise UnrecognizedService()
             if "unknown-object" in str(err.reason):
-                self.log(f"Unknown object {args}", level='warning')
+                self.log(f"Unknown object {args}", level="warning")
                 raise UnknownObjectError(f"Unknown object {args}")
             if "unknown-property" in str(err.reason):
                 values.append("")  # type: ignore[arg-type]
@@ -330,7 +330,7 @@ class ReadProperty:
         if arr_index is None:
             arr_index = int(args[4]) if len(args) == 5 else arr_index
         params = (device_address, object_identifier, prop_id, arr_index)
-        self.log(f"{'REQUEST':<20} {params!r}", level='debug')
+        self.log(f"{'REQUEST':<20} {params!r}", level="debug")
         return params
 
     async def build_rpm_request(
@@ -342,7 +342,7 @@ class ReadProperty:
         property_array_index = None
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
-        self.log(args, level='debug')
+        self.log(args, level="debug")
 
         vendor_id = vendor_id
         address = Address(args.pop(0))
@@ -443,7 +443,7 @@ class ReadProperty:
             _, object_identifier, properties, _, _ = each
             request.append(ObjectIdentifier(object_identifier))
             request.append([PropertyReference(x) for x in properties.split()])
-        self.log(f"RPM Request from Regex : {address} | {request}", level='debug')
+        self.log(f"RPM Request from Regex : {address} | {request}", level="debug")
         return (address, request)
 
     async def build_rpm_request_from_dict(self, request_dict, vendor_id=0):
@@ -557,7 +557,7 @@ class ReadProperty:
 
         if len(args) == 5:
             request.propertyArrayIndex = int(args[4])
-        self.log(f"{'REQUEST':<20} {request!r}", level='debug')
+        self.log(f"{'REQUEST':<20} {request!r}", level="debug")
         return request
 
     async def readRange(
@@ -639,7 +639,7 @@ class ReadProperty:
                 bacoid=bacoid,
             )
 
-            self.log(f"{'request':<20} {request!r}", level='debug')
+            self.log(f"{'request':<20} {request!r}", level="debug")
 
         except ReadRangeException as error:
             # construction error

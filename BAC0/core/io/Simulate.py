@@ -69,7 +69,9 @@ class Simulation:
             try:
                 await self.out_of_service(args)
             except NoResponseFromController as e:
-                self.log(f"Failed to write to OutOfService property ({e})", level='warning')
+                self.log(
+                    f"Failed to write to OutOfService property ({e})", level="warning"
+                )
 
             try:
                 if await self.is_out_of_service(args):
@@ -79,7 +81,9 @@ class Simulation:
                 else:
                     raise OutOfServiceNotSet()
             except NoResponseFromController as e:
-                self.log(f"Failed to write to OutOfService property ({e})", level='warning')
+                self.log(
+                    f"Failed to write to OutOfService property ({e})", level="warning"
+                )
 
     async def is_out_of_service(self, args):
         if not self._started:
@@ -121,7 +125,7 @@ class Simulation:
         try:
             await self._write(f"{address} {obj_type} {obj_inst} outOfService True")
         except NoResponseFromController as e:
-            self.log(f"Failed to write to OutOfService property ({e})", level='warning')
+            self.log(f"Failed to write to OutOfService property ({e})", level="warning")
 
     async def release(self, args):
         """
@@ -146,7 +150,7 @@ class Simulation:
         try:
             await self._write(f"{address} {obj_type} {obj_inst} outOfService False")
         except NoResponseFromController as e:
-            self.log(f"Failed to write to OutOfService property ({e})", level='warning')
+            self.log(f"Failed to write to OutOfService property ({e})", level="warning")
 
         try:
             if await self.is_out_of_service(args) is True:
@@ -154,4 +158,4 @@ class Simulation:
             else:
                 pass  # Everything is ok"
         except NoResponseFromController as e:
-            self.log(f"Failed to read OutOfService property ({e})", level='warning')
+            self.log(f"Failed to read OutOfService property ({e})", level="warning")

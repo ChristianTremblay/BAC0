@@ -122,7 +122,7 @@ class Base:
         location="Bromont, Québec",
         spin=None,
     ):
-        self.log("Configurating app", level='debug')
+        self.log("Configurating app", level="debug")
 
         self.timehandler = TimeHandler()
 
@@ -197,7 +197,7 @@ class Base:
         Define the local device, including services supported.
         Once defined, start the BACnet stack in its own thread.
         """
-        self.log("Create Local Device", level='debug')
+        self.log("Create Local Device", level="debug")
         try:
             # make a device object
             self.this_device = LocalDeviceObject(
@@ -251,21 +251,21 @@ class Base:
                     subscription_contexts=self.subscription_contexts,
                 )
                 app_type = "Simple BACnet/IP App"
-            self.log("Starting", level='debug')
+            self.log("Starting", level="debug")
             self._initialized = True
             try:
                 self._startAppThread()
                 Base._used_ips.add(self.localIPAddr)
-                self.log(f"Registered as {app_type}", level='info')
+                self.log(f"Registered as {app_type}", level="info")
             except OSError as error:
-                self.log(f"Error opening socket: {error}", level='warning')
+                self.log(f"Error opening socket: {error}", level="warning")
                 raise InitializationError(f"Error opening socket: {error}")
-            self.log("Running", level='debug')
+            self.log("Running", level="debug")
         except OSError as error:
-            self.log(f"an error has occurred: {error}", level='error')
+            self.log(f"an error has occurred: {error}", level="error")
             raise InitializationError(f"Error starting app: {error}")
         finally:
-            self.log("finally", level='debug')
+            self.log("finally", level="debug")
 
     def register_foreign_device(self, addr=None, ttl=0):
         self.this_application.bip.register(addr, ttl)
@@ -277,9 +277,9 @@ class Base:
         """
         Stop the BACnet stack.  Free the IP socket.
         """
-        self.log("Stopping All running tasks", level='debug')
+        self.log("Stopping All running tasks", level="debug")
         stopAllTasks()
-        self.log("Stopping BACnet stack", level='debug')
+        self.log("Stopping BACnet stack", level="debug")
         # Freeing socket
         try:
             self.this_application.mux.directPort.handle_close()
@@ -291,7 +291,7 @@ class Base:
         self.t.join()
         self._started = False
         Base._used_ips.discard(self.localIPAddr)
-        self.log("BACnet stopped", level='info')
+        self.log("BACnet stopped", level="info")
 
     def _startAppThread(self):
         """
@@ -299,7 +299,7 @@ class Base:
         As signal cannot be called in another thread than the main thread
         when calling startBacnetIPApp, we must pass None to both parameters
         """
-        self.log("Starting app...", level='info')
+        self.log("Starting app...", level="info")
         enable_sleeping(0.0005)
         if self._spin:
             kwargs = {"sigterm": None, "sigusr1": None, "spin": self._spin}
@@ -313,7 +313,7 @@ class Base:
         try:
             self.t.start()
             self._started = True
-            self.log("BAC0 started", level='info')
+            self.log("BAC0 started", level="info")
         except OSError:
             stopBacnetIPApp()
             self.t.join()

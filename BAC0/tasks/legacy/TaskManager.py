@@ -34,7 +34,7 @@ class Manager:
         if not Manager.enable:
             self.start_service()
 
-        self.log("Task Manager Initiated", level='debug')
+        self.log("Task Manager Initiated", level="debug")
 
     @classmethod
     def process(cls):
@@ -54,9 +54,7 @@ class Manager:
                         task.next_execution = task.previous_execution + task.delay
                         cls.schedule_task(task)
 
-                    cls._log.debug(
-                        f"Task {task.id} | {task.name} executed. {task}"
-                    )
+                    cls._log.debug(f"Task {task.id} | {task.name} executed. {task}")
             except IndexError:
                 cls._log.debug("Task Manager waiting for tasks...")
                 time.sleep(1)
@@ -67,13 +65,9 @@ class Manager:
                 cls.tasks.remove(task.id)
             except Exception as error:
                 if task.name == "Ping Task":
-                    cls._log.warning(
-                        f"Ping failed with error {error} ({task})."
-                    )
+                    cls._log.warning(f"Ping failed with error {error} ({task}).")
                 else:
-                    cls._log.error(
-                        f"Super Mega Giga big error {error}. Removing task."
-                    )
+                    cls._log.error(f"Super Mega Giga big error {error}. Removing task.")
                     cls.tasks.remove(task.id)
             else:
                 if not cls.manager.is_alive() and cls.enable:
@@ -184,10 +178,10 @@ class Task(object):
 
         # self.log('Stat for task {}'.format(self), level='info')
         if self.average_latency > Task.high_latency:
-            self.log(f"High latency for {self.name}", level='warning')
-            self.log(f"Stats : {self}", level='warning')
+            self.log(f"High latency for {self.name}", level="warning")
+            self.log(f"Stats : {self}", level="warning")
 
-        self.log(f"Executing : {self.name}", level='debug')
+        self.log(f"Executing : {self.name}", level="debug")
         self.execution_time = time.time() - _start_time
 
     def start(self):

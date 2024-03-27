@@ -45,13 +45,11 @@ class Update_local_COV(Task):
                     obj, None
                 )
                 if (not cov_detection) or (len(cov_detection.cov_subscriptions) == 0):
-                    self._log.debug(
-                        f"no subscriptions for that object : {objName}"
-                    )
+                    self._log.debug(f"no subscriptions for that object : {objName}")
                     continue
 
                 # tell it to send out notifications
-                self.log(f"Sending COV for {objName}", level='info')
+                self.log(f"Sending COV for {objName}", level="info")
                 deferred(cov_detection.send_cov_notifications)
 
         except Exception as error:

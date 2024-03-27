@@ -45,7 +45,8 @@ class AddDevice(Task):
     def find_address(self, address, boid):
         if self.network.discoveredDevices is None:
             self.log(
-                "Device cannot be created yet, use bacnet.discover() or provide both address and Boid", level='error'
+                "Device cannot be created yet, use bacnet.discover() or provide both address and Boid",
+                level="error",
             )
             raise DeviceNotFoundError(
                 "Device cannot be created yet, use bacnet.discover() or provide both address and Boid"
@@ -54,24 +55,26 @@ class AddDevice(Task):
             for each in self.network.discoveredDevices:
                 address, boid = each
                 if address in str(address) or boid in str(boid):
-                    self.log(f"Found {each}", level='info')
+                    self.log(f"Found {each}", level="info")
                     return each
         self.log(
-            "Device not discovered yet, use bacnet.discover() or provide both address and Boid", level='error'
+            "Device not discovered yet, use bacnet.discover() or provide both address and Boid",
+            level="error",
         )
 
     def task(self, **kwargs):
         try:
-            self.log(kwargs, level='info')
+            self.log(kwargs, level="info")
             dev = Device(kwargs)
             self.log(
-                f"Device named {dev.properties.name} ({dev.properties.address}/{dev.properties.device_id}) created. Retrieve it using bacnet[boid]", level='info'
+                f"Device named {dev.properties.name} ({dev.properties.address}/{dev.properties.device_id}) created. Retrieve it using bacnet[boid]",
+                level="info",
             )
             if self.callback is not None:
-                self.log(f"Executing callback for {dev.properties.name}", level='info')
+                self.log(f"Executing callback for {dev.properties.name}", level="info")
                 self.callback()
         except BadDeviceDefinition as error:
-            self.log(f"Bad device definition ({error})", level='error')
+            self.log(f"Bad device definition ({error})", level="error")
 
 
 class DeviceNotFoundError(Exception):

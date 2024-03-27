@@ -46,7 +46,7 @@ class Alias:
         will return an acknowledgement with its routing table configuration.
         """
         # build a request
-        self.log(f"Addr : {address}", level='info')
+        self.log(f"Addr : {address}", level="info")
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
         await _app.nse.initialize_routing_table()

@@ -57,7 +57,7 @@ class DeviceCommunicationControl:
 
         request.password = CharacterString(password)
 
-        self.log(f"{'- request:':>12} {request}", level='debug')
+        self.log(f"{'- request:':>12} {request}", level="debug")
 
         iocb = IOCB(request)  # make an IOCB
 
@@ -71,8 +71,8 @@ class DeviceCommunicationControl:
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
-                self.log("Not an ack, see debug for more infos.", level='warning')
-                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level='debug')
+                self.log("Not an ack, see debug for more infos.", level="warning")
+                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level="debug")
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -80,4 +80,7 @@ class DeviceCommunicationControl:
             reason = find_reason(apdu)
             raise NoResponseFromController(f"APDU Abort Reason : {reason}")
 
-        self.log(f"DeviceCommunicationControl request sent to device : {address}", level='info')
+        self.log(
+            f"DeviceCommunicationControl request sent to device : {address}",
+            level="info",
+        )

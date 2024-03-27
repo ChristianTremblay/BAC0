@@ -183,7 +183,9 @@ class Complete(Lite, Stats_Mixin):
             self.start_bokeh()
             self.FlaskServer.start()
         else:
-            self.log("Bokeh server not started. Trend feature will not work", level='warning')
+            self.log(
+                "Bokeh server not started. Trend feature will not work", level="warning"
+            )
         self.discover()
 
     @property
@@ -198,7 +200,7 @@ class Complete(Lite, Stats_Mixin):
                 deviceName = self.read(f"{device[0]} device {device[1]} objectName")
                 vendorName = self.read(f"{device[0]} device {device[1]} vendorName")
             except NoResponseFromController:
-                self.log(f"No response from {device}", level='info')
+                self.log(f"No response from {device}", level="info")
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
         df = pd.DataFrame(
@@ -243,17 +245,18 @@ class Complete(Lite, Stats_Mixin):
         except OSError as error:
             self.bokehserver = False
             self.log(
-                "[bokeh serve] required for trending (controller.chart) features", level='error'
+                "[bokeh serve] required for trending (controller.chart) features",
+                level="error",
             )
-            self.log(error, level='error')
+            self.log(error, level="error")
 
         except RuntimeError:
             self.bokehserver = False
-            self.log("Server already running", level='warning')
+            self.log("Server already running", level="warning")
 
         except BokehServerCantStart:
             self.bokehserver = False
-            self.log("No Bokeh Server - controller.chart not available", level='error')
+            self.log("No Bokeh Server - controller.chart not available", level="error")
 
     def __repr__(self):
         return "Bacnet Network using ip {} with device id {} | Featuring Bokeh and Pandas".format(

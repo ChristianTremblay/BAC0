@@ -106,8 +106,8 @@ class Calendar:
             apdu = iocb.ioResponse
 
             if not isinstance(apdu, SimpleAckPDU):  # expect an ACK
-                self.log("Not an ack, see debug for more infos.", level='warning')
-                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level='debug')
+                self.log("Not an ack, see debug for more infos.", level="warning")
+                self.log(f"Not an ack. | APDU : {apdu} / {type(apdu)}", level="debug")
                 return
 
         if iocb.ioError:  # unsuccessful: error/reject/abort
@@ -140,7 +140,7 @@ class Calendar:
             )
             dict_calendar = self.decode_dateList(dateList_object)
         except Exception as error:
-            self.log(f"exception: {error!r}", level='error')
+            self.log(f"exception: {error!r}", level="error")
             return {}
 
         return dict_calendar

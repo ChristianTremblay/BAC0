@@ -121,7 +121,8 @@ class Lite(
     ) -> None:
         self._initialized = False
         self.log(
-            f"Starting BAC0 version {version} ({self.__module__.split('.')[-1]})", level='info'
+            f"Starting BAC0 version {version} ({self.__module__.split('.')[-1]})",
+            level="info",
         )
         self.log("Use BAC0.log_level to adjust verbosity of the app.", level="info")
         self.log(
@@ -171,7 +172,7 @@ class Lite(
             bdtable=bdtable,
             **params,
         )
-        self.log(f"Device instance (id) : {self.Boid}", level='info')
+        self.log(f"Device instance (id) : {self.Boid}", level="info")
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
 
@@ -241,7 +242,9 @@ class Lite(
                         f"Error writing points of {each} to InfluxDB : {error}. Stopping task."
                     )
                     await self._write_to_db.stop()
-                    self.log("Write to InfluxDB Task stopped. Restarting", level='warning')
+                    self.log(
+                        "Write to InfluxDB Task stopped. Restarting", level="warning"
+                    )
                     self.create_save_to_influxdb_task(delay=20)
 
     def register_device(
@@ -389,10 +392,10 @@ class Lite(
                         f"{device_address} device {devId} vendorName"
                     )
                 except NoResponseFromController:
-                    self.log(f"No response from {k}", level='warning')
+                    self.log(f"No response from {k}", level="warning")
                     continue
             except (NoResponseFromController, Timeout):
-                self.log(f"No response from {k}", level='warning')
+                self.log(f"No response from {k}", level="warning")
                 continue
             lst.append((deviceName, vendorName, devId, device_address, network_number))
         if RICH:
@@ -449,7 +452,7 @@ class Lite(
             for device in self._registered_devices:
                 if str(device.properties.device_id) == str(boid_or_localobject):
                     return device
-            self.log(f"{boid_or_localobject} not found", level='error')
+            self.log(f"{boid_or_localobject} not found", level="error")
         else:
             return item
 

@@ -113,12 +113,15 @@ class Lite(
         **params,
     ) -> None:
         self.log(
-            f"Starting BAC0 version {version} ({self.__module__.split('.')[-1]})", level='info'
+            f"Starting BAC0 version {version} ({self.__module__.split('.')[-1]})",
+            level="info",
         )
-        self.log("Use BAC0.log_level to adjust verbosity of the app.", level='info')
-        self.log("Ex. BAC0.log_level('silence') or BAC0.log_level('error')", level='info')
+        self.log("Use BAC0.log_level to adjust verbosity of the app.", level="info")
+        self.log(
+            "Ex. BAC0.log_level('silence') or BAC0.log_level('error')", level="info"
+        )
 
-        self.log("Configurating app", level='debug')
+        self.log("Configurating app", level="debug")
         self._registered_devices = weakref.WeakValueDictionary()
 
         # Ping task will deal with all registered device and disconnect them if they do not respond.
@@ -161,7 +164,7 @@ class Lite(
             bdtable=bdtable,
             **params,
         )
-        self.log(f"Device instance (id) : {self.Boid}", level='info')
+        self.log(f"Device instance (id) : {self.Boid}", level="info")
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
 
@@ -177,7 +180,9 @@ class Lite(
         )
         self._update_local_cov_task.task.start()
         self._update_local_cov_task.running = True
-        self.log("Update Local COV Task started (required to support COV)", level='info')
+        self.log(
+            "Update Local COV Task started (required to support COV)", level="info"
+        )
 
         # Activate InfluxDB if params are available
         if db_params and INFLUXDB:
@@ -263,7 +268,7 @@ class Lite(
         self.what_is_network_number()
         # Try to find local routers...
         self.whois_router_to_network()
-        self.log(f"Found those networks : {self.known_network_numbers}", level='info')
+        self.log(f"Found those networks : {self.known_network_numbers}", level="info")
 
         if networks:
             if isinstance(networks, list):
@@ -279,7 +284,7 @@ class Lite(
 
         if _networks:
             for network in _networks:
-                self.log(f"Discovering network {network}", level='info')
+                self.log(f"Discovering network {network}", level="info")
                 _res = self.whois(
                     "{}:* {} {}".format(
                         network,
@@ -294,7 +299,8 @@ class Lite(
 
         else:
             self.log(
-                f"No BACnet network found, attempting a simple whois using provided device instances limits ({deviceInstanceRangeLowLimit} - {deviceInstanceRangeHighLimit})", level='info'
+                f"No BACnet network found, attempting a simple whois using provided device instances limits ({deviceInstanceRangeLowLimit} - {deviceInstanceRangeHighLimit})",
+                level="info",
             )
             _res = self.whois(
                 f"{deviceInstanceRangeLowLimit} {deviceInstanceRangeHighLimit}",
@@ -426,15 +432,18 @@ class Lite(
                     f"{device[0]} device {device[1]} objectName vendorName"
                 )
             except (UnrecognizedService, ValueError):
-                self.log(f"Unrecognized service for {device[0]} | {device[1]}", level='warning')
+                self.log(
+                    f"Unrecognized service for {device[0]} | {device[1]}",
+                    level="warning",
+                )
                 try:
                     deviceName = self.read(f"{device[0]} device {device[1]} objectName")
                     vendorName = self.read(f"{device[0]} device {device[1]} vendorName")
                 except NoResponseFromController:
-                    self.log(f"No response from {device}", level='warning')
+                    self.log(f"No response from {device}", level="warning")
                     continue
             except (NoResponseFromController, Timeout):
-                self.log(f"No response from {device}", level='warning')
+                self.log(f"No response from {device}", level="warning")
                 continue
             lst.append((deviceName, vendorName, device[0], device[1]))
         return lst  # type: ignore[return-value]
@@ -447,7 +456,7 @@ class Lite(
         return list(self._points_to_trend.values())
 
     def disconnect(self) -> None:
-        self.log("Disconnecting", level='debug')
+        self.log("Disconnecting", level="debug")
         for each in self.registered_devices:
             each.disconnect()
         super().disconnect()
@@ -461,6 +470,6 @@ class Lite(
             for device in self._registered_devices:
                 if str(device.properties.device_id) == str(boid_or_localobject):
                     return device
-            self.log(f"{boid_or_localobject} not found", level='error')
+            self.log(f"{boid_or_localobject} not found", level="error")
         else:
             return item

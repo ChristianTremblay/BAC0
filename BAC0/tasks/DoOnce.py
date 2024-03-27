@@ -51,7 +51,7 @@ class DoOnce(OneShotTask):
                 self.func(self.fnc_args)
         else:
             if asyncio.iscoroutinefunction(self.func):
-                self.log(f"Running {self.func.__name__}", level='debug')
+                self.log(f"Running {self.func.__name__}", level="debug")
                 await self.func()
             else:
                 self.func()

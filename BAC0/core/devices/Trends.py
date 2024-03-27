@@ -143,7 +143,7 @@ class _TrendLog(TrendLogProperties):
         _count = max(_actual_index - start, 0)
         steps = int(_count / RECORDS) + int(1 if (_count % RECORDS) > 0 else 0)
 
-        self.log(f"Reading log : {start} {_count} {steps}", level='debug')
+        self.log(f"Reading log : {start} {_count} {steps}", level="debug")
 
         _from = start
         for each in range(steps):
@@ -173,7 +173,7 @@ class _TrendLog(TrendLogProperties):
             )
             _choice, _logDatum = self.read_logDatum(each.logDatum)
             _status = each.statusFlags
-            self.log(_index, _logDatum, _status, _choice, level='debug')
+            self.log(_index, _logDatum, _status, _choice, level="debug")
             his_component = HistoryComponent(_index, _logDatum, _status, _choice)
             if his_component not in self.properties._history_components:
                 self.properties._history_components.append(his_component)

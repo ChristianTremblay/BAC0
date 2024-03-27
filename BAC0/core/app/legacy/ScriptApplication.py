@@ -68,7 +68,7 @@ class common_mixin:
 
     def do_IAmRequest(self, apdu):
         """Given an I-Am request, cache it."""
-        self.log(f"do_IAmRequest {apdu!r}", level='debug')
+        self.log(f"do_IAmRequest {apdu!r}", level="debug")
 
         # build a key from the source, just use the instance number
         key = (str(apdu.pduSource), apdu.iAmDeviceIdentifier[1])
@@ -77,7 +77,7 @@ class common_mixin:
 
     def do_IHaveRequest(self, apdu):
         """Given an I-Have request, cache it."""
-        self.log(f"do_IHaveRequest {apdu!r}", level='debug')
+        self.log(f"do_IHaveRequest {apdu!r}", level="debug")
 
         # build a key from the source, using object name
         key = (str(apdu.pduSource), apdu.objectName)
@@ -93,7 +93,7 @@ class common_mixin:
             apdu.deviceInstanceRangeLowLimit,
             apdu.deviceInstanceRangeHighLimit,
         )
-        self.log(f"do_WhoIsRequest from {key[0]} | {key[1]} to {key[2]}", level='debug')
+        self.log(f"do_WhoIsRequest from {key[0]} | {key[1]} to {key[2]}", level="debug")
 
         # count the times this has been received
         self.who_is_counter[key] += 1
@@ -108,7 +108,7 @@ class common_mixin:
         if high_limit is not None and self.localDevice.objectIdentifier[1] > high_limit:
             return
         # generate an I-Am
-        self.log("Responding to Who is by a Iam", level='debug')
+        self.log("Responding to Who is by a Iam", level="debug")
         self.iam_req.pduDestination = apdu.pduSource
         iocb = IOCB(self.iam_req)  # make an IOCB
         deferred(self.request_io, iocb)
@@ -118,7 +118,8 @@ class common_mixin:
         context = self.subscription_contexts.get(apdu.subscriberProcessIdentifier, None)
         if not context or apdu.pduSource != context.address:
             self.log(
-                f"Unsollicited COV Notification received from {apdu.pduSource} ({apdu}). Have you restarted the application recently ?", level='warning'
+                f"Unsollicited COV Notification received from {apdu.pduSource} ({apdu}). Have you restarted the application recently ?",
+                level="warning",
             )
             # this is turned into cancel_cov request and sent back to the client
 
@@ -131,7 +132,7 @@ class common_mixin:
 
             # send a confirmation
             self.response(response)
-            self.log(f"Confirmed COV Notification: {elements}", level='debug')
+            self.log(f"Confirmed COV Notification: {elements}", level="debug")
             self.subscription_contexts["context_callback"](elements)
 
             # execute callback
@@ -146,7 +147,7 @@ class common_mixin:
 
         # now tell the context object
         elements = context.cov_notification(apdu)
-        self.log(f"Unconfirmed COV Notification: {elements}", level='debug')
+        self.log(f"Unconfirmed COV Notification: {elements}", level="debug")
         self.subscription_contexts["context_callback"](elements)
 
         # execute callback
@@ -154,21 +155,21 @@ class common_mixin:
             context.callback(elements=elements)
 
     def do_ReadRangeRequest(self, apdu):
-        self.log("do_ReadRangeRequest %r", apdu, level='debug')
+        self.log("do_ReadRangeRequest %r", apdu, level="debug")
 
         # extract the object identifier
         objId = apdu.objectIdentifier
 
         # get the object
         obj = self.get_object_id(objId)
-        self.log("    - object: %r", obj, level='debug')
+        self.log("    - object: %r", obj, level="debug")
 
         if not obj:
             raise ExecutionError(errorClass="object", errorCode="unknownObject")
 
         # get the datatype
         datatype = obj.get_datatype(apdu.propertyIdentifier)
-        self.log("    - datatype: %r", datatype, level='debug')
+        self.log("    - datatype: %r", datatype, level="debug")
 
         # must be a list, or an array of lists
         if issubclass(datatype, List):
@@ -183,18 +184,20 @@ class common_mixin:
             raise ExecutionError(errorClass="property", errorCode="propertyIsNotAList")
 
         # get the value
-        self.log(apdu.__dict__, level='debug')
+        self.log(apdu.__dict__, level="debug")
         value = obj.ReadProperty(apdu.propertyIdentifier, apdu.propertyArrayIndex)
-        self.log(f"    - value: {value.__repr__()} | of type {type(value)}", level='debug')
+        self.log(
+            f"    - value: {value.__repr__()} | of type {type(value)}", level="debug"
+        )
         if value is None:
             raise PropertyError(apdu.propertyIdentifier)
         if isinstance(value, List):
-            self.log("    - value is a list of: %r", datatype.subtype, level='debug')
+            self.log("    - value is a list of: %r", datatype.subtype, level="debug")
             # datatype = datatype.subtype
 
         if apdu.range.byPosition:
             range_by_position = apdu.range.byPosition
-            self.log("    - range_by_position: %r", range_by_position, level='debug')
+            self.log("    - range_by_position: %r", range_by_position, level="debug")
 
         elif apdu.range.bySequenceNumber:
             range_by_sequence_number = apdu.range.bySequenceNumber
@@ -204,7 +207,7 @@ class common_mixin:
 
         elif apdu.range.byTime:
             range_by_time = apdu.range.byTime
-            self.log("    - range_by_time: %r", range_by_time, level='debug')
+            self.log("    - range_by_time: %r", range_by_time, level="debug")
 
         else:
             raise RejectException("missingRequiredParameter")
@@ -222,8 +225,8 @@ class common_mixin:
         item_data = SequenceOfAny()
         item_data.cast_in(value)
         resp.itemData = item_data
-        self.log("    - itemData : %r", resp.itemData, level='debug')
-        self.log("    - resp: %r", resp, level='debug')
+        self.log("    - itemData : %r", resp.itemData, level="debug")
+        self.log("    - resp: %r", resp, level="debug")
         self.response(resp)
         # return the result
         # iocb = IOCB(resp)  # make an IOCB

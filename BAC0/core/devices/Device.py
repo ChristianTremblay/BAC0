@@ -192,7 +192,9 @@ class Device(SQLMixin):
         :type newstate: Any
         :return: None
         """
-        self.log(f"Changing device state to {str(newstate).split('.')[-1]}", level='info')
+        self.log(
+            f"Changing device state to {str(newstate).split('.')[-1]}", level="info"
+        )
         self.__class__ = newstate
         await self._init_state()
 
@@ -362,7 +364,8 @@ class Device(SQLMixin):
     def find_overrides(self, force: bool = False) -> None:
         if self._find_overrides_running and not force:
             self.log(
-                f"Already running ({self._find_overrides_progress:.1%})... please wait.", level='warning'
+                f"Already running ({self._find_overrides_progress:.1%})... please wait.",
+                level="warning",
             )
             return
         lst = []
@@ -393,7 +396,8 @@ class Device(SQLMixin):
     def release_all_overrides(self, force: bool = False) -> None:
         if self._release_overrides_running and not force:
             self.log(
-                f"Already running ({self._release_overrides_progress:.1%})... please wait.", level='warning'
+                f"Already running ({self._release_overrides_progress:.1%})... please wait.",
+                level="warning",
             )
             return
         self._release_overrides_running = True
@@ -410,7 +414,7 @@ class Device(SQLMixin):
                 self.log("Overrides found... releasing them", level="info")
                 self.log("=================================", level="info")
                 for idx, point in enumerate(self.properties.points_overridden):
-                    self.log(f"Releasing {point}", level='info')
+                    self.log(f"Releasing {point}", level="info")
                     point.release_ovr()
                     self._release_overrides_progress = (idx / total) / 2 + 0.5
             else:
@@ -510,7 +514,7 @@ class DeviceConnected(Device):
             return ("Not Found", "", [], [])
 
         except SegmentationNotSupported:
-            self.log("Segmentation not supported", level='warning')
+            self.log("Segmentation not supported", level="warning")
             self.segmentation_supported = False
             await self.new_state(DeviceDisconnected)
 
@@ -861,7 +865,8 @@ class DeviceDisconnected(Device):
             if db:
                 await self.new_state(DeviceFromDB)
             self.log(
-                'You can reconnect to network using : "device.connect(network=bacnet)"', level='info'
+                'You can reconnect to network using : "device.connect(network=bacnet)"',
+                level="info",
             )
 
         else:
@@ -895,14 +900,16 @@ class DeviceDisconnected(Device):
                 await self.new_state(RPDeviceConnected)
 
             except (NoResponseFromController, AttributeError) as error:
-                self.log("BAC0 got no response from controller: %s", error, level='warning')
+                self.log(
+                    "BAC0 got no response from controller: %s", error, level="warning"
+                )
                 if self.properties.db_name:
                     await self.new_state(DeviceFromDB)
                 else:
                     self._log.warning(
                         "Offline: provide database name to load stored data."
                     )
-                    self.log("Ex. controller.connect(db = 'backup')", level='warning')
+                    self.log("Ex. controller.connect(db = 'backup')", level="warning")
 
     def df(self, list_of_points, force_read=True):
         raise DeviceNotConnected("Must connect to BACnet or database")
@@ -1079,7 +1086,8 @@ class DeviceFromDB(DeviceConnected):
         self.properties.default_history_size = self._props["history_size"]
         self.log("Device restored from db", level="info")
         self.log(
-            'You can reconnect to network using : "device.connect(network=bacnet)"', level='info'
+            'You can reconnect to network using : "device.connect(network=bacnet)"',
+            level="info",
         )
 
     @property

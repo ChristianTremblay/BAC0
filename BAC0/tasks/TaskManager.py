@@ -77,10 +77,14 @@ class Task(object):
             while True:
                 self.count += 1
                 _start_time = time.time()
-                self.log(f"Executing : {self.name} | Count : {self.count}", level='debug')
-                self.log(f"Start Time : {_start_time}", level='debug')
+                self.log(
+                    f"Executing : {self.name} | Count : {self.count}", level="debug"
+                )
+                self.log(f"Start Time : {_start_time}", level="debug")
                 if self.previous_execution:
-                    self.log(f"Previous execution : {self.previous_execution}", level='debug')
+                    self.log(
+                        f"Previous execution : {self.previous_execution}", level="debug"
+                    )
                 else:
                     self.log("First Run", level="debug")
 
@@ -106,11 +110,11 @@ class Task(object):
 
                 # self.log('Stat for task {}'.format(self), level='info')
                 if self.average_latency > Task.high_latency:
-                    self.log(f"High latency for {self.name}", level='warning')
-                    self.log(f"Stats : {self}", level='warning')
+                    self.log(f"High latency for {self.name}", level="warning")
+                    self.log(f"Stats : {self}", level="warning")
 
                 self.execution_time = time.time() - _start_time
-                self.log(f"Execution Time : {self.execution_time}", level='debug')
+                self.log(f"Execution Time : {self.execution_time}", level="debug")
                 self.previous_execution = _start_time
                 self.next_execution = time.time() + self.delay
                 await asyncio.sleep(self.delay)

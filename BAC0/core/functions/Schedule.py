@@ -123,7 +123,7 @@ class Schedule:
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
 
-        self.log(f"{'- request:':>12} {request}", level='debug')
+        self.log(f"{'- request:':>12} {request}", level="debug")
 
         _app.request(request)
 
@@ -203,7 +203,7 @@ class Schedule:
                 for each in object_references
             ]
         except Exception as error:
-            self.log(f"Error {error}", level='error')
+            self.log(f"Error {error}", level="error")
             # Not used in device, not linked...
             _state_text = range(255)
             schedule["object_references"] = []

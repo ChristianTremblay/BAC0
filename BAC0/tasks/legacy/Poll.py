@@ -176,9 +176,7 @@ class DeviceNormalPoll(DevicePoll):
         """
         if delay < 10:
             delay = 10
-        self._log.info(
-            f"Device defined for normal polling with a delay of {delay}sec"
-        )
+        self._log.info(f"Device defined for normal polling with a delay of {delay}sec")
         DevicePoll.__init__(
             self, device=device, name=name, delay=delay, prefix="rpm_normal_poll"
         )
@@ -207,9 +205,7 @@ class DeviceFastPoll(DevicePoll):
             delay = 0.01
         elif delay > 10:
             delay = 10
-        self._log.warning(
-            f"Device defined for fast polling with a delay of {delay}sec"
-        )
+        self._log.warning(f"Device defined for fast polling with a delay of {delay}sec")
         DevicePoll.__init__(
             self, device=device, name=name, delay=delay, prefix="rpm_fast_poll"
         )

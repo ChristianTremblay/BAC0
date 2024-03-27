@@ -497,7 +497,7 @@ class Point:
         AnalogValue are written to
         AnalogOutput are overridden
         """
-        self.log(f"Setting to {value}", level='debug')
+        self.log(f"Setting to {value}", level="debug")
         if "characterstring" in self.properties.type:
             asyncio.create_task(self.write(value))
 
@@ -520,7 +520,7 @@ class Point:
             if str(value).lower() == "auto":
                 await self.release()
             else:
-                self.log(f"Simulating to {value}", level='debug')
+                self.log(f"Simulating to {value}", level="debug")
                 await self.sim(value)
 
     def _set(self, value):
@@ -678,7 +678,7 @@ class Point:
             lifetime: int = None,
             identifier: int = None,
         ):
-            self.log(f"Subscribing to COV for {self.properties.name}", level='info')
+            self.log(f"Subscribing to COV for {self.properties.name}", level="info")
             try:
                 async with _app.change_of_value(
                     address,
@@ -701,7 +701,8 @@ class Point:
                         if incoming in done:
                             property_identifier, property_value = incoming.result()
                             self.log(
-                                f"COV notification received for {self.properties.name} | {property_identifier} -> {type(property_identifier)} with value {property_value} | {property_value} -> {type(property_value)}", level='debug'
+                                f"COV notification received for {self.properties.name} | {property_identifier} -> {type(property_identifier)} with value {property_value} | {property_value} -> {type(property_value)}",
+                                level="debug",
                             )
                             if property_identifier == PropertyIdentifier.presentValue:
                                 val = extract_value_from_primitive_data(property_value)
@@ -713,7 +714,7 @@ class Point:
                                     f"Unsupported COV property identifier {property_identifier}"
                                 )
             except Exception as e:
-                self.log(f"Error in COV subscription : {e}", level='error')
+                self.log(f"Error in COV subscription : {e}", level="error")
 
         asyncio.create_task(
             cov_ctxmgr(
@@ -726,7 +727,7 @@ class Point:
         )
 
     def cancel_cov(self):
-        self.log(f"Canceling COV subscription for {self.properties.name}", level='info')
+        self.log(f"Canceling COV subscription for {self.properties.name}", level="info")
         self.cov_registered = False
 
     def update_description(self, value):
@@ -772,13 +773,14 @@ class Point:
                 loop = asyncio.get_running_loop()
                 loop.create_task(self._update_value())
             except Exception as e:
-                self.log(f"Error updating value : {e}", level='error')
+                self.log(f"Error updating value : {e}", level="error")
                 return self.lastValue
         if datetime.now().astimezone() - self._history.timestamp[-1] > timedelta(
             seconds=60
         ):
             self.log(
-                f"Last known value {self._history.value[-1]} with timestamp of {self._history.timestamp[-1]}, older than 10sec {datetime.now().astimezone()}. Consider using dev['point'].lastValue if you trust polling of device of manage a up to date read in asynchronous side of your app for better precision", level='warning'
+                f"Last known value {self._history.value[-1]} with timestamp of {self._history.timestamp[-1]}, older than 10sec {datetime.now().astimezone()}. Consider using dev['point'].lastValue if you trust polling of device of manage a up to date read in asynchronous side of your app for better precision",
+                level="warning",
             )
         return self.lastValue
 
