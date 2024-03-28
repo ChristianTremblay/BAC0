@@ -151,7 +151,7 @@ class VirtualPoint:
 
         self.fake_pv = None
         if initial_value:
-            self._set(initial_value)
+            self._set(float(initial_value))
 
     def chart(self, remove=False):
         """
@@ -163,8 +163,8 @@ class VirtualPoint:
         if value == "auto":
             pass
         elif self._history_fn is None:
-            self.fake_pv = value
-            self._trend(value)
+            self.fake_pv = float(value)
+            self._trend(float(value))
         else:
             self._log.warning(
                 "Point is configured as a function of other points. You can't set a new value"
