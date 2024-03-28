@@ -17,6 +17,7 @@ Example:
 import asyncio
 
 from ..core.utils.notes import note_and_log
+from ..core.io.IOExceptions import NotReadyError
 
 # --- this application's modules ---
 from .TaskManager import Task
@@ -41,6 +42,10 @@ class Match(Task):
         Task.__init__(self, delay=delay, name=name)
 
     async def task(self):
+        if self.status.properties.network.initialized is False or self.status.properties.network.initialized is None or self.status is None:
+            raise NotReadyError(f"{self.status} is not ready")
+        if self.command.properties.network.initialized is False or self.command.properties.network.initialized is None or self.command is None:
+            raise NotReadyError(f"{self.command} is not ready")
         try:
             if self.status.history[-1] != self.command.history[-1]:
                 _val = (
@@ -50,11 +55,11 @@ class Match(Task):
                 )
                 self.log(f"Match value is {_val}", level="debug")
                 await self.status._setitem(_val.replace(" ", ""))
-        except Exception:
+        except (NotReadyError,TypeError) as error:
+            self.log(f"Problem executing match value task : {error}", level="warning")
+        except Exception as error:
             self._log.error(
-                "Something wrong matching {} and {}... try again next time...".format(
-                    self.command.properties.name, self.status.properties.name
-                )
+                f"Something wrong matching {self.command.properties.name} and {self.status.properties.name}... try again next time...\nError:{error}"
             )
             await asyncio.sleep(1)
 
@@ -89,6 +94,8 @@ class Match_Value(Task):
         Task.__init__(self, delay=delay, name=name)
 
     async def task(self):
+        if self.point.properties.network.initialized is False or self.point.properties.network.initialized is None or self.point is None:
+            raise NotReadyError(f"{self.point} is not ready")
         try:
             if self.use_last_value:
                 _point = self.point.lastValue
@@ -97,6 +104,8 @@ class Match_Value(Task):
             value = self.value() if hasattr(self.value, "__call__") else self.value
             if value != _point:
                 await self.point._set(value)
+        except (NotReadyError,TypeError) as error:
+            self.log(f"Problem executing match value task : {error}", level="warning")
         except Exception as error:
             self._log.error(
                 f"Something is wrong matching {self.value} and {self.point.properties.name}... try again next time {error}"
