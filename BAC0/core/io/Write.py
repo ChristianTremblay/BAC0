@@ -132,7 +132,7 @@ class WriteProperty:
         Utility to parse the string of the request.
         Supports @obj_ and @prop_ syntax for objest type and property id, useful with proprietary objects and properties.
         """
-        pattern = r"(?P<address>\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b|(\b\d+:\d+\b)) (?P<objId>(@obj_)?[-\w]*[: ]*\d*) (?P<propId>(@prop_)?\w*)[ ]?(?P<value>\w*)?[ ]?(?P<indx>-|\d*)?[ ]?(?P<priority>(1[0-6]|[0-9]))?"
+        pattern = r"(?P<address>\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b|(\b\d+:\d+\b)) (?P<objId>(@obj_)?[-\w]*[: ]*\d*) (?P<propId>(@prop_)?\w*)[ ]?(?P<value>-*\w*)?[ ]?(?P<indx>-|\d*)?[ ]?(?P<priority>(1[0-6]|[0-9]))?"
         match = re.search(pattern, args)
         try:
             address = match.group("address")
