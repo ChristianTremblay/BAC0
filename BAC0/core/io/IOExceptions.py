@@ -171,3 +171,6 @@ class WrongParameter(Exception):
 
 class NumerousPingFailures(Exception):
     pass
+
+class NotReadyError(Exception):
+    pass
