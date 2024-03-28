@@ -119,7 +119,7 @@ class Device(SQLMixin):
         reconnect_on_failure: bool = True,
     ):
         self.properties = DeviceProperties()
-        self.initialized = False
+        #self.initialized = False
         self.properties.address = address
         self.properties.device_id = device_id
         self.properties.network = network
@@ -180,6 +180,11 @@ class Device(SQLMixin):
                 raise BadDeviceDefinition(
                     "Please provide address, device id and network or specify from_backup argument"
                 )
+    @property
+    def initialized(self):
+        if isinstance(self, DeviceConnected) and self.creation_task.done():
+            return True
+        return False
 
     async def new_state(self, newstate: Any) -> None:
         """
@@ -451,7 +456,7 @@ class DeviceConnected(Device):
     async def _init_state(self):
         await self._buildPointList()
         self.properties.network.register_device(self)
-        self.initialized = True
+        #self.initialized = True
 
     async def _disconnect(self, save_on_disconnect=True, unregister=True):
         self.log("Wait while stopping polling", level="info")
@@ -850,7 +855,7 @@ class DeviceDisconnected(Device):
     """
 
     async def _init_state(self):
-        self.initialized = False
+        #self.initialized = False
         await self.connect()
 
     async def connect(self, *, db=None, network=None):
