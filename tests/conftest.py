@@ -118,9 +118,10 @@ async def network_and_devices():
     global test_device_30
 
     loop = asyncio.get_running_loop()
-    ip = os.getenv('RUNNER_IP')
-    if ip is not None:
-        ip = f"{ip}/24"
+    #ip = os.getenv('RUNNER_IP')
+    #if ip is not None:
+    #    ip = f"{ip}/24"
+    ip='127.0.0.1/24'
     async with BAC0.lite(ip=ip, localObjName="bacnet") as bacnet:
         async with BAC0.lite(ip=ip, port=47809, localObjName="device_app") as device_app:
             async with BAC0.lite(
