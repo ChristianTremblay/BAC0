@@ -71,7 +71,7 @@ jobs:
         pip install pytest-asyncio
         pip install coveralls
         pip install .
-        pip install git+https://github.com/JoelBender/BACpypes3.git
+        pip install git+https://github.com/JoelBender/BACpypes3.git@26-custom-router-info
     - name: Test with pytest
       run: |
         coverage run --source BAC0 -m pytest -v
