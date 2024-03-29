@@ -283,12 +283,6 @@ class Base:
         Returns a dict with the address of routers as key.
         """
 
-        class RouterState(Enum):
-            AVAILABLE = 0
-            BUSY = 1
-            DISCONNECTED = 2
-            UNREACHABLE = 3
-
         class Router:
             def __init__(self, snet, address, dnets, path=None):
                 self.source_network: int = snet
@@ -315,7 +309,7 @@ class Base:
             router_address, router_status = router_info
             snet, dnet = path
             self._routers[str(router_address)].path.append(
-                (path, RouterState(router_status))
+                (path, router_status)
             )
 
         return self._routers
