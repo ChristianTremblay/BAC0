@@ -63,6 +63,9 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Get IP
+      id: ip
+      run: echo "::set-output name=ip::$(curl -s https://api.ipify.org)"
     - name: Install BAC0
       run: |
         pip install pandas
@@ -74,6 +77,7 @@ jobs:
         pip install git+https://github.com/JoelBender/BACpypes3.git@26-custom-router-info
     - name: Test with pytest
       run: |
+        export RUNNER_IP=${{ steps.ip.outputs.ip }}
         coverage run --source BAC0 -m pytest -v
         coverage report
     - name: Upload coverage data to coveralls.io

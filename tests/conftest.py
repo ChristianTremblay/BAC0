@@ -9,6 +9,7 @@ import asyncio
 
 import pytest
 from pytest_asyncio import is_async_test
+import os
 
 import BAC0
 from BAC0.core.devices.local.factory import (
@@ -117,10 +118,13 @@ async def network_and_devices():
     global test_device_30
 
     loop = asyncio.get_running_loop()
-    async with BAC0.lite(localObjName="bacnet") as bacnet:
-        async with BAC0.lite(port=47809, localObjName="device_app") as device_app:
+    ip = os.getenv('RUNNER_IP')
+    if ip is not None:
+        ip = f"{ip}/24"
+    async with BAC0.lite(ip=ip, localObjName="bacnet") as bacnet:
+        async with BAC0.lite(ip=ip, port=47809, localObjName="device_app") as device_app:
             async with BAC0.lite(
-                port=47810, localObjName="device30_app"
+                ip=ip, port=47810, localObjName="device30_app"
             ) as device30_app:
                 # await asyncio.sleep(5) # let all the objects be valid before continuing
                 add_points(2, device_app)
