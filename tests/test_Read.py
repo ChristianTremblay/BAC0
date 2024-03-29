@@ -2,7 +2,6 @@
 # -*- coding utf-8 -*-
 from typing import AsyncGenerator
 import pytest
-import asyncio
 
 """
 Test Bacnet communication with another device

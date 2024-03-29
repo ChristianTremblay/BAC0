@@ -1,5 +1,4 @@
 import pytest
-import re
 from BAC0.core.io.Write import write_pattern
 
 @pytest.mark.parametrize(

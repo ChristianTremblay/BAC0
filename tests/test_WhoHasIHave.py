@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-from typing import AsyncGenerator
 import pytest
-import asyncio
 
 @pytest.mark.asyncio
 async def test_WhoHas(network_and_devices):

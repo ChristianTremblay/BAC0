@@ -4,7 +4,6 @@
 """
 Test Bacnet communication with another device
 """
-import time
 import asyncio
 import pytest
 

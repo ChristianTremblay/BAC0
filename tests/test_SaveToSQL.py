@@ -5,9 +5,7 @@
 Test Bacnet communication with another device
 """
 import os.path
-from typing import AsyncGenerator
 import pytest
-import asyncio
 import BAC0
 
 @pytest.mark.asyncio

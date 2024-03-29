@@ -6,12 +6,8 @@ Test Bacnet communication with another device
 """
 
 import asyncio
-import time
-from collections import namedtuple
-from signal import SIGINT, SIGTERM, signal
 
 import pytest
-import pytest_asyncio
 from pytest_asyncio import is_async_test
 
 import BAC0
