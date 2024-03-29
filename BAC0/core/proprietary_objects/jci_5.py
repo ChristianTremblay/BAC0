@@ -150,7 +150,7 @@ except RuntimeError:
     pass  # we are re-running the script... forgive us or maybe we already read a jci device
     _jci = get_vendor_info(_vendor_id)
 
-class DeviceObject(_DeviceObject):
+class JCIDeviceObject(_DeviceObject):
     """
     When running as an instance of this custom device, the DeviceObject is
     an extension of the one defined in bacpypes3.local.device 
@@ -262,7 +262,7 @@ class JCIAnalogOutputObject(_AnalogOutputObject):
 
 
 # Register Johnson Controls Proprietary Objects and properties
-_jci.register_object_class(ObjectTypesSupported.device, DeviceObject)
+_jci.register_object_class(ObjectTypesSupported.device, JCIDeviceObject)
 _jci.register_object_class(ObjectTypesSupported.analogInput, JCIAnalogInputObject)
 _jci.register_object_class(ObjectTypesSupported.analogValue, JCIAnalogValueObject)
 _jci.register_object_class(ObjectTypesSupported.analogOutput, JCIAnalogOutputObject)
