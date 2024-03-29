@@ -1,17 +1,20 @@
 #!/usr/bin/env python
+from typing import AsyncGenerator
+import pytest
+import asyncio
 
-
-def test_WhoHas(network_and_devices):
+@pytest.mark.asyncio
+async def test_WhoHas(network_and_devices):
     # Write to an object and validate new value is correct
-    bacnet = network_and_devices.bacnet
-    test_device = network_and_devices.test_device
-    response = bacnet.whohas(
-        "analogInput:0", destination="{}".format(test_device.properties.address)
-    )
-    assert response
-    # response = bacnet.whohas("analogInput:0", global_broadcast=True)
-    # assert response
-    # response = bacnet.whohas("analogInput:0")
-    # assert response
-    # Can't work as I'm using different ports to have multiple devices using the same IP....
-    # So neither local or global broadcast will give result here
+    async for resources in network_and_devices:
+        loop, bacnet, device_app, device30_app, test_device, test_device_30 = resources
+        response = bacnet.whohas(
+            "analogInput:0", destination="{}".format(test_device.properties.address)
+        )
+        assert response
+        # response = bacnet.whohas("analogInput:0", global_broadcast=True)
+        # assert response
+        # response = bacnet.whohas("analogInput:0")
+        # assert response
+        # Can't work as I'm using different ports to have multiple devices using the same IP....
+        # So neither local or global broadcast will give result here

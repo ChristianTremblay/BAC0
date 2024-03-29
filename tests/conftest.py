@@ -121,23 +121,12 @@ async def network_and_devices():
     global test_device_30
 
     loop = asyncio.get_running_loop()
-    # await create_applications()
-
-    # Create BAC0.lite() instances
-    # bacnet = BAC0.lite()
-    # device_app = BAC0.lite(port=47809)
-    # device30_app = BAC0.lite(port=47810)
-
-    # Wait for the instances to be initialized
-    # while not bacnet._initialized or not device_app._initialized or not device30_app._initialized:
-    #    #await asyncio.sleep(0.1)  # Sleep for a short time to prevent busy waiting
-    #    time.sleep(0.1)
-
-    # Once the instances are initialized, yield them to the test functions
     async with BAC0.lite(localObjName="bacnet") as bacnet:
         async with BAC0.lite(port=47809, localObjName="device_app") as device_app:
-            async with BAC0.lite(port=47810,localObjName="device30_app") as device30_app:
-                #await asyncio.sleep(5) # let all the objects be valid before continuing
+            async with BAC0.lite(
+                port=47810, localObjName="device30_app"
+            ) as device30_app:
+                # await asyncio.sleep(5) # let all the objects be valid before continuing
                 add_points(2, device_app)
                 add_points(5, device30_app)
                 # add_points(10, device300_app)
@@ -157,9 +146,13 @@ async def network_and_devices():
                 await asyncio.gather(t1, t2)
                 # Wait for the instances to be initialized
                 net_and_dev = (
-                    loop, bacnet, device_app, device30_app, test_device, test_device_30
+                    loop,
+                    bacnet,
+                    device_app,
+                    device30_app,
+                    test_device,
+                    test_device_30,
                 )
                 yield net_and_dev
                 await test_device._disconnect(save_on_disconnect=False)
                 await test_device_30._disconnect(save_on_disconnect=False)
-
