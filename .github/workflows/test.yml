@@ -66,6 +66,9 @@ jobs:
     - name: Install BAC0
       run: |
         pip install .
+        pip install pytest
+        pip install pytest-cov
+        pip install coveralls
     - name: Test with pytest
       run: |
         coverage run --source BAC0 -m pytest -v
