@@ -439,7 +439,7 @@ class Lite(
     async def _disconnect(self) -> None:
         self.log("Disconnecting", level="debug")
         for each in self.registered_devices:
-            await each.disconnect()
+            await each._disconnect()
         await super()._disconnect()
         self._initialized = False
 
