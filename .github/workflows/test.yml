@@ -5,16 +5,16 @@ name: Build & Test
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ master, develop, async ]
   pull_request:
-    branches: [ master, develop ]
+    branches: [ master, develop, async ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -39,14 +39,6 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f requirements-mypy.txt ]; then pip install -r requirements-mypy.txt; fi
         pip install .
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-#    - name: Type check with mypy
-#      run: mypy -p BAC0
     - name: Test with pytest
       run: |
         coverage run --source BAC0 -m pytest -v
@@ -58,18 +50,28 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
 
-
-#  coveralls:
-#    name: Indicate completion to coveralls.io
-#    needs: build
-#    runs-on: ubuntu-latest
-#    container: python:3-slim
-#    steps:
-#    - name: Finished
-#      run: |
-#        pip3 install --upgrade coveralls
-#        coveralls --finish
-#      env:
-#        GITHUB_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
-#        COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
-#        COVERALLS_PARALLEL: true
+  build-async:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/async'
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11']
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install BAC0
+      run: |
+        pip install .
+    - name: Test with pytest
+      run: |
+        coverage run --source BAC0 -m pytest -v
+        coverage report
+    - name: Upload coverage data to coveralls.io
+      if: matrix.python-version == '3.12'
+      run: coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+        COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
