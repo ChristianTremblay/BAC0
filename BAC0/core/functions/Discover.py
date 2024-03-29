@@ -169,7 +169,7 @@ class Discover:
             device_address: Address = iam_request.pduSource
             objid: ObjectIdentifier = iam_request.iAmDeviceIdentifier
             self.log(str(objid), level="debug")
-            self.log(self.discoveredDevices.keys(), level="debug")
+            self.log(f"Discovered : {self.discoveredDevices.keys()}", level="debug")
             key = str(objid)
             if key in self.discoveredDevices:
                 self._log.debug(
