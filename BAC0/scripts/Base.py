@@ -12,7 +12,6 @@ import random
 import sys
 import typing as t
 from collections import defaultdict
-from enum import Enum
 
 # --- standard Python modules ---
 from bacpypes3.basetypes import DeviceStatus, HostNPort, ObjectTypesSupported

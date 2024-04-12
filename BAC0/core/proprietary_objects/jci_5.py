@@ -14,7 +14,6 @@ from bacpypes3.object import AnalogOutputObject as _AnalogOutputObject
 from bacpypes3.object import AnalogValueObject as _AnalogValueObject
 from bacpypes3.object import DeviceObject as _DeviceObject
 from bacpypes3.object import NetworkPortObject as _NetworkPortObject
-from bacpypes3.object import Object as _Object
 from bacpypes3.primitivedata import Boolean  # Signed,
 from bacpypes3.primitivedata import (
     Atomic,
@@ -262,7 +261,7 @@ class JCIAnalogOutputObject(_AnalogOutputObject):
 
 
 # Register Johnson Controls Proprietary Objects and properties
-_jci.register_object_class(ObjectTypesSupported.device, JCIDeviceObject)
-_jci.register_object_class(ObjectTypesSupported.analogInput, JCIAnalogInputObject)
-_jci.register_object_class(ObjectTypesSupported.analogValue, JCIAnalogValueObject)
-_jci.register_object_class(ObjectTypesSupported.analogOutput, JCIAnalogOutputObject)
+#_jci.register_object_class(ObjectTypesSupported.device, JCIDeviceObject)
+#_jci.register_object_class(ObjectTypesSupported.analogInput, JCIAnalogInputObject)
+#_jci.register_object_class(ObjectTypesSupported.analogValue, JCIAnalogValueObject)
+#_jci.register_object_class(ObjectTypesSupported.analogOutput, JCIAnalogOutputObject)

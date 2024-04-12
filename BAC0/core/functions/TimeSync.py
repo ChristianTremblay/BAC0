@@ -13,7 +13,6 @@ import datetime as dt
 from datetime import datetime
 
 # --- standard Python modules ---
-from typing import Optional, Tuple, Union
 
 import pytz
 from bacpypes3.apdu import TimeSynchronizationRequest, UTCTimeSynchronizationRequest

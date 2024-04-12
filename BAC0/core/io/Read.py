@@ -129,7 +129,12 @@ class ReadProperty:
         )
 
         self.log_title("Read property", args_split)
-
+        dic = await self.this_application.app.device_info_cache.get_device_info(device_address)
+        if dic is None:
+            _iam = await self.this_application.app.who_is(address=device_address)
+            await self.this_application.app.device_info_cache.set_device_info(_iam[0])
+            dic = await self.this_application.app.device_info_cache.get_device_info(device_address)
+        self.log(f"Device Info Cache : {dic}", level="debug")
         try:
             response = await _app.read_property(
                 device_address,
@@ -218,6 +223,8 @@ class ReadProperty:
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
 
+
+
         if request_dict is not None:
             address, parameter_list = await self.build_rpm_request_from_dict(
                 request_dict, vendor_id
@@ -235,10 +242,19 @@ class ReadProperty:
             )
             self.log_title("Read Multiple", args_list)
 
+        # Force DeviceInfoCache
+        dic = await self.this_application.app.device_info_cache.get_device_info(address)
+        if dic is None:
+            _iam = await self.this_application.app.who_is(address=address)
+            await self.this_application.app.device_info_cache.set_device_info(_iam[0])
+            dic = await self.this_application.app.device_info_cache.get_device_info(address)
+        self.log(f"Device Info Cache : {dic}", level="info")
+
         values = []
         dict_values = {}
 
         self.log(f"Parameter list : {parameter_list}", level="debug")
+
         try:
             # build an ReadPropertyMultiple request
             response = await _app.read_property_multiple(address, parameter_list)
@@ -304,13 +320,14 @@ class ReadProperty:
     def build_rp_request(
         self, args: t.List[str], arr_index=None, vendor_id: int = 0, bacoid=None
     ) -> t.Tuple:
+        vendor = get_vendor_info(vendor_id)
         try:
             addr, obj_type_str, obj_inst_str, prop_id_str = args[:4]
             object_identifier = ObjectIdentifier((obj_type_str, int(obj_inst_str)))
         except ValueError:
             addr, obj_type_str, prop_id_str = args[:3]
             object_identifier = ObjectIdentifier(obj_type_str)
-
+        
         device_address = Address(addr)
 
         # TODO : This part needs work to find proprietary objects
@@ -353,7 +370,7 @@ class ReadProperty:
         if device_info:
             vendor_info = get_vendor_info(device_info.vendor_identifier)
         else:
-            vendor_info = get_vendor_info(0)
+            vendor_info = get_vendor_info(vendor_id)
 
         parameter_list = []
         while args:

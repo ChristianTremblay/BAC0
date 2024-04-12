@@ -10,6 +10,7 @@ Device.py - describe a BACnet Device
 """
 import asyncio
 import os.path
+import logging
 
 # --- standard Python modules ---
 from collections import namedtuple
@@ -497,7 +498,7 @@ class DeviceConnected(Device):
             try:
                 his.append(self._findPoint(point, force_read=force_read).history)
             except ValueError as ve:
-                self.log("{ve}", level=logging.DEBUG)
+                self.log(f"Value Error : {ve}", level=logging.DEBUG)
                 continue
         if not _PANDAS:
             return dict(zip(list_of_points, his))

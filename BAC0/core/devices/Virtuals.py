@@ -10,7 +10,6 @@ Points.py - Definition of points so operations on Read results are more convenie
 
 import asyncio
 import hashlib
-import time
 from collections import namedtuple
 
 # --- standard Python modules ---

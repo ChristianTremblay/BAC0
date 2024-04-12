@@ -19,17 +19,13 @@ Write.py - creation of WriteProperty requests
 
 
 """
-import asyncio
 import re
 
 from bacpypes3.apdu import (
     ErrorRejectAbortNack,
-    SimpleAckPDU,
-    WriteAccessSpecification,
-    WritePropertyMultipleRequest,
 )
 from bacpypes3.app import Application
-from bacpypes3.basetypes import PropertyIdentifier, PropertyValue
+from bacpypes3.basetypes import PropertyIdentifier
 
 # --- 3rd party modules ---
 from bacpypes3.debugging import ModuleLogger
@@ -47,7 +43,6 @@ from .IOExceptions import (
     NoResponseFromController,
     WritePropertyException,
 )
-from .Read import find_reason
 
 # ------------------------------------------------------------------------------
 

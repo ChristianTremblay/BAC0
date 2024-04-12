@@ -1,7 +1,6 @@
-import asyncio
 import json
 import os
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set
 
 from bacpypes3.app import Application
 from bacpypes3.basetypes import BDTEntry, HostNPort

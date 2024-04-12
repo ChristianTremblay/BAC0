@@ -4,12 +4,10 @@ try:
 except ImportError:
     raise ImportError("Install influxdb to use this feature")
 
-import asyncio
 from datetime import datetime
 
 import pytz
 
-from ..core.devices.Virtuals import VirtualPoint
 from ..core.utils.notes import note_and_log
 
 

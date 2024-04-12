@@ -1,7 +1,7 @@
 from functools import wraps
 from typing import Any, Callable, Dict, Tuple, Type, Union
 
-from bacpypes3.basetypes import EngineeringUnits, LogRecord
+from bacpypes3.basetypes import EngineeringUnits
 from bacpypes3.constructeddata import ListOf
 from bacpypes3.local.cmd import Commandable
 from bacpypes3.local.oos import OutOfService

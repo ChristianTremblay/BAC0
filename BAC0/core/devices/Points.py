@@ -9,7 +9,6 @@ Points.py - Definition of points so operations on Read results are more convenie
 """
 
 import asyncio
-import time
 import typing as t
 from collections import namedtuple
 
@@ -23,9 +22,7 @@ from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import (
     Boolean,
     CharacterString,
-    Integer,
     ObjectIdentifier,
-    Real,
 )
 
 try:

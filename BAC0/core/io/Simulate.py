@@ -8,17 +8,8 @@
 """
 Simulate.py - simulate the value of controller I/O values
 """
-import re
 
 from bacpypes3.app import Application
-from bacpypes3.basetypes import (
-    DateTime,
-    PropertyIdentifier,
-    RangeByPosition,
-    RangeBySequenceNumber,
-    RangeByTime,
-)
-from bacpypes3.primitivedata import Null, ObjectIdentifier
 
 from ..app.asyncApp import BAC0Application
 from .IOExceptions import (
