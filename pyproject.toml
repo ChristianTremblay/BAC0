@@ -21,7 +21,8 @@ extras = ["pandas", "influxdb_client[async]", "rich", "pytest-asyncio", "coverag
 include = [
     "BAC0", 
     "BAC0.core", 
-    "BAC0.core.app", 
+    "BAC0.core.app",
+    "BAC0.core.app/device.json",
     "BAC0.core.io", 
     "BAC0.core.functions", 
     "BAC0.core.devices", 
