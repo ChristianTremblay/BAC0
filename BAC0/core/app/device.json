@@ -17,8 +17,6 @@
             "database-revision": 1,
             "device-address-binding": [],
             "firmware-revision": "N/A",
-            "local-date": "2023-10-08",
-            "local-time": "22:15:26.22",
             "max-apdu-length-accepted": 1024,
             "max-segments-accepted": 16,
             "model-name": "N/A",
