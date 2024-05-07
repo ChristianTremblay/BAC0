@@ -150,7 +150,8 @@ class VirtualPoint:
 
         self.fake_pv = None
         if initial_value:
-            self._set(float(initial_value))
+            self.fake_pv = float(initial_value)
+            self._trend(float(initial_value))
 
     def chart(self, remove=False):
         """
@@ -158,7 +159,7 @@ class VirtualPoint:
         """
         self.log("Use bacnet.add_trend(point) instead", level="warning")
 
-    def _set(self, value):
+    async def _set(self, value):
         if value == "auto":
             pass
         elif self._history_fn is None:

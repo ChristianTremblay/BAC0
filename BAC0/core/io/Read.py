@@ -134,7 +134,7 @@ class ReadProperty:
             _iam = await self.this_application.app.who_is(address=device_address)
             await self.this_application.app.device_info_cache.set_device_info(_iam[0])
             dic = await self.this_application.app.device_info_cache.get_device_info(device_address)
-        self.log(f"Device Info Cache : {dic}", level="debug")
+            self.log(f"Device Info Cache : {dic}", level="debug")
         try:
             response = await _app.read_property(
                 device_address,
@@ -248,7 +248,7 @@ class ReadProperty:
             _iam = await self.this_application.app.who_is(address=address)
             await self.this_application.app.device_info_cache.set_device_info(_iam[0])
             dic = await self.this_application.app.device_info_cache.get_device_info(address)
-        self.log(f"Device Info Cache : {dic}", level="info")
+            self.log(f"Device Info Cache : {dic}", level="debug")
 
         values = []
         dict_values = {}

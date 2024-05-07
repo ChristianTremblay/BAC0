@@ -56,7 +56,7 @@ class Match(Task):
                 self.log(f"Match value is {_val}", level="debug")
                 await self.status._setitem(_val.replace(" ", ""))
         except (NotReadyError,TypeError) as error:
-            self.log(f"Problem executing match value task : {error}", level="warning")
+            self.log(f"Problem executing match value task {self.status.name} -> {self.command.name} : {error}", level="warning")
         except Exception as error:
             self._log.error(
                 f"Something wrong matching {self.command.properties.name} and {self.status.properties.name}... try again next time...\nError:{error}"
@@ -94,7 +94,7 @@ class Match_Value(Task):
         Task.__init__(self, delay=delay, name=name)
 
     async def task(self):
-        if self.point.properties.network.initialized is False or self.point.properties.network.initialized is None or self.point is None:
+        if self.point.properties.device.initialized is False or self.point.properties.device.initialized is None or self.point is None:
             raise NotReadyError(f"{self.point} is not ready")
         try:
             if self.use_last_value:
@@ -103,22 +103,24 @@ class Match_Value(Task):
                 _point = await self.point.value
             value = self.value() if hasattr(self.value, "__call__") else self.value
             if value != _point:
-                await self.point._set(value)
+                await self.point._set(value=value)
         except (NotReadyError,TypeError) as error:
-            self.log(f"Problem executing match value task : {error}", level="warning")
+            self.log(f"Problem executing match value task on {self.point.name} -> {value}: {error}", level="warning")
+            await asyncio.sleep(1)
         except Exception as error:
-            self._log.error(
-                f"Something is wrong matching {self.value} and {self.point.properties.name}... try again next time {error}"
+            self.log(
+                f"Something is wrong matching {self.value} and {self.point.properties.name}... try again next time {error}", level="error"
             )
+            await asyncio.sleep(1)
 
     async def _before_stop(self):
         try:
             await self.point._set("auto")
-        except ValueError:
-            self._log.warning(
+        except (ValueError, TypeError):
+            self.log(
                 "Could not set {} to auto. If this is a network input, it is normal as we didn't have to override or simulate".format(
                     self.point
-                )
+                ), level="warning"
             )
 
     async def stop(self):

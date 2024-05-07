@@ -450,7 +450,7 @@ class Point:
         Sets the Out_Of_Service property [to True].
         """
         await self.properties.device.properties.network.out_of_service(
-            f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} outOfService"
+            f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} outOfService True"
         )
         self.properties.simulated = (True, None)
 
@@ -496,7 +496,7 @@ class Point:
         """
         self.log(f"Setting to {value}", level="debug")
         if "characterstring" in self.properties.type:
-            asyncio.create_task(self.write(value))
+            await self.write(value)
 
         elif "value" in self.properties.type:
             if str(value).lower() == "auto":
@@ -504,7 +504,7 @@ class Point:
                     "Value was not simulated or overridden, cannot release to auto"
                 )
             # analog value must be written to
-            asyncio.create_task(self.write(value))
+            await self.write(value)
 
         elif "output" in self.properties.type:
             # analog output must be overridden
@@ -520,7 +520,7 @@ class Point:
                 self.log(f"Simulating to {value}", level="debug")
                 await self.sim(value)
 
-    def _set(self, value):
+    async def _set(self, value):
         """
         Allows the syntax:
             device['point'] = value
