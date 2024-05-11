@@ -33,6 +33,7 @@ from ..core.devices.Points import Point
 from ..core.devices.Trends import TrendLog
 from ..core.devices.Virtuals import VirtualPoint
 from ..core.functions.Alias import Alias
+from ..core.functions.Reinitialize import Reinitialize
 
 # from ..core.functions.legacy.cov import CoV
 # from ..core.functions.legacy.DeviceCommunicationControl import (
@@ -88,7 +89,7 @@ class Lite(
     WriteProperty,
     Simulation,
     TimeSync,
-    # Reinitialize,
+    Reinitialize,
     # DeviceCommunicationControl,
     # CoV,
     Schedule,
