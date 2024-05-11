@@ -74,7 +74,7 @@ jobs:
         pip install pytest-asyncio
         pip install coveralls
         pip install .
-        pip install git+https://github.com/JoelBender/BACpypes3.git@26-custom-router-info
+        pip install bacpypes3
     - name: Test with pytest
       run: |
         export RUNNER_IP=${{ steps.ip.outputs.ip }}
