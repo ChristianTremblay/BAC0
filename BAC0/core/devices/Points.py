@@ -258,7 +258,7 @@ class Point:
                 return None
             return val
 
-    def _trend(self, res: t.Union[float, int, str]) -> None:
+    def _trend(self, res: t.Optional[t.Union[float, int, str]]) -> None:
         now = datetime.now().astimezone()
         self._history.timestamp.append(now)
         self._history.value.append(res)
@@ -875,7 +875,8 @@ class BooleanPoint(Point):
         self.properties.units_state = tuple(str(x) for x in units_state)
 
     def _trend(self, res):
-        res = "1: active" if res == BinaryPV.active else "0: inactive"
+        if res is not None:
+            res = "1: active" if res == BinaryPV.active else "0: inactive"
         super()._trend(res)
 
     @property
@@ -1009,7 +1010,8 @@ class EnumPoint(Point):
         )
 
     def _trend(self, res):
-        res = f"{res}: {self.get_state(res)}"
+        if res is not None:
+            res = f"{res}: {self.get_state(res)}"
         super()._trend(res)
 
     @property
