@@ -447,6 +447,8 @@ def device(*args: Any, **kwargs: Any) -> Device:
     return dev
 
 
+
+
 # @fix_docs
 class DeviceConnected(Device):
     """
@@ -546,6 +548,7 @@ class DeviceConnected(Device):
             if self.properties.pollDelay is not None and self.properties.pollDelay > 0:
                 self.poll(delay=self.properties.pollDelay)
             self.update_history_size(size=self.properties.history_size)
+            self._log.info("Device ready, use device_name.points and start interact with it")
             # self.clear_histories()
         except NoResponseFromController:
             self.log("Cannot retrieve object list, disconnecting...", level="error")

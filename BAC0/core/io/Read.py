@@ -689,7 +689,7 @@ class ReadProperty:
 
 def find_reason(apdu):
     try:
-        if apdu == TimeoutError:
+        if apdu is TimeoutError:
             return "Timeout"
         elif apdu.pduType == RejectPDU.pduType:
             reasons = RejectReason.enumerations

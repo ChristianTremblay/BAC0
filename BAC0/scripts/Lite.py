@@ -17,11 +17,13 @@ import typing as t
 import weakref
 
 from bacpypes3.app import Application
+from bacpypes3 import __version__ as bacpypes_version
 
 try:
     from rich.console import Console
     from rich.table import Table
-
+    from rich import print, pretty
+    pretty.install()
     RICH = True
 except ImportError:
     RICH = False
@@ -122,9 +124,10 @@ class Lite(
     ) -> None:
         self._initialized = False
         self.log(
-            f"Starting BAC0 version {version} ({self.__module__.split('.')[-1]})",
+            f"Starting Asynchronous BAC0 version {version} ({self.__module__.split('.')[-1]})",
             level="info",
         )
+        self.log(f"Using bacpypes3 version {bacpypes_version}", level="info")
         self.log("Use BAC0.log_level to adjust verbosity of the app.", level="info")
         self.log(
             "Ex. BAC0.log_level('silence') or BAC0.log_level('error')", level="info"
@@ -143,6 +146,7 @@ class Lite(
 
         if ip is None:
             host = HostIP(port)
+            mask = host.mask
             ip_addr = host.address
         else:
             try:
@@ -162,7 +166,7 @@ class Lite(
                 port = 47808
             ip_addr = Address(f"{ip}/{mask}:{port}")
         self._log.info(
-            f"Using ip : {ip_addr} on port {ip_addr.addrPort} | broadcast : {ip_addr.addrBroadcastTuple[0]}"
+            f"Using ip : {ip_addr}/{mask} on port {ip_addr.addrPort} | broadcast : {ip_addr.addrBroadcastTuple[0]}"
         )
 
         Base.__init__(

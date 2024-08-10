@@ -219,7 +219,7 @@ class DiscoveryUtilsMixin:
         # TrendLogs
         trendlogs = await create_trendlogs(objList, self)
 
-        self.log("Ready!", level="info")
+        self.log("Points and trendlogs (if any) created", level="info")
         return (objList, points, trendlogs)
 
     async def rp_discovered_values(self, discover_request, points_per_request):

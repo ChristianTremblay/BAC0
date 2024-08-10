@@ -26,6 +26,12 @@ try:
 except ImportError:
     _PANDAS = False
 
+try:
+    from rich.console import Console
+    from rich.logging import RichHandler
+    RICH = True
+except ImportError:
+    RICH = False
 
 class LogList:
     LOGGERS: t.List[Logger] = []
@@ -188,11 +194,15 @@ def note_and_log(cls):
     cls._log.setLevel(logging.DEBUG)
 
     # Console Handler
-    ch = logging.StreamHandler(sys.stderr)
+    if RICH:
+        ch = RichHandler()
+        ch2 = RichHandler()
+    else:
+        ch = logging.StreamHandler(sys.stderr)
+        ch2 = logging.StreamHandler(sys.stdout)
+    
     ch.set_name("stderr")
-    ch.setLevel(logging.CRITICAL)
-
-    ch2 = logging.StreamHandler(sys.stdout)
+    ch.setLevel(logging.CRITICAL)    
     ch2.set_name("stdout")
     ch2.setLevel(console_level)
 
