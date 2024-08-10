@@ -173,7 +173,7 @@ class _TrendLog(TrendLogProperties):
             )
             _choice, _logDatum = self.read_logDatum(each.logDatum)
             _status = each.statusFlags
-            self.log(_index, _logDatum, _status, _choice, level="debug")
+            self._log.debug(f"{_index}, {_logDatum}, {_status}, {_choice}")
             his_component = HistoryComponent(_index, _logDatum, _status, _choice)
             if his_component not in self.properties._history_components:
                 self.properties._history_components.append(his_component)
