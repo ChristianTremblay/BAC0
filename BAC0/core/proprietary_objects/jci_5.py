@@ -25,6 +25,7 @@ from bacpypes3.primitivedata import (
     Time,
     Unsigned,
 )
+from . import OptionalUnsigned
 from typing import Any as _Any, Callable, Optional
 # some debugging
 _debug = 0
@@ -177,7 +178,7 @@ class JCIDeviceObject(_DeviceObject):
     max_message_buffer: Unsigned
     user_name: CharacterString
     pcode: CharacterString
-    sab_device_status_list_changed: Optional[Unsigned]
+    sab_device_status_list_changed: OptionalUnsigned
     events_lost: Unsigned
     accept_bacnet_time_sync: Boolean
     supervisory_device_online: Boolean
@@ -237,7 +238,7 @@ class NetworkPortObject(_NetworkPortObject):
 class JCIAnalogInputObject(_AnalogInputObject):
     offset: Real
     offline: Boolean
-    sabusaddr: Optional[Unsigned]
+    sabusaddr: OptionalUnsigned
     inputrangelow: Real
     inputrangehigh: Real
     outputrangelow: Real
@@ -247,14 +248,14 @@ class JCIAnalogValueObject(_AnalogValueObject):
     flow_sp_eeprom: Real
     offset: Real
     offline: Boolean
-    sabusaddr: Optional[Unsigned]
+    sabusaddr: OptionalUnsigned
     peertopeer: Atomic
     p2p_errorstatus: Enumerated
 
 
 class JCIAnalogOutputObject(_AnalogOutputObject):
     offline: Boolean
-    sabusaddr: Optional[Unsigned]
+    sabusaddr: OptionalUnsigned
     min_out_value: Real
     max_out_value: Real
     # polarity = polarity
