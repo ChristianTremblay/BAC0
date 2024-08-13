@@ -25,6 +25,7 @@ from bacpypes3.primitivedata import (
     Time,
     Unsigned,
 )
+from typing import Any as _Any, Callable, Optional
 # some debugging
 _debug = 0
 _log = ModuleLogger(globals())
@@ -176,7 +177,7 @@ class JCIDeviceObject(_DeviceObject):
     max_message_buffer: Unsigned
     user_name: CharacterString
     pcode: CharacterString
-    sab_device_status_list_changed: Unsigned
+    sab_device_status_list_changed: Optional[Unsigned]
     events_lost: Unsigned
     accept_bacnet_time_sync: Boolean
     supervisory_device_online: Boolean
@@ -236,7 +237,7 @@ class NetworkPortObject(_NetworkPortObject):
 class JCIAnalogInputObject(_AnalogInputObject):
     offset: Real
     offline: Boolean
-    sabusaddr: Unsigned
+    sabusaddr: Optional[Unsigned]
     inputrangelow: Real
     inputrangehigh: Real
     outputrangelow: Real
@@ -246,22 +247,15 @@ class JCIAnalogValueObject(_AnalogValueObject):
     flow_sp_eeprom: Real
     offset: Real
     offline: Boolean
-    sabusaddr: Unsigned
+    sabusaddr: Optional[Unsigned]
     peertopeer: Atomic
     p2p_errorstatus: Enumerated
 
 
 class JCIAnalogOutputObject(_AnalogOutputObject):
     offline: Boolean
-    sabusaddr: Unsigned
+    sabusaddr: Optional[Unsigned]
     min_out_value: Real
     max_out_value: Real
     # polarity = polarity
     stroketime: Real
-
-
-# Register Johnson Controls Proprietary Objects and properties
-#_jci.register_object_class(ObjectTypesSupported.device, JCIDeviceObject)
-#_jci.register_object_class(ObjectTypesSupported.analogInput, JCIAnalogInputObject)
-#_jci.register_object_class(ObjectTypesSupported.analogValue, JCIAnalogValueObject)
-#_jci.register_object_class(ObjectTypesSupported.analogOutput, JCIAnalogOutputObject)
