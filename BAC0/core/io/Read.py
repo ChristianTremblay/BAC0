@@ -145,7 +145,30 @@ class ReadProperty:
 
         except ErrorRejectAbortNack as err:
             response = err
-            self.log(f"Error : {err}", level="error")
+            
+            if "unknown-property" in str(err.reason):
+                if "description" in args:
+                    self._log.warning(
+                        "The description property is not implemented in the device. "
+                        "Using a default value for internal needs."
+                    )
+                    return "n/a"
+                elif "inactiveText" in args:
+                    self._log.warning(
+                        "The inactiveText property is not implemented in the device. "
+                        "Using a default value of Off for internal needs."
+                    )
+                    return "False"
+                elif "activeText" in args:
+                    self._log.warning(
+                        "The activeText property is not implemented in the device. "
+                        "Using a default value of On for internal needs."
+                    )
+                    return "True"
+                else:
+                    raise UnknownPropertyError(f"Unknown property {args}")
+            else:
+                self.log(f"Error : {err}", level="error")
         except ObjectError:
             raise UnknownObjectError(f"Unknown object {args}")
 
@@ -153,27 +176,6 @@ class ReadProperty:
         except NoResponse:
             raise NoResponseFromController
 
-        except PropertyError:
-            if "description" in args:
-                self._log.warning(
-                    "The description property is not implemented in the device. "
-                    "Using a default value for internal needs."
-                )
-                return "Property Not Implemented"
-            elif "inactiveText" in args:
-                self._log.warning(
-                    "The inactiveText property is not implemented in the device. "
-                    "Using a default value of Off for internal needs."
-                )
-                return "Off"
-            elif "activeText" in args:
-                self._log.warning(
-                    "The activeText property is not implemented in the device. "
-                    "Using a default value of On for internal needs."
-                )
-                return "On"
-            else:
-                raise UnknownPropertyError(f"Unknown property {args}")
 
         if not isinstance(response, ErrorRejectAbortNack):
             return response
