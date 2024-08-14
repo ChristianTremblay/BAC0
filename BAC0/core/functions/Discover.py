@@ -21,7 +21,7 @@ except ImportError:
 @note_and_log
 class Discover:
     """
-    Define BACnet WhoIs and IAm functions.
+    Main function to explore the network and find devices.
     """
 
     @property
@@ -99,10 +99,11 @@ class Discover:
 
         deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit = limits
         # Try to find on which network we are
-        _this_network = await _app.nse.what_is_network_number()
-        _networks.append(_this_network)
+        _this_network = await self.what_is_network_number()
+        if _this_network:
+            _networks.append(_this_network)
         # Try to find local routers...
-        _other_networks = await _app.nse.who_is_router_to_network()
+        _other_networks = await self.whois_router_to_network()
         for each in _other_networks:
             network_adapter, _iamrtn = each
             _networks.extend(_iamrtn.iartnNetworkList)
@@ -146,7 +147,7 @@ class Discover:
             )
             if global_broadcast is True:
                 self._log.warning(
-                    "Issuing a global Broadcast can create network flood. Use with care."
+                    "Issuing a global Broadcast whois can create network flood. Use with care."
                 )
             else:
                 self.log("Issuing a local broadcast whois request.", level="info")

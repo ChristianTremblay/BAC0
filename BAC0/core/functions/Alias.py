@@ -1,7 +1,7 @@
 import asyncio
 
 from bacpypes3.app import Application
-
+from bacpypes3.pdu import Address
 from BAC0.core.app.asyncApp import BAC0Application
 
 from ...core.utils.notes import note_and_log
@@ -14,7 +14,31 @@ class Alias:
     This mixin bring them to the BAC0 app so it's easy to use
     """
 
-    async def iam(self, destination=None):
+    async def who_is(self, address=None, low_limit=0, high_limit=4194303, timeout=3):
+        """
+        Build a WhoIs request.  WhoIs are sent to discover devices on the network.
+        If an address is specified, the request is sent to that address.  Otherwise,
+        the request is broadcast to the local network.
+
+        :param address: (optional) the address to send the request to
+        :param destination: (optional) the destination address
+
+        :returns: list of IAm responses
+
+        Example::
+
+            whois()
+            whois('
+        """
+        _iams = await self.this_application.app.who_is(
+            address=Address(address),
+            low_limit=low_limit,
+            high_limit=high_limit,
+            timeout=timeout,
+        )
+        return _iams
+
+    def iam(self, destination=None):
         """
         Build an IAm response.  IAm are sent in response to a WhoIs request that;
         matches our device ID, whose device range includes us, or is a broadcast.
@@ -30,13 +54,20 @@ class Alias:
         _app: Application = _this_application.app
         self.log("do_iam", level="debug")
 
-        await _app.i_am()
+        _app.i_am()
 
-    async def whois_router_to_network(self, network=None, *, destination=None):
+    async def whois_router_to_network(self, network=None, *, destination=None, timeout=3):
         # build a request
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
-        await _app.nse.who_is_router_to_network()
+        try:
+            network_numbers = await asyncio.wait_for(_app.nse.who_is_router_to_network(), timeout)
+            return network_numbers
+        except asyncio.TimeoutError:
+            # Handle the timeout error
+            self.log("Request timed out for whois_router_to_network, no response", level='warning')
+            return []
+        
 
     async def init_routing_table(self, address):
         """
@@ -51,7 +82,7 @@ class Alias:
         _app: Application = _this_application.app
         await _app.nse.initialize_routing_table()
 
-    async def what_is_network_number(self, destination=None):
+    async def what_is_network_number(self, destination=None, timeout=3):
         """
         winn [ <addr> ]
 
@@ -62,7 +93,13 @@ class Alias:
         # self.log("Addr : {}".format(address), level='info')
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
-        await _app.nse.what_is_network_number()
+        try:
+            network_number = await asyncio.wait_for(_app.nse.what_is_network_number(), timeout)
+            return network_number
+        except asyncio.TimeoutError:
+            # Handle the timeout error
+            self.log("Request timed out for what_is_network_number, no response", level='warning')
+            return None
 
     async def whohas(
         self,
