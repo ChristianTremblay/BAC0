@@ -446,7 +446,10 @@ def device(*args: Any, **kwargs: Any) -> Device:
         pass
     return dev
 
-
+async def device_async(*args: Any, **kwargs: Any) -> Device:
+    dev = Device(*args, **kwargs)
+    await dev.new_state(DeviceDisconnected)
+    return dev
 
 
 # @fix_docs

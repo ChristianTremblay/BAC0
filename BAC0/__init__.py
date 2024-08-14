@@ -26,6 +26,7 @@ try:
     from . import core, tasks
     from .core.devices.Device import DeviceLoad as load
     from .core.devices.Device import device as device
+    from .core.devices.Device import device_async as aDevice
     from .core.devices.Trends import TrendLog as TrendLog
     from .core.utils.notes import update_log_level as log_level
     from .infos import __version__ as version
