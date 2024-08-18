@@ -25,7 +25,8 @@ from bacpypes3.primitivedata import (
     Time,
     Unsigned,
 )
-from . import OptionalUnsigned
+#from . import OptionalUnsigned
+from bacpypes3.basetypes import OptionalUnsigned
 from typing import Any as _Any, Callable, Optional
 # some debugging
 _debug = 0

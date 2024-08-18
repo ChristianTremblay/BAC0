@@ -62,7 +62,7 @@ class ObjectFactory(object):
 
     definition = namedtuple(  # type: ignore[name-match]
         "Definition",
-        "name, objectType, instance, properties, description, presentValue, is_commandable, relinquish_default",
+        "name, objectType, instance, properties, description, presentValue, is_commandable, relinquishDefault",
     )
 
     objects: t.Dict[str, t.Any] = {}
@@ -78,16 +78,16 @@ class ObjectFactory(object):
         description="",
         presentValue=None,
         is_commandable=False,
-        relinquish_default=None,
+        relinquishDefault=None,
     ):
         _localTrendLogDataType = properties.pop("trendLog_datatype", None)
         self._properties = ObjectFactory.default_properties(
-            objectType, properties, is_commandable, relinquish_default
+            objectType, properties, is_commandable, relinquishDefault
         )
         # print(f"Obj {objectType} of type {type(objectType)}")
         if objectType is not TrendLogObject:
             pv_datatype = ObjectFactory.get_pv_datatype(objectType)
-            self.log(f"pv datatype : {pv_datatype}", level="info")
+            self.log(f"pv datatype : {pv_datatype}", level="debug")
 
             def enforce_datatype(val, datatype):
                 if not isinstance(val, datatype):
@@ -101,8 +101,8 @@ class ObjectFactory(object):
 
             if presentValue is not None:
                 presentValue = enforce_datatype(presentValue, pv_datatype)
-            if relinquish_default is not None:
-                relinquish_default = enforce_datatype(relinquish_default, pv_datatype)
+            if relinquishDefault is not None:
+                relinquishDefault = enforce_datatype(relinquishDefault, pv_datatype)
 
         @bacnet_properties(self._properties)
         @make_commandable()
@@ -110,7 +110,7 @@ class ObjectFactory(object):
             objectType, instance, objectName, presentValue, description
         ):
             self._log.info(
-                f"creation : t:{objectType} id:{instance} ob:{objectName} pv:{presentValue} d:{description}"
+                f"Making this object commandable : type:{objectType} id:{instance} name:{objectName} presentValue:{presentValue} description:{description}"
             )
             return create(objectType, instance, objectName, presentValue, description)
 
@@ -193,7 +193,6 @@ class ObjectFactory(object):
             description=definition["description"],
             presentValue=definition["presentValue"],
             is_commandable=definition["is_commandable"],
-            relinquish_default=definition["relinquish_default"],
         )
 
     @staticmethod
@@ -224,7 +223,7 @@ class ObjectFactory(object):
 
     @staticmethod
     def default_properties(
-        objectType, properties, is_commandable=False, relinquish_default=None
+        objectType, properties, is_commandable=False, relinquishDefault=None
     ):
         _properties = properties or {}
         if "statusFlags" not in _properties.keys():
@@ -234,11 +233,6 @@ class ObjectFactory(object):
             and "units" not in _properties.keys()
         ):
             raise ValueError("Provide Engineering Units in properties")
-        if is_commandable and (
-            "input" in objectType.__name__.lower()
-            or "output" in objectType.__name__.lower()
-        ):
-            pass
         return _properties
 
     @staticmethod
@@ -297,7 +291,6 @@ def _create(definition, **kwargs):
         "description": None,
         "presentValue": None,
         "is_commandable": False,
-        "relinquish_default": None,  # will be created by cmd ?
     }
     _definition.update(definition)
     for k, v in kwargs.items():
@@ -306,10 +299,11 @@ def _create(definition, **kwargs):
                 _definition["properties"][_k] = _v  # type: ignore[index]
         else:
             _definition[k] = v
+
     return ObjectFactory.from_dict(_definition)
 
 
-def make_state_text(list_of_string):
+def make_state_text(list_of_string:list[str]):
     _arr = ArrayOf(CharacterString)
     _lst = [CharacterString(each) for each in list_of_string]
     return _arr(_lst)
@@ -324,6 +318,10 @@ def set_default_if_not_provided(prop, default_prop, **kwargs):
 
 
 def analog(**kwargs):
+    # This is the general definition for an analog object
+    # more information are provided in each of sub functions
+    if "is_commandable" not in kwargs:
+        kwargs["is_commandable"] = False
     definition = {
         "instance": 0,
         "description": "No description",
@@ -333,8 +331,6 @@ def analog(**kwargs):
             # "covIncrement": 0.15,
         },
         "presentValue": 0,
-        # "is_commandable": False,
-        # "relinquish_default": 0,
     }
     return _create(definition, **kwargs)
 
@@ -343,8 +339,6 @@ def analog_input(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "AI", **kwargs)
     kwargs["objectType"] = AnalogInputObject
     kwargs["instance"] = set_default_if_not_provided("instance", 0, **kwargs)
-    # kwargs['is_commandable'] = True # Futur
-
     return analog(**kwargs)
 
 
@@ -352,8 +346,6 @@ def analog_output(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "AO", **kwargs)
     kwargs["objectType"] = AnalogOutputObject
     kwargs["instance"] = set_default_if_not_provided("instance", 0, **kwargs)
-    # kwargs["is_commandable"] = True
-
     return analog(**kwargs)
 
 
@@ -361,11 +353,12 @@ def analog_value(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "AV", **kwargs)
     kwargs["objectType"] = AnalogValueObject
     kwargs["instance"] = set_default_if_not_provided("instance", 0, **kwargs)
-    kwargs["is_commandable"] = False
     return analog(**kwargs)
 
 
 def binary(**kwargs):
+    if "is_commandable" not in kwargs:
+        kwargs["is_commandable"] = False
     definition = {
         "instance": 0,
         "description": "No description",
@@ -374,8 +367,6 @@ def binary(**kwargs):
             # "eventState": EventState()
         },
         "presentValue": "inactive",
-        "is_commandable": False,
-        "relinquish_default": "inactive",
     }
     return _create(definition, **kwargs)
 
@@ -387,15 +378,12 @@ def binary_input(**kwargs):
         kwargs["properties"].update({"polarity": Polarity("normal")})
     except KeyError:
         kwargs["properties"] = {"polarity": Polarity("normal")}
-    # kwargs['is_commandable'] = True # Futur
-
     return binary(**kwargs)
 
 
 def binary_output(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "BO", **kwargs)
     kwargs["objectType"] = BinaryOutputObject
-    # kwargs["is_commandable"] = True
     try:
         kwargs["properties"].update({"polarity": Polarity("normal")})
     except KeyError:
@@ -406,12 +394,12 @@ def binary_output(**kwargs):
 def binary_value(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "BV", **kwargs)
     kwargs["objectType"] = BinaryValueObject
-    kwargs["is_commandable"] = True
-
     return binary(**kwargs)
 
 
 def multistate(**kwargs):
+    if "is_commandable" not in kwargs:
+        kwargs["is_commandable"] = False
     default_states = make_state_text(["Off", "On"])
     definition = {
         "instance": 0,
@@ -421,9 +409,9 @@ def multistate(**kwargs):
             # "numberOfStates": Unsigned(2),
         },
         "description": "No description",
-        "presentValue": Unsigned(1),
-        "is_commandable": False,
-        "relinquish_default": Unsigned(1),
+        #"presentValue": Unsigned(1),
+        #"is_commandable": False,
+        #"relinquishDefault": Unsigned(1),
     }
     return _create(definition, **kwargs)
 
@@ -431,8 +419,7 @@ def multistate(**kwargs):
 def multistate_input(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "MSI", **kwargs)
     kwargs["objectType"] = MultiStateInputObject
-    # kwargs["is_commandable"] = True
-    kwargs["relinquish_default"] = Unsigned(1)
+    kwargs["relinquishDefault"] = Unsigned(1)
 
     return multistate(**kwargs)
 
@@ -440,8 +427,7 @@ def multistate_input(**kwargs):
 def multistate_output(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "MSO", **kwargs)
     kwargs["objectType"] = MultiStateOutputObject
-    # kwargs["is_commandable"] = True
-    kwargs["relinquish_default"] = Unsigned(1)
+    kwargs["relinquishDefault"] = Unsigned(1)
 
     return multistate(**kwargs)
 
@@ -449,8 +435,7 @@ def multistate_output(**kwargs):
 def multistate_value(**kwargs):
     kwargs["name"] = set_default_if_not_provided("name", "MSV", **kwargs)
     kwargs["objectType"] = MultiStateValueObject
-    kwargs["is_commandable"] = True
-    kwargs["relinquish_default"] = Unsigned(1)
+    kwargs["relinquishDefault"] = Unsigned(1)
 
     return multistate(**kwargs)
 
@@ -488,7 +473,7 @@ def character_string(**kwargs):
         "presentValue": "",
         "properties": {},
         "is_commandable": False,
-        "relinquish_default": "inactive",
+        "relinquishDefault": "inactive",
     }
     return _create(definition, **kwargs)
 
@@ -502,7 +487,7 @@ def date_value(**kwargs):
         "presentValue": Date().now(),
         "properties": {},
         "is_commandable": False,
-        # "relinquish_default": "inactive",
+        # "relinquishDefault": "inactive",
     }
     return _create(definition, **kwargs)
 
@@ -516,7 +501,6 @@ def datetime_value(**kwargs):
         "presentValue": DateTime(date=Date().now(), time=Time().now()),
         "properties": {},
         "is_commandable": False,
-        # "relinquish_default": "inactive",
     }
     return _create(definition, **kwargs)
 

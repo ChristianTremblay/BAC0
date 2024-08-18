@@ -129,10 +129,14 @@ class ReadProperty:
         )
 
         self.log_title("Read property", args_split)
+        # Do I know you ?
         dic = await self.this_application.app.device_info_cache.get_device_info(device_address)
         if dic is None:
             _iam = await self.this_application.app.who_is(address=device_address)
-            await self.this_application.app.device_info_cache.set_device_info(_iam[0])
+            try:
+                await self.this_application.app.device_info_cache.set_device_info(_iam[0])
+            except IndexError:
+                self.log(f"Trouble with Iam... {_iam}", level="error")
             dic = await self.this_application.app.device_info_cache.get_device_info(device_address)
             self.log(f"Device Info Cache : {dic}", level="debug")
         try:

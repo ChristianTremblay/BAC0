@@ -77,6 +77,7 @@ except ImportError:
     INFLUXDB = False
 
 from bacpypes3.pdu import Address
+from bacpypes3.primitivedata import ObjectIdentifier
 
 # ------------------------------------------------------------------------------
 
@@ -451,8 +452,26 @@ class Lite(
     def __repr__(self) -> str:
         return f"Bacnet Network using ip {self.localIPAddr} with device id {self.Boid}"
 
-    def __getitem__(self, boid_or_localobject):
-        item = self.this_application.app.objectName[boid_or_localobject]
+    def __getitem__(self, boid_or_localobject:t.Union[str, ObjectIdentifier, tuple]):
+        """
+        Retrieve an item from the application by its name or identifier.
+
+        Args:
+            boid_or_localobject (Union[str, ObjectIdentifier]): The name (as a string) or identifier (as an ObjectIdentifier) of the object to retrieve.
+
+        Returns:
+            Union[YourObjectType, None]: The object corresponding to the given name or identifier, or a registered device if the identifier matches a device ID. Returns None if the object or device is not found.
+
+        Raises:
+            KeyError: If the object or device is not found and logging is not enabled.
+        """
+        if isinstance(boid_or_localobject, str):
+            item = self.this_application.app.objectName[boid_or_localobject]
+        elif isinstance(boid_or_localobject, ObjectIdentifier):
+            item = self.this_application.app.objectIdentifier[boid_or_localobject]
+        elif isinstance(boid_or_localobject, tuple):
+            _objId = ObjectIdentifier(boid_or_localobject)
+            item = self.this_application.app.objectIdentifier[_objId]
         if item is None:
             for device in self._registered_devices:
                 if str(device.properties.device_id) == str(boid_or_localobject):
