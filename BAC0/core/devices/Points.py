@@ -637,7 +637,7 @@ class Point:
         """
         return len(self.history)
 
-    def subscribe_cov(self, confirmed: bool = False, lifetime: int = 900):
+    async def subscribe_cov(self, confirmed: bool = False, lifetime: int = 900):
         """
         Subscribes to the Change of Value (COV) service for this point.
 
@@ -673,7 +673,7 @@ class Point:
             return
         cov_subscription = Point._running_cov_tasks.pop(process_identifer)
         cov_subscription.stop()
-        await cov_subscription.task
+        #await cov_subscription.task
 
     def update_description(self, value):
         asyncio.create_task(self._update_description(value=value))
@@ -1502,6 +1502,7 @@ class COVSubscription:
         self.point.log(
             f"Subscribing to COV for {self.point.properties.name}", level="info"
         )
+
         try:
             async with self._app.change_of_value(
                 self.address,
@@ -1510,17 +1511,16 @@ class COVSubscription:
                 self.confirmed,
                 self.lifetime,
             ) as scm:
-                while self.point.cov_registered:
+                cov_fini_task_monitor = asyncio.create_task(self.cov_fini.wait())
+                while not self.cov_fini.is_set():
                     incoming: asyncio.Future = asyncio.ensure_future(scm.get_value())
                     done, pending = await asyncio.wait(
-                        [incoming],
+                        [incoming,],
                         return_when=asyncio.FIRST_COMPLETED,
                     )
                     for task in pending:
-                        self.point._log.info(
-                            f"Canceling COV subscription for {self.point.properties.name}"
-                        )
                         task.cancel()
+
                     if incoming in done:
                         property_identifier, property_value = incoming.result()
                         self.point.log(
@@ -1538,14 +1538,15 @@ class COVSubscription:
                             self.point._log.warning(
                                 f"Unsupported COV property identifier {property_identifier}"
                             )
+                await cov_fini_task_monitor
         except Exception as e:
             self.point.log(f"Error in COV subscription : {e}", level="error")
 
     def stop(self):
         self.point.log(
-            f"Stopping COV subscription for {self.point.properties.name}", level="info"
+            f"Stopping COV subscription class for {self.point.properties.name}", level="debug"
         )
-        #self.cov_fini.set()
+        self.cov_fini.set()
         self.point.cov_registered = False
 
 
