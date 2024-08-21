@@ -1,92 +1,94 @@
 How to start BAC0
 ===================================================
-Define a bacnet network
+Intro
 ----------------------------------------
 
-Once imported, BAC0 will rely on a 'network' variable that will connect to the BACnet network you want to reach. This variable will be tied to a network interface (that can be a network card or a VPN connection) and all the traffice will pass on this variable.
+BAC0 is a library that will allow you to interact with BACnet devices. It relies on bacpypes3 and take advantages of the features of asyncio to provide fast and efficient communication with BACnet devices.
 
-More than one network variable can be created but only one connection by interface is supported.
+To start using BAC0, you will need to import the library and create a BAC0 object. This object will be the main object that will allow you to interact with the BACnet network.
 
-Typically, we'll call this variable 'bacnet' to illustrate that it represents the network. But you can call it like you want.
+More than one BAC0 object can be created but only one connection by interface is supported.
 
-This variable will also be passed to some functions when you will define a device for example. As the device needs to know on which network it can be found.
+Typically, we'll call this object 'bacnet' to illustrate that it represents the access point to the BACnet network. But you can call it like you want.
+
+This object will be used to interact with the BACnet network. It will be used to discover devices, read and write properties, trend points, etc.
+
+This object will also be used as a BACnet device itself, serving BACnet objects to the network.
+
+To create a BAC0 object, you will need to use the start() function. This function will create the object and connect it to the network.
+
+.. note :: 
+    Legacy BAC0 was available in 2 flavours : ilte and complete. This is not the case anymore. I have merged the two versions into one. All web services have been deprecated letting other softwares like Grafana or InfluxDB to take care of the trending features.
 
 When creating the connection to the network, BAC0 needs to know the ip network of the interface on which it will work. It also needs to know the subnet mask (as BACnet operations often use broadcast messages).If you don't provide one, BAC0 will try to detect the interface for you.
 
 .. note::
-    If you use ios, you will need to provide a ip manually. The script is unable to detect the subnet mask yet. You will also have to modify bacpypes and allow 'ios' so it
-    can be installed on pythonista.
+    Legacy BAC0 have been tested with Pythonista (iOS) to a certain point. This is not the case for this version where I haven't tested this and have no plan to support it.
 
-By default, if Bokeh, Pandas and Flask are installed, using the connect script will launch the complete version. But you can also use the lite version if you want something simple.
-    
+How to run async code
+----------------------------------------
+
+To run async code interactively (so you can explore the library or your BACnet network), you can use different ways. Running standalone scripts are somewhat different and we'll cover that later.
+
+The first way is to use the REPL by calling : `python -m asyncio`. This will start the asyncio REPL and you will be able to run async code. This is the recommended way to run async code interactively.
+
+Another way is to use a Jupyter Notebook. This is also a good way to run async code interactively. They can even run directly inside your browser or code editor using .ipynb files.
+
+Define a bacnet application
+----------------------------------------
+
 Example::
 
     import BAC0
-    bacnet = BAC0.connect()
-    # or specify the IP you want to use / bacnet = BAC0.connect(ip='192.168.1.10/24')
+    bacnet = BAC0.start()
+    # or specify the IP you want to use / bacnet = BAC0.start(ip='192.168.1.10/24')
     # by default, it will attempt an internet connection and use the network adapter
     # connected to the internet.
     # Specifying the network mask will allow the usage of a local broadcast address
     # like 192.168.1.255 instead of the global broadcast address 255.255.255.255
     # which could be blocked in some cases.
-    # You can also use :
-    # bacnet = BAC0.lite() to force the script to load only minimum features.
-    # Please note that if Bokeh, Pandas or Flask are not installed, using connect() will in fact call the lite version.
 
+Dependencies and nice to hace features
+--------------------------------------------
+BAC0 is a library that relies on several other libraries to function effectively. The main library is bacpypes3, a BACnet stack that facilitates interaction with BACnet devices. BAC0 serves as a wrapper around bacpypes3, simplifying these interactions.
 
-Lite vs Complete
+In this new version, rich is used to enhance console output, making it more readable. While not required, it improves the user experience. Similarly, Pandas is utilized for handling historical data, easing the process of working with such data.
+
+Additionally, python-dotenv is employed to load environment variables from a .env file, simplifying the management of these variables. For data storage, sqlite3 is used to maintain a local database when devices are disconnected, and InfluxDB is used for storing data in a time series database. Both are optional but provide convenient data storage solutions.
+
+Asynchronous programming
+**************************
+BAC0 is based on the new bacpypes3 which highly relies on asyncio. This means that you will have to use the asyncio library to interact with BAC0. This is not a big deal as asyncio is now part of the standard library and is easy to use. But it brings some changes in the way you will write your code.
+Typically, all requests to read information on the network will be required to be awaited. This is done to allow the event loop to continue to run and not block the execution of the program. Some functions will not require to be awaited, for example, write requests for which we don't need to receive an message back. 
+
+Asynchronous programming brings some overhead in the way you will write your code. But it also brings a lot of advantages. For example, you can now write code that will be able to do multiple things at the same time. This is really useful when you want to read multiple points on the network at the same time. Your code will run faster.
+
+Lite vs Complete vs connect vs start
 *****************
+This version of BAC0 present only one way to create a BAC0 object. The function `start()` is the preferred way to create a BAC0 object. This function will create a BAC0 object and connect it to the network. To maintain compatibility with previous versions, the functions `connect()` and `lite()` are still available. They are exact equivalent of `start()`.
 
-Lite
+
+Start
 .............
 
-Use Lite if you only want to interact with some devices without using the web 
-interface or the live trending features. 
-On small devices like Raspberry Pi on which Numpy and Pandas are not installed, 
-it will run without problem.
+When you start BAC0, you will have a BAC0 object that will be able to interact with the BACnet network. This object will be able to discover devices, read and write properties, trend points, etc. But before doing so, you will need to know some details about the network you want to connect to.
+Using the same subnet is really important as BACnet relies on broadcast messages to communicate. If you don't know the subnet, BAC0 will try to find it for you. But it is always better to provide it.
+If you need to connect to a network that is not on the same subnet as the one you are on, you will need to provide the IP address of a BBMD (BACnet Broadcast Management Device) that will be able to route the messages to the network you want to connect to. 
+
+BAC0 can act as a BBMD itself and route messages to other networks. But in simple cases where you will only want to explore the network, being configured as a foreign device is enough. 
+
+Details about configuring BAC0 as a foreign device or a BBMD are available in the documentation.
 
 To do so, use the syntax::
 
-    bacnet = BAC0.lite(ip='xxx.xxx.xxx.xxx/mask')
+    bacnet = BAC0.start(ip='xxx.xxx.xxx.xxx/mask')
 
-On a device without all the module sufficient to run the "complete" mode, using
-this syntax will also run BAC0 in "Lite" mode::
-
-    bacnet = BAC0.connect()
 
 > Device ID 
 > 
 > It's possible to define the device ID you want in your BAC0 instance by
-> using the `deviceId` argument
+> using the `deviceId` argument `bacnet = BAC0.start(ip='xxx.xxx.xxx.xxx/mask', deviceId=1234)`.
     
-Complete
-............
-
-Complete will launch a web server with bokeh trending features. You will be able to 
-access the server from another computer if you want.
-
-To do so, use the syntax::
-
-    bacnet = BAC0.connect(ip='xxx.xxx.xxx.xxx/mask')
-
-And log to the web server pointing your browser to http://localhost:8111
-
-.. note::
-   To run BAC0 in "complete" mode, you need to install supplemental packages :
-       * flask
-       * flask-bootstrap
-       * bokeh
-       * pandas (numpy)
-   To install bokeh, using "conda install bokeh" works really well. User will also needs to "pip install" everything else.
-
-.. note::
-   To run BAC0 in "complete" mode using a RaspberryPi_, I strongly recommend using the package
-   berryconda_. This will install Pandas, numpy, already compiled for the Pi and give you access
-   to the "conda" tool. You'll then be able to "conda install bokeh" and everythin will be working fine. If you try
-   to "pip install pandas" you will face issues as the RPi will have to compile the source and it is
-   a hard taks for a so small device. berryconda_ gives access to a great amount of packages already
-   compiled for the Raspberry Pi.
-
 
 Use BAC0 on a different subnect (Foreign Device)
 ***************************************************
@@ -103,7 +105,7 @@ To do so, use the syntax::
     my_ip = '10.8.0.2/24'
     bbmdIP = '192.168.1.2:47808'
     bbmdTTL = 900
-    bacnet = BAC0.connect(ip='xxx.xxx.xxx.xxx/mask', bbdmAddress=bbmdIP, bbmdTTL=bbmdTTL)
+    bacnet = BAC0.start(ip='xxx.xxx.xxx.xxx/mask', bbdmAddress=bbmdIP, bbmdTTL=bbmdTTL)
     
 Discovering devices on a network
 *********************************
@@ -153,10 +155,10 @@ I recommend using discover.
 
 Devices dataframe ::
 
-    bacnet.devices
+    await bacnet.devices
 
 ..note::
-    WARNING. `bacnet.devices` may in some circumstances, be a bad choice when you want to discover
+    WARNING. `await bacnet.devices` may in some circumstances, be a bad choice when you want to discover
     devices on a network. A lot of read requests are made to look for manufacturer, object name, etc
     and if a lot of devices are on the network, it is recommended to use whois() and start from there.
 
@@ -178,7 +180,7 @@ BAC0 includes a way to ping constantly the devices that have been registered.
 This way, when devices go offline, BAC0 will disconnect them until they come back
 online. This feature can be disabled if required when declaring the network ::
 
-    bacnet = BAC0.lite(ping=False)
+    bacnet = BAC0.start(ping=False)
     
 By default, the feature is activated.
 
@@ -197,12 +199,9 @@ When a network discovery is made by BAC0, informations about the detected routes
 be saved (actually by the bacpypes stack itself) and for reference, BAC0 offers a way 
 to extract the information ::
 
-    bacnet.routing_table
+    await bacnet.routing_table
 
 This will return a dict with all the available information about the routes in this form : 
 
-bacnet.routing_table
+await bacnet.routing_table
 Out[5]: {'192.168.211.3': Source Network: None | Address: 192.168.211.3 | Destination Networks: {303: 0} | Path: (1, 303)}
-
-.. _berryconda : https://github.com/jjhelmus/berryconda  
-.. _RaspberryPi : http://www.raspberrypi.org

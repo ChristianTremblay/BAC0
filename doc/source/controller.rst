@@ -8,20 +8,16 @@ Once the bacnet variable is created, you can define devices.
 Example::
 
     import BAC0
-    bacnet = BAC0.connect()
-    # or specify the IP you want to use / bacnet = BAC0.connect(ip='192.168.1.10/24')
+    bacnet = BAC0.start()
+    # or specify the IP you want to use / bacnet = BAC0.start(ip='192.168.1.10/24')
     # by default, it will attempt an internet connection and use the network adapter
     # connected to the internet.
     # Specifying the network mask will allow the usage of a local broadcast address
     # like 192.168.1.255 instead of the global broadcast address 255.255.255.255
     # which could be blocked in some cases.
-    # You can also use :
-    # bacnet = BAC0.lite() to force the script to load only minimum features.
-    # Please note that if Bokeh, Pandas or Flask are not installed, using connect()
-    # will in fact call the lite version.
 
     # Query and display the list of devices seen on the network
-    bacnet.whois()
+    bacnet.discover()
     bacnet.devices
 
     # Define a controller (this one is on MSTP #3, MAC addr 4, device ID 5504)    
@@ -43,7 +39,7 @@ speciy to BAC0 that the device doesn't support segmentation.
 
 To do so, use the parameter::
 
-    my_old_device = BAC0.connect('3:4', 5504, bacnet, segmentation_supported=False)
+    my_old_device = BAC0.start('3:4', 5504, bacnet, segmentation_supported=False)
     
 Object List
 ............
@@ -212,8 +208,8 @@ When a point (with a priority array) is released of all override commands, it ta
 of its **Relinquish_Default**. [BACnet clause 12.4.12]  If you wish to set this default value, 
 you may with this command::
 
-    mycontroller['pointToChange'].default(<value>)
-    mycontroller['Output'].default(75)
+    await mycontroller['pointToChange'].default(<value>)
+    await mycontroller['Output'].default(75)
 
 
 .. figure:: images/AO_set_default.png
@@ -254,10 +250,10 @@ Read Property
 You can read simple properties using ::
     
     prop = ('device',100,'objectName')
-    device.read_property(prop)
+    await device.read_property(prop)
     # this will return the object name 
     prop = ('analogInput',1,'priorityArray')
-    device.read_property(prop)
+    await device.read_property(prop)
     # this will return the priority array of AI1 
 
 Write property
@@ -265,7 +261,7 @@ Write property
 You can write to a property using ::
 
     prop = ('analogValue',1,'presentValue')
-    device.write_property(prop,value=98,priority=7)
+    await device.write_property(prop,value=98,priority=7)
 
 
 Write description
@@ -276,12 +272,12 @@ to update a description if it contains a space.
 
 Instead, use **update_description** against a point::
 
-    device['AI_3'].update_description('Hello, World!')
+    await device['AI_3'].update_description('Hello, World!')
 
 You can then read the description back, as a property::
 
-    device['AI_3'].read_property('description')
+    await device['AI_3'].read_property('description')
 
 or going back to the device::
 
-    device.read_property(('analogInput',3,'description'))
+    await device.read_property(('analogInput',3,'description'))
