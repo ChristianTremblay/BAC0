@@ -16,19 +16,22 @@ class Alias:
 
     async def who_is(self, address=None, low_limit=0, high_limit=4194303, timeout=3):
         """
-        Build a WhoIs request.  WhoIs are sent to discover devices on the network.
-        If an address is specified, the request is sent to that address.  Otherwise,
+        Build a WhoIs request. WhoIs requests are sent to discover devices on the network.
+        If an address is specified, the request is sent to that address. Otherwise,
         the request is broadcast to the local network.
 
-        :param address: (optional) the address to send the request to
-        :param destination: (optional) the destination address
+        :param address: (optional) The address to send the request to.
+        :param destination: (optional) The destination address.
 
-        :returns: list of IAm responses
+        :returns: List of IAm responses.
 
         Example::
 
-            whois()
-            whois('
+            import BAC0
+            bacnet = BAC0.lite()
+
+            bacnet.whois()
+            bacnet.whois('2:5')
         """
         _iams = await self.this_application.app.who_is(
             address=Address(address),
@@ -38,13 +41,11 @@ class Alias:
         )
         return _iams
 
-    def iam(self, destination=None):
+    def iam(self, address=None):
         """
         Build an IAm response.  IAm are sent in response to a WhoIs request that;
         matches our device ID, whose device range includes us, or is a broadcast.
         Content is defined by the script (deviceId, vendor, etc...)
-
-        :returns: bool
 
         Example::
 
@@ -54,9 +55,21 @@ class Alias:
         _app: Application = _this_application.app
         self.log("do_iam", level="debug")
 
-        _app.i_am()
+        _app.i_am(address=address)
 
     async def whois_router_to_network(self, network=None, *, destination=None, timeout=3):
+        """
+        Send a Who-Is-Router-To-Network request. This request is used to discover routers
+        on the network that can route messages to a specific network.
+
+        The function sends a broadcast message to the local network to find routers that
+        can route messages to the specified network. The response will contain information
+        about the routers that can handle the routing.
+
+        Example::
+
+            whois_router_to_network()
+        """
         # build a request
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app

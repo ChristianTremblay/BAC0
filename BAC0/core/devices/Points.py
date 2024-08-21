@@ -92,7 +92,8 @@ class Point:
     """
 
     _cache_delta = timedelta(seconds=5)
-    _cov_identifier = 0
+    _last_cov_identifier = 0
+    _running_cov_tasks = {}
 
     def __init__(
         self,
@@ -636,9 +637,7 @@ class Point:
         """
         return len(self.history)
 
-    def subscribe_cov(
-        self, confirmed: bool = True, lifetime: int = None, callback=None
-    ):
+    def subscribe_cov(self, confirmed: bool = False, lifetime: int = 900):
         """
         Subscribes to the Change of Value (COV) service for this point.
 
@@ -659,73 +658,22 @@ class Point:
         Returns:
             None
         """
-        address = Address(self.properties.device.properties.address)
-        obj_identifier = ObjectIdentifier(
-            (self.properties.type, int(self.properties.address))
+        self.cov_task = COVSubscription(
+            point=self, confirmed=confirmed, lifetime=lifetime
         )
-        _app = self.properties.device.properties.network.this_application.app
-        process_identifier = Point._cov_identifier + 1
-        Point._cov_identifier = process_identifier
-        self.cov_registered = True
+        Point._running_cov_tasks[self.cov_task.process_identifier] = self.cov_task
+        self.cov_task.task = asyncio.create_task(self.cov_task.run())
 
-        async def cov_ctxmgr(
-            address: Address = None,
-            obj_identifier: ObjectIdentifier = None,
-            confirmed: bool = False,
-            lifetime: int = None,
-            identifier: int = None,
-        ):
-            self.log(f"Subscribing to COV for {self.properties.name}", level="info")
-            try:
-                async with _app.change_of_value(
-                    address,
-                    obj_identifier,
-                    identifier,
-                    confirmed,
-                    lifetime,
-                ) as scm:
-                    while self.cov_registered is True:
-                        incoming = asyncio.ensure_future(scm.get_value())
-                        done, pending = await asyncio.wait(
-                            [incoming],
-                            return_when=asyncio.FIRST_COMPLETED,
-                        )
-                        for task in pending:
-                            self._log.info(
-                                f"Canceling COV subscription for {self.properties.name}"
-                            )
-                            task.cancel()
-                        if incoming in done:
-                            property_identifier, property_value = incoming.result()
-                            self.log(
-                                f"COV notification received for {self.properties.name} | {property_identifier} -> {type(property_identifier)} with value {property_value} | {property_value} -> {type(property_value)}",
-                                level="debug",
-                            )
-                            if property_identifier == PropertyIdentifier.presentValue:
-                                val = extract_value_from_primitive_data(property_value)
-                                self._trend(val)
-                            elif property_identifier == PropertyIdentifier.statusFlags:
-                                self.properties.status_flags = property_value
-                            else:
-                                self._log.warning(
-                                    f"Unsupported COV property identifier {property_identifier}"
-                                )
-            except Exception as e:
-                self.log(f"Error in COV subscription : {e}", level="error")
-
-        asyncio.create_task(
-            cov_ctxmgr(
-                address=address,
-                obj_identifier=obj_identifier,
-                confirmed=confirmed,
-                lifetime=lifetime,
-                identifier=process_identifier,
-            )
-        )
-
-    def cancel_cov(self):
+    async def cancel_cov(self):
         self.log(f"Canceling COV subscription for {self.properties.name}", level="info")
-        self.cov_registered = False
+        process_identifer = self.cov_task.process_identifier
+        
+        if process_identifer not in Point._running_cov_tasks:
+            await self.response("COV subscription not found")
+            return
+        cov_subscription = Point._running_cov_tasks.pop(process_identifer)
+        cov_subscription.stop()
+        await cov_subscription.task
 
     def update_description(self, value):
         asyncio.create_task(self._update_description(value=value))
@@ -1528,6 +1476,77 @@ class StringPointOffline(EnumPoint):
 
     def release(self, value, *, prop="presentValue", priority=""):
         raise OfflineException("Must be online to write")
+
+
+class COVSubscription:
+    def __init__(
+        self, point: Point = None, lifetime: int = 900, confirmed: bool = False
+    ):
+        self.address = Address(point.properties.device.properties.address)
+        self.cov_fini = asyncio.Event()
+        self.task = None
+        self.obj_identifier = ObjectIdentifier(
+            (point.properties.type, int(point.properties.address))
+        )
+        self._app = point.properties.device.properties.network.this_application.app
+        self.process_identifier = Point._last_cov_identifier + 1
+        Point._last_cov_identifier = self.process_identifier
+
+
+        self.point = point
+        self.lifetime = lifetime
+        self.confirmed = confirmed
+
+    async def run(self):
+        self.point.cov_registered = True
+        self.point.log(
+            f"Subscribing to COV for {self.point.properties.name}", level="info"
+        )
+        try:
+            async with self._app.change_of_value(
+                self.address,
+                self.obj_identifier,
+                self.process_identifier,
+                self.confirmed,
+                self.lifetime,
+            ) as scm:
+                while self.point.cov_registered:
+                    incoming: asyncio.Future = asyncio.ensure_future(scm.get_value())
+                    done, pending = await asyncio.wait(
+                        [incoming],
+                        return_when=asyncio.FIRST_COMPLETED,
+                    )
+                    for task in pending:
+                        self.point._log.info(
+                            f"Canceling COV subscription for {self.point.properties.name}"
+                        )
+                        task.cancel()
+                    if incoming in done:
+                        property_identifier, property_value = incoming.result()
+                        self.point.log(
+                            f"COV notification received for {self.point.properties.name} | {property_identifier} -> {type(property_identifier)} with value {property_value} | {property_value} -> {type(property_value)}",
+                            level="info",
+                        )
+                        if property_identifier == PropertyIdentifier.presentValue:
+                            val = extract_value_from_primitive_data(
+                                property_value
+                            )
+                            self.point._trend(val)
+                        elif property_identifier == PropertyIdentifier.statusFlags:
+                            self.point.properties.status_flags = property_value
+                        else:
+                            self.point._log.warning(
+                                f"Unsupported COV property identifier {property_identifier}"
+                            )
+        except Exception as e:
+            self.point.log(f"Error in COV subscription : {e}", level="error")
+
+    def stop(self):
+        self.point.log(
+            f"Stopping COV subscription for {self.point.properties.name}", level="info"
+        )
+        #self.cov_fini.set()
+        self.point.cov_registered = False
 
 
 class OfflineException(Exception):

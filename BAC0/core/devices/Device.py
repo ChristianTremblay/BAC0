@@ -438,15 +438,15 @@ class Device(SQLMixin):
         return f"{self.properties.name} / Undefined"
 
 
-def device(*args: Any, **kwargs: Any) -> Device:
-    dev = Device(*args, **kwargs)
-    t = asyncio.create_task(dev.new_state(DeviceDisconnected))
-    dev.creation_task = t
-    while not t.done:
-        pass
-    return dev
+#def device(*args: Any, **kwargs: Any) -> Device:
+#    dev = Device(*args, **kwargs)
+#    t = asyncio.create_task(dev.new_state(DeviceDisconnected))
+#    dev.creation_task = t
+#    while not t.done:
+#        pass
+#    return dev
 
-async def device_async(*args: Any, **kwargs: Any) -> Device:
+async def device(*args: Any, **kwargs: Any) -> Device:
     dev = Device(*args, **kwargs)
     await dev.new_state(DeviceDisconnected)
     return dev
