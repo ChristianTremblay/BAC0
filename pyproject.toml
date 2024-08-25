@@ -17,6 +17,9 @@ Homepage = "https://github.com/ChristianTremblay/BAC0"
 [project.optional-dependencies]
 extras = ["pandas", "influxdb_client[async]", "rich", "pytest-asyncio", "coverage", "pandas"]
 
+[tool.setuptools.package-data]
+"BAC0.core.app" = ["device.json"]
+
 [tool.setuptools.packages.find]
 include = [
     "BAC0", 
