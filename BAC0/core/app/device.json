@@ -115,7 +115,10 @@
             ],
             "protocol-level": "bacnet-application",
             "reliability": "no-fault-detected",
-            "status-flags": []
+            "status-flags": [],
+            "bbmdBroadcastDistributionTable": [],
+            "bbmdAcceptFDRegistrations": false,
+            "bbmdForeignDeviceTable": []
         }
     ]
 }
