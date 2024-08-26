@@ -244,8 +244,11 @@ class SQLMixin(object):
         # Saving other properties to a pickle file...
         prop_backup = {"device": self.dev_properties_df()}
         prop_backup["points"] = self.points_properties_df()
-        with open(f"{self.properties.db_name}.bin", "wb") as file:
-            pickle.dump(prop_backup, file)
+        try:
+            with open(f"{self.properties.db_name}.bin", "wb") as file:
+                pickle.dump(prop_backup, file)
+        except Exception as error:
+            self._log.error(f"Error saving to pickle file: {error}")
 
         if self.properties.clear_history_on_save:
             self.clear_histories()
