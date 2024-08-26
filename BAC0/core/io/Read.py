@@ -130,14 +130,22 @@ class ReadProperty:
 
         self.log_title("Read property", args_split)
         # Do I know you ?
-        dic = await self.this_application.app.device_info_cache.get_device_info(device_address)
+        dic = await self.this_application.app.device_info_cache.get_device_info(
+            device_address
+        )
         if dic is None:
             _iam = await self.this_application.app.who_is(address=device_address)
             try:
-                await self.this_application.app.device_info_cache.set_device_info(_iam[0])
+                await self.this_application.app.device_info_cache.set_device_info(
+                    _iam[0]
+                )
             except IndexError:
-                self.log(f"Trouble with Iam... {_iam}", level="error")
-            dic = await self.this_application.app.device_info_cache.get_device_info(device_address)
+                self.log(
+                    f"Trouble with Iam... Respose received = {_iam}", level="error"
+                )
+            dic = await self.this_application.app.device_info_cache.get_device_info(
+                device_address
+            )
             self.log(f"Device Info Cache : {dic}", level="debug")
         try:
             response = await _app.read_property(
@@ -149,7 +157,7 @@ class ReadProperty:
 
         except ErrorRejectAbortNack as err:
             response = err
-            
+
             if "unknown-property" in str(err.reason):
                 if "description" in args:
                     self._log.warning(
@@ -179,7 +187,6 @@ class ReadProperty:
         # except bufferOverflow
         except NoResponse:
             raise NoResponseFromController
-
 
         if not isinstance(response, ErrorRejectAbortNack):
             return response
@@ -229,8 +236,6 @@ class ReadProperty:
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
 
-
-
         if request_dict is not None:
             address, parameter_list = await self.build_rpm_request_from_dict(
                 request_dict, vendor_id
@@ -253,7 +258,9 @@ class ReadProperty:
         if dic is None:
             _iam = await self.this_application.app.who_is(address=address)
             await self.this_application.app.device_info_cache.set_device_info(_iam[0])
-            dic = await self.this_application.app.device_info_cache.get_device_info(address)
+            dic = await self.this_application.app.device_info_cache.get_device_info(
+                address
+            )
             self.log(f"Device Info Cache : {dic}", level="debug")
 
         values = []
@@ -333,7 +340,7 @@ class ReadProperty:
         except ValueError:
             addr, obj_type_str, prop_id_str = args[:3]
             object_identifier = ObjectIdentifier(obj_type_str)
-        
+
         device_address = Address(addr)
 
         # TODO : This part needs work to find proprietary objects
