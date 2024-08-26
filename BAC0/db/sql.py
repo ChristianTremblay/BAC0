@@ -247,13 +247,12 @@ class SQLMixin(object):
         try:
             with open(f"{self.properties.db_name}.bin", "wb") as file:
                 pickle.dump(prop_backup, file)
+            if self.properties.clear_history_on_save:
+                self.clear_histories()
+
+            self.log(f"Device saved to {self.properties.db_name}.db", level="info")
         except Exception as error:
             self._log.error(f"Error saving to pickle file: {error}")
-
-        if self.properties.clear_history_on_save:
-            self.clear_histories()
-
-        self.log(f"Device saved to {self.properties.db_name}.db", level="info")
 
     def points_from_sql(self, db_name):
         """
