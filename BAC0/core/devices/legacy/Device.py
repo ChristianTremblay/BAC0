@@ -546,13 +546,13 @@ class DeviceConnected(Device):
         except IndexError:
             if self._reconnect_on_failure:
                 self.log(
-                    "Device creation failed... re-connecting {self.properties.address} | {self.properties.device_id}",
+                    f"Device creation failed... re-connecting {self.properties.address} | {self.properties.device_id}",
                     level="error",
                 )
                 self.new_state(DeviceDisconnected)
             else:
                 self.log(
-                    "Device creation failed... disconnecting {self.properties.address} | {self.properties.device_id}",
+                    f"Device creation failed... disconnecting {self.properties.address} | {self.properties.device_id}",
                     level="error",
                 )
 
