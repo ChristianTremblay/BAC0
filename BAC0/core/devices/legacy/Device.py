@@ -537,15 +537,24 @@ class DeviceConnected(Device):
             self.update_history_size(size=self.properties.history_size)
             # self.clear_histories()
         except NoResponseFromController:
-            self.log("Cannot retrieve object list, disconnecting...", level="error")
+            self.log(
+                f"Cannot retrieve object list of {self.properties.address} | {self.properties.device_id}, disconnecting...",
+                level="error",
+            )
             self.segmentation_supported = False
             self.new_state(DeviceDisconnected)
         except IndexError:
             if self._reconnect_on_failure:
-                self.log("Device creation failed... re-connecting", level="error")
+                self.log(
+                    "Device creation failed... re-connecting {self.properties.address} | {self.properties.device_id}",
+                    level="error",
+                )
                 self.new_state(DeviceDisconnected)
             else:
-                self.log("Device creation failed... disconnecting", level="error")
+                self.log(
+                    "Device creation failed... disconnecting {self.properties.address} | {self.properties.device_id}",
+                    level="error",
+                )
 
     def __getitem__(self, point_name):
         """
