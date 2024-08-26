@@ -291,5 +291,9 @@ class SQLMixin(object):
         Device properties retrieved from pickle
         """
         self.log("Reading prop from DB file", level="debug")
-        with open(f"{device_name}.bin", "rb") as file:
-            return pickle.load(file)["device"]
+        try:
+            with open(f"{device_name}.bin", "rb") as file:
+                return pickle.load(file)["device"]
+        except EOFError:
+            self._log.error("Error reading device properties")
+            raise ValueError

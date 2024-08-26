@@ -1067,6 +1067,7 @@ class DeviceFromDB(DeviceConnected):
         # Save important properties for reuse
         if self.properties.db_name:
             dbname = self.properties.db_name
+            self._props = self.read_dev_prop(self.properties.db_name)
         else:
             self.log("Missing argument DB", level="info")
             raise ValueError("Please provide db name using device.load_db('name')")
@@ -1074,7 +1075,6 @@ class DeviceFromDB(DeviceConnected):
         # network = self.properties.network
         pss = self.properties.pss
 
-        self._props = self.read_dev_prop(self.properties.db_name)
         self.points = []
         for point in self.points_from_sql(self.properties.db_name):
             try:
