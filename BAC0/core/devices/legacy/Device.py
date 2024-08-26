@@ -907,7 +907,10 @@ class DeviceDisconnected(Device):
                 self.new_state(RPDeviceConnected)
 
             except (NoResponseFromController, AttributeError) as error:
-                self.log("Error connecting: %s", error, level="warning")
+                self.log(
+                    f"Error connecting to {self.properties.device_id} : {error}",
+                    level="warning",
+                )
                 if self.properties.db_name:
                     self.new_state(DeviceFromDB)
                 else:
