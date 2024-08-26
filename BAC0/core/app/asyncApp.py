@@ -32,11 +32,11 @@ class BAC0Application:
 
     def populate_bdt(self) -> None:
         np = self.app.get_object_name("NetworkPort-1")
-        bdt = []
+        linklayer = self.app.link_layers[np.objectIdentifier]
         for addr in self.bdt:
             bdt_entry = BDTEntry(addr)
-            bdt.append(bdt_entry)
-        np.bbmdBroadcastDistributionTable = bdt
+            np.bbmdBroadcastDistributionTable.append(bdt_entry)
+            linklayer.add_peer(bdt_entry.address)
 
     def get_bacnet_ip_mode(self) -> str:
         return self.app.get_object_name("NetworkPort-1").bacnetIPMode

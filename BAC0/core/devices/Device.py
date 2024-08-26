@@ -9,8 +9,8 @@ Device.py - describe a BACnet Device
 
 """
 import asyncio
-import os.path
 import logging
+import os.path
 
 # --- standard Python modules ---
 from collections import namedtuple
@@ -120,7 +120,7 @@ class Device(SQLMixin):
         reconnect_on_failure: bool = True,
     ):
         self.properties = DeviceProperties()
-        #self.initialized = False
+        # self.initialized = False
         self.properties.address = address
         self.properties.device_id = device_id
         self.properties.network = network
@@ -181,6 +181,7 @@ class Device(SQLMixin):
                 raise BadDeviceDefinition(
                     "Please provide address, device id and network or specify from_backup argument"
                 )
+
     @property
     def initialized(self):
         if isinstance(self, DeviceConnected) and self.creation_task.done():
@@ -438,13 +439,14 @@ class Device(SQLMixin):
         return f"{self.properties.name} / Undefined"
 
 
-#def device(*args: Any, **kwargs: Any) -> Device:
+# def device(*args: Any, **kwargs: Any) -> Device:
 #    dev = Device(*args, **kwargs)
 #    t = asyncio.create_task(dev.new_state(DeviceDisconnected))
 #    dev.creation_task = t
 #    while not t.done:
 #        pass
 #    return dev
+
 
 async def device(*args: Any, **kwargs: Any) -> Device:
     dev = Device(*args, **kwargs)
@@ -462,7 +464,7 @@ class DeviceConnected(Device):
     async def _init_state(self):
         await self._buildPointList()
         self.properties.network.register_device(self)
-        #self.initialized = True
+        # self.initialized = True
 
     async def _disconnect(self, save_on_disconnect=True, unregister=True):
         self.log("Wait while stopping polling", level="info")
@@ -551,7 +553,9 @@ class DeviceConnected(Device):
             if self.properties.pollDelay is not None and self.properties.pollDelay > 0:
                 self.poll(delay=self.properties.pollDelay)
             self.update_history_size(size=self.properties.history_size)
-            self._log.info("Device ready, use device_name.points and start interact with it")
+            self._log.info(
+                "Device ready, use device_name.points and start interact with it"
+            )
             # self.clear_histories()
         except NoResponseFromController:
             self.log("Cannot retrieve object list, disconnecting...", level="error")
@@ -862,7 +866,7 @@ class DeviceDisconnected(Device):
     """
 
     async def _init_state(self):
-        #self.initialized = False
+        # self.initialized = False
         await self.connect()
 
     async def connect(self, *, db=None, network=None):
@@ -896,7 +900,7 @@ class DeviceDisconnected(Device):
                 )
 
                 self.segmentation_supported = (
-                    False if segmentation.numerator == 3 else True
+                    False if segmentation and segmentation.numerator == 3 else True
                 )
 
                 if self.segmentation_supported:
