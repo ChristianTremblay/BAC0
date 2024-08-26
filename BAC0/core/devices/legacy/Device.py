@@ -8,6 +8,7 @@
 Device.py - describe a BACnet Device
 
 """
+
 import os.path
 
 # --- standard Python modules ---
@@ -907,9 +908,8 @@ class DeviceDisconnected(Device):
                 self.new_state(RPDeviceConnected)
 
             except (NoResponseFromController, AttributeError) as error:
-                self.log(
-                    f"Error connecting to {self.properties.device_id} : {error}",
-                    level="warning",
+                self._log.warning(
+                    f"Error connecting to {self.properties.device_id} : {error}"
                 )
                 if self.properties.db_name:
                     self.new_state(DeviceFromDB)
@@ -917,7 +917,7 @@ class DeviceDisconnected(Device):
                     self._log.warning(
                         "Offline: provide database name to load stored data."
                     )
-                    self.log("Ex. controller.connect(db = 'backup')", level="warning")
+                    self._log.warning("Ex. controller.connect(db = 'backup')")
 
     def df(self, list_of_points, force_read=True):
         raise DeviceNotConnected("Must connect to BACnet or database")

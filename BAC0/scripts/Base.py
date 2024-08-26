@@ -88,7 +88,7 @@ class Base:
         segmentationSupported: str = "segmentedBoth",
         bbmdAddress: str = None,
         bbmdTTL: int = 0,
-        bdtable: dict = None,
+        bdtable: list = None,
         modelName: str = "BAC0 Scripting Tool",
         vendorId: int = 842,
         vendorName: str = "SERVISYS inc.",
@@ -224,10 +224,20 @@ class Base:
                     "bacnet-ip-mode": mode,
                 },
             }
+            if mode == "bbmd":
+                # bdt_json_seq = [f"BDTEntry({addr})" for addr in self.bdtable]
+                cfg["network-port"]["bbmdBroadcastDistributionTable"] = self.bdtable
+                print(cfg)
+
+            _cfg = config(cfg)
+            print(_cfg)
 
             self.this_application = BAC0Application(
-                config(cfg), self.localIPAddr, json_file=self.json_file
+                _cfg, self.localIPAddr, json_file=self.json_file
             )
+            if mode == "bbmd":
+                self.this_application.populate_bdt()
+
             self.log("Starting", level="debug")
             self._initialized = True
 
@@ -307,8 +317,6 @@ class Base:
         for path, router_info in self._ric.path_info.items():
             router_address, router_status = router_info
             snet, dnet = path
-            self._routers[str(router_address)].path.append(
-                (path, router_status)
-            )
+            self._routers[str(router_address)].path.append((path, router_status))
 
         return self._routers

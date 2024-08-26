@@ -916,16 +916,14 @@ class DeviceDisconnected(Device):
                 await self.new_state(RPDeviceConnected)
 
             except (NoResponseFromController, AttributeError) as error:
-                self.log(
-                    "BAC0 got no response from controller: %s", error, level="warning"
-                )
+                self._log.warning(f"BAC0 got no response from controller: {error}")
                 if self.properties.db_name:
                     await self.new_state(DeviceFromDB)
                 else:
                     self._log.warning(
                         "Offline: provide database name to load stored data."
                     )
-                    self.log("Ex. controller.connect(db = 'backup')", level="warning")
+                    self._log.warning("Ex. controller.connect(db = 'backup')")
 
     def df(self, list_of_points, force_read=True):
         raise DeviceNotConnected("Must connect to BACnet or database")
