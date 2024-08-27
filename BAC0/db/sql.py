@@ -216,12 +216,9 @@ class SQLMixin(object):
                     'select * from "history"', self.properties.db_name
                 )
                 his.index = his["index"].apply(Timestamp)
-            except Exception:
-                df_to_backup = _df_to_backup()
-            try:
                 last = his.index[-1]
                 df_to_backup = _df_to_backup()[last:]
-            except (IndexError, TypeError):
+            except Exception:
                 df_to_backup = _df_to_backup()
 
         else:
