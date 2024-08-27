@@ -226,9 +226,7 @@ class SQLMixin(object):
         if df_to_backup is None:
             return
         # DataFrames that will be saved to SQL
-        async with contextlib.closing(
-            aiosqlite.connect(f"{self.properties.db_name}.db")
-        ) as con:
+        async with aiosqlite.connect(f"{self.properties.db_name}.db") as con:
             try:
                 data = pd.read_sql("SELECT * FROM history", con)
                 df = pd.concat([data, df_to_backup], sort=True)
