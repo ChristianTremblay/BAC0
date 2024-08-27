@@ -200,7 +200,8 @@ class Device(SQLMixin):
         :return: None
         """
         self.log(
-            f"Changing device state to {str(newstate).split('.')[-1]}", level="info"
+            f"Changing {self.properties.name} state to {str(newstate).split('.')[-1]}",
+            level="info",
         )
         self.__class__ = newstate
         await self._init_state()
@@ -467,13 +468,15 @@ class DeviceConnected(Device):
         # self.initialized = True
 
     async def _disconnect(self, save_on_disconnect=True, unregister=True):
-        self.log("Wait while stopping polling", level="info")
+        self.log(
+            f"Wait while stopping polling for {self.properties.name}", level="info"
+        )
         self.poll(command="stop")
         if unregister:
             self.properties.network.unregister_device(self)
             self.properties.network = None
         if save_on_disconnect:
-            self.log("Savig device to database...", level="info")
+            self.log(f"Saving {self.properties.name} to database...", level="info")
             await self.save()
         if self.properties.db_name:
             await self.new_state(DeviceFromDB)
@@ -1063,7 +1066,7 @@ class DeviceFromDB(DeviceConnected):
             await self._init_state()
 
     async def initialize_device_from_db(self):
-        self.log("Initializing DB", level="info")
+        self.log(f"Initializing DB for {self.properties.name}", level="info")
         # Save important properties for reuse
         if self.properties.db_name:
             dbname = self.properties.db_name
@@ -1072,8 +1075,10 @@ class DeviceFromDB(DeviceConnected):
             except ValueError:
                 raise ValueError(f"Can't find {self.properties.db_name} on drive")
         else:
-            self.log("Missing argument DB", level="info")
-            raise ValueError("Please provide db name using device.load_db('name')")
+            self.log(f"Missing argument DB for {self.properties.name}", level="info")
+            raise ValueError(
+                f"Please provide db name using device.load_db('name') for {self.properties.name}"
+            )
 
         # network = self.properties.network
         pss = self.properties.pss
@@ -1101,7 +1106,7 @@ class DeviceFromDB(DeviceConnected):
         self.properties.save_resampling = self._props["save_resampling"]
         self.properties.clear_history_on_save = self._props["clear_history_on_save"]
         self.properties.default_history_size = self._props["history_size"]
-        self.log("Device restored from db", level="info")
+        self.log(f"{self.properties.name} restored from db", level="info")
         self.log(
             'You can reconnect to network using : "device.connect(network=bacnet)"',
             level="info",

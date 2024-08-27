@@ -618,7 +618,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
 
                 self._polling_task.task = None
                 self._polling_task.running = False
-                self.log("Polling stopped", level="info")
+                self.log(f"{self.properties.name} | Polling stopped", level="info")
 
         elif self._polling_task.task is None:
             self._polling_task.task = _poll_cls(
