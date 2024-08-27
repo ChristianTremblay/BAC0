@@ -211,10 +211,13 @@ class SQLMixin(object):
                 return None
 
         if os.path.isfile(f"{self.properties.db_name}.db"):
-            his = await self._read_from_sql(
-                'select * from "history"', self.properties.db_name
-            )
-            his.index = his["index"].apply(Timestamp)
+            try:
+                his = await self._read_from_sql(
+                    'select * from "history"', self.properties.db_name
+                )
+                his.index = his["index"].apply(Timestamp)
+            except aiosqlite.OperationError:
+                df_to_backup = _df_to_backup()
             try:
                 last = his.index[-1]
                 df_to_backup = _df_to_backup()[last:]
