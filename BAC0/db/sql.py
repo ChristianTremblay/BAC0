@@ -144,10 +144,13 @@ class SQLMixin(object):
                     continue
 
             except Exception as error:
-                self.log(
-                    f"{self.properties.device.properties.name} ({self.properties.device.properties.address}) | Error in resampling {point.properties.name} | {error} (probably not enough points)",
-                    level="error",
-                )
+                try:
+                    self.log(
+                        f"{self.properties.device.properties.name} ({self.properties.device.properties.address}) | Error in resampling {point.properties.name} | {error} (probably not enough points)",
+                        level="error",
+                    )
+                except AttributeError:
+                    raise DataError("Cannot save, missing required information")
                 if (
                     "binary" in point.properties.type
                     or "multi" in point.properties.type
