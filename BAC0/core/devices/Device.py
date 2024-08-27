@@ -1069,7 +1069,7 @@ class DeviceFromDB(DeviceConnected):
             dbname = self.properties.db_name
             try:
                 self._props = self.read_dev_prop(self.properties.db_name)
-            except FileNotFoundError:
+            except ValueError:
                 raise ValueError(f"Can't find {self.properties.db_name} on drive")
         else:
             self.log("Missing argument DB", level="info")
