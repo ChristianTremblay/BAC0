@@ -298,6 +298,6 @@ class SQLMixin(object):
         try:
             with open(f"{device_name}.bin", "rb") as file:
                 return pickle.load(file)["device"]
-        except EOFError:
+        except (EOFError, FileNotFoundError):
             self._log.error("Error reading device properties")
             raise ValueError
