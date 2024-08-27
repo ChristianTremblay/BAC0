@@ -554,7 +554,7 @@ class DeviceConnected(Device):
                 self.poll(delay=self.properties.pollDelay)
             self.update_history_size(size=self.properties.history_size)
             self._log.info(
-                "Device ready, use device_name.points and start interact with it"
+                f"Device {self.properties.name} | {self.properties.device_id} ready, use device_name.points and start interact with it"
             )
             # self.clear_histories()
         except NoResponseFromController:
