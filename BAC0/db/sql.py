@@ -240,7 +240,7 @@ class SQLMixin(object):
 
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(
-                None, df_to_backup.to_sql, "history", con, "index", True, "append"
+                None, df_to_backup.to_sql, "history", con, "index", "append", True
             )
 
         # Saving other properties to a pickle file...
