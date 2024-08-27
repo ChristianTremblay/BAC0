@@ -15,7 +15,7 @@ import os.path
 import pickle
 
 # --- 3rd party modules ---
-import sqlite3
+import aiosqlite
 
 try:
     import pandas as pd
@@ -44,13 +44,16 @@ class SQLMixin(object):
     is not available.
     """
 
-    def _read_from_sql(self, request, db_name):
+    async def _read_from_sql(self, request, db_name):
         """
         Using the contextlib, I hope to close the connection to database when
         not in use
         """
-        with contextlib.closing(sqlite3.connect(f"{db_name}.db")) as con:
-            return sql.read_sql(sql=request, con=con)
+        async with aiosqlite.connect(f"{db_name}.db") as con:
+            async with con.execute(request) as cursor:
+                rows = await cursor.fetchall()
+                columns = [description[0] for description in cursor.description]
+                return pd.DataFrame(rows, columns=columns)
 
     def dev_properties_df(self):
         dic = self.properties.asdict.copy()
@@ -175,7 +178,7 @@ class SQLMixin(object):
         else:
             return df
 
-    def save(self, filename=None, resampling=None):
+    async def save(self, filename=None, resampling=None):
         """
         Save the point histories to sqlite3 database.
         Save the device object properties to a pickle file so the device can be reloaded.
@@ -206,7 +209,7 @@ class SQLMixin(object):
                 return None
 
         if os.path.isfile(f"{self.properties.db_name}.db"):
-            his = self._read_from_sql(
+            his = await self._read_from_sql(
                 'select * from "history"', self.properties.db_name
             )
             his.index = his["index"].apply(Timestamp)
@@ -223,8 +226,8 @@ class SQLMixin(object):
         if df_to_backup is None:
             return
         # DataFrames that will be saved to SQL
-        with contextlib.closing(
-            sqlite3.connect(f"{self.properties.db_name}.db")
+        async with contextlib.closing(
+            aiosqlite.connect(f"{self.properties.db_name}.db")
         ) as con:
             try:
                 data = pd.read_sql("SELECT * FROM history", con)
@@ -254,26 +257,26 @@ class SQLMixin(object):
         except Exception as error:
             self._log.error(f"Error saving to pickle file: {error}")
 
-    def points_from_sql(self, db_name):
+    async def points_from_sql(self, db_name):
         """
         Retrieve point list from SQL database
         """
-        points = self._read_from_sql("SELECT * FROM history;", db_name)
+        points = await self._read_from_sql("SELECT * FROM history;", db_name)
         return list(points.columns.values)[1:]
 
-    def his_from_sql(self, db_name, point):
+    async def his_from_sql(self, db_name, point):
         """
         Retrive point histories from SQL database
         """
-        his = self._read_from_sql('select * from "history"', db_name)
+        his = await self._read_from_sql('select * from "history"', db_name)
         his.index = his["index"].apply(Timestamp)
         return his.set_index("index")[point]
 
-    def value_from_sql(self, db_name, point):
+    async def value_from_sql(self, db_name, point):
         """
         Take last known value as the value
         """
-        return self.his_from_sql(db_name, point).last_valid_index()
+        return await self.his_from_sql(db_name, point).last_valid_index()
 
     def read_point_prop(self, device_name, point):
         """

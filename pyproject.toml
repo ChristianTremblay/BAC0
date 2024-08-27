@@ -5,7 +5,7 @@ description = "BACnet Scripting Framework for testing DDC Controls"
 authors = [{name = "Christian Tremblay", email = "christian.tremblay@servisys.com"}]
 readme = "README.md"
 keywords = ["bacnet", "building", "automation", "test"]
-dependencies=["BACpypes3", "colorama", "python-dotenv", "pytz"]
+dependencies=["BACpypes3", "colorama", "python-dotenv", "pytz", "aiosqlite"]
 
 [build-system]
 requires = ["setuptools"]

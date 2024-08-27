@@ -474,7 +474,7 @@ class DeviceConnected(Device):
             self.properties.network = None
         if save_on_disconnect:
             self.log("Savig device to database...", level="info")
-            self.save()
+            await self.save()
         if self.properties.db_name:
             await self.new_state(DeviceFromDB)
         else:
@@ -1076,7 +1076,7 @@ class DeviceFromDB(DeviceConnected):
         pss = self.properties.pss
 
         self.points = []
-        for point in self.points_from_sql(self.properties.db_name):
+        for point in await self.points_from_sql(self.properties.db_name):
             try:
                 self.points.append(OfflinePoint(self, point))
             except RemovedPointException:
