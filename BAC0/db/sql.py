@@ -216,7 +216,7 @@ class SQLMixin(object):
                     'select * from "history"', self.properties.db_name
                 )
                 his.index = his["index"].apply(Timestamp)
-            except aiosqlite.OperationError:
+            except Exception:
                 df_to_backup = _df_to_backup()
             try:
                 last = his.index[-1]
