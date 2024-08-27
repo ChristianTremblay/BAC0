@@ -8,6 +8,7 @@
 sql.py -
 """
 
+import asyncio
 import os.path
 
 # --- standard Python modules ---
@@ -234,12 +235,9 @@ class SQLMixin(object):
             except Exception:
                 df = df_to_backup
 
-            await df_to_backup.to_sql(
-                name="history",
-                con=con,
-                index_label="index",
-                index=True,
-                if_exists="append",
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(
+                None, df_to_backup.to_sql, "history", con, "index", True, "append"
             )
 
         # Saving other properties to a pickle file...
