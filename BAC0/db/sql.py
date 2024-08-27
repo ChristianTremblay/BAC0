@@ -8,7 +8,6 @@
 sql.py -
 """
 
-import contextlib
 import os.path
 
 # --- standard Python modules ---
@@ -20,7 +19,6 @@ import aiosqlite
 try:
     import pandas as pd
     from pandas.errors import DataError
-    from pandas.io import sql
 
     try:
         from pandas import Timestamp
@@ -228,13 +226,15 @@ class SQLMixin(object):
         # DataFrames that will be saved to SQL
         async with aiosqlite.connect(f"{self.properties.db_name}.db") as con:
             try:
-                data = pd.read_sql("SELECT * FROM history", con)
-                df = pd.concat([data, df_to_backup], sort=True)
+                async with con.execute("SELECT * FROM history") as cursor:
+                    data = await cursor.fetchall()
+                    columns = [description[0] for description in cursor.description]
+                    data = pd.DataFrame(data, columns=columns)
+                    df = pd.concat([data, df_to_backup], sort=True)
             except Exception:
                 df = df_to_backup
 
-            sql.to_sql(
-                df_to_backup,
+            await df_to_backup.to_sql(
                 name="history",
                 con=con,
                 index_label="index",
