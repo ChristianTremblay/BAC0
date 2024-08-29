@@ -209,7 +209,7 @@ class SQLMixin(object):
                 return self.backup_histories_df(resampling=resampling)
             except (DataError, NoResponseFromController):
                 self.log("Impossible to save right now, error in data", level="error")
-                return None
+                return pd.DataFrame()
 
         if os.path.isfile(f"{self.properties.db_name}.db"):
             try:

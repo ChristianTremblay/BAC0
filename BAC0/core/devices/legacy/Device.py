@@ -205,7 +205,8 @@ class Device(SQLMixin):
         Take care to call the state init function.
         """
         self.log(
-            f"Changing device state to {str(newstate).split('.')[-1]}", level="info"
+            f"Changing {self.properties.name} state to {str(newstate).split('.')[-1]}",
+            level="info",
         )
         self.__class__ = newstate
         self._init_state()
