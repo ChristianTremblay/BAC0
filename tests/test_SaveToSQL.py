@@ -8,6 +8,7 @@ import os.path
 import pytest
 import BAC0
 
+
 @pytest.mark.asyncio
 async def test_SaveToSQL(network_and_devices):
     async for resources in network_and_devices:
@@ -19,6 +20,7 @@ async def test_SaveToSQL(network_and_devices):
         assert os.path.isfile("{}.db".format(test_device.properties.db_name))
         assert os.path.isfile("{}.db".format("obj30"))
         # assert os.path.isfile("{}.db".format("obj300"))
+
 
 @pytest.mark.asyncio
 async def test_disconnection_of_device(network_and_devices):

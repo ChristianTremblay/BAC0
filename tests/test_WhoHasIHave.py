@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import pytest
 
+
 @pytest.mark.asyncio
 async def test_WhoHas(network_and_devices):
     # Write to an object and validate new value is correct

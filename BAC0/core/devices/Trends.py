@@ -121,6 +121,7 @@ class _TrendLog(TrendLogProperties):
                     oid=str(self.properties.oid),
                 )
             )
+            self.properties.description = str(self.properties.description)
         except Exception as error:
             raise Exception(f"Problem reading trendLog informations: {error}")
 

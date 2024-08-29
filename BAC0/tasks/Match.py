@@ -42,9 +42,17 @@ class Match(Task):
         Task.__init__(self, delay=delay, name=name)
 
     async def task(self):
-        if self.status.properties.network.initialized is False or self.status.properties.network.initialized is None or self.status is None:
+        if (
+            self.status.properties.network.initialized is False
+            or self.status.properties.network.initialized is None
+            or self.status is None
+        ):
             raise NotReadyError(f"{self.status} is not ready")
-        if self.command.properties.network.initialized is False or self.command.properties.network.initialized is None or self.command is None:
+        if (
+            self.command.properties.network.initialized is False
+            or self.command.properties.network.initialized is None
+            or self.command is None
+        ):
             raise NotReadyError(f"{self.command} is not ready")
         try:
             if self.status.history[-1] != self.command.history[-1]:
@@ -55,8 +63,11 @@ class Match(Task):
                 )
                 self.log(f"Match value is {_val}", level="debug")
                 await self.status._setitem(_val.replace(" ", ""))
-        except (NotReadyError,TypeError) as error:
-            self.log(f"Problem executing match value task {self.status.name} -> {self.command.name} : {error}", level="warning")
+        except (NotReadyError, TypeError) as error:
+            self.log(
+                f"Problem executing match value task {self.status.name} -> {self.command.name} : {error}",
+                level="warning",
+            )
         except Exception as error:
             self._log.error(
                 f"Something wrong matching {self.command.properties.name} and {self.status.properties.name}... try again next time...\nError:{error}"
@@ -94,7 +105,11 @@ class Match_Value(Task):
         Task.__init__(self, delay=delay, name=name)
 
     async def task(self):
-        if self.point.properties.device.initialized is False or self.point.properties.device.initialized is None or self.point is None:
+        if (
+            self.point.properties.device.initialized is False
+            or self.point.properties.device.initialized is None
+            or self.point is None
+        ):
             raise NotReadyError(f"{self.point} is not ready")
         try:
             if self.use_last_value:
@@ -104,12 +119,16 @@ class Match_Value(Task):
             value = self.value() if hasattr(self.value, "__call__") else self.value
             if value != _point:
                 await self.point._set(value=value)
-        except (NotReadyError,TypeError) as error:
-            self.log(f"Problem executing match value task on {self.point.name} -> {value}: {error}", level="warning")
+        except (NotReadyError, TypeError) as error:
+            self.log(
+                f"Problem executing match value task on {self.point.name} -> {value}: {error}",
+                level="warning",
+            )
             await asyncio.sleep(1)
         except Exception as error:
             self.log(
-                f"Something is wrong matching {self.value} and {self.point.properties.name}... try again next time {error}", level="error"
+                f"Something is wrong matching {self.value} and {self.point.properties.name}... try again next time {error}",
+                level="error",
             )
             await asyncio.sleep(1)
 
@@ -120,7 +139,8 @@ class Match_Value(Task):
             self.log(
                 "Could not set {} to auto. If this is a network input, it is normal as we didn't have to override or simulate".format(
                     self.point
-                ), level="warning"
+                ),
+                level="warning",
             )
 
     async def stop(self):

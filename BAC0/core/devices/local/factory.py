@@ -303,7 +303,7 @@ def _create(definition, **kwargs):
     return ObjectFactory.from_dict(_definition)
 
 
-def make_state_text(list_of_string:list[str]):
+def make_state_text(list_of_string: list[str]):
     _arr = ArrayOf(CharacterString)
     _lst = [CharacterString(each) for each in list_of_string]
     return _arr(_lst)
@@ -409,9 +409,9 @@ def multistate(**kwargs):
             # "numberOfStates": Unsigned(2),
         },
         "description": "No description",
-        #"presentValue": Unsigned(1),
-        #"is_commandable": False,
-        #"relinquishDefault": Unsigned(1),
+        # "presentValue": Unsigned(1),
+        # "is_commandable": False,
+        # "relinquishDefault": Unsigned(1),
     }
     return _create(definition, **kwargs)
 

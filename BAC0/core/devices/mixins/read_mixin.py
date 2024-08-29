@@ -313,7 +313,7 @@ class RPMObjectsProcessing:
                 elif obj_type == "multi":
                     presentValue = int(presentValue)
             try:
-                point_description = point_infos[_find_propid_index("description")]
+                point_description = str(point_infos[_find_propid_index("description")])
             except KeyError:
                 point_description = ""
             try:

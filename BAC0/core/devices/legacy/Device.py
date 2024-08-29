@@ -801,7 +801,7 @@ class DeviceConnected(Device):
             value=value,
             prop_id="description",
         )
-        self.properties.description = self.read_property("description")
+        self.properties.description = str(self.read_property("description"))
 
     def ping(self):
         try:

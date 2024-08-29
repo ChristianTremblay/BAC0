@@ -16,10 +16,12 @@ import pickle
 
 # --- 3rd party modules ---
 import aiosqlite
+from bacpypes3.primitivedata import CharacterString
 
 try:
     import pandas as pd
     from pandas.errors import DataError
+    from pandas.io import sql
 
     try:
         from pandas import Timestamp
@@ -57,6 +59,7 @@ class SQLMixin(object):
     def dev_properties_df(self):
         dic = self.properties.asdict.copy()
         dic.pop("network", None)
+        dic["objects_list"] = []
         dic.pop("pss", None)
         return dic
 
@@ -71,7 +74,7 @@ class SQLMixin(object):
             p.pop("network", None)
             p.pop("simulated", None)
             p.pop("overridden", None)
-            pprops[each.properties.name] = p
+            pprops[str(each.properties.name)] = p
 
         return pd.DataFrame(pprops)
 
@@ -117,7 +120,7 @@ class SQLMixin(object):
 
         # print(resampling, resampling_freq, resampling_needed)
         for point in self.points:
-            _name = point.properties.name
+            _name = str(point.properties.name)
             try:
                 if (
                     "binary" in point.properties.type
@@ -134,9 +137,7 @@ class SQLMixin(object):
                         .last()
                     )
                 elif resampling_needed and "analog" in point.properties.type:
-                    backup[point.properties.name] = point.history.resample(
-                        resampling_freq
-                    ).mean()
+                    backup[_name] = point.history.resample(resampling_freq).mean()
                 else:
                     # backup[point.properties.name] = point.history.resample(
                     #    resampling_freq
@@ -169,9 +170,7 @@ class SQLMixin(object):
                     )
                     backup[_name] = point.history.resample(resampling_freq).last()
                 elif "analog" in point.properties.type:
-                    backup[point.properties.name] = point.history.resample(
-                        resampling_freq
-                    ).mean()
+                    backup[_name] = point.history.resample(resampling_freq).mean()
                 else:
                     # backup[point.properties.name] = point.history
                     continue
@@ -237,13 +236,20 @@ class SQLMixin(object):
                     columns = [description[0] for description in cursor.description]
                     data = pd.DataFrame(data, columns=columns)
                     df = pd.concat([data, df_to_backup], sort=True)
+                    sql.to_sql(
+                        df_to_backup,
+                        name="history",
+                        con=con,
+                        index_label="index",
+                        index=True,
+                        if_exists="append",
+                    )
             except Exception:
                 df = df_to_backup
 
-            loop = asyncio.get_event_loop()
-            await loop.run_in_executor(
-                None, df_to_backup.to_sql, "history", con, "append", True, "index"
-            )
+            # asyncio.run(
+            #    None, df_to_backup.to_sql, "history", con, None, "append", True, "index"
+            # )
 
         # Saving other properties to a pickle file...
         prop_backup = {"device": self.dev_properties_df()}

@@ -19,6 +19,7 @@ import subprocess
 import re
 
 import struct
+
 # from bacpypes.pdu import Address as legacy_Address
 from bacpypes3.pdu import Address
 
@@ -136,7 +137,7 @@ class HostIP:
                 "we'll consider 255.255.255.0 (/24).\nYou can install netifaces using 'pip install netifaces'."
             )
             return "255.255.255.0"
-        
+
     def _findSubnetMask(self, ip: str) -> str:
         """
         Retrieve the broadcast IP address connected to internet... used as
@@ -149,12 +150,12 @@ class HostIP:
         if platform.system() == "Windows":
             try:
                 # Run the ipconfig command
-                result = subprocess.run(['ipconfig'], capture_output=True, text=True)
+                result = subprocess.run(["ipconfig"], capture_output=True, text=True)
                 output = result.stdout
 
                 # Regular expression to match IP and subnet mask
-                ip_pattern = re.compile(r'IPv4 Address[. ]*: ([\d.]+)')
-                mask_pattern = re.compile(r'Subnet Mask[. ]*: ([\d.]+)')
+                ip_pattern = re.compile(r"IPv4 Address[. ]*: ([\d.]+)")
+                mask_pattern = re.compile(r"Subnet Mask[. ]*: ([\d.]+)")
 
                 # Parse the output
                 lines = output.splitlines()
@@ -175,12 +176,13 @@ class HostIP:
                 return None
         elif platform.system() == "Linux":
             import fcntl
+
             def get_interface_info(ifname):
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 return fcntl.ioctl(
                     s.fileno(),
-                    0x891b,  # SIOCGIFNETMASK
-                    struct.pack('256s', ifname[:15].encode('utf-8'))
+                    0x891B,  # SIOCGIFNETMASK
+                    struct.pack("256s", ifname[:15].encode("utf-8")),
                 )
 
             try:
@@ -188,11 +190,13 @@ class HostIP:
                 for ifindex, ifname in interfaces:
                     try:
                         netmask = socket.inet_ntoa(get_interface_info(ifname)[20:24])
-                        ip_address = socket.inet_ntoa(fcntl.ioctl(
-                            socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
-                            0x8915,  # SIOCGIFADDR
-                            struct.pack('256s', ifname[:15].encode('utf-8'))
-                        )[20:24])
+                        ip_address = socket.inet_ntoa(
+                            fcntl.ioctl(
+                                socket.socket(socket.AF_INET, socket.SOCK_DGRAM),
+                                0x8915,  # SIOCGIFADDR
+                                struct.pack("256s", ifname[:15].encode("utf-8")),
+                            )[20:24]
+                        )
                         if ip is None or ip_address == ip:
                             return netmask
                     except IOError:
@@ -219,4 +223,3 @@ def validate_ip_address(ip: Address) -> bool:
     finally:
         s.close()
     return result
-

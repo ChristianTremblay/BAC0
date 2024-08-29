@@ -23,6 +23,7 @@ try:
     from rich.console import Console
     from rich.table import Table
     from rich import print, pretty
+
     pretty.install()
     RICH = True
 except ImportError:
@@ -452,7 +453,7 @@ class Lite(
     def __repr__(self) -> str:
         return f"Bacnet Network using ip {self.localIPAddr} with device id {self.Boid}"
 
-    def __getitem__(self, boid_or_localobject:t.Union[str, ObjectIdentifier, tuple]):
+    def __getitem__(self, boid_or_localobject: t.Union[str, ObjectIdentifier, tuple]):
         """
         Retrieve an item from the application by its name or identifier.
 

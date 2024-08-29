@@ -23,6 +23,7 @@ from bacpypes3.primitivedata import CharacterString
 from ..io.IOExceptions import ApplicationNotStarted, NoResponseFromController
 from ..utils.notes import note_and_log
 from ...core.app.asyncApp import BAC0Application
+
 # --- standard Python modules ---
 
 
@@ -46,14 +47,13 @@ class Reinitialize:
 
         # build a request
         request = ReinitializeDeviceRequest()
-        request.reinitializedStateOfDevice = (
-            getattr(ReinitializeDeviceRequestReinitializedStateOfDevice, state)
+        request.reinitializedStateOfDevice = getattr(
+            ReinitializeDeviceRequestReinitializedStateOfDevice, state
         )
         request.pduDestination = Address(address)
         request.password = CharacterString(password)
 
         self.log(f"{'- request:':>12} {request}", level="debug")
         _app.request(request)
-        
 
         self.log(f"Reinitialize request sent to device : {address}", level="info")

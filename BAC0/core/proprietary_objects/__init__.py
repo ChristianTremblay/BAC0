@@ -1,11 +1,24 @@
-from bacpypes3.primitivedata import Atomic, Enumerated, Real, Unsigned, Boolean, CharacterString, TagList, TagClass, TagNumber, Tag
+from bacpypes3.primitivedata import (
+    Atomic,
+    Enumerated,
+    Real,
+    Unsigned,
+    Boolean,
+    CharacterString,
+    TagList,
+    TagClass,
+    TagNumber,
+    Tag,
+)
 from bacpypes3.errors import DecodingError, InvalidTag, PropertyError
 from typing import Any as _Any, Callable, Optional
+
 
 class OptionalUnsigned(Unsigned):
     """
     This is a special case where a vendor will send NULL values for Unsigned
     """
+
     @classmethod
     def decode(cls, tag_list: TagList) -> Optional[Unsigned]:
         """Decode an unsigned element from a tag list."""
@@ -20,7 +33,9 @@ class OptionalUnsigned(Unsigned):
                 if tag.tag_number == TagNumber.null:
                     return None
                 else:
-                    raise InvalidTag(f"unsigned application tag expected, got {tag.tag_number}")
+                    raise InvalidTag(
+                        f"unsigned application tag expected, got {tag.tag_number}"
+                    )
         elif tag.tag_class == TagClass.context:
             if cls._context is None:
                 raise InvalidTag("unsigned application tag expected")

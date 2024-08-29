@@ -126,11 +126,11 @@ class Point:
         self.properties.history_size = history_size
 
         self.properties.device = device
-        self.properties.name = pointName
+        self.properties.name = str(pointName)
         self.properties.type = pointType
         self.properties.address = pointAddress
 
-        self.properties.description = description
+        self.properties.description = str(description)
         self.properties.units_state = units_state
         self.properties.simulated = (False, 0)
         self.properties.overridden = (False, 0)
@@ -667,13 +667,13 @@ class Point:
     async def cancel_cov(self):
         self.log(f"Canceling COV subscription for {self.properties.name}", level="info")
         process_identifer = self.cov_task.process_identifier
-        
+
         if process_identifer not in Point._running_cov_tasks:
             await self.response("COV subscription not found")
             return
         cov_subscription = Point._running_cov_tasks.pop(process_identifer)
         cov_subscription.stop()
-        #await cov_subscription.task
+        # await cov_subscription.task
 
     def update_description(self, value):
         asyncio.create_task(self._update_description(value=value))
@@ -690,7 +690,7 @@ class Point:
             value=value,
             prop_id="description",
         )
-        self.properties.description = self.read_property("description")
+        self.properties.description = str(self.read_property("description"))
 
     def tag(self, tag_id, tag_value, lst=None):
         """
@@ -886,6 +886,7 @@ class BooleanPoint(Point):
             units_state=units_state,
             history_size=history_size,
         )
+        self.properties.units_state = tuple(str(x) for x in units_state)
 
     def _trend(self, res):
         res = "1: active" if res == BinaryPV.active else "0: inactive"
@@ -1017,6 +1018,7 @@ class EnumPoint(Point):
             units_state=units_state,
             history_size=history_size,
         )
+        self.properties.units_state = [str(x) for x in units_state]
 
     def _trend(self, res):
         res = f"{res}: {self.get_state(res)}"
@@ -1492,7 +1494,6 @@ class COVSubscription:
         self.process_identifier = Point._last_cov_identifier + 1
         Point._last_cov_identifier = self.process_identifier
 
-
         self.point = point
         self.lifetime = lifetime
         self.confirmed = confirmed
@@ -1515,7 +1516,9 @@ class COVSubscription:
                 while not self.cov_fini.is_set():
                     incoming: asyncio.Future = asyncio.ensure_future(scm.get_value())
                     done, pending = await asyncio.wait(
-                        [incoming,],
+                        [
+                            incoming,
+                        ],
                         return_when=asyncio.FIRST_COMPLETED,
                     )
                     for task in pending:
@@ -1528,9 +1531,7 @@ class COVSubscription:
                             level="info",
                         )
                         if property_identifier == PropertyIdentifier.presentValue:
-                            val = extract_value_from_primitive_data(
-                                property_value
-                            )
+                            val = extract_value_from_primitive_data(property_value)
                             self.point._trend(val)
                         elif property_identifier == PropertyIdentifier.statusFlags:
                             self.point.properties.status_flags = property_value
@@ -1544,7 +1545,8 @@ class COVSubscription:
 
     def stop(self):
         self.point.log(
-            f"Stopping COV subscription class for {self.point.properties.name}", level="debug"
+            f"Stopping COV subscription class for {self.point.properties.name}",
+            level="debug",
         )
         self.cov_fini.set()
         self.point.cov_registered = False

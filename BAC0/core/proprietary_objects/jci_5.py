@@ -5,6 +5,7 @@
 #
 # Register Johnson Controls Proprietary Objects and properties
 """
+
 from bacpypes3.vendor import VendorInfo, get_vendor_info
 from bacpypes3.basetypes import ObjectTypesSupported
 from bacpypes3.basetypes import PropertyIdentifier
@@ -25,9 +26,11 @@ from bacpypes3.primitivedata import (
     Time,
     Unsigned,
 )
-#from . import OptionalUnsigned
+
+# from . import OptionalUnsigned
 from bacpypes3.basetypes import OptionalUnsigned
 from typing import Any as _Any, Callable, Optional
+
 # some debugging
 _debug = 0
 _log = ModuleLogger(globals())
@@ -36,7 +39,6 @@ _log = ModuleLogger(globals())
 # this vendor identifier reference is used when registering custom classes
 _vendor_id = 5
 _vendor_name = "Johnson Controls"
-
 
 
 class ProprietaryObjectType(ObjectType):
@@ -144,19 +146,20 @@ class ProprietaryPropertyIdentifier(PropertyIdentifier):
     # polarity = polarity
     stroketime = 3478
 
+
 try:
-    _jci = VendorInfo(
-    _vendor_id, ProprietaryObjectType, ProprietaryPropertyIdentifier
-    )
+    _jci = VendorInfo(_vendor_id, ProprietaryObjectType, ProprietaryPropertyIdentifier)
 except RuntimeError:
     pass  # we are re-running the script... forgive us or maybe we already read a jci device
     _jci = get_vendor_info(_vendor_id)
 
+
 class JCIDeviceObject(_DeviceObject):
     """
     When running as an instance of this custom device, the DeviceObject is
-    an extension of the one defined in bacpypes3.local.device 
+    an extension of the one defined in bacpypes3.local.device
     """
+
     alarm_state: Enumerated
     archive_date: Date
     archive_status: Unsigned
@@ -244,6 +247,7 @@ class JCIAnalogInputObject(_AnalogInputObject):
     inputrangehigh: Real
     outputrangelow: Real
     outputrangehigh: Real
+
 
 class JCIAnalogValueObject(_AnalogValueObject):
     flow_sp_eeprom: Real

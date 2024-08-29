@@ -534,8 +534,10 @@ class DeviceConnected(Device):
             self.segmentation_supported = False
             await self.new_state(DeviceDisconnected)
 
-        self.properties.name = await self.properties.network.read(
-            f"{self.properties.address} device {self.properties.device_id} objectName"
+        self.properties.name = str(
+            await self.properties.network.read(
+                f"{self.properties.address} device {self.properties.device_id} objectName"
+            )
         )
         self.properties.vendor_id = await self.properties.network.read(
             "{} device {} vendorIdentifier".format(
@@ -815,7 +817,7 @@ class DeviceConnected(Device):
             value=value,
             prop_id="description",
         )
-        self.properties.description = await self.read_property("description")
+        self.properties.description = str(await self.read_property("description"))
 
     async def ping(self):
         try:

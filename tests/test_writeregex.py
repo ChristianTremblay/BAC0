@@ -1,5 +1,7 @@
 import pytest
+
 from BAC0.core.io.Write import write_pattern
+
 
 @pytest.mark.parametrize(
     "req",
@@ -13,6 +15,9 @@ from BAC0.core.io.Write import write_pattern
         "303:5 binaryInput:1095 presentValue active",
         "303:5 analog-input 1095 presentValue 10.3",
         "303:5 analogInput:1095 presentValue 15.3",
+        "303:5 analogInput:1095",
+        "303:5 analog-input:1095",
+        "303:5 analog-input 1095",
     ],
 )
 @pytest.mark.asyncio

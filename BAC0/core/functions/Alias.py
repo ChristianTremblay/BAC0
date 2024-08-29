@@ -57,7 +57,9 @@ class Alias:
 
         _app.i_am(address=address)
 
-    async def whois_router_to_network(self, network=None, *, destination=None, timeout=3):
+    async def whois_router_to_network(
+        self, network=None, *, destination=None, timeout=3
+    ):
         """
         Send a Who-Is-Router-To-Network request. This request is used to discover routers
         on the network that can route messages to a specific network.
@@ -74,13 +76,17 @@ class Alias:
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
         try:
-            network_numbers = await asyncio.wait_for(_app.nse.who_is_router_to_network(), timeout)
+            network_numbers = await asyncio.wait_for(
+                _app.nse.who_is_router_to_network(), timeout
+            )
             return network_numbers
         except asyncio.TimeoutError:
             # Handle the timeout error
-            self.log("Request timed out for whois_router_to_network, no response", level='warning')
+            self.log(
+                "Request timed out for whois_router_to_network, no response",
+                level="warning",
+            )
             return []
-        
 
     async def init_routing_table(self, address):
         """
@@ -107,11 +113,16 @@ class Alias:
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
         try:
-            network_number = await asyncio.wait_for(_app.nse.what_is_network_number(), timeout)
+            network_number = await asyncio.wait_for(
+                _app.nse.what_is_network_number(), timeout
+            )
             return network_number
         except asyncio.TimeoutError:
             # Handle the timeout error
-            self.log("Request timed out for what_is_network_number, no response", level='warning')
+            self.log(
+                "Request timed out for what_is_network_number, no response",
+                level="warning",
+            )
             return None
 
     async def whohas(
