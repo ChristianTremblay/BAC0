@@ -227,10 +227,8 @@ class Base:
             if mode == "bbmd":
                 # bdt_json_seq = [f"BDTEntry({addr})" for addr in self.bdtable]
                 cfg["network-port"]["bbmdBroadcastDistributionTable"] = self.bdtable
-                print(cfg)
 
             _cfg = config(cfg)
-            print(_cfg)
 
             self.this_application = BAC0Application(
                 _cfg, self.localIPAddr, json_file=self.json_file
