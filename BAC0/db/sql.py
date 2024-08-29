@@ -268,8 +268,12 @@ class SQLMixin(object):
         """
         Retrieve point list from SQL database
         """
-        points = await self._read_from_sql("SELECT * FROM history;", db_name)
-        return list(points.columns.values)[1:]
+        try:
+            points = await self._read_from_sql("SELECT * FROM history;", db_name)
+            return list(points.columns.values)[1:]
+        except Exception as error:
+            self._log.warning(f"No history retrieved from {db_name}.db:")
+            return []
 
     async def his_from_sql(self, db_name, point):
         """
