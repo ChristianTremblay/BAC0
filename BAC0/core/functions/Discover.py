@@ -190,6 +190,6 @@ class Discover:
                 }
 
         self.log(
-            f"Discovery done. Found {len(self.discoveredDevices)} devices on {len(_networks)} BACnet networks.",
+            f"Discovery done. Found {len(self.discoveredDevices) if self.discoveredDevices else 0} devices on {len(_networks) if _networks else 0} BACnet networks.",
             level="info",
         )

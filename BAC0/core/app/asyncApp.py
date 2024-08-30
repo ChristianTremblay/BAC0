@@ -25,10 +25,12 @@ class BAC0Application:
 
         self.app: Application = Application.from_json(self.cfg["application"])
 
-    def add_foreign_device_host(self, host: str) -> None:
+    def register_as_foreign_device_to(self, host: str, lifetime: int = 900) -> None:
         np = self.app.get_object_name("NetworkPort-1")
+        linklayer = self.app.link_layers[np.objectIdentifier]
         hnp = HostNPort(host)
         np.fdBBMDAddress = hnp
+        linklayer.register(hnp.address, lifetime)
 
     def populate_bdt(self) -> None:
         np = self.app.get_object_name("NetworkPort-1")

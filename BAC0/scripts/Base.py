@@ -234,14 +234,23 @@ class Base:
                 _cfg, self.localIPAddr, json_file=self.json_file
             )
             if mode == "bbmd":
+                self._log.info(f"Populating BDT with {self.bdtable}")
                 self.this_application.populate_bdt()
+
+            if mode == "foreign":
+                self._log.info(
+                    f"Registering as a foreign device to host {self.bbmdAddress} for {self.bbmdTTL} seconds"
+                )
+                self.this_application.register_as_foreign_device_to(
+                    host=self.bbmdAddress, lifetime=self.bbmdTTL
+                )
 
             self.log("Starting", level="debug")
             self._initialized = True
 
             try:
                 Base._used_ips.add(self.localIPAddr)
-                self.log(f"Registered as {app_type}", level="info")
+                self.log(f"Registered as {app_type} | mode {mode}", level="info")
                 self._started = True
             except OSError as error:
                 self.log(f"Error opening socket: {error}", level="warning")
