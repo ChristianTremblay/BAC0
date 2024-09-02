@@ -10,8 +10,9 @@ def run(main_task, bacnet):
     global loop
 
     def handler(sig, sig2):
-        bacnet._log.info(f"Got signal: {sig!s}, shutting down.")
-        bacnet.disconnect()
+        if bacnet is not None:
+            bacnet._log.info(f"Got signal: {sig!s}, shutting down.")
+            bacnet.disconnect()
         loop.stop()
 
     try:
