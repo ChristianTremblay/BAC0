@@ -496,3 +496,10 @@ class Lite(
         self._log.info(
             f"{self.localObjName}|{self.Boid} disconnected. Exiting context manager."
         )
+
+    def get_device_by_id(self, id):
+        for each in self.registered_devices:
+            if each.properties.device_id == id:
+                return each
+        self._log.error(f"Device {id} not found")
+        raise ValueError('Device not found')
