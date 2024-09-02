@@ -200,7 +200,7 @@ class Device(SQLMixin):
         :return: None
         """
         self.log(
-            f"Changing {self.properties.name} state to {str(newstate).split('.')[-1]}",
+            f"Changing {self.properties.device_id} state to {str(newstate).split('.')[-1]}",
             level="info",
         )
         self.__class__ = newstate
