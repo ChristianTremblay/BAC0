@@ -213,7 +213,7 @@ class DiscoveryUtilsMixin:
         )
         points.extend(
             await self._process_new_objects(
-                obj_cls=DateTimePoint, obj_type="datetimeValue", objList=objList
+                obj_cls=DateTimePoint, obj_type="datetime-value", objList=objList
             )
         )
         # TrendLogs
@@ -266,7 +266,7 @@ class RPMObjectsProcessing:
             prop_list = "objectName presentValue description"
         elif obj_type == "characterstringValue":
             prop_list = "objectName presentValue"
-        elif obj_type == "datetimeValue":
+        elif obj_type == "datetime-value":
             prop_list = "objectName presentValue"
         else:
             raise ValueError("Unsupported objectType")
