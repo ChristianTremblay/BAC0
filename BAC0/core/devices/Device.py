@@ -609,7 +609,7 @@ class DeviceConnected(Device):
                         except ValueError:
                             raise ValueError()
         except ValueError as ve:
-            self.log(f"{ve}", level="error")
+            self.log(f"Can't find {point_name} | {ve}", level="error")
 
     def __iter__(self):
         yield from self.points

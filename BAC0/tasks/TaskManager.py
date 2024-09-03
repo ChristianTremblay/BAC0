@@ -74,6 +74,7 @@ class Task(object):
 
     async def execute(self):
         if self.delay > 0:
+            self.log(f"Installing recurring task {self.name} (id:{self.id})", level="info")
             while True:
                 self.count += 1
                 _start_time = time.time()
@@ -91,15 +92,18 @@ class Task(object):
                 self.average_latency = (
                     self.average_latency + (_start_time - self.next_execution)
                 ) / 2
-                if self.fn and self.args is not None:
-                    await self.fn(self.args)
-                elif self.fn:
-                    await self.fn()
-                else:
-                    if self._kwargs is not None:
-                        await self.task(**self._kwargs)
+                try:
+                    if self.fn and self.args is not None:
+                        await self.fn(self.args)
+                    elif self.fn:
+                        await self.fn()
                     else:
-                        await self.task()
+                        if self._kwargs is not None:
+                            await self.task(**self._kwargs)
+                        else:
+                            await self.task()
+                except Exception as error:
+                    self.log(f"An exception occured while running the task {self.name} (id:{self.id}) : {error}", level="error")
                 if self.previous_execution:
                     _total = self.average_execution_delay + (
                         _start_time - self.previous_execution
@@ -119,6 +123,7 @@ class Task(object):
                 self.next_execution = time.time() + self.delay
                 await asyncio.sleep(self.delay)
         else:  # one shot
+            self.log(f"Running one shot task {self.name} (id:{self.id})", level="info")
             if self.fn and self.args is not None:
                 await self.fn(self.args)
             elif self.fn:
