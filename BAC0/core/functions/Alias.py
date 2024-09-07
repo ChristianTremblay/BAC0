@@ -1,7 +1,8 @@
 import asyncio
 
 from bacpypes3.app import Application
-from bacpypes3.pdu import Address
+from bacpypes3.pdu import Address, GlobalBroadcast
+
 from BAC0.core.app.asyncApp import BAC0Application
 
 from ...core.utils.notes import note_and_log
@@ -34,7 +35,7 @@ class Alias:
             bacnet.whois('2:5')
         """
         _iams = await self.this_application.app.who_is(
-            address=Address(address),
+            address=Address(address) if address else None,
             low_limit=low_limit,
             high_limit=high_limit,
             timeout=timeout,
@@ -58,7 +59,7 @@ class Alias:
         _app.i_am(address=address)
 
     async def whois_router_to_network(
-        self, network=None, *, destination=None, timeout=3
+        self, network=None, *, destination=None, timeout=3, global_broadcast=False
     ):
         """
         Send a Who-Is-Router-To-Network request. This request is used to discover routers
@@ -75,9 +76,17 @@ class Alias:
         # build a request
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
+        if destination and not isinstance(destination, Address):
+            destination = Address(destination)
+        elif global_broadcast:
+            destination = GlobalBroadcast()
+
         try:
             network_numbers = await asyncio.wait_for(
-                _app.nse.who_is_router_to_network(), timeout
+                _app.nse.who_is_router_to_network(
+                    destination=destination, network=network
+                ),
+                timeout,
             )
             return network_numbers
         except asyncio.TimeoutError:

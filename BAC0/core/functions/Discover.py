@@ -104,6 +104,8 @@ class Discover:
             _networks.append(_this_network)
         # Try to find local routers...
         _other_networks = await self.whois_router_to_network()
+        if _other_networks == []:
+            _other_networks = await self.whois_router_to_network(global_broadcast=True)
         for each in _other_networks:
             network_adapter, _iamrtn = each
             _networks.extend(_iamrtn.iartnNetworkList)
