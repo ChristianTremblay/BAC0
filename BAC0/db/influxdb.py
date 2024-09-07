@@ -80,12 +80,14 @@ class InfluxDB:
             try:
                 self.log(f"Write called for record: {record}", level="debug")
                 write_api = client.write_api()
-                response = await write_api.write(
+                success = await write_api.write(
                     bucket=bucket, org=self.org, record=record
                 )
-                self.log(f"Write response: {response}", level="debug")
+                self.log(f"Write response: {success}", level="debug")
+                return success
             except Exception as error:
-                self.log(f"Error while writing to db: {error}", level="error")
+                self.log(f"Error while writing{record} to db: {error}", level="error")
+                return False
 
     async def query(self, query):
         async with InfluxDBClientAsync.from_env_properties() as client:
