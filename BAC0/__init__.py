@@ -30,10 +30,12 @@ try:
     from .core.utils.notes import update_log_level as log_level  # noqa: F401
     from .infos import __version__ as version  # noqa: F401
     from .scripts.Base import Base  # noqa: F401
-    from .scripts.Lite import (
-        Lite as connect,
-    )  # noqa: F401; noqa: F401 # to maintain compatibility with old code; noqa: F401 # this would be the new preferred way to start a BAC0 app
+
+    # Kept for compatibility
+    from .scripts.Lite import Lite as connect  # noqa: F401
     from .scripts.Lite import Lite as lite
+
+    # New preferred way to start
     from .scripts.Lite import Lite as start
     from .tasks.Devices import AddDevice as add_device  # noqa: F401
     from .tasks.Match import Match as match  # noqa: F401
