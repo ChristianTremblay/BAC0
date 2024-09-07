@@ -12,21 +12,9 @@ import asyncio
 import hashlib
 from collections import namedtuple
 
+
 # --- standard Python modules ---
 from datetime import datetime
-
-# --- 3rd party modules ---
-try:
-    import pandas as pd
-    from pandas.io import sql
-
-    try:
-        from pandas import Timestamp
-    except ImportError:
-        from pandas.lib import Timestamp
-    _PANDAS = True
-except ImportError:
-    _PANDAS = False
 
 from bacpypes3.basetypes import EngineeringUnits
 
@@ -34,7 +22,9 @@ from ...tasks.Match import Match_Value
 
 # --- this application's modules ---
 from ..utils.notes import note_and_log
+from ..utils.lookfordependency import pandas_if_available
 
+_PANDAS, pd = pandas_if_available()
 # ------------------------------------------------------------------------------
 
 

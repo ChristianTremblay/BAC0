@@ -7,13 +7,7 @@
 
 # --- standard Python modules ---
 # --- 3rd party modules ---
-try:
-    import pandas as pd
-    from pandas import DataFrame
 
-    _PANDAS = True
-except ImportError:
-    _PANDAS = False
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -21,6 +15,10 @@ from bacpypes3.primitivedata import Date, Time
 
 # --- this application's modules ---
 from ..utils.notes import note_and_log
+from ..utils.lookfordependency import pandas_if_available
+
+_PANDAS, pd, _, _ = pandas_if_available()
+
 
 # ------------------------------------------------------------------------------
 
@@ -50,7 +48,7 @@ class TrendLogProperties(object):
             "out_of_service": False,
         }
         self._history_components: List[HistoryComponent] = []
-        self._df: Optional[DataFrame] = None
+        self._df: Optional[pd.DataFrame] = None
         self.type: str = "TrendLog"
         self.units_state: str = "None"
 

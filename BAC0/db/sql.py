@@ -18,21 +18,10 @@ import pickle
 import aiosqlite
 from bacpypes3.primitivedata import CharacterString
 
-try:
-    import pandas as pd
-    from pandas.errors import DataError
-    from pandas.io import sql
-
-    try:
-        from pandas import Timestamp
-    except ImportError:
-        from pandas.lib import Timestamp
-    _PANDAS = True
-except ImportError:
-    _PANDAS = False
-
 from ..core.io.IOExceptions import NoResponseFromController, RemovedPointException
+from ..core.utils.lookfordependency import pandas_if_available
 
+_PANDAS, pd, sql, Timestamp = pandas_if_available()
 # --- this application's modules ---
 
 # ------------------------------------------------------------------------------

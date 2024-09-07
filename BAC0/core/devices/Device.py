@@ -16,20 +16,6 @@ import os.path
 from collections import namedtuple
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
-try:
-    import pandas as pd
-
-    _PANDAS = True
-except ImportError:
-    _PANDAS = False
-
-try:
-    from xlwings import Chart, Range, Sheet, Workbook  # noqa E401
-
-    _XLWINGS = True
-except ImportError:
-    _XLWINGS = False
-
 
 # --- this application's modules ---
 from bacpypes3.basetypes import ServicesSupported
@@ -48,10 +34,15 @@ from ..io.IOExceptions import (
     WrongParameter,
 )
 from ..utils.notes import note_and_log
+from ..utils.lookfordependency import pandas_if_available, xlwings_if_available
 from .mixins.read_mixin import ReadProperty, ReadPropertyMultiple
 from .Points import BooleanPoint, EnumPoint, NumericPoint, OfflinePoint, Point
 from .Virtuals import VirtualPoint
 
+_XLWINGS, xlwings = xlwings_if_available()
+if _XLWINGS:
+    from xlwings import Chart, Range, Sheet, Workbook  # noqa E401
+_PANDAS, pd = pandas_if_available()
 # ------------------------------------------------------------------------------
 
 

@@ -25,18 +25,6 @@ from bacpypes3.primitivedata import (
     ObjectIdentifier,
 )
 
-try:
-    import pandas as pd
-    from pandas.io import sql  # noqa E401
-
-    try:
-        from pandas import Timestamp
-    except ImportError:
-        from pandas.lib import Timestamp
-    _PANDAS = True
-except ImportError:
-    _PANDAS = False
-
 from ...tasks.Match import Match, Match_Value
 
 # --- this application's modules ---
@@ -48,7 +36,9 @@ from ..io.IOExceptions import (
     WritePropertyException,
 )
 from ..utils.notes import note_and_log
+from ..utils.lookfordependency import pandas_if_available
 
+_PANDAS, pd, sql, Timestamp = pandas_if_available()
 # ------------------------------------------------------------------------------
 
 
