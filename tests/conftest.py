@@ -122,11 +122,11 @@ async def network_and_devices():
     # if ip is not None:
     #    ip = f"{ip}/24"
     ip = "127.0.0.1/24"
-    async with BAC0.lite(ip=ip, localObjName="bacnet") as bacnet:
-        async with BAC0.lite(
+    async with BAC0.start(ip=ip, localObjName="bacnet") as bacnet:
+        async with BAC0.start(
             ip=ip, port=47809, localObjName="device_app"
         ) as device_app:
-            async with BAC0.lite(
+            async with BAC0.start(
                 ip=ip, port=47810, localObjName="device30_app"
             ) as device30_app:
                 # await asyncio.sleep(5) # let all the objects be valid before continuing
