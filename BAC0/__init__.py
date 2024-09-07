@@ -32,9 +32,9 @@ try:
     from .scripts.Base import Base  # noqa: F401
     from .scripts.Lite import (
         Lite as connect,
-    )  # noqa: F401 # to maintain compatibility with old code; noqa: F401 # this would be the new preferred way to start a BAC0 app
+    )  # noqa: F401; noqa: F401 # to maintain compatibility with old code; noqa: F401 # this would be the new preferred way to start a BAC0 app
     from .scripts.Lite import Lite as lite
-    from .scripts.Lite import Lite as start  # noqa: F401
+    from .scripts.Lite import Lite as start
     from .tasks.Devices import AddDevice as add_device  # noqa: F401
     from .tasks.Match import Match as match  # noqa: F401
     from .tasks.Poll import SimplePoll as poll  # noqa: F401

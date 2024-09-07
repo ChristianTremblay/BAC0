@@ -1,10 +1,6 @@
-import BAC0
 import asyncio
 from signal import SIGINT, SIGTERM, signal
-import click
-from BAC0.tools.jci_tec_points_list import tec_short_point_list
-from BAC0.tasks.RecurringTask import RecurringTask
-import os
+
 
 def run(main_task, bacnet):
     global loop
@@ -16,7 +12,9 @@ def run(main_task, bacnet):
         loop.stop()
 
     try:
-        loop = asyncio.get_running_loop() #we also could have chosen get_event_loop(), and if we did we would not have needed to set_event_loop() and create a new event loop
+        loop = (
+            asyncio.get_running_loop()
+        )  # we also could have chosen get_event_loop(), and if we did we would not have needed to set_event_loop() and create a new event loop
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)

@@ -8,7 +8,6 @@
 sql.py -
 """
 
-import asyncio
 import os.path
 
 # --- standard Python modules ---
@@ -16,7 +15,6 @@ import pickle
 
 # --- 3rd party modules ---
 import aiosqlite
-from bacpypes3.primitivedata import CharacterString
 
 from ..core.io.IOExceptions import NoResponseFromController, RemovedPointException
 from ..core.utils.lookfordependency import pandas_if_available
@@ -260,7 +258,7 @@ class SQLMixin(object):
         try:
             points = await self._read_from_sql("SELECT * FROM history;", db_name)
             return list(points.columns.values)[1:]
-        except Exception as error:
+        except Exception:
             self._log.warning(f"No history retrieved from {db_name}.db:")
             return []
 

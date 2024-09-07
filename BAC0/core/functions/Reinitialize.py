@@ -11,7 +11,6 @@ Reinitialize.py - creation of ReinitializeDeviceRequest
 from bacpypes3.apdu import (
     ReinitializeDeviceRequest,
     ReinitializeDeviceRequestReinitializedStateOfDevice,
-    SimpleAckPDU,
 )
 
 
@@ -20,7 +19,7 @@ from bacpypes3.pdu import Address
 from bacpypes3.app import Application
 from bacpypes3.primitivedata import CharacterString
 
-from ..io.IOExceptions import ApplicationNotStarted, NoResponseFromController
+from ..io.IOExceptions import ApplicationNotStarted
 from ..utils.notes import note_and_log
 from ...core.app.asyncApp import BAC0Application
 

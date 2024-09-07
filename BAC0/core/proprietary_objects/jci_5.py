@@ -7,7 +7,6 @@
 """
 
 from bacpypes3.vendor import VendorInfo, get_vendor_info
-from bacpypes3.basetypes import ObjectTypesSupported
 from bacpypes3.basetypes import PropertyIdentifier
 from bacpypes3.debugging import ModuleLogger
 from bacpypes3.object import AnalogInputObject as _AnalogInputObject
@@ -29,7 +28,6 @@ from bacpypes3.primitivedata import (
 
 # from . import OptionalUnsigned
 from bacpypes3.basetypes import OptionalUnsigned
-from typing import Any as _Any, Callable, Optional
 
 # some debugging
 _debug = 0

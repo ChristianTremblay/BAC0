@@ -49,7 +49,7 @@ from bacpypes3.basetypes import (
     RangeBySequenceNumber,
     RangeByTime,
 )
-from bacpypes3.errors import NoResponse, ObjectError, PropertyError
+from bacpypes3.errors import NoResponse, ObjectError
 from bacpypes3.object import get_vendor_info
 
 # --- 3rd party modules ---
