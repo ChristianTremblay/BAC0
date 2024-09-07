@@ -16,13 +16,13 @@ import typing as t
 # --- standard Python modules ---
 import weakref
 
-from bacpypes3.app import Application
 from bacpypes3 import __version__ as bacpypes_version
+from bacpypes3.app import Application
 
 try:
+    from rich import pretty, print
     from rich.console import Console
     from rich.table import Table
-    from rich import print, pretty
 
     pretty.install()
     RICH = True
@@ -36,7 +36,6 @@ from ..core.devices.Points import Point
 from ..core.devices.Trends import TrendLog
 from ..core.devices.Virtuals import VirtualPoint
 from ..core.functions.Alias import Alias
-from ..core.functions.Reinitialize import Reinitialize
 
 # from ..core.functions.legacy.cov import CoV
 # from ..core.functions.legacy.DeviceCommunicationControl import (
@@ -45,6 +44,7 @@ from ..core.functions.Reinitialize import Reinitialize
 from ..core.functions.Discover import Discover
 from ..core.functions.EventEnrollment import EventEnrollment
 from ..core.functions.GetIPAddr import HostIP
+from ..core.functions.Reinitialize import Reinitialize
 
 # from ..core.functions.legacy.Reinitialize import Reinitialize
 from ..core.functions.Schedule import Schedule
@@ -260,7 +260,7 @@ class Lite(
         oid = id(device)
         self._registered_devices[oid] = device
 
-    def ping_registered_devices(self) -> None:
+    async def ping_registered_devices(self) -> None:
         """
         Registered device on a network (self) are kept in a list (registered_devices).
         This function will allow pinging thoses device regularly to monitor them. In case
@@ -279,7 +279,7 @@ class Lite(
                     self._log.debug(
                         f"Ping {each.properties.name}|{each.properties.address}"
                     )
-                    asyncio.create_task(each.ping())
+                    await each.ping()
                     if each.properties.ping_failures > 3:
                         raise NumerousPingFailures
 
@@ -289,12 +289,12 @@ class Lite(
                             each.properties.name, each.properties.address
                         )
                     )
-                    each.disconnect(unregister=False)
+                    await each._disconnect(unregister=False)
 
             else:
                 device_id = each.properties.device_id
                 addr = each.properties.address
-                name = self.read(f"{addr} device {device_id} objectName")
+                name = await self.read(f"{addr} device {device_id} objectName")
                 if name == each.properties.name:
                     each.properties.ping_failures = 0
                     self._log.info(
@@ -502,4 +502,4 @@ class Lite(
             if each.properties.device_id == id:
                 return each
         self._log.error(f"Device {id} not found")
-        raise ValueError('Device not found')
+        raise ValueError("Device not found")
