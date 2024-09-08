@@ -24,7 +24,7 @@ from ...tasks.Match import Match_Value
 from ..utils.notes import note_and_log
 from ..utils.lookfordependency import pandas_if_available
 
-_PANDAS, pd = pandas_if_available()
+_PANDAS, pd, _, _ = pandas_if_available()
 # ------------------------------------------------------------------------------
 
 
