@@ -9,6 +9,7 @@ RecurringTask.py - execute a recurring task
 """
 import asyncio
 from typing import Any, Callable, Tuple, Union, Coroutine
+from concurrent.futures import ThreadPoolExecutor
 
 from ..core.utils.notes import note_and_log
 from .TaskManager import Task
@@ -45,14 +46,18 @@ class RecurringTask(Task):
         Task.__init__(self, name=name, delay=delay)
 
     async def task(self) -> None:
+        loop = asyncio.get_event_loop()
+        executor = ThreadPoolExecutor()
         if self.fnc_args:
             if asyncio.iscoroutinefunction(self.func):
                 await self.func(self.fnc_args)
             else:
-                self.func(self.fnc_args)
+                await loop.run_in_executor(executor, self.func, self.fnc_args)
+                #self.func(self.fnc_args)
         else:
             if asyncio.iscoroutinefunction(self.func):
                 await self.func()
             else:
-                self.func()
+                await loop.run_in_executor(executor, self.func)
+                #self.func()
         await asyncio.sleep(self.delay)

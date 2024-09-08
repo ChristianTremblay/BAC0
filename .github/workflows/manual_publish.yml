@@ -6,11 +6,10 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Upload Python Package
+name: Manual Upload Python Package
 
 on:
-  release:
-    types: [created]
+  workflow_dispatch
 
 permissions:
   contents: read
