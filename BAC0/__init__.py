@@ -33,10 +33,10 @@ try:
 
     # Kept for compatibility
     from .scripts.Lite import Lite as connect  # noqa: F401
-    from .scripts.Lite import Lite as lite
+    from .scripts.Lite import Lite as lite  # noqa: F401
 
     # New preferred way to start
-    from .scripts.Lite import Lite as start
+    from .scripts.Lite import Lite as start  # noqa: F401
     from .tasks.Devices import AddDevice as add_device  # noqa: F401
     from .tasks.Match import Match as match  # noqa: F401
     from .tasks.Poll import SimplePoll as poll  # noqa: F401
