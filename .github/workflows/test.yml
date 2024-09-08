@@ -5,60 +5,19 @@ name: Build & Test
 
 on:
   push:
-    branches: [ master, develop, async ]
+    branches: [ main, develop, async ]
   pull_request:
-    branches: [ master, develop, async ]
+    branches: [ main, develop, async ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    if: github.ref != 'refs/heads/async'
-    strategy:
-      matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install flake8 pytest
-        pip install coveralls
-        pip install colorama
-        pip install pytest
-        pip install pytest-cov
-        pip install pandas
-        pip install bokeh
-        pip install flask
-        pip install flask_bootstrap
-        pip install colorama
-        pip install netifaces
-        pip install python-dotenv
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        if [ -f requirements-mypy.txt ]; then pip install -r requirements-mypy.txt; fi
-        pip install .
-    - name: Test with pytest
-      run: |
-        coverage run --source BAC0 -m pytest -v
-        coverage report
-    - name: Upload coverage data to coveralls.io
-      if: matrix.python-version == '3.9'
-      run: coveralls
-      env:
-        GITHUB_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
-        COVERALLS_FLAG_NAME: ${{ matrix.test-name }}
-
   build-async:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/async'
     strategy:
       matrix:
-        python-version: ['3.11', '3.12']
+        python-version: ['3.10','3.11', '3.12']
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
@@ -69,6 +28,9 @@ jobs:
     - name: Install BAC0
       run: |
         pip install pandas
+        pip install rich
+        pip install influxdb_client[async]
+        pip install python-dotenv
         pip install pytest
         pip install pytest-cov
         pip install pytest-asyncio
