@@ -19,11 +19,7 @@ from bacpypes3.basetypes import BinaryPV, PropertyIdentifier
 from bacpypes3.pdu import Address
 
 # --- 3rd party modules ---
-from bacpypes3.primitivedata import (
-    Boolean,
-    CharacterString,
-    ObjectIdentifier,
-)
+from bacpypes3.primitivedata import Boolean, CharacterString, ObjectIdentifier
 
 from ...tasks.Match import Match, Match_Value
 
@@ -35,8 +31,8 @@ from ..io.IOExceptions import (
     UnknownPropertyError,
     WritePropertyException,
 )
-from ..utils.notes import note_and_log
 from ..utils.lookfordependency import pandas_if_available
+from ..utils.notes import note_and_log
 
 _PANDAS, pd, sql, Timestamp = pandas_if_available()
 # ------------------------------------------------------------------------------
@@ -1008,7 +1004,9 @@ class EnumPoint(Point):
             units_state=units_state,
             history_size=history_size,
         )
-        self.properties.units_state = [str(x) for x in units_state]
+        self.properties.units_state = (
+            [str(x) for x in units_state] if units_state else []
+        )
 
     def _trend(self, res):
         res = f"{res}: {self.get_state(res)}"
