@@ -1,4 +1,6 @@
 import importlib.util
+from types import ModuleType
+from typing import Type
 
 
 # Function to dynamically import a module
@@ -21,7 +23,8 @@ def check_dependencies(module_name: list) -> bool:
 
 def rich_if_available():
     if not check_dependencies(["rich"]):
-        return None
+        _RICH = False
+        return (_RICH, FakeRich)
     try:
         rich_spec = importlib.util.find_spec("rich")
         if rich_spec is not None:
@@ -31,12 +34,14 @@ def rich_if_available():
             _RICH = False
     except ImportError:
         _RICH = False
+        rich = False
     return (_RICH, rich)
 
 
 def influxdb_if_available():
     if not check_dependencies(["influxdb_client"]):
-        return None
+        _INFLUXDB = False
+        return (_INFLUXDB, FakeInflux)
     try:
         influxdb_spec = importlib.util.find_spec("influxdb_client")
         if influxdb_spec is not None:
@@ -46,10 +51,11 @@ def influxdb_if_available():
             _INFLUXDB = False
     except ImportError:
         _INFLUXDB = False
+        influxdb_client = False
     return (_INFLUXDB, influxdb_client)
 
 
-def pandas_if_available():
+def pandas_if_available() -> tuple[bool, Type, ModuleType, ModuleType]:
     global _PANDAS
     if not check_dependencies(["pandas"]):
         return None
@@ -67,21 +73,32 @@ def pandas_if_available():
                 Timestamp = import_module("pandas.lib").Timestamp
 
         _PANDAS = True
+
     except ImportError:
         _PANDAS = False
+        pd = FakePandas
+        sql = FakePandas.sql
+        Timestamp = FakePandas.Timestamp
     return (_PANDAS, pd, sql, Timestamp)
 
 
-def xlwings_if_available():
-    if not check_dependencies(["xlwings"]):
+class FakePandas:
+    "Typing in Device requires pandas, but it is not available"
+
+    class DataFrame:
+        id = "fake"
+
+    def sql(self):
         return None
-    try:
-        xlwings_spec = importlib.util.find_spec("xlwings")
-        if xlwings_spec is not None:
-            xlwings = import_module("xlwings")
-            _XLWINGS = True
-        else:
-            _XLWINGS = False
-    except ImportError:
-        _XLWINGS = False
-    return (_XLWINGS, xlwings)
+
+    def Timestamp(self):
+        return None
+
+
+class FakeInflux:
+    "Typing in Device requires influxdb_client, but it is not available"
+    pass
+
+
+class FakeRich:
+    pass
