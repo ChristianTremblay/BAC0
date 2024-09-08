@@ -1,6 +1,6 @@
 [project]
 name = "BAC0"
-version = "2024.08.dev1"
+version = "2024.09.dev1"
 description = "BACnet Scripting Framework for testing DDC Controls"
 authors = [{name = "Christian Tremblay", email = "christian.tremblay@servisys.com"}]
 readme = "README.md"
@@ -15,7 +15,7 @@ build-backend = "setuptools.build_meta"
 Homepage = "https://github.com/ChristianTremblay/BAC0"
 
 [project.optional-dependencies]
-extras = ["pandas", "influxdb_client[async]", "rich", "pytest-asyncio", "coverage", "pandas"]
+extras = ["pandas", "influxdb_client[async]", "rich", "pytest-asyncio", "coverage"]
 
 [tool.setuptools.package-data]
 "BAC0.core.app" = ["device.json"]

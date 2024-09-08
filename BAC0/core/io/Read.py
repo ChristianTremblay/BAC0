@@ -336,7 +336,7 @@ class ReadProperty:
     def build_rp_request(
         self, args: t.List[str], arr_index=None, vendor_id: int = 0, bacoid=None
     ) -> t.Tuple:
-        vendor = get_vendor_info(vendor_id)  # noqa: F401
+        vendor = get_vendor_info(vendor_id)
         try:
             addr, obj_type_str, obj_inst_str, prop_id_str = args[:4]
             object_identifier = ObjectIdentifier((obj_type_str, int(obj_inst_str)))
