@@ -1,14 +1,15 @@
-try:
-    from influxdb_client import Point, WriteOptions
-    from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
-except ImportError:
-    raise ImportError("Install influxdb to use this feature")
-
 from datetime import datetime
 
 import pytz
 
+from ..core.utils.lookfordependency import influxdb_available
 from ..core.utils.notes import note_and_log
+
+if influxdb_available():
+    from influxdb_client import Point, WriteOptions
+    from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
+else:
+    raise ImportError("Install influxdb to use this feature")
 
 
 @note_and_log
@@ -60,7 +61,7 @@ class InfluxDB:
             exponential_base=getattr(self, "exponential_base", 2),
         )
 
-    async def write(self, bucket: str, record):
+    async def write(self, bucket: str, record) -> bool:
         """
         Asynchronously writes a record to the specified bucket in the InfluxDB database.
 
@@ -89,7 +90,7 @@ class InfluxDB:
                 self.log(f"Error while writing{record} to db: {error}", level="error")
                 return False
 
-    async def query(self, query):
+    async def query(self, query: str) -> list:
         async with InfluxDBClientAsync.from_env_properties() as client:
             query_api = client.query_api()
             records = await query_api.query_stream(query)
@@ -103,7 +104,7 @@ class InfluxDB:
         start: datetime = datetime.utcfromtimestamp(0),
         stop: datetime = datetime.now(),
         bucket: str = None,
-    ):
+    ) -> bool:
         """
          Asynchronously delete data from the specified bucket in the InfluxDB database.
 
@@ -139,10 +140,12 @@ class InfluxDB:
                     bucket=bucket,
                     predicate=f'{predicate} = "{value}"',
                 )
+                return successfully
             except Exception as error:
                 self.log(f"Error while deleting from db: {error}", level="error")
+                return False
 
-    async def _health(self):
+    async def _health(self) -> bool:
         """
         Asynchronously checks the health of the connection to the InfluxDB server.
 
@@ -159,6 +162,10 @@ class InfluxDB:
             ready = await client.ping()
             if ready:
                 self.log("InfluxDB connection is ready", level="info")
+                return True
+            else:
+                self.log("InfluxDB connection is not ready", level="error")
+                return False
 
     def clean_value(self, object_type, val, units_state):
         """

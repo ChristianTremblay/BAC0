@@ -8,7 +8,6 @@
 sql.py -
 """
 
-import asyncio
 import os.path
 
 # --- standard Python modules ---
@@ -16,23 +15,15 @@ import pickle
 
 # --- 3rd party modules ---
 import aiosqlite
-from bacpypes3.primitivedata import CharacterString
 
-try:
-    import pandas as pd
-    from pandas.errors import DataError
-    from pandas.io import sql
+from ..core.io.IOExceptions import (
+    DataError,
+    NoResponseFromController,
+    RemovedPointException,
+)
+from ..core.utils.lookfordependency import pandas_if_available
 
-    try:
-        from pandas import Timestamp
-    except ImportError:
-        from pandas.lib import Timestamp
-    _PANDAS = True
-except ImportError:
-    _PANDAS = False
-
-from ..core.io.IOExceptions import NoResponseFromController, RemovedPointException
-
+_PANDAS, pd, sql, Timestamp = pandas_if_available()
 # --- this application's modules ---
 
 # ------------------------------------------------------------------------------
@@ -245,7 +236,8 @@ class SQLMixin(object):
                         if_exists="append",
                     )
             except Exception:
-                df = df_to_backup
+                # df = df_to_backup
+                self._log.error("Error saving to SQL database")
 
             # asyncio.run(
             #    None, df_to_backup.to_sql, "history", con, None, "append", True, "index"
@@ -271,7 +263,7 @@ class SQLMixin(object):
         try:
             points = await self._read_from_sql("SELECT * FROM history;", db_name)
             return list(points.columns.values)[1:]
-        except Exception as error:
+        except Exception:
             self._log.warning(f"No history retrieved from {db_name}.db:")
             return []
 

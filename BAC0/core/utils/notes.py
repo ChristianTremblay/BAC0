@@ -19,20 +19,13 @@ from logging import FileHandler, Logger
 from os.path import expanduser, join
 
 # --- 3rd party modules ---
-try:
-    import pandas as pd
+from ...core.utils.lookfordependency import rich_if_available, pandas_if_available
 
-    _PANDAS = True
-except ImportError:
-    _PANDAS = False
-
-try:
-    from rich.console import Console
+RICH, rich = rich_if_available()
+if RICH:
     from rich.logging import RichHandler
 
-    RICH = True
-except ImportError:
-    RICH = False
+_PANDAS, pd, _, _ = pandas_if_available()
 
 
 class LogList:

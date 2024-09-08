@@ -1,5 +1,3 @@
-import typing as t
-
 from bacpypes3.apdu import WritePropertyRequest
 from bacpypes3.app import Application
 from bacpypes3.constructeddata import Any

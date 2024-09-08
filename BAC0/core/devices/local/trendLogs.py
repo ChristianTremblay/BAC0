@@ -15,12 +15,10 @@ from bacpypes3.basetypes import (
 )
 from bacpypes3.constructeddata import ListOf
 from bacpypes3.primitivedata import Unsigned
+from ...utils.lookfordependency import pandas_if_available
 
-PANDAS = True
-try:
-    import pandas as pd
-except ImportError:
-    PANDAS = False
+PANDAS, _, _, _ = pandas_if_available()
+
 
 Record = namedtuple(
     "Record", "timestamp value statusFlags sequencenumber interval trendFlag logEvent"

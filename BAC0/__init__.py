@@ -4,7 +4,7 @@ import importlib.util
 import os
 
 if importlib.util.find_spec("bacpypes3") is not None:
-    import bacpypes3
+    import bacpypes3  # noqa: F401
 
 else:
     # Using print here or setup.py will fail
@@ -23,22 +23,23 @@ else:
     print("You need to pip install python-dotenv to use your .env file")
 
 try:
-    from . import core, tasks
-    from .core.devices.Device import DeviceLoad as load
-    from .core.devices.Device import device as device
-    from .core.devices.Trends import TrendLog as TrendLog
-    from .core.utils.notes import update_log_level as log_level
-    from .infos import __version__ as version
-    from .scripts.Base import Base
-    from .tasks.Devices import AddDevice as add_device
-    from .tasks.Match import Match as match
-    from .tasks.Poll import SimplePoll as poll
+    from . import core, tasks  # noqa: F401
+    from .core.devices.Device import DeviceLoad as load  # noqa: F401
+    from .core.devices.Device import device as device  # noqa: F401
+    from .core.devices.Trends import TrendLog as TrendLog  # noqa: F401
+    from .core.utils.notes import update_log_level as log_level  # noqa: F401
+    from .infos import __version__ as version  # noqa: F401
+    from .scripts.Base import Base  # noqa: F401
 
-    from .scripts.Lite import Lite as lite  # to maintain compatibility with old code
-    from .scripts.Lite import Lite as connect  # to maintain compatibility with old code
-    from .scripts.Lite import (
-        Lite as start,
-    )  # this would be the new preferred way to start a BAC0 app
+    # Kept for compatibility
+    from .scripts.Lite import Lite as connect  # noqa: F401
+    from .scripts.Lite import Lite as lite  # noqa: F401
+
+    # New preferred way to start
+    from .scripts.Lite import Lite as start  # noqa: F401
+    from .tasks.Devices import AddDevice as add_device  # noqa: F401
+    from .tasks.Match import Match as match  # noqa: F401
+    from .tasks.Poll import SimplePoll as poll  # noqa: F401
 
 except ImportError as error:
     print("=" * 80)

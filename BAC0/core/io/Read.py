@@ -49,7 +49,7 @@ from bacpypes3.basetypes import (
     RangeBySequenceNumber,
     RangeByTime,
 )
-from bacpypes3.errors import NoResponse, ObjectError, PropertyError
+from bacpypes3.errors import NoResponse, ObjectError
 from bacpypes3.object import get_vendor_info
 
 # --- 3rd party modules ---
@@ -783,8 +783,8 @@ def validate_property_id(obj_type, prop_id):
             "polarity",
         ):
             return prop_id
-        elif validate_datatype(obj_type, prop_id) is not None:
-            return prop_id
+        # elif validate_datatype(obj_type, prop_id) is not None:
+        #    return prop_id
         else:
             raise ValueError(
                 f"invalid property for object type : {obj_type} | {prop_id}"
@@ -795,5 +795,5 @@ def validate_property_id(obj_type, prop_id):
         raise ValueError(f"{prop_id} is an invalid property for {obj_type}")
 
 
-def validate_datatype(obj_type, prop_id, vendor_id=842):
-    return get_datatype(obj_type, prop_id, vendor_id=vendor_id) if not None else False
+# def validate_datatype(obj_type, prop_id, vendor_id=842):
+#    return get_datatype(obj_type, prop_id, vendor_id=vendor_id) if not None else False

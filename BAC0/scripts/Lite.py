@@ -18,16 +18,9 @@ import weakref
 
 from bacpypes3 import __version__ as bacpypes_version
 from bacpypes3.app import Application
+from bacpypes3.pdu import Address
+from bacpypes3.primitivedata import ObjectIdentifier
 
-try:
-    from rich import pretty, print
-    from rich.console import Console
-    from rich.table import Table
-
-    pretty.install()
-    RICH = True
-except ImportError:
-    RICH = False
 from BAC0.core.app.asyncApp import BAC0Application
 from BAC0.scripts.Base import Base
 
@@ -59,6 +52,7 @@ from ..core.io.IOExceptions import (
 from ..core.io.Read import ReadProperty
 from ..core.io.Simulate import Simulation
 from ..core.io.Write import WriteProperty
+from ..core.utils.lookfordependency import influxdb_if_available, rich_if_available
 
 # from ..core.io.asynchronous.Write import WriteProperty
 from ..core.utils.notes import note_and_log
@@ -68,17 +62,17 @@ from ..infos import __version__ as version
 from ..tasks.RecurringTask import RecurringTask
 from ..tasks.TaskManager import Task
 
-# from ..tasks.legacy.UpdateCOV import Update_local_COV
+INFLUXDB, _ = influxdb_if_available()
+if INFLUXDB:
+    from ..db.influxdb import InfluxDB
+RICH, rich = rich_if_available()
+if RICH:
+    from rich import pretty
+    from rich.console import Console
+    from rich.table import Table
 
-try:
-    from ..db.influxdb import ConnectionError, InfluxDB
+    pretty.install()
 
-    INFLUXDB = True
-except ImportError:
-    INFLUXDB = False
-
-from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import ObjectIdentifier
 
 # ------------------------------------------------------------------------------
 

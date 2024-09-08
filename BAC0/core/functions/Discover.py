@@ -9,14 +9,6 @@ from BAC0.core.app.asyncApp import BAC0Application
 
 from ...core.utils.notes import note_and_log
 
-try:
-    from rich.table import Table
-    from rich.console import Console
-
-    RICH = True
-except ImportError:
-    RICH = False
-
 
 @note_and_log
 class Discover:
