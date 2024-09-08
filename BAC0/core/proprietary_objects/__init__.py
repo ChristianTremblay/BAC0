@@ -1,17 +1,7 @@
-from bacpypes3.primitivedata import (
-    Atomic,
-    Enumerated,
-    Real,
-    Unsigned,
-    Boolean,
-    CharacterString,
-    TagList,
-    TagClass,
-    TagNumber,
-    Tag,
-)
-from bacpypes3.errors import DecodingError, InvalidTag, PropertyError
-from typing import Any as _Any, Callable, Optional
+from typing import Any as Optional
+
+from bacpypes3.errors import InvalidTag
+from bacpypes3.primitivedata import Tag, TagClass, TagList, TagNumber, Unsigned
 
 
 class OptionalUnsigned(Unsigned):

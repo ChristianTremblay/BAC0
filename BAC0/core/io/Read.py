@@ -336,7 +336,7 @@ class ReadProperty:
     def build_rp_request(
         self, args: t.List[str], arr_index=None, vendor_id: int = 0, bacoid=None
     ) -> t.Tuple:
-        vendor = get_vendor_info(vendor_id)
+        vendor = get_vendor_info(vendor_id)  # noqa: F401
         try:
             addr, obj_type_str, obj_inst_str, prop_id_str = args[:4]
             object_identifier = ObjectIdentifier((obj_type_str, int(obj_inst_str)))
@@ -783,8 +783,8 @@ def validate_property_id(obj_type, prop_id):
             "polarity",
         ):
             return prop_id
-        elif validate_datatype(obj_type, prop_id) is not None:
-            return prop_id
+        # elif validate_datatype(obj_type, prop_id) is not None:
+        #    return prop_id
         else:
             raise ValueError(
                 f"invalid property for object type : {obj_type} | {prop_id}"
@@ -795,5 +795,5 @@ def validate_property_id(obj_type, prop_id):
         raise ValueError(f"{prop_id} is an invalid property for {obj_type}")
 
 
-def validate_datatype(obj_type, prop_id, vendor_id=842):
-    return get_datatype(obj_type, prop_id, vendor_id=vendor_id) if not None else False
+# def validate_datatype(obj_type, prop_id, vendor_id=842):
+#    return get_datatype(obj_type, prop_id, vendor_id=vendor_id) if not None else False

@@ -16,7 +16,11 @@ import pickle
 # --- 3rd party modules ---
 import aiosqlite
 
-from ..core.io.IOExceptions import NoResponseFromController, RemovedPointException
+from ..core.io.IOExceptions import (
+    DataError,
+    NoResponseFromController,
+    RemovedPointException,
+)
 from ..core.utils.lookfordependency import pandas_if_available
 
 _PANDAS, pd, sql, Timestamp = pandas_if_available()
@@ -232,7 +236,8 @@ class SQLMixin(object):
                         if_exists="append",
                     )
             except Exception:
-                df = df_to_backup
+                # df = df_to_backup
+                self._log.error("Error saving to SQL database")
 
             # asyncio.run(
             #    None, df_to_backup.to_sql, "history", con, None, "append", True, "index"

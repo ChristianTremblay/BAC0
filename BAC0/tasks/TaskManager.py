@@ -74,7 +74,9 @@ class Task(object):
 
     async def execute(self):
         if self.delay > 0:
-            self.log(f"Installing recurring task {self.name} (id:{self.id})", level="info")
+            self.log(
+                f"Installing recurring task {self.name} (id:{self.id})", level="info"
+            )
             while True:
                 self.count += 1
                 _start_time = time.time()
@@ -103,7 +105,10 @@ class Task(object):
                         else:
                             await self.task()
                 except Exception as error:
-                    self.log(f"An exception occured while running the task {self.name} (id:{self.id}) : {error}", level="error")
+                    self.log(
+                        f"An exception occured while running the task {self.name} (id:{self.id}) : {error}",
+                        level="error",
+                    )
                 if self.previous_execution:
                     _total = self.average_execution_delay + (
                         _start_time - self.previous_execution
