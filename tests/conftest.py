@@ -6,10 +6,10 @@ Test Bacnet communication with another device
 """
 
 import asyncio
+import os
 
 import pytest
 from pytest_asyncio import is_async_test
-import os
 
 import BAC0
 from BAC0.core.devices.local.factory import (
@@ -67,7 +67,7 @@ def add_points(qty_per_type, device):
         description="An Alarm Value",
         properties={"stateText": states},
         name="BIG-ALARM",
-        is_commandable=True,
+        is_commandable=False,
     )
 
     # All others using default implementation
@@ -123,15 +123,26 @@ async def network_and_devices():
     #    ip = f"{ip}/24"
     ip = "127.0.0.1/24"
     async with BAC0.start(ip=ip, localObjName="bacnet") as bacnet:
+        # while bacnet._initialized is False:
+        # await asyncio.sleep(1)
         async with BAC0.start(
             ip=ip, port=47809, localObjName="device_app"
         ) as device_app:
+            # while device_app._initialized is False:
+            # await asyncio.sleep(1)
+            # await asyncio.sleep(2)
+            add_points(2, device_app)
+            # await asyncio.sleep(2)
+
             async with BAC0.start(
                 ip=ip, port=47810, localObjName="device30_app"
             ) as device30_app:
+                # while device30_app._initialized is False:
+                # await asyncio.sleep(1)
                 # await asyncio.sleep(5) # let all the objects be valid before continuing
-                add_points(2, device_app)
+                # await asyncio.sleep(2)
                 add_points(5, device30_app)
+                # await asyncio.sleep(2)
                 # add_points(10, device300_app)
 
                 ip = device_app.localIPAddr.addrTuple[0]
@@ -140,13 +151,15 @@ async def network_and_devices():
                 ip_30 = device30_app.localIPAddr.addrTuple[0]
                 boid_30 = device30_app.Boid
                 # Connect to test device using main network
-                test_device = BAC0.device("{}:47809".format(ip), boid, bacnet, poll=10)
-                test_device_30 = BAC0.device(
+                test_device = await BAC0.device(
+                    "{}:47809".format(ip), boid, bacnet, poll=10
+                )
+                test_device_30 = await BAC0.device(
                     "{}:47810".format(ip_30), boid_30, bacnet, poll=0
                 )
-                t1 = test_device.creation_task
-                t2 = test_device_30.creation_task
-                await asyncio.gather(t1, t2)
+                # t1 = test_device.creation_task
+                # t2 = test_device_30.creation_task
+                # await asyncio.gather(t1, t2)
                 # Wait for the instances to be initialized
                 net_and_dev = (
                     loop,
@@ -156,6 +169,8 @@ async def network_and_devices():
                     test_device,
                     test_device_30,
                 )
-                yield net_and_dev
-                await test_device._disconnect(save_on_disconnect=False)
-                await test_device_30._disconnect(save_on_disconnect=False)
+                try:
+                    yield net_and_dev
+                finally:
+                    await test_device._disconnect(save_on_disconnect=False)
+                    await test_device_30._disconnect(save_on_disconnect=False)

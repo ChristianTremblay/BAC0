@@ -409,7 +409,7 @@ def multistate(**kwargs):
             # "numberOfStates": Unsigned(2),
         },
         "description": "No description",
-        # "presentValue": Unsigned(1),
+        "presentValue": Unsigned(1),
         # "is_commandable": False,
         # "relinquishDefault": Unsigned(1),
     }

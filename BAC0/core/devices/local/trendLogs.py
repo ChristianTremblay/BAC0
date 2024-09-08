@@ -15,9 +15,9 @@ from bacpypes3.basetypes import (
 )
 from bacpypes3.constructeddata import ListOf
 from bacpypes3.primitivedata import Unsigned
-from ...utils.lookfordependency import pandas_available
+from ...utils.lookfordependency import pandas_if_available
 
-PANDAS = pandas_available()
+PANDAS, _, _, _ = pandas_if_available()
 
 
 Record = namedtuple(
