@@ -38,3 +38,6 @@ include = [
     "BAC0.tasks", 
     "BAC0.tools"]
 namespaces = false
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "session"
