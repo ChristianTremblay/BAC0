@@ -3,7 +3,7 @@
 import importlib.util
 import os
 
-if importlib.util.find_spec("BACpypes3") is not None:
+if importlib.util.find_spec("bacpypes3") is not None:
     import bacpypes3  # noqa: F401
 
 else:
