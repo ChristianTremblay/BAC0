@@ -18,7 +18,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Get IP
@@ -34,8 +34,8 @@ jobs:
         pip install pytest-cov
         pip install pytest-asyncio
         pip install coveralls
-        pip install .
         pip install bacpypes3
+        pip install .
     - name: Test with pytest
       run: |
         export RUNNER_IP=${{ steps.ip.outputs.ip }}
