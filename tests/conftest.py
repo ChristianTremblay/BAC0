@@ -37,11 +37,11 @@ test_device_30 = None
 # loop = asyncio.get_running_loop()
 
 
-def pytest_collection_modifyitems(items):
-    pytest_asyncio_tests = (item for item in items if is_async_test(item))
-    session_scope_marker = pytest.mark.asyncio(loop_scope="session")
-    for async_test in pytest_asyncio_tests:
-        async_test.add_marker(session_scope_marker, append=False)
+# def pytest_collection_modifyitems(items):
+#    pytest_asyncio_tests = (item for item in items if is_async_test(item))
+#    session_scope_marker = pytest.mark.asyncio(scope="session")
+#    for async_test in pytest_asyncio_tests:
+#        async_test.add_marker(session_scope_marker, append=False)
 
 
 def add_points(qty_per_type, device):
