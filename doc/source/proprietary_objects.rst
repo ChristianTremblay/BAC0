@@ -23,9 +23,9 @@ If you need to read a property named 1032, you will tell BAC0 to read `@prop_103
 
 This way, you could build a request this way : 
 
-    bacnet.read('2:5 @obj_142 1 @prop_1032')
+    await bacnet.read('2:5 @obj_142 1 @prop_1032')
     # or
-    bacnet.readMultiple('2:5 @obj_142 1 objectName @prop_1032')
+    await bacnet.readMultiple('2:5 @obj_142 1 objectName @prop_1032')
 
 Writing to proprietary properties
 **********************************
@@ -35,7 +35,7 @@ use network schedule (if not, switch to internal schedule).
 
 If you try this :
 
-    bacnet.write('2000:10 device 5010 3653 True')
+    await bacnet.write('2000:10 device 5010 3653 True')
 
 You'll get :
 
@@ -47,7 +47,7 @@ write function so BAC0 will know which class to use. Because 2 different vendors
 "number" for a proprietary object or property with different type.
 
 
-How to implement
+How to implement [DEPRECATED - MUST BE UPDATED]
 -----------------
 BAC0 will allow dynamic creation of the classes needed to read and write to those special variables. To
 do so, a special dictionary need to be declared in this form ::
@@ -100,7 +100,7 @@ the special object definition for this particular vendor.
     BAC0 will automatically register known proprietary classes at startup. See BAC0.core.proprietary_objects
     for details.
 
-Proprietary objects
+Proprietary objects [DEPRECATED - MUST BE UPDATED]
 --------------------
 Proprietary object can be accessed using ::
 
@@ -122,7 +122,7 @@ BAC0 will do its best to give you a complete list.
     objects are not detected automatically. You will need to build the object class to interact 
     with those objects. See next section.
 
-Proprietary Property 
+Proprietary Property [DEPRECATED - MUST BE UPDATED]
 ---------------------
 One common case I'm aware of is the addition of proprietary properties to the DeviceObject of a device.
 Those properties may, for example, give the CPU rate or memory usage of the controllers. On the TEC3000 (JCI), 
@@ -168,7 +168,7 @@ This will allow us to interact with them after registration ::
     In future version it will be able to define special device and attach some
     proprietary objects to them so tec['SupOnline'] would work...
 
-Vendor Context for Read and Write
+Vendor Context for Read and Write [DEPRECATED - MUST BE UPDATED]
 **********************************
 In `BAC0.device`, the vendor_id context will be provided to the stack automatically. This mean that 
 if a device is created and there is a extended implementation of an object (JCIDeviceObject for example)

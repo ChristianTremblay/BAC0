@@ -53,12 +53,12 @@ Check that BAC0 works
 +++++++++++++++++++++
 In the terminal again, type :: 
 
-    python
+    python -m asyncio
 
 This will open a python terminal. In the terminal type :: 
 
     >>import BAC0
-    >>BAC0.version
+    >>bacnet = BAC0.start()
 
 This will show you the installed version. You're good to go.   
 
@@ -74,7 +74,7 @@ There you'll be able to open issues if you find bugs.
 
 Dependencies
 ------------
-* BAC0 is based on BACpypes_ for all BACnet/IP communication.
+* BAC0 is based on BACpypes3_ for all BACnet/IP communication.
 
   Starting at version 0.9.900, BAC0 will not strictly depend on bokeh_ or Flask_ or Pandas_ to work. Having them will allow to use the complete set of features (the web app with live trending features) but if you don't have them installed, you will be able to use the 'lite' version of BAC0 which is sufficient to interact with BACnet devices.
 
@@ -83,9 +83,9 @@ Dependencies
 * It uses Flask_ to serve the Web app (you will need to pip install flask_bootstrap)
 
 Normally, if you have installed Anaconda_, Flask_, Bokeh_ and Pandas_ will already
-be installed. You'll only need to install BACpypes_ ::
+be installed. You'll only need to install BACpypes3_ ::
 
-    pip install bacpypes
+    pip install BACpypes3
     pip install bokeh (or conda install bokeh if using Anaconda)
 
 You're ready to begin using BAC0 !
@@ -102,7 +102,7 @@ You're ready to begin using BAC0 !
    :target: https://coveralls.io/github/ChristianTremblay/BAC0?branch=master
    :alt: Coverage
 
-.. _bacpypes : https://github.com/JoelBender/bacpypes
+.. _bacpypes3 : https://github.com/JoelBender/BACpypes3
 
 .. _bokeh : http://www.bokehplots.com
 

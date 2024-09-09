@@ -3,14 +3,14 @@
 import importlib.util
 import os
 
-if importlib.util.find_spec("bacpypes3") is not None:
+if importlib.util.find_spec("BACpypes3") is not None:
     import bacpypes3  # noqa: F401
 
 else:
     # Using print here or setup.py will fail
     print("=" * 80)
     print(
-        'bacpypes module missing, please install latest version using \n    $ "pip install bacpypes"'
+        'BACpypes3 module missing, please install latest version using \n    $ "pip install BACpypes3"'
     )
     print("\nDiscard this message if you are actually installing BAC0.")
     print("=" * 80)
