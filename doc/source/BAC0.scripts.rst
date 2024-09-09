@@ -12,14 +12,6 @@ BAC0.scripts.Base module
    :undoc-members:
    :show-inheritance:
 
-BAC0.scripts.Complete module
-----------------------------
-
-.. automodule:: BAC0.scripts.Complete
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 BAC0.scripts.Lite module
 ------------------------
 

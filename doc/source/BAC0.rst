@@ -8,10 +8,10 @@ Subpackages
    :maxdepth: 7
 
    BAC0.core
+   BAC0.db
    BAC0.scripts
-   BAC0.sql
    BAC0.tasks
-   BAC0.web
+   BAC0.tools
 
 Submodules
 ----------
