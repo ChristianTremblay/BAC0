@@ -367,56 +367,60 @@ class Lite(
         For that, some requests will be sent over the network to look for name,
         manufacturer, etc and in big network, this could be a long process.
         """
+
         lst = []
-        for k, v in self.discoveredDevices.items():
-            objid, device_address, network_number, vendor_id, vendor_name = (
-                v["object_instance"],
-                v["address"],
-                v["network_number"],
-                v["vendor_id"],
-                v["vendor_name"],
-            )
-            devId = objid[1]
-            try:
-                deviceName, vendorName = await self.readMultiple(
-                    f"{device_address} device {devId} objectName vendorName"
+        if self.discoveredDevices is not None:
+            for k, v in self.discoveredDevices.items():
+                objid, device_address, network_number, vendor_id, vendor_name = (
+                    v["object_instance"],
+                    v["address"],
+                    v["network_number"],
+                    v["vendor_id"],
+                    v["vendor_name"],
                 )
-            except (UnrecognizedService, ValueError):
-                self._log.warning(
-                    f"Unrecognized service for {devId} | {device_address}"
-                )
+                devId = objid[1]
                 try:
-                    deviceName = await self.read(
-                        f"{device_address} device {devId} objectName"
+                    deviceName, vendorName = await self.readMultiple(
+                        f"{device_address} device {devId} objectName vendorName"
                     )
-                    vendorName = await self.read(
-                        f"{device_address} device {devId} vendorName"
+                except (UnrecognizedService, ValueError):
+                    self._log.warning(
+                        f"Unrecognized service for {devId} | {device_address}"
                     )
-                except NoResponseFromController:
+                    try:
+                        deviceName = await self.read(
+                            f"{device_address} device {devId} objectName"
+                        )
+                        vendorName = await self.read(
+                            f"{device_address} device {devId} vendorName"
+                        )
+                    except NoResponseFromController:
+                        self.log(f"No response from {k}", level="warning")
+                        continue
+                except (NoResponseFromController, Timeout):
                     self.log(f"No response from {k}", level="warning")
                     continue
-            except (NoResponseFromController, Timeout):
-                self.log(f"No response from {k}", level="warning")
-                continue
-            lst.append((deviceName, vendorName, devId, device_address, network_number))
-        if RICH:
-            console = Console()
-            table = Table(show_header=True, header_style="bold magenta")
-            table.add_column("Network_number")
-            table.add_column("Device Name")
-            table.add_column("Address")
-            table.add_column("Device Instance")
-            table.add_column("Vendor Name")
-            for each in lst:
-                deviceName, vendorName, devId, device_address, network_number = each
-                table.add_row(
-                    f"{network_number}",
-                    f"{deviceName}",
-                    f"{device_address}",
-                    f"{devId}",
-                    f"{vendorName}",
+                lst.append(
+                    (deviceName, vendorName, devId, device_address, network_number)
                 )
-            console.print(table)
+            if RICH:
+                console = Console()
+                table = Table(show_header=True, header_style="bold magenta")
+                table.add_column("Network_number")
+                table.add_column("Device Name")
+                table.add_column("Address")
+                table.add_column("Device Instance")
+                table.add_column("Vendor Name")
+                for each in lst:
+                    deviceName, vendorName, devId, device_address, network_number = each
+                    table.add_row(
+                        f"{network_number}",
+                        f"{deviceName}",
+                        f"{device_address}",
+                        f"{devId}",
+                        f"{vendorName}",
+                    )
+                console.print(table)
         if _return_list:
             return lst  # type: ignore[return-value]
 
