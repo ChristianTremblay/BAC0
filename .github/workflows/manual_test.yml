@@ -4,11 +4,7 @@
 name: Build & Test
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-
+  workflow_dispatch
 jobs:
   build:
     runs-on: ubuntu-latest
