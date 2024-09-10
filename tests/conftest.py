@@ -107,7 +107,7 @@ async def network_and_devices():
     global device30_app
     global test_device
     global test_device_30
-
+    BAC0.log_level("debug")
     loop = asyncio.get_running_loop()
     # ip = os.getenv('RUNNER_IP')
     # if ip is not None:
