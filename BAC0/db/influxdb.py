@@ -2,10 +2,12 @@ from datetime import datetime
 
 import pytz
 
-from ..core.utils.lookfordependency import influxdb_available
+from ..core.utils.lookfordependency import influxdb_if_available
 from ..core.utils.notes import note_and_log
 
-if influxdb_available():
+
+_INFLUX, _ = influxdb_if_available()
+if _INFLUX:
     from influxdb_client import Point, WriteOptions
     from influxdb_client.client.influxdb_client_async import InfluxDBClientAsync
 else:
