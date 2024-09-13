@@ -78,7 +78,7 @@ class Base:
 
     def __init__(
         self,
-        localIPAddr: str = "127.0.0.1",
+        localIPAddr: Address = Address("127.0.0.1/24"),
         networkNumber: int = None,
         localObjName: str = "BAC0",
         deviceId: int = None,
