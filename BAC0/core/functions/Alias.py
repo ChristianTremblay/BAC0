@@ -1,7 +1,8 @@
 import asyncio
-from typing import List, Tuple, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 from bacpypes3.app import Application
+from bacpypes3.netservice import RouterEntryStatus
 from bacpypes3.npdu import RejectMessageToNetwork
 from bacpypes3.pdu import Address, GlobalBroadcast
 
@@ -144,6 +145,15 @@ class Alias:
             await _app.nsap.update_router_references(
                 snet=snet, address=address, dnets=dnets
             )
+            self._ric = self.this_application.app.nsap.router_info_cache
+            self._log.info(
+                f"Updating router info cache -> Snet : {snet} Addr : {address} dnets : {dnets}"
+            )
+            for each in dnets:
+                await self._ric.set_path_info(
+                    snet, each, address, RouterEntryStatus.available
+                )
+                _this_application._learnedNetworks.add(each)
         else:
             self._log.warning(f"Router not found at {address}")
 
@@ -163,8 +173,7 @@ class Alias:
                 _app.nse.what_is_network_number(), timeout
             )
             return network_number
-        except RejectMessageToNetwork as error:
-            self._log.warning(f"Reject Network Number : {error}")
+
         except asyncio.TimeoutError:
             # Handle the timeout error
             self.log(
