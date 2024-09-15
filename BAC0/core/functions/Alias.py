@@ -1,4 +1,5 @@
 import asyncio
+from typing import List, Tuple, Optional, Union
 
 from bacpypes3.app import Application
 from bacpypes3.npdu import RejectMessageToNetwork
@@ -7,6 +8,11 @@ from bacpypes3.pdu import Address, GlobalBroadcast
 from BAC0.core.app.asyncApp import BAC0Application
 
 from ...core.utils.notes import note_and_log
+
+ROUTER_TUPLE_TYPE = Union[
+    Tuple[Union[Address, str], Union[int, List[int]]],
+    Tuple[Union[Address, str], Union[int, List[int]], Optional[int]],
+]
 
 
 @note_and_log
@@ -110,6 +116,36 @@ class Alias:
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
         await _app.nse.initialize_routing_table()
+
+    async def use_router(
+        self,
+        router_infos: Union[
+            Tuple[Union[Address, str], Union[int, List[int]]],
+            Tuple[Union[Address, str], Union[int, List[int]], Optional[int]],
+        ] = (None, None, None),
+    ):
+        address, dnets = router_infos[:2]
+        try:
+            snet = router_infos[2]
+        except IndexError:
+            snet = None
+        _this_application: BAC0Application = self.this_application
+        _app: Application = _this_application.app
+        if not isinstance(address, Address):
+            address = Address(address)
+        if not isinstance(dnets, list):
+            dnets = [dnets]
+        response = await self.who_is(address=address)
+        if response:
+            self._log.info(f"Router found at {address}")
+            self._log.info(
+                f"Adding router reference -> Snet : {snet} Addr : {address} dnets : {dnets}"
+            )
+            await _app.nsap.update_router_references(
+                snet=snet, address=address, dnets=dnets
+            )
+        else:
+            self._log.warning(f"Router not found at {address}")
 
     async def what_is_network_number(self, destination=None, timeout=3):
         """
