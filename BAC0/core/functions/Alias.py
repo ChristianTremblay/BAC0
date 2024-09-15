@@ -1,6 +1,7 @@
 import asyncio
 
 from bacpypes3.app import Application
+from bacpypes3.npdu import RejectMessageToNetwork
 from bacpypes3.pdu import Address, GlobalBroadcast
 
 from BAC0.core.app.asyncApp import BAC0Application
@@ -126,6 +127,8 @@ class Alias:
                 _app.nse.what_is_network_number(), timeout
             )
             return network_number
+        except RejectMessageToNetwork as error:
+            self._log.warning(f"Reject Network Number : {error}")
         except asyncio.TimeoutError:
             # Handle the timeout error
             self.log(
