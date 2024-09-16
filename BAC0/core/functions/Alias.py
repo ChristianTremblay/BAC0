@@ -105,7 +105,7 @@ class Alias:
             )
             return []
 
-    async def init_routing_table(self, address):
+    async def init_routing_table(self, address=None):
         """
         irt <addr>
 
@@ -116,7 +116,9 @@ class Alias:
         self.log(f"Addr : {address}", level="info")
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
-        await _app.nse.initialize_routing_table()
+        if address is not None and not isinstance(address, Address):
+            address = Address(address)
+        await _app.nse.initialize_routing_table(destination=address)
 
     async def use_router(
         self,
