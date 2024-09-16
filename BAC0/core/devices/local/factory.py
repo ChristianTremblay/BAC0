@@ -328,7 +328,7 @@ def analog(**kwargs):
         "properties": {
             "units": "percent",
             # "eventState": EventState(),
-            # "covIncrement": 0.15,
+            "covIncrement": 0.15,
         },
         "presentValue": 0,
     }
