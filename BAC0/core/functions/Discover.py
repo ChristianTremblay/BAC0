@@ -84,10 +84,11 @@ class Discover:
         if reset:
             self.discoveredDevices = {}
         found = []
-        _networks = []
 
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
+
+        _networks = _this_application._learnedNetworks
 
         deviceInstanceRangeLowLimit, deviceInstanceRangeHighLimit = limits
         # Try to find on which network we are
