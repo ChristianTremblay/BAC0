@@ -58,7 +58,8 @@ def influxdb_if_available():
 def pandas_if_available() -> tuple[bool, Type, ModuleType, ModuleType]:
     global _PANDAS
     if not check_dependencies(["pandas"]):
-        return None
+        _PANDAS = False
+        return (_PANDAS, FakePandas, FakePandas.sql, FakePandas.Timestamp)
 
     try:
         pd = import_module("pandas")
