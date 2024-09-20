@@ -94,14 +94,14 @@ class Discover:
         # Try to find on which network we are
         _this_network = await self.what_is_network_number()
         if _this_network:
-            _networks.append(_this_network)
+            _networks.add(_this_network)
         # Try to find local routers...
         _other_networks = await self.whois_router_to_network()
         if _other_networks == []:
             _other_networks = await self.whois_router_to_network(global_broadcast=True)
         for each in _other_networks:
             network_adapter, _iamrtn = each
-            _networks.extend(_iamrtn.iartnNetworkList)
+            _networks.update(_iamrtn.iartnNetworkList)
         for net in _networks:
             _this_application._learnedNetworks.add(net)
         self.log(f"Found those networks : {self.known_network_numbers}", level="info")
@@ -111,12 +111,12 @@ class Discover:
                 # we'll make multiple whois...
                 for network in networks:
                     if network < 65535:
-                        _networks.append(network)
+                        _networks.add(network)
             elif networks == "known":
                 _networks = self.known_network_numbers.copy()
             else:
                 if isinstance(networks, int) and networks < 65535:
-                    _networks.append(networks)
+                    _networks.add(networks)
 
         if _networks and not global_broadcast:
             for each_network in _networks:

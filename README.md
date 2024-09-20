@@ -1,4 +1,4 @@
-# BAC0 ![Build status](https://github.com/ChristianTremblay/BAC0/workflows/Build%20&%20Test/badge.svg?branch=main) ![Coverage](https://coveralls.io/repos/github/ChristianTremblay/BAC0/badge.svg?branch=main) ![Documentation](https://readthedocs.org/projects/bac0/badge/?version=latest)
+# BAC0 [![Build & Test](https://github.com/ChristianTremblay/BAC0/actions/workflows/test.yml/badge.svg)](https://github.com/ChristianTremblay/BAC0/actions/workflows/test.yml) ![Coverage](https://coveralls.io/repos/github/ChristianTremblay/BAC0/badge.svg?branch=main) [![Documentation Status](https://readthedocs.org/projects/bac0/badge/?version=stable)](https://bac0.readthedocs.io/en/stable/?badge=stable)
 
 [![Join the chat at https://gitter.im/ChristianTremblay/BAC0](https://badges.gitter.im/ChristianTremblay/BAC0.svg)](https://gitter.im/ChristianTremblay/BAC0?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
