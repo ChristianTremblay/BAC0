@@ -776,32 +776,8 @@ class NumericPoint(Point):
                 raise WritePropertyException(f"Problem writing to device : {error}")
 
     def __repr__(self):
-        try:
-            polling = self.properties.device.properties.pollDelay
-            if (polling < 90 and polling > 0) or self.cov_registered:
-                val = float(self.lastValue)
-            else:
-                asyncio.gather(self.value, asyncio.sleep(1))
-                val = float(self.lastValue)
-        except ValueError:
-            self._log.error(
-                "Cannot convert value {}. Device probably disconnected or the response is inconsistent".format(
-                    self.value
-                )
-            )
-            # Probably disconnected
-            return "{}/{} : (n/a) {}".format(
-                self.properties.device.properties.name,
-                self.properties.name,
-                self.properties.units_state,
-            )
-
-        return "{}/{} : {:.2f} {}".format(
-            self.properties.device.properties.name,
-            self.properties.name,
-            val,
-            self.properties.units_state,
-        )
+        val = self.lastValue if self.lastValue is not None else "NaN"
+        return f"{self.properties.device.properties.name}/{self.properties.name} : {val:.2f} {self.properties.units_state}"
 
     def __add__(self, other):
         self._update_value_if_required()
@@ -934,15 +910,9 @@ class BooleanPoint(Point):
             raise WritePropertyException(f"Problem writing to device : {error}")
 
     def __repr__(self):
-        polling = self.properties.device.properties.pollDelay
-        if (polling >= 90 or polling <= 0) and not self.cov_registered:
-            # Force reading
-            self._log.warning(
-                "Cannot read in __repr__ as it need an asynchronous call, using lastValue"
-            )
-            self.lastValue
-        return "{}/{} : {}".format(
-            self.properties.device.properties.name, self.properties.name, self.boolValue
+        val = self.boolValue if self.boolValue is not None else "NaN"
+        return (
+            f"{self.properties.device.properties.name}/{self.properties.name} : {val}"
         )
 
     def __or__(self, other):
@@ -1070,12 +1040,9 @@ class EnumPoint(Point):
             raise WritePropertyException(f"Problem writing to device : {error}")
 
     def __repr__(self):
-        polling = self.properties.device.properties.pollDelay
-        if (polling >= 90 or polling <= 0) and not self.cov_registered:
-            # Force reading
-            self.value
-        return "{}/{} : {}".format(
-            self.properties.device.properties.name, self.properties.name, self.enumValue
+        val = self.enumValue if self.enumValue is not None else "NaN"
+        return (
+            f"{self.properties.device.properties.name}/{self.properties.name} : {val}"
         )
 
     def __eq__(self, other):
@@ -1146,20 +1113,9 @@ class StringPoint(Point):
             raise WritePropertyException(f"Problem writing to device : {error}")
 
     def __repr__(self):
-        try:
-            polling = self.properties.device.properties.pollDelay
-            if (polling < 90 and polling > 0) or self.cov_registered:
-                val = str(self.lastValue)
-            else:
-                val = str(self.value)
-        except ValueError:
-            self.log(
-                "Cannot convert value. Device probably disconnected", level="error"
-            )
-            # Probably disconnected
-            val = None
-        return "{}/{} : {}".format(
-            self.properties.device.properties.name, self.properties.name, val
+        val = self.lastValue if self.lastValue is not None else "NaN"
+        return (
+            f"{self.properties.device.properties.name}/{self.properties.name} : {val}"
         )
 
     def __eq__(self, other):
@@ -1226,22 +1182,8 @@ class DateTimePoint(Point):
         #    raise WritePropertyException("Problem writing to device : {}".format(error))`
         raise NotImplementedError("Writing to Datetime is not supported yet")
 
-    async def __repr__(self):
-        try:
-            # polling = self.properties.device.properties.pollDelay
-            # if (polling < 90 and polling > 0) or self.cov_registered:
-            #    val = str(self.lastValue)
-            # else:
-            val = await self.value
-        except ValueError:
-            self.log(
-                "Cannot convert value. Device probably disconnected", level="error"
-            )
-            # Probably disconnected
-            val = None
-        return "{}/{} : {}".format(
-            self.properties.device.properties.name, self.properties.name, val
-        )
+    def __repr__(self):
+        return f"{self.properties.device.properties.name}/{self.properties.name} : {self.lastValue}"
 
     def __eq__(self, other):
         self._update_value_if_required()
