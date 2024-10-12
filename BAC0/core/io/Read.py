@@ -314,7 +314,8 @@ class ReadProperty:
                         "",
                     )
                 )
-                dict_values[str(object_identifier)] = []
+                if str(object_identifier) not in dict_values:
+                    dict_values[str(object_identifier)] = []
                 if show_property_name:
                     values.append((property_value, property_identifier))
                     dict_values[str(object_identifier)].append(
