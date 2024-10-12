@@ -24,6 +24,7 @@ from bacpypes3.errors import NoResponse
 # from ...bokeh.BokehRenderer import BokehPlot
 from ...db.sql import SQLMixin
 from ...tasks.DoOnce import DoOnce
+from ...tasks.Poll import DeviceOneShotPoll
 from ..io.IOExceptions import (
     BadDeviceDefinition,
     DeviceNotConnected,
@@ -453,6 +454,9 @@ class DeviceConnected(Device):
     async def _init_state(self):
         await self._buildPointList()
         self.properties.network.register_device(self)
+        if self.properties.pollDelay == 0:
+            _poll = DeviceOneShotPoll(self)
+            _poll.start()
         # self.initialized = True
 
     async def _disconnect(self, save_on_disconnect=True, unregister=True):
