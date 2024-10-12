@@ -158,6 +158,29 @@ class DevicePoll(Task):
 
 
 @note_and_log
+class DeviceOneShotPoll(DevicePoll):
+    """
+    Start a normal polling task to repeatedly read a list of points from a device using
+    ReadPropertyMultiple requests.
+
+    Normal polling will limit the polling speed to 10 second minimum
+
+    """
+
+    def __init__(self, device, name=""):
+        """
+        :param device: (BAC0.core.devices.Device.Device) device to poll
+        :param delay: (int) Delay between polls in seconds, defaults = 10sec
+
+        :returns: Nothing
+        """
+        self._log.info(f"Starting a simple polling task for {device.properties.name}")
+        DevicePoll.__init__(
+            self, device=device, name=name, delay=0, prefix="rpm_oneshot_poll"
+        )
+
+
+@note_and_log
 class DeviceNormalPoll(DevicePoll):
     """
     Start a normal polling task to repeatedly read a list of points from a device using
