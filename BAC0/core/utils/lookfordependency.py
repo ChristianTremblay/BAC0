@@ -64,15 +64,8 @@ def pandas_if_available() -> tuple[bool, Type, ModuleType, ModuleType]:
     try:
         pd = import_module("pandas")
         sql = import_module("pandas.io.sql")
-        Timestamp = None
-        timestamp_spec = importlib.util.find_spec("pandas.Timestamp")
-        if timestamp_spec is not None:
-            Timestamp = pd.Timestamp
-        else:
-            timestamp_lib_spec = importlib.util.find_spec("pandas.lib.Timestamp")
-            if timestamp_lib_spec is not None:
-                Timestamp = import_module("pandas.lib").Timestamp
 
+        Timestamp = pd.Timestamp
         _PANDAS = True
 
     except ImportError:
