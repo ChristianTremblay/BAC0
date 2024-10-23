@@ -60,7 +60,7 @@ class TrendLogCreationException(Exception):
 
 async def create_trendlogs(objList, device):
     trendlogs = {}
-    for each in retrieve_type(objList, "trendLog"):
+    for each in retrieve_type(objList, "trend-log"):
         point_address = str(each[1])
         try:
             # tl = await ATrendLog(point_address, device, read_log_on_creation=False)
