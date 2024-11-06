@@ -185,64 +185,37 @@ class Alias:
             return None
 
     async def whohas(
-        self,
-        object_id=None,
-        object_name=None,
-        instance_range_low_limit=0,
-        instance_range_high_limit=4194303,
-        destination=None,
-        global_broadcast=False,
+        self, 
+        object_id=None, 
+        object_name=None, 
+        low_limit=0, 
+        high_limit=4194303, 
+        destination=None, 
+        timeout=5,
     ):
         """
-        Object ID : analogInput:1
-        Object Name : string
-        Instance Range Low Limit : 0
-        Instance Range High Limit : 4194303
-        destination (optional) : If empty, local broadcast will be used.
-        global_broadcast : False
+        Build a WhoHas request.
 
+        :param object_id: (optional) The address to send the request to, if unused object_name must be present.
+        :param object_name: (optional) The address to send the request to, if unused object_id must be present.
+        :param destination: (optional) The destination address, if empty local broadcast will be used.
+        :param timeout: (optional) The timeout for the WhoHas.
+
+        :returns: IAm response.
+
+        Example::
+
+            import BAC0
+            bacnet = BAC0.lite()
+
+            bacnet.whohas(object_name='SomeDevice')
         """
-        print("Not yet... come back later")
-        await asyncio.sleep(1)
-
-        """    
-        if object_name and not object_id:
-            obj_name = CharacterString(object_name)
-            obj = WhoHasObject(objectName=obj_name)
-        elif object_id and not object_name:
-            obj_id = ObjectIdentifier(object_id)
-            obj = WhoHasObject(objectIdentifier=obj_id)
-        else:
-            obj_id = ObjectIdentifier(object_id)
-            obj_name = CharacterString(object_name)
-            obj = WhoHasObject(objectIdentifier=obj_id, objectName=obj_name)
-        limits = WhoHasLimits(
-            deviceInstanceRangeLowLimit=instance_range_low_limit,
-            deviceInstanceRangeHighLimit=instance_range_high_limit,
+        _ihave = await self.this_application.app.who_has(
+            object_identifier=object_id,
+            object_name=object_name,
+            low_limit=low_limit,
+            high_limit=high_limit,
+            address=Address(destination) if destination else None,
+            timeout=timeout,
         )
-        request = WhoHasRequest(object=obj, limits=limits)
-        if destination:
-            request.pduDestination = Address(destination)
-        else:
-            if global_broadcast:
-                request.pduDestination = GlobalBroadcast()
-            else:
-                request.pduDestination = LocalBroadcast()
-        iocb = IOCB(request)  # make an IOCB
-        iocb.set_timeout(2)
-        deferred(self.this_application.request_io, iocb)
-        iocb.wait()
-
-        iocb = IOCB(request)  # make an IOCB
-        self.this_application._last_i_have_received = []
-
-        if iocb.ioResponse:  # successful response
-            pass
-
-        if iocb.ioError:  # unsuccessful: error/reject/abort
-            pass
-
-        time.sleep(3)
-        # self.discoveredObjects = self.this_application.i_am_counter
-        return self.this_application._last_i_have_received
-        """
+        return _ihave
