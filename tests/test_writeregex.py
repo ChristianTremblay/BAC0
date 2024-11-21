@@ -8,6 +8,9 @@ from BAC0.core.io.Write import write_pattern
     [
         "303:5 binaryOutput:2132 presentValue inactive - 8",
         "192.168.1.149 binaryOutput:2132 presentValue inactive - 8",
+        "192.168.1.149 binaryOutput:2132 presentValue 0.1 - 8",
+        "192.168.1.149 binaryOutput 2132 presentValue 0.1234 - 8",
+        "303:5 analogInput 1095 presentValue 15.3 - 8"
         "303:5 binaryOutput 2132 presentValue inactive - 8",
         "303:5 @obj_142:2132 presentValue inactive - 8",
         "303:5 @obj_142:2132 @prop_345 inactive - 8",
