@@ -157,7 +157,7 @@ Devices dataframe ::
 
     await bacnet.devices
 
-..note::
+.. note::
     WARNING. `await bacnet.devices` may in some circumstances, be a bad choice when you want to discover
     devices on a network. A lot of read requests are made to look for manufacturer, object name, etc
     and if a lot of devices are on the network, it is recommended to use whois() and start from there.
@@ -188,7 +188,7 @@ When reconnecting after being disconnected, a complete rebuild of the device is 
 This way, if the device have changed (a download have been done and point list changed)
 new points will be available. Old one will not.
 
-..note::
+.. note::
     WARNING. When BAC0 disconnects a device, it will try to save the device to SQL.
 
 Routing Table
