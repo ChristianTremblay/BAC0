@@ -90,7 +90,7 @@ To do so, use the syntax::
 > using the `deviceId` argument `bacnet = BAC0.start(ip='xxx.xxx.xxx.xxx/mask', deviceId=1234)`.
     
 
-Use BAC0 on a different subnect (Foreign Device)
+Use BAC0 on a different subnet (Foreign Device)
 ***************************************************
 In some situations (like using BAC0 with a VPN using TUN) your BAC0 instance
 will run on a different subnet than the BACnet/IP network.
