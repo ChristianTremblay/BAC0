@@ -18,7 +18,7 @@ This object will also be used as a BACnet device itself, serving BACnet objects 
 To create a BAC0 object, you will need to use the start() function. This function will create the object and connect it to the network.
 
 .. note :: 
-    Legacy BAC0 was available in 2 flavours : ilte and complete. This is not the case anymore. I have merged the two versions into one. All web services have been deprecated letting other softwares like Grafana or InfluxDB to take care of the trending features.
+    Legacy BAC0 was available in 2 flavours : lite and complete. This is not the case anymore. I have merged the two versions into one. All web services have been deprecated letting other softwares like Grafana or InfluxDB to take care of the trending features.
 
 When creating the connection to the network, BAC0 needs to know the ip network of the interface on which it will work. It also needs to know the subnet mask (as BACnet operations often use broadcast messages).If you don't provide one, BAC0 will try to detect the interface for you.
 
