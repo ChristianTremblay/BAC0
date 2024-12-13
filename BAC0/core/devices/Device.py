@@ -632,7 +632,8 @@ class DeviceConnected(Device):
             device['point_name'] = value
         """
         try:
-            asyncio.create_task(self._findPoint(point_name)._set(value))
+            loop = asyncio.get_event_loop()
+            loop.create_task(self._findPoint(point_name)._set(value))
         except WritePropertyException as ve:
             self.log(f"{ve}", level="error")
 
