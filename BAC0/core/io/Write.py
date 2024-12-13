@@ -21,16 +21,14 @@ Write.py - creation of WriteProperty requests
 """
 import re
 
-from bacpypes3.apdu import (
-    ErrorRejectAbortNack,
-)
+from bacpypes3.apdu import ErrorRejectAbortNack
 from bacpypes3.app import Application
 from bacpypes3.basetypes import PropertyIdentifier
 
 # --- 3rd party modules ---
 from bacpypes3.debugging import ModuleLogger
 from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import ObjectIdentifier, Null
+from bacpypes3.primitivedata import Null, ObjectIdentifier
 
 from BAC0.tasks.DoOnce import DoOnce
 
@@ -99,7 +97,8 @@ class WriteProperty:
             value,
             property_array_index,
             priority,
-        ) = self.build_wp_request(args)
+        ) = request = self.build_wp_request(args)
+        # print(request)
 
         try:
             response = await _app.write_property(
@@ -122,7 +121,11 @@ class WriteProperty:
 
         except WritePropertyException as error:
             # construction error
-            self._log.exception(f"exception: {error!r}")
+            self.log(f"exception: {error!r}", level="error")
+
+        except TypeError as error:
+            # construction error
+            self.log(f"exception: {error!r} | Requests = {request}", level="error")
 
     @classmethod
     def _parse_wp_args(cls, args):
