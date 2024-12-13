@@ -401,10 +401,12 @@ class Point:
             req = f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} {prop} {value} - {priority}"
             # self.log(req, level='info')
             try:
-                await self.properties.device.properties.network._write(
+                response = await self.properties.device.properties.network._write(
                     req,
                     vendor_id=self.properties.device.properties.vendor_id,
                 )
+                # print(response)
+                self.log(f"Write response : {response}", level="debug")
             except NoResponseFromController:
                 raise
 
@@ -460,17 +462,17 @@ class Point:
         )
         self.properties.simulated = (False, None)
 
-    def ovr(self, value):
-        asyncio.create_task(self.write(value, priority=8))
+    async def ovr(self, value):
+        await self.write(value, priority=8)
         self.properties.overridden = (True, value)
 
-    def auto(self):
-        asyncio.create_task(self.write("null", priority=8))
+    async def auto(self):
+        await self.write("null", priority=8)
         self.properties.overridden = (False, 0)
 
-    def release_ovr(self):
-        asyncio.create_task(self.write("null", priority=1))
-        asyncio.create_task(self.write("null", priority=8))
+    async def release_ovr(self):
+        await self.write("null", priority=1)
+        await self.write("null", priority=8)
         self.properties.overridden = (False, None)
 
     async def _setitem(self, value):
@@ -482,10 +484,10 @@ class Point:
         AnalogOutput are overridden
         """
         self.log(f"Setting to {value}", level="debug")
-        if "characterstring" in self.properties.type:
+        if "characterstring" in self.properties.type.lower():
             await self.write(value)
 
-        elif "value" in self.properties.type:
+        elif "value" in self.properties.type.lower():
             if str(value).lower() == "auto":
                 raise ValueError(
                     "Value was not simulated or overridden, cannot release to auto"
@@ -493,12 +495,12 @@ class Point:
             # analog value must be written to
             await self.write(value)
 
-        elif "output" in self.properties.type:
+        elif "output" in self.properties.type.lower():
             # analog output must be overridden
             if str(value).lower() == "auto":
-                self.auto()
+                await self.auto()
             else:
-                self.ovr(value)
+                await self.ovr(value)
         else:
             # input are left... must be simulated
             if str(value).lower() == "auto":
@@ -871,7 +873,7 @@ class BooleanPoint(Point):
         return res
 
     @property
-    def boolValue(self):
+    def _boolValue(self):
         """
         returns : (boolean) Value
         """
@@ -886,6 +888,14 @@ class BooleanPoint(Point):
             self._key = 0
             self._boolKey = False
         return self._boolKey
+
+    @property
+    async def boolValue(self):
+        """
+        returns : (boolean) Value
+        """
+        await self.value  # Force a read
+        return self._boolValue
 
     @property
     def units(self):
@@ -910,22 +920,22 @@ class BooleanPoint(Point):
             raise WritePropertyException(f"Problem writing to device : {error}")
 
     def __repr__(self):
-        val = self.boolValue if self.boolValue is not None else "NaN"
+        val = self._boolValue if self._boolValue is not None else "NaN"
         return (
             f"{self.properties.device.properties.name}/{self.properties.name} : {val}"
         )
 
     def __or__(self, other):
         self._update_value_if_required()
-        return self.boolValue | other
+        return self._boolValue | other
 
     def __and__(self, other):
         self._update_value_if_required()
-        return self.boolValue & other
+        return self._boolValue & other
 
     def __xor__(self, other):
         self._update_value_if_required()
-        return self.boolValue ^ other
+        return self._boolValue ^ other
 
     def __eq__(self, other):
         self._update_value_if_required()
@@ -937,7 +947,7 @@ class BooleanPoint(Point):
             else:
                 return False
         elif isinstance(other, bool):
-            return self.boolValue == other
+            return self._boolValue == other
         elif isinstance(other, int):
             return int(self.lastValue.split(":")[0]) == other
         else:
@@ -998,7 +1008,7 @@ class EnumPoint(Point):
             return "n/a"
 
     @property
-    def enumValue(self):
+    def _enumValue(self):
         """
         returns: (str) Enum state value
         """
@@ -1014,6 +1024,14 @@ class EnumPoint(Point):
         except ValueError:
             value = "NaN"
         return value
+
+    @property
+    async def enumValue(self):
+        """
+        returns: (str) Enum state value
+        """
+        await self.value
+        return self._enumValue
 
     @property
     def units(self):
@@ -1040,7 +1058,7 @@ class EnumPoint(Point):
             raise WritePropertyException(f"Problem writing to device : {error}")
 
     def __repr__(self):
-        val = self.enumValue if self.enumValue is not None else "NaN"
+        val = self._enumValue if self._enumValue is not None else "NaN"
         return (
             f"{self.properties.device.properties.name}/{self.properties.name} : {val}"
         )
@@ -1051,7 +1069,7 @@ class EnumPoint(Point):
             if ":" in other:
                 return self.lastValue == other
             else:
-                return self.enumValue == other
+                return self._enumValue == other
         elif isinstance(other, int):
             return int(self.lastValue.split(":")[0]) == other
         else:
