@@ -24,6 +24,7 @@ import re
 
 # --- standard Python modules ---
 import typing as t
+import asyncio
 
 # from bacpypes3.core import deferred
 # from bacpypes.iocb import IOCB, TimeoutError
@@ -135,17 +136,19 @@ class ReadProperty:
         )
         if dic is None:
             _iam = await self.this_application.app.who_is(address=device_address)
-            try:
-                await self.this_application.app.device_info_cache.set_device_info(
-                    _iam[0]
-                )
-            except IndexError:
-                self.log(
-                    f"Trouble with Iam... Response received from {device_address} = {_iam}",
-                    level="error",
-                )
-                if _iam == []:
+            failures = 0
+            while _iam == []:
+                # retry
+                failures += 1
+                await asyncio.sleep(1)
+                _iam = await self.this_application.app.who_is(address=device_address)
+                if failures > 5:
+                    self.log(
+                        f"Trouble with Iam... Response received from {device_address} = {_iam}",
+                        level="error",
+                    )
                     raise NoResponseFromController
+            await self.this_application.app.device_info_cache.set_device_info(_iam[0])
             dic = await self.this_application.app.device_info_cache.get_device_info(
                 device_address
             )
