@@ -109,6 +109,11 @@ class WriteProperty:
                 property_array_index,
                 priority,
             )
+            if response == "-no property type-" or response == "-no object class-":
+                self.log(
+                    f"exception: {response!r}, you probably need to define proprietary objects and property for this vendor (or import the specific module)",
+                    level="error",
+                )
             return response
 
         except ErrorRejectAbortNack as err:
