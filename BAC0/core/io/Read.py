@@ -49,6 +49,7 @@ from bacpypes3.basetypes import (
     RangeByPosition,
     RangeBySequenceNumber,
     RangeByTime,
+    EngineeringUnits,
 )
 from bacpypes3.errors import NoResponse, ObjectError
 from bacpypes3.object import get_vendor_info
@@ -183,7 +184,14 @@ class ReadProperty:
                         "Using a default value of On for internal needs."
                     )
                     return "True"
+                if "units" in args:
+                    self._log.warning(
+                        "The units property is not implemented in the device. We will consider noUnits"
+                        "Using a default value for internal needs. Please note that units is a required property for BACnet objects like analog values. The device you are reading from may be non-compliant."
+                    )
+                    return EngineeringUnits("noUnits")
                 else:
+
                     raise UnknownPropertyError(f"Unknown property {args}")
             else:
                 self.log(f"Error : {err}", level="error")
