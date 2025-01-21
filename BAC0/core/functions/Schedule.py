@@ -114,8 +114,7 @@ class Schedule:
 
         address = Address(destination)
         request.pduDestination = address
-        request.propertyValue = Any()
-        request.propertyValue.cast_in(weeklySchedule)
+        request.propertyValue = Any(weeklySchedule)
         request.priority = 15
         return request
 
@@ -182,20 +181,20 @@ class Schedule:
         try:
             first_obj_id = object_references[0]
             obj_type, obj_instance = first_obj_id.objectIdentifier
-            if obj_type == "binaryValue":
+            if "binary" in str(obj_type):
                 _state_text = ["inactive", "active"]
-            elif "multi" in obj_type:
-                _state_text = self.read(
+            elif "multi" in str(obj_type):
+                _state_text = await self.read(
                     f"{address} {obj_type} {obj_instance} stateText"
                 )
-            elif "analog" in obj_type:
+            elif "analog" in str(obj_type):
                 _state_text = "analog"
 
             schedule["object_references"] = [
                 objectId.objectIdentifier for objectId in object_references
             ]
             schedule["references_names"] = [
-                self.read(
+                await self.read(
                     "{} {} {} objectName".format(
                         address, each.objectIdentifier[0], each.objectIdentifier[1]
                     )
@@ -217,23 +216,25 @@ class Schedule:
             for i, each in enumerate(_state_text):
                 sched_states[each] = i
             presentValue = "{} ({})".format(
-                list(sched_states.keys())[int(presentValue.value)],
-                presentValue.value,
+                list(sched_states.keys())[int(presentValue.get_value())],
+                presentValue.get_value(),
             )
         elif _state_text == "analog":
             sched_states = _state_text  # type: ignore[assignment]
             if presentValue is not None:
-                presentValue = f"{presentValue.value}"
+                presentValue = f"{presentValue.get_value()}"
         else:
             try:
                 for i, each in enumerate(_state_text):  # type: ignore[arg-type]
                     sched_states[each] = i + offset_MV
                 presentValue = "{} ({})".format(
-                    list(sched_states.keys())[int(presentValue.value) - offset_MV],
-                    presentValue.value,
+                    list(sched_states.keys())[
+                        int(presentValue.get_value()) - offset_MV
+                    ],
+                    presentValue.get_value(),
                 )
             except TypeError:
-                presentValue = presentValue.value
+                presentValue = presentValue.get_value()
 
         schedule["states"] = sched_states
         schedule["reliability"] = reliability
@@ -256,14 +257,14 @@ class Schedule:
             _time = dt_time(hour, minute, second, hundreth).strftime("%H:%M")
             try:
                 _value = None
-                if each.value.value is not None:
+                if each.value.get_value() is not None:
                     if states == ["inactive", "active"]:
-                        _value = states[int(each.value.value)]
+                        _value = states[int(each.value.get_value())]
                     elif states == "analog":
-                        _value = float(each.value.value)
+                        _value = float(each.value.get_value())
                     else:
-                        _value = states[int(each.value.value) - offset_MV]
+                        _value = states[int(each.value.get_value()) - offset_MV]
                 events.append((_time, _value))
             except IndexError:
-                events.append((_time, f"??? ({each.value.value})"))
+                events.append((_time, f"??? ({each.value.get_value()})"))
         return events
