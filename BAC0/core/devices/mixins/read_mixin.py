@@ -151,6 +151,10 @@ class DiscoveryUtilsMixin:
                     ),
                     vendor_id=self.properties.vendor_id,
                 )
+                if not objList:
+                    raise SegmentationNotSupported(
+                        "No object list returned, maybe if we try again"
+                    )
 
             except NoResponseFromController:
                 self._log.error(

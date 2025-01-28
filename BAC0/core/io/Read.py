@@ -20,11 +20,11 @@ Read.py - creation of ReadProperty and ReadPropertyMultiple requests
 
 """
 
+import asyncio
 import re
 
 # --- standard Python modules ---
 import typing as t
-import asyncio
 
 # from bacpypes3.core import deferred
 # from bacpypes.iocb import IOCB, TimeoutError
@@ -45,11 +45,11 @@ from bacpypes3.apdu import (
 from bacpypes3.app import Application
 from bacpypes3.basetypes import (
     DateTime,
+    EngineeringUnits,
     PropertyIdentifier,
     RangeByPosition,
     RangeBySequenceNumber,
     RangeByTime,
-    EngineeringUnits,
 )
 from bacpypes3.errors import NoResponse, ObjectError
 from bacpypes3.object import get_vendor_info
@@ -302,8 +302,15 @@ class ReadProperty:
                 values.append("")  # type: ignore[arg-type]
                 return values
             if "no-response" in str(err.reason):
-                values.append("")  # type: ignore[arg-type]
-                return values
+                # values.append("")  # type: ignore[arg-type]
+                # return values
+                # try again
+                try:
+                    response = await _app.read_property_multiple(
+                        address, parameter_list
+                    )
+                except ErrorRejectAbortNack as err:
+                    raise err
 
         if not isinstance(response, ErrorRejectAbortNack):
             """
