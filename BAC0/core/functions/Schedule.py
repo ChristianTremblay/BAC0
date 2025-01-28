@@ -94,7 +94,7 @@ class Schedule:
                 if dict_schedule["states"] == {"inactive": 0, "active": 1}:
                     return Integer(dict_schedule["states"][v])
                 else:
-                    return Enumerated(dict_schedule["states"][v] - 1)
+                    return Enumerated(dict_schedule["states"][v])
 
         daily_schedules = []
         for day in Schedule.days:
