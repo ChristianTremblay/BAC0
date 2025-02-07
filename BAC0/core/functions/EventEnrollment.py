@@ -19,7 +19,7 @@ class EventEnrollment:
 
         address = Address(destination)
         request.pduDestination = address
-        request.propertyValue = Any()
+        request.propertyValue = Any(None)
         request.propertyValue.cast_in(event_parameters)
         request.priority = 15
         return request
@@ -59,7 +59,7 @@ class EventEnrollment:
 
         address = Address(destination)
         request.pduDestination = address
-        request.propertyValue = Any()
+        request.propertyValue = Any(None)
         request.propertyValue.cast_in(obj_prop_ref)
         request.priority = 15
         return request

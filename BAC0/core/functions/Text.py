@@ -43,7 +43,7 @@ class TextMixin:
         )
         request.pduDestination = Address(addr)
 
-        _value = Any()
+        _value = Any(None)
         _value.cast_in(CharacterString(value))
         request.propertyValue = _value
 

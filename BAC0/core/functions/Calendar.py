@@ -89,7 +89,7 @@ class Calendar:
 
         address = Address(destination)
         request.pduDestination = address
-        request.propertyValue = Any()
+        request.propertyValue = Any(None)
         request.propertyValue.cast_in(dateList)
         return request
 
