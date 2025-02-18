@@ -1,6 +1,6 @@
 [project]
 name = "BAC0"
-version = "2025.01.20dev"
+version = "2025.02-18"
 description = "BACnet Scripting Framework for testing DDC Controls"
 authors = [{name = "Christian Tremblay", email = "christian.tremblay@servisys.com"}]
 readme = "README.md"
