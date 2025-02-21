@@ -30,6 +30,7 @@ from ..core.devices.Trends import TrendLog
 from ..core.devices.Virtuals import VirtualPoint
 from ..core.functions.Alias import Alias
 from ..core.functions.CoV import COVSubscription
+
 # from ..core.functions.legacy.cov import CoV
 # from ..core.functions.legacy.DeviceCommunicationControl import (
 #    DeviceCommunicationControl,
@@ -497,4 +498,3 @@ class Lite(
                 return each
         self._log.error(f"Device {id} not found")
         raise ValueError("Device not found")
-

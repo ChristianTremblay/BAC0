@@ -334,7 +334,7 @@ class Base:
     def extract_value_from_primitive_data(value):
         if isinstance(value, float):
             return float(value)
-        #elif isinstance(value, Boolean):
+        # elif isinstance(value, Boolean):
         #    if value == int(1):
         #        return True
         #    else:
