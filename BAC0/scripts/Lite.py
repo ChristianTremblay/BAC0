@@ -135,10 +135,17 @@ class Lite(
         # Ping task will deal with all registered device and disconnect them if they do not respond.
 
         self._ping_task = RecurringTask(
-            self.ping_registered_devices, delay=ping_delay, name="Ping Task"
+            self.ping_registered_devices,
+            delay=ping_delay,
+            name="Ping Registered Devices Task",
         )
         if ping:
             self._ping_task.start()
+
+        self._cleanup_task = RecurringTask(
+            Task.clean_tasklist, delay=60, name="Cleanup Tasks List"
+        )
+        self._cleanup_task.start()
 
         if ip is None:
             host = HostIP(port)

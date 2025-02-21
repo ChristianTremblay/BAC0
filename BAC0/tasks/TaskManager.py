@@ -13,7 +13,6 @@ import asyncio
 import time
 from random import random
 
-
 # --- 3rd party modules ---
 # --- this application's modules ---
 from ..core.utils.notes import note_and_log
@@ -26,7 +25,7 @@ async def stopAllTasks():
     for each in Task.tasks:
         each.aio_task.cancel()
     Task._log.info("Ok all tasks stopped")
-    Task.clean_tasklist()
+    Task.clean_tasklist(all=True)
     return True
 
 
@@ -36,9 +35,15 @@ class Task(object):
     high_latency = 60
 
     @classmethod
-    def clean_tasklist(cls):
-        cls._log.debug("Cleaning tasks list")
-        cls.tasks = []
+    def clean_tasklist(cls, all=False):
+        if all is True:
+            cls._log.debug("Cleaning tasks list")
+            cls.tasks = []
+        else:
+            for each in cls.tasks:
+                if each.done:
+                    cls._log.debug(f"Removing task {each.name}")
+                    cls.tasks.remove(each)
 
     @classmethod
     def number_of_tasks(cls):
@@ -198,4 +203,8 @@ class Task(object):
 @note_and_log
 class OneShotTask(Task):
     def __init__(self, fn=None, args=None, name="Oneshot"):
-        super().__init__(name=name, delay=0)
+        if args is not None:
+            _args = (fn, args)
+        else:
+            _args = fn
+        super().__init__(fn=_args, name=name, delay=0)

@@ -30,15 +30,7 @@ class DoOnce(OneShotTask):
 
         :returns: Nothing
         """
-        self.name = name
-        self.fnc_args = None
-        if isinstance(fnc, tuple):
-            self.func, self.fnc_args = fnc
-        elif hasattr(fnc, "__call__"):
-            self.func = fnc
-            OneShotTask.__init__(self)
-        else:
-            raise ValueError("You must pass a function to this...")
+        super().__init__(fnc, name=name)
 
     async def task(self):
         if self.fnc_args:
