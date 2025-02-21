@@ -21,6 +21,7 @@ from bacpypes3.pdu import Address
 # --- 3rd party modules ---
 from bacpypes3.primitivedata import Boolean, CharacterString, ObjectIdentifier
 
+from ...scripts.Base import Base
 from ...tasks.Match import Match, Match_Value
 
 # --- this application's modules ---
@@ -78,8 +79,6 @@ class Point:
     """
 
     _cache_delta = timedelta(seconds=5)
-    _last_cov_identifier = 0
-    _running_cov_tasks = {}
 
     def __init__(
         self,
@@ -651,17 +650,17 @@ class Point:
         self.cov_task = COVSubscription(
             point=self, confirmed=confirmed, lifetime=lifetime, callback=callback
         )
-        Point._running_cov_tasks[self.cov_task.process_identifier] = self.cov_task
+        Base._running_cov_tasks[self.cov_task.process_identifier] = self.cov_task
         self.cov_task.task = asyncio.create_task(self.cov_task.run())
 
     async def cancel_cov(self):
         self.log(f"Canceling COV subscription for {self.properties.name}", level="info")
         process_identifer = self.cov_task.process_identifier
 
-        if process_identifer not in Point._running_cov_tasks:
+        if process_identifer not in Base._running_cov_tasks:
             await self.response("COV subscription not found")
             return
-        cov_subscription = Point._running_cov_tasks.pop(process_identifer)
+        cov_subscription = Base._running_cov_tasks.pop(process_identifer)
         cov_subscription.stop()
         # await cov_subscription.task
 
@@ -1447,8 +1446,8 @@ class COVSubscription:
             (point.properties.type, int(point.properties.address))
         )
         self._app = point.properties.device.properties.network.this_application.app
-        self.process_identifier = Point._last_cov_identifier + 1
-        Point._last_cov_identifier = self.process_identifier
+        self.process_identifier = Base._last_cov_identifier + 1
+        Base._last_cov_identifier = self.process_identifier
 
         self.point = point
         self.lifetime = lifetime
@@ -1488,7 +1487,7 @@ class COVSubscription:
                             level="info",
                         )
                         if property_identifier == PropertyIdentifier.presentValue:
-                            val = extract_value_from_primitive_data(property_value)
+                            val = Base.extract_value_from_primitive_data(property_value)
                             self.point._trend(val)
                         elif property_identifier == PropertyIdentifier.statusFlags:
                             self.point.properties.status_flags = property_value
@@ -1502,9 +1501,15 @@ class COVSubscription:
                                 level="info",
                             )
                             if asyncio.iscoroutinefunction(self.callback):
-                                await self.callback()
+                                await self.callback(
+                                    property_identifier=property_identifier,
+                                    property_value=property_value,
+                                )
                             elif hasattr(self.callback, "__call__"):
-                                self.callback()
+                                self.callback(
+                                    property_identifier=property_identifier,
+                                    property_value=property_value,
+                                )
                             else:
                                 self.point.log(
                                     f"Callback {self.callback} is not callable",

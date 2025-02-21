@@ -75,6 +75,8 @@ class Base:
     """
 
     _used_ips: t.Set[Address] = set()
+    _last_cov_identifier = 0
+    _running_cov_tasks = {}
 
     def __init__(
         self,
@@ -327,3 +329,19 @@ class Base:
             self._routers[str(router_address)].path.append((path, router_status))
 
         return self._routers
+
+    @classmethod
+    def extract_value_from_primitive_data(value):
+        if isinstance(value, float):
+            return float(value)
+        #elif isinstance(value, Boolean):
+        #    if value == int(1):
+        #        return True
+        #    else:
+        #        return False
+        elif isinstance(value, int):
+            return int(value)
+        elif isinstance(value, str):
+            return str(value)
+        else:
+            return value

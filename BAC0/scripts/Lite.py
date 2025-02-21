@@ -29,7 +29,7 @@ from ..core.devices.Points import Point
 from ..core.devices.Trends import TrendLog
 from ..core.devices.Virtuals import VirtualPoint
 from ..core.functions.Alias import Alias
-
+from ..core.functions.CoV import COVSubscription
 # from ..core.functions.legacy.cov import CoV
 # from ..core.functions.legacy.DeviceCommunicationControl import (
 #    DeviceCommunicationControl,
@@ -89,7 +89,7 @@ class Lite(
     TimeSync,
     Reinitialize,
     # DeviceCommunicationControl,
-    # CoV,
+    COVSubscription,
     Schedule,
     # Calendar,
     TextMixin,
@@ -183,17 +183,6 @@ class Lite(
         self.log(f"Device instance (id) : {self.Boid}", level="info")
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
-
-        # Do what's needed to support COV
-        # self._update_local_cov_task = namedtuple(
-        #    "_update_local_cov_task", ["task", "running"]
-        # )
-        # self._update_local_cov_task.task = Update_local_COV(
-        #    self, delay=1, name="Update Local COV Task"
-        # )
-        # self._update_local_cov_task.task.start()
-        # self._update_local_cov_task.running = True
-        # self.log("Update Local COV Task started (required to support COV)", level="info")
 
         # Activate InfluxDB if params are available
         if db_params and INFLUXDB:
@@ -508,3 +497,4 @@ class Lite(
                 return each
         self._log.error(f"Device {id} not found")
         raise ValueError("Device not found")
+
