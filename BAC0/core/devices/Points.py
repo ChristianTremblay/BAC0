@@ -647,7 +647,7 @@ class Point:
         Returns:
             None
         """
-        self.cov_task = COVSubscription(
+        self.cov_task = COVPointSubscription(
             point=self, confirmed=confirmed, lifetime=lifetime, callback=callback
         )
         Base._running_cov_tasks[self.cov_task.process_identifier] = self.cov_task
@@ -1431,13 +1431,43 @@ class StringPointOffline(EnumPoint):
         raise OfflineException("Must be online to write")
 
 
-class COVSubscription:
+class COVPointSubscription:
+    """
+    COVPointSubscription is a class that handles Change of Value (COV) subscriptions for BACnet points.
+    It allows subscribing to COV notifications for a specific point, and handles the asynchronous
+    communication with the BACnet device to receive these notifications.
+
+    Attributes:
+        address (Address): The BACnet address of the device.
+        cov_fini (asyncio.Event): An event to signal the end of the COV subscription.
+        task (asyncio.Task): The asyncio task that runs the COV subscription.
+        obj_identifier (ObjectIdentifier): The BACnet object identifier for the point.
+        _app (BACnetApplication): The BACnet application instance.
+        process_identifier (int): The process identifier for the COV subscription.
+        point (Point): The `BAC0.point` for which the COV subscription is created.
+        lifetime (int): The lifetime of the COV subscription in seconds.
+        confirmed (bool): Whether the COV notifications should be confirmed.
+        callback (Optional[Union[Callable[[str, Any], None], Awaitable[None]]]): The callback function to be called when a COV notification is received.
+
+    Methods:
+        __init__(self, point: Point, lifetime: int = 900, confirmed: bool = False, callback: Optional[Union[Callable[[str, Any], None], Awaitable[None]]] = None):
+            Initializes the COVPointSubscription instance.
+
+        run(self):
+            Asynchronously runs the COV subscription, listening for COV notifications and calling the callback function if provided.
+
+        stop(self):
+            Stops the COV subscription by setting the cov_fini event.
+    """
+
     def __init__(
         self,
         point: Point = None,
         lifetime: int = 900,
         confirmed: bool = False,
-        callback=None,
+        callback: t.Optional[
+            t.Union[t.Callable[[str, t.Any], None], t.Awaitable[None]]
+        ] = None,
     ):
         self.address = Address(point.properties.device.properties.address)
         self.cov_fini = asyncio.Event()

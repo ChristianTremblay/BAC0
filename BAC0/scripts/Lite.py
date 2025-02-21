@@ -10,6 +10,7 @@ It uses provided args to register itself as a device in the network
 and allow communication with other devices.
 
 """
+
 import asyncio
 import typing as t
 
@@ -498,3 +499,39 @@ class Lite(
                 return each
         self._log.error(f"Device {id} not found")
         raise ValueError("Device not found")
+
+    async def cov(
+        self,
+        address: str = None,
+        objectID: t.Tuple[str, int] = None,
+        lifetime: int = 900,
+        confirmed: bool = False,
+        callback: t.Optional[
+            t.Union[t.Callable[[str, t.Any], None], t.Awaitable[None]]
+        ] = None,
+    ):
+        """
+        Subscribe to COV notification for a given address and objectID
+        If callback is provided, it will be called with the value of the COV notification
+        So the function must be built to accept two arguments : property_identifier and property_value
+        """
+        cov_task = COVSubscription(
+            address=address,
+            objectID=objectID,
+            confirmed=confirmed,
+            lifetime=lifetime,
+            callback=callback,
+        )
+        Base._running_cov_tasks[cov_task.process_identifier] = cov_task
+        cov_task.task = asyncio.create_task(self.cov_task.run())
+
+    async def cancel_cov(self):
+        self.log(f"Canceling COV subscription for {self.properties.name}", level="info")
+        process_identifer = self.cov_task.process_identifier
+
+        if process_identifer not in Base._running_cov_tasks:
+            await self.response("COV subscription not found")
+            return
+        cov_subscription = Base._running_cov_tasks.pop(process_identifer)
+        cov_subscription.stop()
+        # await cov_subscription.task
