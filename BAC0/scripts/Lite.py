@@ -500,7 +500,7 @@ class Lite(
         self._log.error(f"Device {id} not found")
         raise ValueError("Device not found")
 
-    async def cov(
+    def cov(
         self,
         address: str = None,
         objectID: t.Tuple[str, int] = None,
@@ -521,17 +521,26 @@ class Lite(
             confirmed=confirmed,
             lifetime=lifetime,
             callback=callback,
+            BAC0App=self,
         )
         Base._running_cov_tasks[cov_task.process_identifier] = cov_task
-        cov_task.task = asyncio.create_task(self.cov_task.run())
+        cov_task.task = asyncio.create_task(cov_task.run())
+        self.log(
+            f"COV subscription for {address}|{objectID} with id {cov_task.process_identifier} started",
+            level="info",
+        )
 
-    async def cancel_cov(self):
-        self.log(f"Canceling COV subscription for {self.properties.name}", level="info")
-        process_identifer = self.cov_task.process_identifier
+    def cancel_cov(self, task_id: int):
+        self.log(f"Canceling COV subscription id {task_id}", level="info")
+        process_identifer = task_id
 
         if process_identifer not in Base._running_cov_tasks:
-            await self.response("COV subscription not found")
+            self.log(f"Task {process_identifer} not found", level="warning")
             return
         cov_subscription = Base._running_cov_tasks.pop(process_identifer)
         cov_subscription.stop()
         # await cov_subscription.task
+
+    @property
+    def cov_tasks(self):
+        return Base._running_cov_tasks

@@ -1487,7 +1487,7 @@ class COVPointSubscription:
     async def run(self):
         self.point.cov_registered = True
         self.point.log(
-            f"Subscribing to COV for {self.point.properties.name}", level="info"
+            f"Subscribing to COV for {self.point.properties.name}", level="debug"
         )
 
         try:
@@ -1528,7 +1528,7 @@ class COVPointSubscription:
                         if callable(self.callback):
                             self.point.log(
                                 f"Calling callback for {self.point.properties.name}",
-                                level="info",
+                                level="debug",
                             )
                             if asyncio.iscoroutinefunction(self.callback):
                                 await self.callback(
