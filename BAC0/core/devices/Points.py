@@ -625,7 +625,9 @@ class Point:
         """
         return len(self.history)
 
-    async def subscribe_cov(self, confirmed: bool = False, lifetime: int = 900):
+    async def subscribe_cov(
+        self, confirmed: bool = False, lifetime: int = 900, callback=None
+    ):
         """
         Subscribes to the Change of Value (COV) service for this point.
 
@@ -647,7 +649,7 @@ class Point:
             None
         """
         self.cov_task = COVSubscription(
-            point=self, confirmed=confirmed, lifetime=lifetime
+            point=self, confirmed=confirmed, lifetime=lifetime, callback=callback
         )
         Point._running_cov_tasks[self.cov_task.process_identifier] = self.cov_task
         self.cov_task.task = asyncio.create_task(self.cov_task.run())
@@ -1432,7 +1434,11 @@ class StringPointOffline(EnumPoint):
 
 class COVSubscription:
     def __init__(
-        self, point: Point = None, lifetime: int = 900, confirmed: bool = False
+        self,
+        point: Point = None,
+        lifetime: int = 900,
+        confirmed: bool = False,
+        callback=None,
     ):
         self.address = Address(point.properties.device.properties.address)
         self.cov_fini = asyncio.Event()
@@ -1447,6 +1453,7 @@ class COVSubscription:
         self.point = point
         self.lifetime = lifetime
         self.confirmed = confirmed
+        self.callback = callback
 
     async def run(self):
         self.point.cov_registered = True
@@ -1489,6 +1496,20 @@ class COVSubscription:
                             self.point._log.warning(
                                 f"Unsupported COV property identifier {property_identifier}"
                             )
+                        if callable(self.callback):
+                            self.point.log(
+                                f"Calling callback for {self.point.properties.name}",
+                                level="info",
+                            )
+                            if asyncio.iscoroutinefunction(self.callback):
+                                await self.callback()
+                            elif hasattr(self.callback, "__call__"):
+                                self.callback()
+                            else:
+                                self.point.log(
+                                    f"Callback {self.callback} is not callable",
+                                    level="error",
+                                )
                 await cov_fini_task_monitor
         except Exception as e:
             self.point.log(f"Error in COV subscription : {e}", level="error")
