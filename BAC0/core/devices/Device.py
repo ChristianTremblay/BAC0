@@ -793,14 +793,14 @@ class DeviceConnected(Device):
         except Exception as e:
             raise Exception(f"Problem reading : {self.properties.name} | {e}")
 
-    def _bacnet_properties(self, update=False):
+    async def _bacnet_properties(self, update=False):
         if not self.properties.bacnet_properties or update:
-            self.update_bacnet_properties()
+            await self.update_bacnet_properties()
         return self.properties.bacnet_properties
 
     @property
-    def bacnet_properties(self):
-        return self._bacnet_properties(update=True)
+    async def bacnet_properties(self):
+        return await self._bacnet_properties(update=True)
 
     async def update_description(self, value):
         await self.properties.network.send_text_write_request(
