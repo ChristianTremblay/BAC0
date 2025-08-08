@@ -16,7 +16,6 @@ import os.path
 from collections import namedtuple
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
-
 # --- this application's modules ---
 from bacpypes3.basetypes import ServicesSupported
 from bacpypes3.errors import NoResponse
@@ -34,8 +33,8 @@ from ..io.IOExceptions import (
     WritePropertyException,
     WrongParameter,
 )
-from ..utils.notes import note_and_log
 from ..utils.lookfordependency import pandas_if_available
+from ..utils.notes import note_and_log
 from .mixins.read_mixin import ReadProperty, ReadPropertyMultiple
 from .Points import BooleanPoint, EnumPoint, NumericPoint, OfflinePoint, Point
 from .Virtuals import VirtualPoint
@@ -370,15 +369,13 @@ class Device(SQLMixin):
         self._find_overrides_running = True
         total = len(self.points)
 
-        def _find_overrides() -> None:
-            self._log.warning(
-                "Overrides are being checked, wait for completion message."
-            )
+        async def _find_overrides() -> None:
+            self._log.info("Overrides are being checked, wait for completion message.")
             for idx, point in enumerate(self.points):
-                if point.is_overridden:
+                if await point.is_overridden:
                     lst.append(point)
                 self._find_overrides_progress = idx / total
-            self._log.warning(
+            self._log.info(
                 "Override check ready, results available in device.properties.points_overridden"
             )
             self.properties.points_overridden = lst
@@ -400,11 +397,17 @@ class Device(SQLMixin):
         self._release_overrides_running = True
         self._release_overrides_progress = 0.0
 
-        def _release_all_overrides() -> None:
+        async def _release_all_overrides() -> None:
             self.find_overrides()
+            # def _progress_bar(progress, width=40):
+            #    filled = int(width * progress)
+            #    bar = '█' * filled + '-' * (width - filled)
+            #    return f"[{bar}] {progress*100:5.1f}%"
             while self._find_overrides_running:
-                self._release_overrides_progress = self._find_overrides_progress * 0.5
-
+                # Provide progress feedback (e.g., log or update UI)
+                # bar = _progress_bar(self._find_overrides_progress)
+                # print(f"\rOverride check progress: {bar}", end='', flush=True)
+                await asyncio.sleep(0.2)  # Adjust sleep for responsiveness
             if self.properties.points_overridden:
                 total = len(self.properties.points_overridden)
                 self.log("=================================", level="info")
@@ -412,7 +415,7 @@ class Device(SQLMixin):
                 self.log("=================================", level="info")
                 for idx, point in enumerate(self.properties.points_overridden):
                     self.log(f"Releasing {point}", level="info")
-                    point.release_ovr()
+                    await point.release_ovr()
                     self._release_overrides_progress = (idx / total) / 2 + 0.5
             else:
                 self.log("No override found", level="info")

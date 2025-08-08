@@ -236,7 +236,7 @@ class Point:
         if self.properties.priority_array is False:
             return False
         if await self.priority(8) or await self.priority(1):
-            self.properties.overridden = (True, self.value)
+            self.properties.overridden = (True, await self.value)
             return True
         else:
             return False
