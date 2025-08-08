@@ -19,7 +19,7 @@ from bacpypes3.json.util import sequence_to_json
 from bacpypes3.local.device import DeviceObject
 from bacpypes3.local.networkport import NetworkPortObject
 from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import CharacterString
+from bacpypes3.primitivedata import CharacterString, ObjectType
 from bacpypes3.vendor import VendorInfo, get_vendor_info
 
 # --- this application's modules ---
@@ -152,7 +152,7 @@ class Base:
         self.description = charstring(description)
         self.location = charstring(location)
 
-        self.discoveredDevices: t.Optional[t.Dict[t.Tuple[str, int], int]] = None
+        self.discoveredDevices: t.Optional[t.Dict[str, t.Dict[str,t.Union[ObjectType, Address, t.Set[int], int, str]]]] = None
         self.systemStatus = DeviceStatus(1)
 
         self.bbmdAddress = bbmdAddress
