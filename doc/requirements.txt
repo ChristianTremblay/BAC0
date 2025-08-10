@@ -1,3 +1,4 @@
 furo
 bacpypes3
 python-dotenv
+sphinx_rtd_theme
