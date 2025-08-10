@@ -39,19 +39,23 @@ Typical usage of priority is :
 
 Write to a simple property
 ---------------------------
-To write to a single property ::
+To write to a single property (fire-and-forget) ::
 
     bacnet.write('address object object_instance property value - priority')
 
+To await the write completion ::
+
+    await bacnet._write('address object object_instance property value - priority')
+
 Write to multiple properties
 -------------------------------
-Write property multiple is also implemented. You will need to build a list for your requets ::
+Write property multiple is also implemented and can be used if the controller to which you write supports the feature. You need to build a list for your requests ::
 
-    r = ['analogValue 1 presentValue 100','analogValue 2 presentValue 100','analogValue 3 presentValue 100 - 8','@obj_142 1 @prop_1042 True']
-    bacnet.writeMultiple(addr='2:5',args=r,vendor_id=842)
+    r = ['analogValue 1 presentValue 100', 'analogValue 2 presentValue 100', 'analogValue 3 presentValue 100 - 8', '@obj_142 1 @prop_1042 True']
+    bacnet.writeMultiple(addr='2:5', args=r, vendor_id=842)
     
-..note::
-    WARNING. See the section on Proprietary objects and properties for details about vendor_id and @obj_142.
+.. note::
+    See the section on Proprietary objects and properties for details about vendor_id and @obj_142.
 
 
 .. _berryconda : https://github.com/jjhelmus/berryconda  

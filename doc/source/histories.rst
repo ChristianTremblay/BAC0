@@ -114,14 +114,47 @@ in the web interface.::
 
    # Manually create a TrendLog
    import BAC0
-   bacnet = BAC0.connect()
-   device = BAC0.device('2:5',5,bacnet)
+   bacnet = BAC0.start()
+   device = await BAC0.device('2:5',5,bacnet)
 
    # Given a TrendLog object at address 1 for device
    trend = BAC0.TrendLog(1,device)
 
-   # Retrieve pandas serie
-   trend.history
+    # Retrieve pandas Series
+    await trend.history
 
    # Adding this object to live trends
    trend.chart()
+
+Example: fetch multiple TrendLogs via a router and export to Excel
+------------------------------------------------------------------
+
+The following example shows how to reach a remote BACnet network through a router,
+collect multiple TrendLogs from a device, and export them to a single Excel file::
+
+    import BAC0
+    bacnet = BAC0.start(ip='192.168.142.20/24')
+    await bacnet.use_router(('192.168.142.1:47808', 65001))
+    salle = await BAC0.device('65001:7', 5207, bacnet)
+
+    a = (await salle.trendlogs[0].history, salle.trendlogs[0].properties.name)
+    b = (await salle.trendlogs[1].history, salle.trendlogs[1].properties.name)
+    c = (await salle.trendlogs[2].history, salle.trendlogs[2].properties.name)
+    d = (await salle.trendlogs[3].history, salle.trendlogs[3].properties.name)
+    e = (await salle.trendlogs[4].history, salle.trendlogs[4].properties.name)
+    f = (await salle.trendlogs[5].history, salle.trendlogs[5].properties.name)
+    g = (await salle.trendlogs[6].history, salle.trendlogs[6].properties.name)
+    h = [a,b,c,d,e,f,g]
+
+    import pandas as pd
+    df = pd.DataFrame()
+    for each in h:
+         his, name = each
+         df.insert(0, name, his)
+         # his.to_csv(f'{name}.csv')  # optional: save each series to CSV
+    df.to_excel('all.xlsx')
+
+.. note::
+    ``trend.history`` is asynchronous and returns a pandas Series. Ensure pandas is
+    installed and await the history before using it. You can iterate ``device.trendlogs``
+    to discover available logs and their names via ``.properties.name``.

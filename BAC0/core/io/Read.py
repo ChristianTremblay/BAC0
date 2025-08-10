@@ -625,21 +625,19 @@ class ReadProperty:
         Build a ReadRangeRequest request, wait for the answer and return the value
 
         :param args: String with <addr> <type> <inst> <prop> [ <indx> ]
-        :param range_params: parameters defining how to query the range, a list of five elements
-        :returns: data read from device (list of LogRecords)
+                :param range_params: parameters defining how to query the range, a list of five elements
+                :returns: data read from device (list of LogRecords)
 
-        range_params: a list of five elements: (range_type: str, first: int, date: str, time: str, count: int)
-            range_type: one of ['p', 's', 't']
-                        p - RangeByPosition:
-                                uses (first, count)
-                        s - RangeBySequenceNumber:
-                                uses (first, count)
-                        t - RangeByTime: Filter by the given time
-                                uses (date, time, count)
-            first: int, first element when querying by Position or Sequence Number
-            date: str, "YYYY-mm-DD" passed to bacpypes.primitivedata.Date constructor
-            time: str, "HH:MM:SS" passed to bacpypes.primitivedata.Time constructor
-            count: int, number of elements to return, negative numbers reverse direction of search
+                Range parameters (five elements):
+
+                - range_type (str): one of ['p', 's', 't']
+                    - 'p' (RangeByPosition) uses (first, count)
+                    - 's' (RangeBySequenceNumber) uses (first, count)
+                    - 't' (RangeByTime) filters by the given time and uses (date, time, count)
+                - first (int): first element when querying by Position or Sequence Number
+                - date (str): "YYYY-mm-DD" passed to bacpypes3.primitivedata.Date constructor
+                - time (str): "HH:MM:SS" passed to bacpypes3.primitivedata.Time constructor
+                - count (int): number of elements to return; negative numbers reverse the search direction
 
         *Example*::
 

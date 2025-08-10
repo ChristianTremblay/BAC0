@@ -21,8 +21,8 @@ PACKAGE_PARENT = "../.."
 SCRIPT_DIR = os.path.dirname(
     os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__)))
 )
-sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
-print(sys.path)
+# Put local project root at the beginning of sys.path so autodoc uses local sources
+sys.path.insert(0, os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 from BAC0 import infos as infos
 
@@ -94,7 +94,12 @@ language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
+exclude_patterns = [
+    # Temporarily exclude WIP or unused pages
+    "jupyter.rst",
+    "pytest.rst",
+    "tests.rst",
+]
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -128,13 +133,12 @@ todo_include_todos = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 # html_theme_options = {}
-html_theme_options = {"rightsidebar": "true"}
 # Add any paths that contain custom themes here, relative to this directory.
 # html_theme_path = []
 

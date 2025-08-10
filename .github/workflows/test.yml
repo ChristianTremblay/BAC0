@@ -23,7 +23,8 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Get IP
       id: ip
-      run: echo "::set-output name=ip::$(curl -s https://api.ipify.org)"
+      run: |
+        echo "ip=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
 
     - name: Install BAC0
       run: |

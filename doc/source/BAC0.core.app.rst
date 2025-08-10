@@ -4,10 +4,10 @@ BAC0.core.app package
 Submodules
 ----------
 
-BAC0.core.app.ScriptApplication module
---------------------------------------
+BAC0.core.app.asyncApp module
+-----------------------------
 
-.. automodule:: BAC0.core.app.ScriptApplication
+.. automodule:: BAC0.core.app.asyncApp
    :members:
    :undoc-members:
    :show-inheritance:

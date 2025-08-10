@@ -27,9 +27,9 @@ from bacpypes3.basetypes import PropertyIdentifier
 
 # --- 3rd party modules ---
 from bacpypes3.debugging import ModuleLogger
+from bacpypes3.errors import PropertyError
 from bacpypes3.pdu import Address
 from bacpypes3.primitivedata import Null, ObjectIdentifier
-from bacpypes3.errors import PropertyError
 
 from BAC0.tasks.DoOnce import DoOnce
 
@@ -48,7 +48,7 @@ from .IOExceptions import (
 # some debugging
 _debug = 0
 _LOG = ModuleLogger(globals())
-WRITE_REGEX = r"(?P<address>\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?::\d+)?\b|(\b\d+:\d+\b)) (?P<objId>(@obj_)?[-\w:]*[: ]*\d*) (?P<propId>(@prop_)?\w*(-\w*)?)[ ]?(?P<value>-?[\w\d]*\.?\d*)?[ ]?(?P<indx>-|\d*)?[ ]?(?P<priority>(1[0-6]|[0-9]))?"
+WRITE_REGEX = r"(?P<address>(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(?:/\d{1,2})?(?::\d+)?|\d+:\d+) (?P<objId>(@obj_)?[-\w:]*[: ]*\d*) (?P<propId>(@prop_)?\w*(-\w*)?)[ ]?(?P<value>-?[\w\d]*\.?\d*)?[ ]?(?P<indx>-|\d*)?[ ]?(?P<priority>(1[0-6]|[0-9]))?"
 write_pattern = re.compile(WRITE_REGEX)
 
 
@@ -59,16 +59,11 @@ class WriteProperty:
 
     """
 
-    def write(self, args, vendor_id=0, timeout=10):
-        # asyncio.create_task(
-        #    self._write(args=args, vendor_id=vendor_id, timeout=timeout)
-        # )
-        # loop = asyncio.get_event_loop()
-        # loop.run_until_complete(self._write(args=args, vendor_id=vendor_id, timeout=timeout))
-        write_task = DoOnce((self._write, [args, vendor_id, timeout]))
+    def write(self, args):
+        write_task = DoOnce(fn=self._write, args=args)
         write_task.start()
 
-    async def _write(self, args, vendor_id=0, timeout=10):
+    async def _write(self, args):
         """Build a WriteProperty request, wait for an answer, and return status [True if ok, False if not].
 
         :param args: String with <addr> <type> <inst> <prop> <value> [ <indx> ] - [ <priority> ]
@@ -118,20 +113,24 @@ class WriteProperty:
             return response
 
         except ErrorRejectAbortNack as err:
-            self.log(f"exception: {err!r}", level="error")
-            raise NoResponseFromController(f"APDU Abort Reason : {response}")
+            self.log(f"exception: {err}", level="error")
+            raise NoResponseFromController(f"APDU Abort Reason : {err}")
 
         except ValueError as err:
-            self.log(f"exception: {err!r}", level="error")
-            raise ValueError(f"Invalid value for property : {err} | {response}")
+            self.log(f"exception: {err}", level="error")
+            raise ValueError(f"Invalid value for property : {err}")
 
         except (WritePropertyException, PropertyError) as error:
             # construction error
-            self.log(f"exception: {error!r}", level="error")
+            self.log(f"exception: {error}", level="error")
+            return response
 
         except TypeError as error:
             # construction error
-            self.log(f"exception: {error!r} | Requests = {request}", level="error")
+            self.log(
+                f"Type Error exception: {error} | Requests = {request}", level="error"
+            )
+            return "response"
 
     @classmethod
     def _parse_wp_args(cls, args):

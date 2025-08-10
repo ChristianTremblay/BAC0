@@ -1,8 +1,10 @@
+.. _database:
+
 Database
 ================
 By default, all data is saved on a SQLite instance where BAC0 run. 
 In some circumstances, it could be required to send data to a more powerful database.
-For that reason, support for [InfluxDB](https://docs.influxdata.com/influxdb/v2.0/) have been added to BAC0.
+For that reason, support for [InfluxDB](https://docs.influxdata.com/influxdb/v2.0/) has been added to BAC0.
 I'm trying to make that flexible to allow other databases to be use eventually, using the same db_params 
 argument when creating the network object.
 
@@ -12,8 +14,10 @@ SQL
 ------------
 Technically, BAC0 sends everything to SQLite locally. It would be possible to make some configuration changes 
 to connect to a SQL database as SQLite share mostly the same commands (This is not actually implemented). 
-Even if another databse is configured, the local SQLite file will be used.
+Even if another database is configured, the local SQLite file will be used.
 
+
+.. _database_influxdb:
 
 InfluxDB
 --------------------
@@ -24,16 +28,18 @@ InfluxDB is installed on the RPi using default options.
 BAC0 will point to a Bucket (ex. named BAC0) using a token created 
 in the InfluxDB web interface (ex. http://ip_of_rpi:8086)
 
-To create the dashbpard, I use [Grafana](https://grafana.com/oss/)
+To create the dashboard, I use [Grafana](https://grafana.com/oss/)
 which is also installed on the same RaspberryPi. (ex. http://ip_of_rpi:3000)
 
 .. note:: 
     The python client used works also for InfluxDB v1.8+. Connecting to this version
     is supported and you must pass a username and a password in db_params
 
+.. _database_influxdb_connection:
+
 Connection 
 ............
-For BAC0 to connect to the inlfuxDB server, it needs to know where to send the data.
+For BAC0 to connect to the InfluxDB server, it needs to know where to send the data.
 This information can be given by using a dict ::
 
     _params = {"name": "InfluxDB",
@@ -46,7 +52,7 @@ This information can be given by using a dict ::
                # (v1.8) "password" : "",
                }
 
-Then you pass this information when you instanciate `bacnet`
+Then you pass this information when you instantiate `bacnet`
 
     bacnet = BAC0.lite(db_params=_params)
 
@@ -77,9 +83,11 @@ The .env file must contain ::
     The name parameters in db_params would be use if any other implementation is made for another product.
     For now, only InfluxDB is valid. 
 
+.. _database_influxdb_write_options:
+
 Write Options configuration
 ............................
-Other options can be provided in the db_parmas dict to fine tune the configuration of the write_api.
+Other options can be provided in the db_params dict to fine tune the configuration of the write_api.
 
     * batch_size (default = 25)
     * flush_interval (default =10 000)
@@ -133,10 +141,15 @@ all the Pandas Series and turn them into a DataFrame which is then sent to Influ
 I'm not sure if it's really useful as the polling takes care of sending the data 
 constantly. 
 
-Write to the database
+.. _database_influxdb_writing_cadence:
+
+Writing cadence
 ........................
-Each call to `_trend` (which add a record in memory) will call a write request to the API if the
-database is defined.
+BAC0 batches point values in memory and writes them to InfluxDB on a periodic background task:
+
+- Each new point value read is added to a batch in memory.
+- A background task flushes batched points to InfluxDB every ``write_interval`` seconds (set via ``db_params``).
+- If the database is temporarily unavailable, the task logs the error and restarts.
 
 ID of the record
 .................
@@ -172,4 +185,38 @@ This way, when working with binary or multistate, it's possible to use
 aggregation functions using the numerical value (standard value), but it is
 also possible to make database request on the string_value field and get 
 a more readable result (ex. Occupied instead of 0)
+
+Viewing data and dashboards
+---------------------------
+You can explore data and build dashboards directly in the InfluxDB UI or in Grafana.
+
+InfluxDB UI (Data Explorer)
+............................
+Build Flux queries by measurement or tags.
+
+- Filter by a specific object instance (measurement)::
+
+    from(bucket: "BAC0")
+        |> range(start: -1h)
+        |> filter(fn: (r) => r._measurement == "Device_5004/analogInput:1")
+        |> filter(fn: (r) => r._field == "value")
+
+- Filter all analog inputs for a device by tag::
+
+    from(bucket: "BAC0")
+        |> range(start: -1h)
+        |> filter(fn: (r) => r.device_id == "5004")
+        |> filter(fn: (r) => r.object =~ /analog/)
+        |> filter(fn: (r) => r._field == "value")
+
+Grafana
+........
+- Add InfluxDB 2.x as a data source (URL, org, token).
+- Create panels using Flux queries like the examples above.
+
+Tips
+.....
+- Ensure BAC0 devices are being polled so values update and get batched.
+- Use point tags (e.g., zone, floor) to simplify filtering in dashboards.
+- For binary/multistate displays, plot ``string_value`` or map numeric ``value``.
 

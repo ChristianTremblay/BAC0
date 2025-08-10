@@ -231,12 +231,12 @@ class Point:
         return self.properties.bacnet_properties
 
     @property
-    def is_overridden(self):
-        self.read_priority_array()
+    async def is_overridden(self):
+        await self.read_priority_array()
         if self.properties.priority_array is False:
             return False
-        if self.priority(8) or self.priority(1):
-            self.properties.overridden = (True, self.value)
+        if await self.priority(8) or await self.priority(1):
+            self.properties.overridden = (True, await self.value)
             return True
         else:
             return False
@@ -402,7 +402,7 @@ class Point:
             try:
                 response = await self.properties.device.properties.network._write(
                     req,
-                    vendor_id=self.properties.device.properties.vendor_id,
+                    # vendor_id=self.properties.device.properties.vendor_id,
                 )
                 # print(response)
                 self.log(f"Write response : {response}", level="debug")

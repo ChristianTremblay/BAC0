@@ -481,6 +481,7 @@ class Lite(
     async def __aenter__(self):
         while not self._initialized:
             await asyncio.sleep(0.1)
+        await asyncio.sleep(1)  # just to be sure we are ready
         self._log.info(
             f"{self.localObjName}|{self.Boid} connected. Entering context manager."
         )

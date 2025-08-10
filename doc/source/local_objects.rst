@@ -15,129 +15,188 @@ What are BACnet objects
 
 BACnet objects are very diverse. You probably know the main ones like AnalogValue or BinaryInput or
 AnalogOutput, etc.
-But there are more. Depending on your needs, there will be an object that fit what you try to define
+But there are more. Depending on your needs, there will be an object that fits what you try to define
 in your application.
-The complet definition of all BACnet objects fall outside the scope of this document. Please refer to
+The complete definition of all BACnet objects falls outside the scope of this document. Please refer to
 the BACnet standard if you want to know more about them. For the sake of understanding, I'll cover
 a few of them.
 
-The definition of the BACnet obejcts is provided by `bacpypes.object`. You will need to import the 
-different classes of objects you need when you will create the objects.
+The definition of BACnet objects is provided by bacpypes3. You will need to import the
+different classes of objects you need when you create the objects.
 
 An object, like you probably know now, owes properties. Those properties can be read-only, writable,
 mandatory or optional. This is defined in the standard. Typically, the actual value of an object is 
 given by a property name `presentValue`. Another property called `relinquishDefault` would hold the 
 value the object should give as a presentValue when all other priorityArray are null. PriorityArray 
 is also a property of an object. When you create an object, you must know which properties you must
-add to the object and how you will interact with thoses properties and how they will interact with 
+add to the object and how you will interact with those properties and how they will interact with 
 one another.
 
-This makes a lot to know when you first want to create one object.
+This is a lot to know when you first want to create an object.
 
 A place to start
 ------------------
 
 The enormous complexity of BACnet objects led me to think of a way to generate objects with a good
 basis. Just enough properties depending on the commandability of the object (do you need other devices
-to write to those objects ?). This decision hAVe an impact on the chosen properties of a BACnet object.
+to write to those objects?). This decision has an impact on the chosen properties of a BACnet object.
 
 For any commandable object, it would be reasonable to provide a priorityArray and a relinquishDefault.
-Those propoerties make no sense for a non-commandable object.
+Those properties make no sense for a non-commandable object.
 
 For any analog object, an engineering unit should be provided.
 
-Those basic properties, depending on the type of objects, the BAC0's user should not hAVe to think about
+Those basic properties, depending on the type of objects, the BAC0 user should not have to think about
 them. They should just be part of the object.
 
-Working in the factory
-------------------------
+Quick start: create a device and add local objects (async)
+----------------------------------------------------------
+Use the factory models from ``BAC0.core.devices.local.factory`` to declare objects, then add them to your running BACnet device.
 
-BAC0 will allow the creation of BACnet objects with a special class named ObjectFactory. This class will take
-as argument the objectType, instance, name, description, properties, etc and create the object. This object 
-will then be added to a class variable (a dict) that will be used later to populate the application will all 
-the created objects.
+Minimal example::
 
-The factory will take as an argument `is_commandable` (boolean) and will modify the base type of object to 
-make it commandable if required. This part is pretty complex as a subclass with a Commandable mixin must be
-created fot each objectType. ObjectFactory uses a special decorator that will recreate a new subclass with
-eveything that is needed to make the point commandable.
+    import asyncio
+    import BAC0
+    from BAC0.core.devices.local.factory import (
+        analog_input, binary_output, multistate_value, character_string, make_state_text,
+    )
 
-Another decorator will also allow the addition of custom properties (that would not be provided by default)
-if it's required. 
+    async def main():
+        async with BAC0.lite(deviceId=1234, port=47808, localObjName="MyDevice") as dev:
+            # Declare objects (units via property strings)
+            analog_input(name="TW1", description="Water temperature 1", properties={"units": "degreesCelsius"})
+            binary_output(name="Night", description="Day/Night flag", properties={"inactiveText": "day", "activeText": "night"})
 
-Another decorator will allow the addition of "features" to the objects. Thos will need to be defined but we 
-can think about event generation, alarms, MinOfOff behAViour, etc.
+            # State text for multistate
+            lang_states = make_state_text(["en", "fr"])
+            multistate_value(name="Language", description="Language for requests", presentValue=1, properties={"stateText": lang_states})
 
-The user will not hAVe to think about the implementation of the decorators as everything is handled by the
-ObjectFactory. But that said, nothing prevent you to create your own implementation of a factory using those
-decorators.
+            # Commandable string
+            character_string(name="Application_Status", description="Health/status", presentValue="Normal")
 
-An example
------------
+            # Push all declared objects into the running application
+            # (call add_objects_to_application on any created model)
+            _ = character_string  # to emphasize any model can be used for the call
+            _.add_objects_to_application(dev)
 
-A good way to understand how things work is by giving an example. This code is part of the tests folder and
-will give you a good idea of the way objects can be defined inside a BAC0's instance ::
+            # Update values at runtime
+            dev["TW1"].presentValue = 21.5
+            dev["Night"].presentValue = False
+            await asyncio.sleep(60)
 
-    def build():
-        bacnet = BAC0.lite(deviceId=3056235)
+    asyncio.run(main())
 
-        new_obj = ObjectFactory(
-            AnalogValueObject,
-            0,
-            "AV0",
-            properties={"units": "degreesCelsius"},
-            presentValue=1,
-            description="Analog Value 0",
-        )
-        ObjectFactory(
-            AnalogValueObject,
-            1,
-            "AV1",
-            properties={"units": "degreesCelsius"},
-            presentValue=12,
-            description="Analog Value 1",
-            is_commandable=True,
-        )
-        ObjectFactory(
-            CharacterStringValueObject,
-            0,
-            "cs0",
-            presentValue="Default value",
-            description="String Value 0",
-        )
-        ObjectFactory(
-            CharacterStringValueObject,
-            1,
-            "cs1",
-            presentValue="Default value",
-            description="Writable String Value 1",
-            is_commandable=True,
+Notes:
+- Creation calls accumulate models internally; ``add_objects_to_application(device)`` registers all accumulated models at once.
+- Access local objects by name via ``dev["Object_Name"]``.
+- For strings/datetimes you can assign plain Python types or bacpypes3 primitives (CharacterString, Date/Time/DateTime) as needed.
+
+Real-world patterns (from examples)
+-----------------------------------
+
+Weather device (OpenWeatherMap)
+................................
+Create many objects using models, then add them and periodically update::
+
+    async with BAC0.lite(deviceId=_device_id, port=_port, localObjName="BAC0_OpenWeatherMap") as dev:
+        from BAC0.core.devices.local.factory import (
+            analog_input, binary_output, multistate_value, datetime_value, character_string, make_state_text,
         )
 
-        new_obj.add_objects_to_application(bacnet.this_application)
-        return bacnet
+        # Declare groups of objects (see src/main.py for full list)
+        for prefix in ["Current", "Day0", "Day1"]:
+            analog_input(name=f"{prefix}_Temp", description=f"{prefix} Temperature", properties={"units": "degreesCelsius"})
+            # ... declare more objects per prefix ...
+
+        # Global objects
+        binary_output(name="Night", description="Based on sunrise/sunset", properties={"inactiveText": "day", "activeText": "night"})
+        lang = make_state_text(["en", "fr"])
+        multistate_value(name="Language", description="Language for requests", presentValue=1, properties={"stateText": lang})
+        character_string(name="Application_Status", description="Health", presentValue="Normal")
+
+        # Register all declared objects
+        character_string.add_objects_to_application(dev)
+
+        # Periodic updates (set presentValue, statusFlags, and datetime fields)
+        # dev["Current_Temp"].presentValue = 23.1
+        # dev["Night"].presentValue = True
+        # See src/main.py for update helpers (update_float_object, update_datetime)
+
+Environment-driven device (Davignon)
+....................................
+Read connection parameters from environment and expose sensor values::
+
+    IP, PORT, MASK, DEVICEID, NAME = os.getenv("BAC0_IP"), os.getenv("BAC0_PORT"), os.getenv("BAC0_MASK"), os.getenv("BAC0_DEVICEID"), os.getenv("BAC0_OBJECTNAME")
+    async def start_device():
+        dev = BAC0.lite(ip=IP, mask=MASK, port=PORT, deviceId=DEVICEID, localObjName=NAME)
+        while not dev._initialized:
+            await asyncio.sleep(0.01)
+
+        from BAC0.core.devices.local.factory import analog_input, binary_input, character_string
+
+        analog_input(name="hg1_last_level", description="Level in meters", properties={"units": "meters"})
+        analog_input(name="Battery_Voltage", description="Voltage of battery", properties={"units": "volts"})
+        binary_input(name="NOAA_ALARM", description="Problem retrieving data")
+        character_string(name="Application_Status", description="Health", presentValue="Normal")
+        # Commandable config strings
+        character_string(name="NOAA_USERNAME", description="Username", presentValue="", is_commandable=True)
+        character_string(name="NOAA_PASSWORD", description="Password", presentValue="", is_commandable=True)
+
+        character_string.add_objects_to_application(dev)
+        return dev
+
+Updating values and flags
+-------------------------
+- Numeric points: assign floats/ints to ``presentValue`` and optionally update ``statusFlags``.
+- Strings: assign plain strings or ``CharacterString``. For datetimes, update the ``date`` and ``time`` fields of a ``DateTime`` presentValue.
+
+Example helpers::
+
+    def update_float(obj_name, value, flags):
+        dev[obj_name].presentValue = float(value)
+        dev[obj_name].statusFlags = flags  # e.g., [0,0,0,0] for normal
+
+    def update_datetime(obj_name, epoch_ts, flags):
+        from bacpypes3.primitivedata import Date, Time
+        import pytz, datetime as dt
+        ref = dt.datetime.fromtimestamp(epoch_ts).astimezone(pytz.UTC).astimezone()
+        dev[obj_name].presentValue.date = Date(ref.date().isoformat())
+        dev[obj_name].presentValue.time = Time(ref.time().isoformat())
+        dev[obj_name].statusFlags = flags
+
+TrendLog objects
+-----------------
+If you declare a local ``trendlog`` object, you can append samples and refresh properties::
+
+    from BAC0.core.devices.local.factory import trendlog
+    trendlog(name="hg1", description="Level log", properties={"trendLog_datatype": "realValue"})
+    trendlog.add_objects_to_application(dev)
+
+    # Add samples; update the log object
+    dev["hg1"]._local.add_data(timestamp, value, flag, interval=900000, update_after=False)
+    dev["hg1"]._local.update_properties()
 
 Models
 ==============
 So it's possible to create objects but even using the object factory, things
 are quite complex and you need to cover a lot of edge cases. What if you
 want to create a lot of similar objects. What if you need to be sure each one
-of them will hAVe the basic properties you need.
+of them will have the basic properties you need.
 
 To go one step further, BAC0 offers models that can be used to simplify (at
 least to try to simplify) the creation of local objects.
 
 Models are an opiniated version of BACnet objects that can be used to create
 the objects you need in your device. There are still some features that are 
-not implemented but a lot of features hAVe been covered by those models.
+not implemented but a lot of features have been covered by those models.
 
 Models use the ObjectFactory but with a supplemental layer of abstraction to
 provide basic options to the objects.
 
-For example, "analog" objects hAVe common properties. But the objectType will
+For example, "analog" objects have common properties. But the objectType will
 be different if you want an analogInput or an analogValue. By default, AnalogOutput
 will be commandable, but not the analogInput (not in BAC0 at least as it doesn't 
-support behAViour that allows to write to the presentValue when the out_of_service 
+support behavior that allows writing to the presentValue when the out_of_service 
 property is True). Instead of letting the user thinking about all those details, 
 you can simply create an `analogInput` and BAC0 will take care of the details.
 
@@ -160,9 +219,11 @@ Actually, BAC0 implements those models :
     humidity_value,
     character_string,
 
-Again, the best way to understand how things work, is by looking at code sample :
- 
-    # code here
+Again, the best way to understand how things work is by looking at code. See the "Real-world patterns" section above for end-to-end examples.
+
+Advanced: ObjectFactory
+------------------------
+The underlying implementation uses an ``ObjectFactory`` that assembles required properties, commandability (priorityArray, relinquishDefault), and optional features. While you can use it directly, the model helpers (``analog_input``, ``binary_output``, etc.) are the recommended interface.
 
 State Text
 ===========
@@ -172,7 +233,7 @@ those objects. A device can tell a valve is "Open/Close", a fan is "Off/On", a
 schedule is "Occupied/Unoccupied/Stanby/NotSet". It brings a lot of value.
 
 To define state text, you must use the special function with a list of states
-then you pass this variable to the properties dict : 
+then pass this variable to the properties dict ::
 
     states = make_state_text(["Normal", "Alarm", "Super Emergency"])
     _new_object = multistate_value(

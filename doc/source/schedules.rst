@@ -3,7 +3,7 @@ Schedules in BAC0
 
 Schedules object in BAC0 are supported by using two specific functions ::
 
-    bacnet.read_weeklySchedule(address, instance)
+    schedule = await bacnet.read_weeklySchedule(address, instance)
     # and
     bacnet.write_weeklySchedule(address, instance, schedule)
 
@@ -160,3 +160,7 @@ When your schedule dict is created, simply send it to the controller schedule by
 and the instance number of the schedule on which you want to write ::
 
     bacnet.write_weeklySchedule("2:5", 10001, schedule)
+
+Reading the weeklySchedule back from the controller (async) ::
+
+    schedule = await bacnet.read_weeklySchedule("2:5", 10001)

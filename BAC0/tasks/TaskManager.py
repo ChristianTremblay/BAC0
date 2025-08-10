@@ -57,7 +57,6 @@ class Task(object):
             self.fn, self.args = fn
         else:
             self.fn = fn
-            self.args = None
 
         if delay > 0:
             self.delay = delay if delay >= 5 else 5
@@ -202,9 +201,9 @@ class Task(object):
 
 @note_and_log
 class OneShotTask(Task):
-    def __init__(self, fn=None, args=None, name="Oneshot"):
-        if args is not None:
-            _args = (fn, args)
-        else:
-            _args = fn
-        super().__init__(fn=_args, name=name, delay=0)
+    def __init__(self, fn=None, args=None, name=None):
+        self.fn = fn
+        self.name = name or fn.__name__
+        self.args = args
+        Task._log.debug(f"Creating OneShotTask {self.name} with args: {self.args}")
+        super().__init__(fn=self.fn, name=self.name, delay=0)

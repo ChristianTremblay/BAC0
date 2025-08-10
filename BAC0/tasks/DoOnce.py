@@ -9,6 +9,7 @@ DoOnce.py - execute a task once
 """
 
 import asyncio
+
 from ..core.utils.notes import note_and_log
 from .TaskManager import OneShotTask
 
@@ -16,12 +17,14 @@ from .TaskManager import OneShotTask
 @note_and_log
 class DoOnce(OneShotTask):
     """
-    Start a polling task which is in fact a recurring read of the point.
-    ex.
+    Execute a function once, optionally awaiting it if it's a coroutine.
+
+    Example::
+
         device['point_name'].poll(delay=60)
     """
 
-    def __init__(self, fnc, name="do_once"):
+    def __init__(self, fn: callable, args: str = None):
         """
         :param point: (BAC0.core.device.Points.Point) name of the point to read
         :param delay: (int) Delay between reads in seconds, defaults = 10sec
@@ -30,20 +33,11 @@ class DoOnce(OneShotTask):
 
         :returns: Nothing
         """
-        super().__init__(fnc, name=name)
+        super().__init__(fn, args)
 
     async def task(self):
-        if self.fnc_args:
-            if asyncio.iscoroutinefunction(self.func):
-                self._log.debug(
-                    f"Running {self.func.__name__} with args {self.fnc_args}"
-                )
-                await self.func(self.fnc_args)
-            else:
-                self.func(self.fnc_args)
+        if asyncio.iscoroutinefunction(self.fn):
+            self._log.debug(f"Running {self.name} with args {self.args}")
+            await self.fn(self.args)
         else:
-            if asyncio.iscoroutinefunction(self.func):
-                self.log(f"Running {self.func.__name__}", level="debug")
-                await self.func()
-            else:
-                self.func()
+            self.fn(self.args)
