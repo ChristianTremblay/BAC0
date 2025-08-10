@@ -60,11 +60,6 @@ class WriteProperty:
     """
 
     def write(self, args):
-        # asyncio.create_task(
-        #    self._write(args=args, vendor_id=vendor_id, timeout=timeout)
-        # )
-        # loop = asyncio.get_event_loop()
-        # loop.run_until_complete(self._write(args=args, vendor_id=vendor_id, timeout=timeout))
         write_task = DoOnce(fn=self._write, args=args)
         write_task.start()
 
@@ -88,8 +83,6 @@ class WriteProperty:
 
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
-        # vendor_id = kwargs.pop("vendor_id", 0)
-        # timeout = kwargs.pop("timeout", 10)
 
         self.log_title("Write property", args)
 
