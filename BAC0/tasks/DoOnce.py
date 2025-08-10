@@ -17,8 +17,10 @@ from .TaskManager import OneShotTask
 @note_and_log
 class DoOnce(OneShotTask):
     """
-    Start a polling task which is in fact a recurring read of the point.
-    ex.
+    Execute a function once, optionally awaiting it if it's a coroutine.
+
+    Example::
+
         device['point_name'].poll(delay=60)
     """
 

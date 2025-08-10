@@ -29,12 +29,3 @@ Provide connect function with the desired database's name.::
     controller.connect(db='db_name')
 
 Please note: this feature is experimental.
-
-Saving Data to Excel
---------------------
-Thought the use of the Python module xlwings [https://www.xlwings.org/], it's possible to export all 
-the data of a controller into an Excel Workbook.
-
-Example ::
-
-    controller.to_excel()

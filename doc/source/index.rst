@@ -28,10 +28,6 @@ Table of contents
    savedevice
    database
    local_objects
-   webinterface
-   jupyter
-   tests
-   pytest
    logging
    
 

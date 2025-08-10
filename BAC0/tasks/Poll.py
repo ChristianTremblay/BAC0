@@ -31,7 +31,9 @@ class MultiplePollingFailures(Exception):
 class SimplePoll(Task):
     """
     Start a polling task to repeatedly read a point's Present_Value.
-    ex.
+
+    Example::
+
         device['point_name'].poll(delay=60)
     """
 
