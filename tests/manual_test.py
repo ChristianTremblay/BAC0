@@ -11,11 +11,13 @@ async def main():
     # # Initialize BACnet
     print(BAC0.infos.__version__)
 
-    async with BAC0.start(ip="127.0.0.1/24") as bacnet:
+    # async with BAC0.start(ip="127.0.0.1/24") as bacnet:
+    async with BAC0.start(ip="192.168.211.208/24", deviceId=111) as bacnet:
+        async with BAC0.start(ip="192.168.211.16/24", deviceId=222) as fakedevice:
 
-        await bacnet._discover()
-        lst = await bacnet._devices(_return_list=True)
-        print(lst)
+            await bacnet._discover(global_broadcast=True)
+            lst = await bacnet._devices(_return_list=True)
+            print(lst)
 
 
 if __name__ == "__main__":

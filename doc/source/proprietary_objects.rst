@@ -2,216 +2,152 @@ Proprietary Objects
 ====================
 
 Some manufacturers provide special variables inside their controllers in the
-form of proprietary objects or expand some objects with proprietary properties. 
-BAC0 supports the creation of those objects but some work is needed on your side to register them.
+form of proprietary objects or expand standard objects with proprietary
+properties. BAC0 supports both via two complementary approaches:
 
-In fact, you will need to know what you are looking for when dealing with proprietary objects or properties.
-Should you write to them or make them read only ? What type should you declare ? 
+1) Numeric IDs (no imports)
+---------------------------
 
-Once you know the information, you are ready to make your implementation.
+Use numeric object and property identifiers directly in a request string:
 
-The actual BAC0 implementation allow the user to be able to read proprietary objects or proprietary properties
-without defining a special class. This is done using a special syntax that will inform BAC0 of the nature or the read.
+- ``@obj_142`` means a proprietary object type with ID 142
+- ``@prop_1032`` means a proprietary property identifier 1032
 
-Why ? Bacpypes requests (in BAC0) are made sequencially using well-known property names and address. When dealing
-with proprietary objects or properties, names and addresses are numbers. This is somewhat hard to detect if the
-request contains an error, is malformed or contains a proprietary thing in it. The new syntax will tell BAC0 that 
-we need to read a proprietary object or property.
-
-If you need to read an object named "142", you will tell BAC0 to read `@obj_142`
-If you need to read a property named 1032, you will tell BAC0 to read `@prop_1032`
-
-This way, you could build a request this way : 
+Examples::
 
     await bacnet.read('2:5 @obj_142 1 @prop_1032')
-    # or
     await bacnet.readMultiple('2:5 @obj_142 1 objectName @prop_1032')
 
+2) Class-based registration (import vendor classes)
+---------------------------------------------------
+
+bacpypes3 uses real Python classes to define vendor extensions. Importing these
+classes registers the vendor information and enables named properties and
+objects. BAC0 re-exports known vendor classes for convenience. Import once at
+startup and bacpypes3 will “know what to do.”
+
+See: :doc:`BAC0.core.proprietary_objects`
+
+Quick examples::
+
+    # Johnson Controls (vendor_id 5)
+    from BAC0.core.proprietary_objects import JCIDeviceObject
+
+    dev = await BAC0.device('2:5', 5005, bacnet)
+    val = await dev.read_property('supervisory_device_online')
+
+    # Produal (vendor_id 783) proprietary object names
+    from BAC0.core.proprietary_objects import Produal783Config1
+    temp_sp_ll = await dev.read_property(('CONFIG1', 1, 'TEMPSP_LL'))
+
 Writing to proprietary properties
-**********************************
-If you need to write to the property, things are a litlle more complicated. For example, JCI TEC3000 have 
-a variable that needs to be written to so the thermostat know that the supervisor is active, a condition to 
-use network schedule (if not, switch to internal schedule).
+*********************************
 
-If you try this :
+When writing to a proprietary property with the raw string API you may see
+errors like ``TypeError: issubclass() arg 1 must be a class`` if bacpypes3
+doesn’t know how to encode the value. You must import the vendor classes so
+bacpypes3 knows the datatype and encoding for that proprietary property. Vendor
+context alone with numeric IDs is not sufficient.
 
-    await bacnet.write('2000:10 device 5010 3653 True')
+Examples::
 
-You'll get :
+    # Via a device instance (vendor classes have been imported; vendor_id is passed automatically)
+    await dev.write_property(('device', 5005, 'supervisory_device_online'), True)
 
-    TypeError: issubclass() arg 1 must be a class
+    # Raw string syntax with numeric IDs (vendor classes must be imported)
+    await bacnet._write('2:5 device 5005 3653 true', vendor_id=5)
 
-This is because BAC0 doesn't know how to encode the value to write. You will need to define a class, register 
-it so BAC0 knows how to encore the value and most importantly, you will need to provide the `vendor_id` to the
-write function so BAC0 will know which class to use. Because 2 different vendors could potentially use the same 
-"number" for a proprietary object or property with different type.
+Register vendor classes (bacpypes3 style)
+-----------------------------------------
 
-
-How to implement [DEPRECATED - MUST BE UPDATED]
------------------
-BAC0 will allow dynamic creation of the classes needed to read and write to those special variables. To
-do so, a special dictionary need to be declared in this form ::
-::
-
-    name = {
-        "name": "Class_Name",
-        "vendor_id": integer,
-        "objectType": "type",
-        "bacpypes_type": Object,
-        "properties": {
-            "NameOfProprietaryProp": {"obj_id": 1110, "datatype": Boolean, "mutable": True},
-        },
-    }
-
-    # name : Name of the class to be created
-    # vendor_id : the manufacturer of the device
-    # objectType : see bacpypes.object for reference (ex. 'device')
-    # bacpypes_type : base class to instanciate (ex. BinaryValueObject)
-    # properties : list of proprietary properties to add 
-    #     name of the property (for reference)
-    #     obj_id : instance of the property, usually an integer
-    #     datatype : the kind of data for this property. Refer to `bacpypes.primitivedata` or `bacpypes.constructeddata`
-    #     mutable : true = writable, default to false
-
-
-Once the dictionary is completed, you need to call the spceial function `create_proprietaryobject`.
-This function will dynamically create the class and register it with bacpypes so you will be able 
-to read and write to the object.
-
-To access the information (for now), you will use this syntax ::
-
-    # Suppose an MSTP controller at address 2:5, device instance 5003
-    # Vendor being Servisys (ID = 842)
-    # Proprietary property added to the device object with object ID 1234
-    bacnet.read('2:5 device 5003 1234', vendor_id=842)
-
-If you want to look at the object registration, you can use this ::
-
-    from bacpypes.object import registered_object_types
-    registered_object_types
-
-It is a dictionary containing all the registered type in use. As you can see, the majority of the
-registration use vendor_id 0 which is the default. But if you register something for another vendor_id, 
-you will see a new dictionary entry. 
-Using the special `bacnet.read` argument "vendor_id" will then inform bacpypes that we want to use 
-the special object definition for this particular vendor.
-
-.. note::
-    BAC0 will automatically register known proprietary classes at startup. See BAC0.core.proprietary_objects
-    for details.
-
-Proprietary objects [DEPRECATED - MUST BE UPDATED]
---------------------
-Proprietary object can be accessed using ::
-
-    # Let say device '2:5' have object (140,1)
-    bacnet.read('2:5 140 1 objectName')
-
-As they are proprietary objects, you will have to know what you are looking for. Typically, the properties
-`objectName`, `objectIdentifier`, will be available. But you will often see proprietary properties 
-attached to those objects. See next section.
-
-To read all properties from an object, if implemented, one can use ::
-
-    bacnet.readMultiple('2:5 140 1 all')
-
-BAC0 will do its best to give you a complete list.
-
-.. note::
-    Please note that arrays under proprietary objects are not implemented yet. Also, context tags 
-    objects are not detected automatically. You will need to build the object class to interact 
-    with those objects. See next section.
-
-Proprietary Property [DEPRECATED - MUST BE UPDATED]
----------------------
-One common case I'm aware of is the addition of proprietary properties to the DeviceObject of a device.
-Those properties may, for example, give the CPU rate or memory usage of the controllers. On the TEC3000 (JCI), 
-there is a "SupervisorOnline" property needed to be written to, allowing the BAS schedule to work.
-
-To declare those properties, we need to extend the base object (the DeviceObject in this case) pointing this 
-declaration to the vendor ID so bacpypes will know where to look. 
-
-The following code is part of BAC0.core.proprietary_objects.jci and define proprietary properties added to 
-the device object for JCI devices. Note that as there are multiple proprietary properties, we need to declare
-them all in the same new class (the example presents 2 new properties). 
+No dynamic class creation is needed. Simply import the vendor modules exposed
+by BAC0; the import registers everything:
 
 ::
 
-    #
-    #   Proprietary Objects and their attributes
-    #
+    from BAC0.core.proprietary_objects import (
+        JCIDeviceObject,              # vendor_id 5
+        PrivaBVDeviceObject,          # vendor_id 105
+        Produal651Config,             # vendor_id 651
+        Produal783Config1, Produal783Config2,  # vendor_id 783
+    )
 
-    JCIDeviceObject = {
-        "name": "JCI_DeviceObject",
-        "vendor_id": 5,
-        "objectType": "device",
-        "bacpypes_type": DeviceObject,
-        "properties": {
-            "SupervisorOnline": {"obj_id": 3653, "datatype": Boolean, "mutable": True},
-            "Model": {"obj_id": 1320, "datatype": CharacterString, "mutable": False},
-        },
-    }
+Proprietary objects
+-------------------
 
-This will allow us to interact with them after registration ::
+Read by numeric IDs or by names (after import):
 
-    from BAC0.core.proprietary_objects.jci import JCIDeviceObject
-    from BAC0.core.proprietary_objects.object import create_proprietaryobject
-    create_proprietaryobject(**JCIDeviceObject)
+::
 
-    # Read model of TEC
-    bacnet.read('2:5 device 5005 1320', vendor_id=5)
-    # Write to supervisor Online
-    bacnet.write('2:5 device 5005 3653 true',vendor_id=5)
+    # Numeric
+    await bacnet.read('2:5 140 1 objectName')
+    await bacnet.readMultiple('2:5 140 1 all')
 
+    # Named (after importing vendor classes)
+    name = await dev.read_property(('CONFIG1', 1, 'objectName'))
 
-.. note:: 
-    In future version it will be able to define special device and attach some
-    proprietary objects to them so tec['SupOnline'] would work...
+Proprietary properties
+----------------------
 
-Vendor Context for Read and Write [DEPRECATED - MUST BE UPDATED]
-**********************************
-In `BAC0.device`, the vendor_id context will be provided to the stack automatically. This mean that 
-if a device is created and there is a extended implementation of an object (JCIDeviceObject for example)
-BAC0 will recognize the proprietary object by default, without having the need to explicitly define the
-vendor_id in the request ::
+Examples on a JCI device (vendor_id 5):
 
-    instance_number = 1000
-    prop_id = 1320
-    device.read_property(('device',instance_number, prop_id))
+::
 
-will work.
+    # Named (after import)
+    model = await dev.read_property(('device', 5005, 'pcode'))
+    await dev.write_property(('device', 5005, 'supervisory_device_online'), True)
 
-Also, proprietary objects and properties classes are defined at startup so it is not necessary to explicitly 
-register them.
+Vendor context for reads and writes
+-----------------------------------
 
-Can proprietary objects be addded to a BAC0.device points
-********************************************************************
-Actually not, because of the way "points" are defined in BAC0. If you look at `BAC0.core.devices.Points.Point`
-you will see that the notion of point is oriented differently than a BACnet object. 
-Properties are a set of informations useful for BAC0 itself but are not "strictly" BACnet properties.
-The value of a point will always be the `presentValue` of the BACnet object. In the context of proprietary
-objects, this can't fit.
+- bacpypes3 resolves vendor context from the device info cache. On first
+    contact, BAC0 populates this cache (Who-Is/I-Am), so subsequent reads/writes
+    use the correct VendorInfo automatically.
+- When you use ``BAC0.device(...)``, the device’s vendor_id is known and passed
+    through; you don’t need to specify it.
+- With the raw string API, you usually don’t need to pass ``vendor_id`` either,
+    because the device_info_cache provides it. Supplying ``vendor_id=<id>`` is an
+    optional fallback if the cache hasn’t been populated yet.
+- Proprietary writes still require importing the vendor classes so bacpypes3
+    knows the datatypes and encodings; vendor context alone isn’t enough.
 
-There are no "standard" way to create a proprietary object. Beside the fact that objectName, objectType and 
-objectIdentifier must be provided, everything else is custom.
+Can proprietary objects be added to BAC0.device points?
+-------------------------------------------------------
 
-For this reason, proprietary objects must be dealt outside of the scope of a device, especially in the context
-of writing to them.
+Not currently. BAC0 “points” map to presentValue-focused objects and metadata
+used by BAC0, which doesn’t generalize to arbitrary proprietary objects.
+Interact with proprietary objects directly via reads/writes as shown above.
 
 How to implement readMultiple with proprietary objects and properties
-**********************************************************************
-It is possible to create read property multiple requests with them, using the syntax `@obj_` and `@prop_`.
-So for now, you will be able to create a request yourself for one device at a time by chaining properties you want 
-to read : 
+---------------------------------------------------------------------
 
-    bacnet.readMultiple('2000:31 device 5012 @prop_3653 analogInput 1106 presentValue units') 
+Use the ``@obj_`` and ``@prop_`` syntax when composing requests:
+
+::
+
+    await bacnet.readMultiple('2000:31 device 5012 @prop_3653 analogInput 1106 presentValue units')
 
 How to find proprietary objects and properties
-********************************************************************
-In BAC0, for a device or a point, you can use :
+----------------------------------------------
 
-    device.bacnet_properties
+For a device or a point, list all properties:
+
+::
+
+    props = await device.bacnet_properties()
     # or
-    point.bacnet_properties
+    props = await point.bacnet_properties()
 
-This will list `all` properties in the object. (equivalent of `bacnet.readMultiple('addr object id all')`)
+This is equivalent to ``bacnet.readMultiple('addr object id all')``.
+
+.. note::
+   The values are cached. If the device changes and you need fresh data, refresh
+   first, then read again::
+
+       await device.update_bacnet_properties()
+       props = await device.bacnet_properties()
+
+   For points::
+
+       await point.update_bacnet_properties()
+       props = await point.bacnet_properties()

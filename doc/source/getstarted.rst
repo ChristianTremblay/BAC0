@@ -13,15 +13,15 @@ it can be hard to know where to start.
 I highly recommend to start with a complete distribution. That will help you a 
 lot as the majority of important modules will be installed for you.
 
-If you are using Windows, it will simplify your life as some modules needs a
+If you are using Windows, it will simplify your life as some modules need a
 C compiler and it can be hard sometimes to compile a module by yourself. 
 
 Some examples of complete distributions are Anaconda_ or `Enthought Canopy <https://www.enthought.com/products/canopy/>`_.
 As I use Anaconda_, I'll focus on this one but you're free to choose the one
 you prefer.
 
-If you are using a RaspberryPi, have a look to miniconda_ or berryconda_. Both can allow a complete installation of modules like bokeh_ and Flask_. 
-For berryconda, once it's done, run `conda install pandas`. This will install pandas on your RaspberryPi without the need to compile it.
+If you are using a Raspberry Pi, have a look at miniconda_ or berryconda_.
+For berryconda, once it's done, run `conda install pandas` to install pandas without compiling.
 
 .. _installing-a-complete-distribution:
 
@@ -40,7 +40,7 @@ to a variety of tools like :
 
 Start using pip
 +++++++++++++++
-Open the Anaconda Prompt (a console terminal with Python configured in the path) ::
+Open a terminal (e.g., Anaconda Prompt on Windows) ::
 
     pip install BAC0
 
@@ -51,16 +51,33 @@ install everything you need to start using BAC0
 
 Check that BAC0 works
 +++++++++++++++++++++
-In the terminal again, type :: 
+In the terminal again, start the asyncio REPL and create a session :: 
 
     python -m asyncio
 
 This will open a python terminal. In the terminal type :: 
 
-    >>import BAC0
-    >>bacnet = BAC0.start()
+    >>> import BAC0
+    >>> async with BAC0.start() as bacnet:
+    ...     # connected, ready to use
+    ...     pass
 
 This will show you the installed version. You're good to go.   
+
+You can also assign directly and manage cleanup yourself ::
+
+    >>> import BAC0, asyncio
+    >>> async def demo():
+    ...     bacnet = BAC0.start()  # or BAC0.connect(), BAC0.lite()
+    ...     try:
+    ...         # use bacnet
+    ...         await bacnet._discover(global_broadcast=True)
+    ...     finally:
+    ...         await bacnet._disconnect()  # or: await bacnet.disconnect()
+    ...
+    >>> asyncio.run(demo())
+
+Note: the context manager waits for full initialization before entering. Without it, most operations work immediately, but a few conveniences may need a brief moment to become ready.
 
 .. _where-to-download-the-source-code:
 
@@ -74,21 +91,14 @@ There you'll be able to open issues if you find bugs.
 
 Dependencies
 ------------
-* BAC0 is based on BACpypes3_ for all BACnet/IP communication.
+* BAC0 is based on BACpypes3_ for BACnet/IP communication.
 
-  Starting at version 0.9.900, BAC0 will not strictly depend on bokeh_ or Flask_ or Pandas_ to work. Having them will allow to use the complete set of features (the web app with live trending features) but if you don't have them installed, you will be able to use the 'lite' version of BAC0 which is sufficient to interact with BACnet devices.
+Optional:
+* Pandas_ for convenient history handling
+* rich for nicer console output
+* python-dotenv to load a .env
 
-* It uses Bokeh_ for Live trending features 
-* It uses Pandas_ for every Series and DataFrame (histories)
-* It uses Flask_ to serve the Web app (you will need to pip install flask_bootstrap)
-
-Normally, if you have installed Anaconda_, Flask_, Bokeh_ and Pandas_ will already
-be installed. You'll only need to install BACpypes3_ ::
-
-    pip install BACpypes3
-    pip install bokeh (or conda install bokeh if using Anaconda)
-
-You're ready to begin using BAC0 !
+You're ready to begin using BAC0!
 
 .. |build-status| image:: https://travis-ci.org/ChristianTremblay/BAC0.svg?branch=master
    :target: https://travis-ci.org/ChristianTremblay/BAC0
@@ -103,10 +113,6 @@ You're ready to begin using BAC0 !
    :alt: Coverage
 
 .. _bacpypes3 : https://github.com/JoelBender/BACpypes3
-
-.. _bokeh : http://www.bokehplots.com
-
-.. _Flask : http://flask.pocoo.org/
 
 .. _Pandas : http://pandas.pydata.org/
 

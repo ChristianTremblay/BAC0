@@ -26,3 +26,8 @@ BAC0 is made for building automation system (BAS) programmers. Controllers used 
 Typical controllers can be programmed in different ways, depending on the manufacturer selling them (block programming, basic "kinda" scripts, C code, etc...). BAC0 is a unified way, using Python language and BACnet/IP communication, to interact with those controllers once their sequence is built.
 
 BAC0 allows users to simply test an application even if sensors are not connected to the controller. Using the out_of_service property, it's easy to write a value to the input so the controller will think an input is connected.
+
+BAC0 is also a BACnet device
+----------------------------------------------
+
+Every instance of BAC0 is a fully feature BACnet device. Add local objects to it, serve them to the network, and interact with other BACnet devices.

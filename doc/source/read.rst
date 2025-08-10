@@ -4,7 +4,7 @@ To read from a BACnet device using the bacnet instance just created by the conne
 know what you are trying to read though and some technical specificities of BACnet. Let's have a 
 simple look at how things work in BACnet. 
 
-To read to a point, you need to create a request that will send some message to the network (directly
+To read a point, you need to create a request that will send a message to the network (directly
 to a controller (unicast) or at large (broadcast) with the object and property from the object you
 want to read from. The BACnet standard defines a lot of different objects. All objects provides some
 properties that we can read from. You can refer bacpypes source code (object.py) to get some examples.
@@ -54,58 +54,58 @@ bacpypes definition of an AnalogValue ::
 Readable properties are mandatory and all BACnet device must implement AnalogValue with those properties. 
 Optional properties, may or may not be available, depending on the choices the manufacturer made.
 
-With BAC0, there is two different kind of requests we can use to read from the network
+With BAC0, there are two primary request types we can use to read from the network
 
   - read
   - readMultiple
 
-Read will be used to read only one (1) property.
+read will be used to read only one (1) property.
 readMultiple will be used to read multiple properties. The number here is not defined. Many elements will 
 have an impact on the number of properties you can retrieve using readMultiple. Is the device an MSTP one
 or a IP one. Does the device support segmentation ? Etc. Many details that could prevent you from using 
 readMultiple with very big requests. Usually, when discovering a device points, BAC0 will use readMultiple
 and will use chunks of 25 properties. It's up to you to decide how many properties you'll read.
 
-So, to read from BACnet. The request will contains the address of the device from which we want to read
+So, to read from BACnet, the request will contain the address of the device from which we want to read
 (example '2:5'). Then the object type (analogValue), the instance number (the object "address" or "register"...
 let's pretend it's 1) and the property from the object we want to read (typically the 'presentValue').
 
-.. notes::
+.. note::
     Please note that some objects are very complex to read from. For instance, schedules have a lot of
     details and the properties defining the object are themselves created from arrays of other type of data.
     A simple `bacnet.read` in the context of a schedule would be pretty hard to interpret. This is why BAC0
     will implement some special read functions for complex items like that. To read schedules, have a look
     to the schedules topic and the function calld `bacnet.read_schedule()`.
 
-Read examples
-........................
+Read examples (awaitable)
+..........................
 Once you know the device you need to read from, you can use ::
 
-    bacnet.read('address object object_instance property')
+    await bacnet.read('address object object_instance property')
 
     Read the present value property on analog value instance 4410 on network 303 device 9
-    bacnet.read('303:9 analogValue 4410 presentValue')
+    await bacnet.read('303:9 analogValue 4410 presentValue')
 
     Read the present value property on analog value instance 4410 on device with IP 192.168.1.100
-    bacnet.read('192.168.1.100 analogValue 4410 presentValue')
+    await bacnet.read('192.168.1.100 analogValue 4410 presentValue')
 
 Read property multiple can also be used ::
 
-    bacnet.readMultiple('address object object_instance property_1 property_2') #or
-    bacnet.readMultiple('address object object_instance all')
+    await bacnet.readMultiple('address object object_instance property_1 property_2') # or
+    await bacnet.readMultiple('address object object_instance all')
 
 Read multiple
 ..................
 Using simple read is a costly way of retrieving data. If you need to read a lot of data from a controller, 
 and this controller supports read multiple, you should use that feature.
 
-When defining `BAC0.devices`, all polling requests will use readMultiple to retrive the information on the network.
+When listing `BAC0.devices`, polling requests use readMultiple to retrieve information efficiently.
 
 There is actually two way of defining a read multiple request. The first one inherit from bacpypes console examples 
 and is based on a string composed from a list of properties to be read on the network. This is the example I showed 
 previously.
 
-Recently, a more flexible way of creating those requests have been added using a dict to create the requests. 
+A flexible way of creating those requests has been added using a dict to create the requests. 
 The results are then provided as a dict for clarity. Because the old way just give all the result in order of the request, 
 which can lead to some errors and is very hard to interact with on the REPL.
 
@@ -126,7 +126,7 @@ If an array index needs to be used, the following syntax can be used in the prop
 This dict must be used with the already exsiting function `bacnet.readMultiple()` and passed
 via the argument named **request_dict**. ::
 
-    bacnet.readMultiple('303:9', request_dict=_rpm)
+    await bacnet.readMultiple('303:9', request_dict=_rpm)
 
 The result will be a dict containing all the information requested. ::
 
@@ -148,21 +148,7 @@ The result will be a dict containing all the information requested. ::
             ]
     }
 
-Write to property
-........................
-To write to a single property ::
-
-    bacnet.write('address object object_instance property value - priority')
-
-Write to multiple properties
-....................................
-Write property multiple is also implemented. You will need to build a list for your requets ::
-
-    r = ['analogValue 1 presentValue 100','analogValue 2 presentValue 100','analogValue 3 presentValue 100 - 8','@obj_142 1 @prop_1042 True']
-    bacnet.writeMultiple(addr='2:5',args=r,vendor_id=842)
-    
-..note::
-    WARNING. See the section on Proprietary objects and properties for details about vendor_id and @obj_142.
+See the write section for write examples. If you need to await a write, use `await bacnet._write(...)`; `bacnet.write(...)` is a non-blocking helper that schedules a write.
 
 
 .. _berryconda : https://github.com/jjhelmus/berryconda  

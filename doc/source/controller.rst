@@ -1,5 +1,9 @@
+.. _devices-and-points:
+
 How to define a device and interact with points
 ===================================================
+To interact with another controller on the BACnet network, you use the `BAC0.device` function. This creates a Python object representing the remote device, allowing you to read and write points, access properties, and use various helper methods.
+
 Define a controller
 ----------------------------------------
 
@@ -18,13 +22,16 @@ Example::
 
     # Query and display the list of devices seen on the network
     bacnet.discover()
-    bacnet.devices
+    await bacnet.devices
 
     # Define a controller (this one is on MSTP #3, MAC addr 4, device ID 5504)    
-    mycontroller = BAC0.device('3:4', 5504, bacnet)
+    mycontroller = await BAC0.device('3:4', 5504, bacnet)
 
     # Get the list of "registered" devices 
     bacnet.registered_devices
+    
+.. note::
+    `BAC0.device(...)` is asynchronous and must be awaited. It returns the device instance once built.
     
 
 Some caveats
@@ -39,13 +46,13 @@ speciy to BAC0 that the device doesn't support segmentation.
 
 To do so, use the parameter::
 
-    my_old_device = BAC0.start('3:4', 5504, bacnet, segmentation_supported=False)
+    my_old_device = await BAC0.device('3:4', 5504, bacnet, segmentation_supported=False)
     
 Object List
 ............
 
 By default, BAC0 will read the object list from the controller and define every
-points found inside the device as points. This behaviour may not be optimal in
+supported points found inside the device as points. This behaviour may not be optimal in
 all use cases. BAC0 allows you to provide a custom object list when creating the
 device.
 
@@ -61,7 +68,7 @@ To do so, use this syntax::
                  ('analogInput', 1)]
     
     # Provide it as an argument               
-    fx = BAC0.device('2:5',5,bacnet, object_list = my_obj_list)
+    fx = await BAC0.device('2:5',5,bacnet, object_list = my_obj_list)
 
 
 Look for points in controller
@@ -147,16 +154,17 @@ Write to an Input (simulate)
 If the point is an input:
 
     * analogInput (AI) 
-    * binaryOutput (BO) 
-    * multistateOutput (MO) 
+    * binaryInput (BI) 
+    * multistateInput (MI) 
 
-You can change its value with a simple assigment, thus overriding any external value it is 
-reading and simulating a different sensor reading.  The override occurs because  
-BAC0 sets the point's **out_of_service** (On) and then writes to the point's **presentValue**.
+You can simulate its value with a simple assignment, decoupling the hardware input from the
+application software. BAC0 sets the point's **out_of_service** to True and writes the
+point's **presentValue** to the value you provide. While in this state, the controller uses
+the internal software value instead of the physical I/O reading.
  
     mycontroller['inputName'] = <simulated value>
 
-    mycontroller['Temperature'] = 23.5      # overiding actual reading of 18.8 C
+    mycontroller['Temperature'] = 23.5      # simulating instead of actual reading of 18.8 C
 
 
 .. figure:: images/AI_override.png
@@ -238,9 +246,10 @@ Read all device properties
 ...........................
 You can retrieve the list of device properties using::
 
-    device.bacnet_properties
-    # will return a cached version by default. If things have changed, you can refresh using.
-    device.update_bacnet_properties()
+    props = await device.bacnet_properties()
+    # returns a cached version by default. If things have changed, refresh using:
+    await device.update_bacnet_properties()
+    props = await device.bacnet_properties()
 
 Often, in this list, you will see proprietary properties added by the manufacturer. They can be 
 recognize by their name, an integer.

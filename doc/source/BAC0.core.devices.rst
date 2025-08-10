@@ -37,14 +37,6 @@ BAC0.core.devices.Trends module
    :undoc-members:
    :show-inheritance:
 
-BAC0.core.devices.create\_objects module
-----------------------------------------
-
-.. automodule:: BAC0.core.devices.create_objects
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Module contents
 ---------------
 
