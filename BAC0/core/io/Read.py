@@ -96,7 +96,7 @@ class ReadProperty:
         bacoid=None,
         timeout: int = 10,
         show_property_name: bool = False,
-    ) -> t.Union[ReadValue, t.Tuple[ReadValue, str], None]:
+    ) -> t.Any:
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -166,33 +166,7 @@ class ReadProperty:
             response = err
 
             if "unknown-property" in str(err.reason):
-                if "description" in args:
-                    self._log.warning(
-                        "The description property is not implemented in the device. "
-                        "Using a default value for internal needs."
-                    )
-                    return "n/a"
-                elif "inactiveText" in args:
-                    self._log.warning(
-                        "The inactiveText property is not implemented in the device. "
-                        "Using a default value of Off for internal needs."
-                    )
-                    return "False"
-                elif "activeText" in args:
-                    self._log.warning(
-                        "The activeText property is not implemented in the device. "
-                        "Using a default value of On for internal needs."
-                    )
-                    return "True"
-                if "units" in args:
-                    self._log.warning(
-                        "The units property is not implemented in the device. We will consider noUnits"
-                        "Using a default value for internal needs. Please note that units is a required property for BACnet objects like analog values. The device you are reading from may be non-compliant."
-                    )
-                    return EngineeringUnits("noUnits")
-                else:
-
-                    raise UnknownPropertyError(f"Unknown property {args}")
+                raise UnknownPropertyError(f"Unknown property {args}")
             else:
                 self.log(f"Error : {err}", level="error")
         except ObjectError:

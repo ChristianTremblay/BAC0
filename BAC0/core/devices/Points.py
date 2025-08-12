@@ -197,6 +197,8 @@ class Point:
                 ),
                 vendor_id=self.properties.device.properties.vendor_id,
             )
+        except UnknownPropertyError as e:
+            raise e
         except Exception as e:
             raise Exception(f"Problem reading : {self.properties.name} | {e}")
 
