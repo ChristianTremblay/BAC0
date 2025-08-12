@@ -301,7 +301,7 @@ class Point:
             last_val_clean = None if len(last_val) == 0 else last_val.iloc[-1]
             return last_val_clean
         else:
-            return self._history.value[-1]
+            return None if len(self._history.value) == 0 else self._history.value.iloc[-1]
 
     @property
     def lastTimestamp(self):
@@ -882,6 +882,8 @@ class BooleanPoint(Point):
         """
         returns : (boolean) Value
         """
+        if self.lastValue is None:
+            return None
         if ":" in self.lastValue:
             _val = int(self.lastValue.split(":")[0])
         else:

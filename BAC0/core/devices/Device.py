@@ -886,12 +886,6 @@ class DeviceDisconnected(Device):
 
         else:
             try:
-                await self.properties.network.read(
-                    "{} device {} objectName".format(
-                        self.properties.address, self.properties.device_id
-                    )
-                )
-
                 segmentation = await self.properties.network.read(
                     "{} device {} segmentationSupported".format(
                         self.properties.address, self.properties.device_id
