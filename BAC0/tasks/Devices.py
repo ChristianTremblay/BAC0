@@ -65,7 +65,7 @@ class AddDevice(Task):
     def task(self, **kwargs):
         try:
             self.log(kwargs, level="info")
-            dev = Device(kwargs)
+            dev = Device(**kwargs)
             self.log(
                 f"Device named {dev.properties.name} ({dev.properties.address}/{dev.properties.device_id}) created. Retrieve it using bacnet[boid]",
                 level="info",

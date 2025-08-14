@@ -125,7 +125,7 @@ class Alias:
         router_infos: Union[
             Tuple[Union[Address, str], Union[int, List[int]]],
             Tuple[Union[Address, str], Union[int, List[int]], Optional[int]],
-        ] = (None, None, None),
+        ] = (None, [], None),
     ):
         address, dnets = router_infos[:2]
         try:

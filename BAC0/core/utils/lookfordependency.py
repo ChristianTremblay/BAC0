@@ -1,6 +1,6 @@
 import importlib.util
 from types import ModuleType
-from typing import Type
+from typing import Type, Callable
 
 
 # Function to dynamically import a module
@@ -55,8 +55,7 @@ def influxdb_if_available():
     return (_INFLUXDB, influxdb_client)
 
 
-def pandas_if_available() -> tuple[bool, Type, ModuleType, ModuleType]:
-    global _PANDAS
+def pandas_if_available() -> tuple[bool, Type, Callable, Callable]:
     if not check_dependencies(["pandas"]):
         _PANDAS = False
         return (_PANDAS, FakePandas, FakePandas.sql, FakePandas.Timestamp)

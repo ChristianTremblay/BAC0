@@ -217,7 +217,7 @@ class Device(SQLMixin):
     def initialize_device_from_db(self) -> None:
         raise NotImplementedError()
 
-    def df(self, list_of_points: List[str], force_read: bool = True) -> pd.DataFrame:
+    def df(self, list_of_points: List[str], force_read: bool = True):
         """
         Build a pandas DataFrame from a list of points.  DataFrames are used to present and analyze data.
 
@@ -247,7 +247,7 @@ class Device(SQLMixin):
 
     def __getitem__(
         self, point_name: Union[str, List[str]]
-    ) -> Union[Point, pd.DataFrame]:
+    ) -> Point:
         """
         Get a point from its name.
         If a list is passed - a dataframe is returned.
@@ -476,7 +476,7 @@ class DeviceConnected(Device):
         else:
             await self.new_state(DeviceDisconnected)
 
-    async def connect(self, *, db=None):
+    async def connect(self, *args, db=None, **kwargs):
         """
         A connected device can be switched to 'database mode' where the device will
         not use the BACnet network but instead obtain its contents from a previously
@@ -868,7 +868,7 @@ class DeviceDisconnected(Device):
         # self.initialized = False
         await self.connect()
 
-    async def connect(self, *, db=None, network=None):
+    async def connect(self, *args, network=None, db=None, **kwargs):
         """
         Attempt to connect to device.  If unable, attempt to connect to a controller database
         (so the user can use previously saved data).
@@ -1010,7 +1010,7 @@ class DeviceFromDB(DeviceConnected):
             # self.new_state(DeviceDisconnected)
             raise
 
-    async def connect(self, *, network=None, from_backup=None):
+    async def connect(self, *args, network=None, from_backup=None, **kwargs):
         """
         In DBState, a device can be reconnected to BACnet using:
             device.connect(network=bacnet) (bacnet = BAC0.connect())

@@ -15,7 +15,7 @@ build-backend = "setuptools.build_meta"
 Homepage = "https://github.com/ChristianTremblay/BAC0"
 
 [project.optional-dependencies]
-extras = ["pandas", "influxdb_client[async]", "aiohttp", "rich", "pytest-asyncio", "coverage"]
+extras = ["pandas", "influxdb_client[async]", "aiohttp", "rich", "pytest-asyncio", "coverage", "types-pytz"]
 
 [tool.setuptools.package-data]
 "BAC0.core.app" = ["device.json"]

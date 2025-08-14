@@ -53,7 +53,7 @@ class PointProperties(object):
         self.units_state = None
         self.simulated: t.Tuple[bool, t.Optional[int]] = (False, None)
         self.overridden: t.Tuple[bool, t.Optional[int]] = (False, None)
-        self.priority_array = None
+        self.priority_array: t.Optional[t.List[t.Dict[str, t.Any]]] = None
         self.history_size = None
         self.bacnet_properties = {}
         self.status_flags = None
@@ -182,7 +182,7 @@ class Point:
                         }
                     )
             except (ValueError, UnknownPropertyError):
-                self.properties.priority_array = False
+                self.properties.priority_array = []
             except Exception as e:
                 raise Exception(f"Problem reading : {self.properties.name} | {e}")
 
@@ -235,7 +235,7 @@ class Point:
     @property
     def is_overridden(self):
         self.read_priority_array()
-        if self.properties.priority_array is False:
+        if self.properties.priority_array == []:
             return False
         if self.priority(8) or self.priority(1):
             self.properties.overridden = (True, self.value)
@@ -244,7 +244,7 @@ class Point:
             return False
 
     async def priority(self, priority=None):
-        if self.properties.priority_array is False:
+        if self.properties.priority_array == []:
             return None
 
         await self.read_priority_array()
@@ -252,8 +252,9 @@ class Point:
             return self.properties.priority_array
         if priority < 1 or priority > 16:
             raise IndexError("Please provide priority to read (1-16)")
-
         else:
+            if self.properties.priority_array is None:
+                raise Exception("issue with read_priority_array non populating self.properties.priority_array")
             val = self.properties.priority_array[priority - 1]["value"]._value
             if isinstance(val, tuple) and len(val) == 0:
                 return None
@@ -377,7 +378,7 @@ class Point:
                 raise ValueError(f"Cannot find property named {key}")
 
     async def write(
-        self, value: t.Any, *, prop: str = "presentValue", priority: str = "16"
+        self, value: t.Any, *, prop: str = "presentValue", priority: int = 16
     ):
         """
         Write to present value of a point
@@ -390,15 +391,8 @@ class Point:
         if prop == "description":
             await self.update_description(value)
         else:
-            if priority != "":
-                if (
-                    isinstance(float(priority), float)
-                    and float(priority) >= 1
-                    and float(priority) <= 16
-                ):
-                    priority = f"{priority}"
-                else:
-                    raise ValueError("Priority must be a number between 1 and 16")
+            if priority < 1 or priority > 16:
+                raise ValueError("Priority must be a number between 1 and 16")
             req = f"{self.properties.device.properties.address} {self.properties.type} {self.properties.address} {prop} {value} - {priority}"
             # self.log(req, level='info')
             try:
@@ -455,7 +449,7 @@ class Point:
         self.properties.simulated = (True, None)
         return res
 
-    async def release(self):
+    async def release(self, value, *, prop="presentValue", priority=""):
         """
         Clears the Out_Of_Service property [to False] - so the controller regains control of the point.
         """
@@ -506,7 +500,7 @@ class Point:
         else:
             # input are left... must be simulated
             if str(value).lower() == "auto":
-                await self.release()
+                await self.release(value)
             else:
                 self.log(f"Simulating to {value}", level="debug")
                 await self.sim(value)
@@ -1298,7 +1292,7 @@ class NumericPointOffline(NumericPoint):
     def write(self, value, *, prop="presentValue", priority=""):
         raise OfflineException("Must be online to write")
 
-    def sim(self, value, *, prop="presentValue", priority=""):
+    def sim(self, value, *, prop="presentValue", priority="", force=False):
         raise OfflineException("Must be online to write")
 
     def release(self, value, *, prop="presentValue", priority=""):
@@ -1344,7 +1338,7 @@ class BooleanPointOffline(BooleanPoint):
     def write(self, value, *, prop="presentValue", priority=""):
         raise OfflineException("Must be online to write")
 
-    def sim(self, value, *, prop="presentValue", priority=""):
+    def sim(self, value, *, prop="presentValue", priority="", force=False):
         raise OfflineException("Must be online to write")
 
     def release(self, value, *, prop="presentValue", priority=""):
@@ -1393,7 +1387,7 @@ class EnumPointOffline(EnumPoint):
     def write(self, value, *, prop="presentValue", priority=""):
         raise OfflineException("Must be online to write")
 
-    def sim(self, value, *, prop="presentValue", priority=""):
+    def sim(self, value, *, prop="presentValue", priority="", force=False):
         raise OfflineException("Must be online to write")
 
     def release(self, value, *, prop="presentValue", priority=""):
@@ -1429,7 +1423,7 @@ class StringPointOffline(EnumPoint):
     def write(self, value, *, prop="presentValue", priority=""):
         raise OfflineException("Must be online to write")
 
-    def sim(self, value, *, prop="presentValue", priority=""):
+    def sim(self, value, *, prop="presentValue", priority="", force=False):
         raise OfflineException("Must be online to write")
 
     def release(self, value, *, prop="presentValue", priority=""):
@@ -1467,16 +1461,14 @@ class COVPointSubscription:
 
     def __init__(
         self,
-        point: Point = None,
+        point: t.Optional[Point] = None,
         lifetime: int = 900,
         confirmed: bool = False,
-        callback: t.Optional[
-            t.Union[t.Callable[[str, t.Any], None], t.Awaitable[None]]
-        ] = None,
+        callback = None,
     ):
         self.address = Address(point.properties.device.properties.address)
         self.cov_fini = asyncio.Event()
-        self.task = None
+        self.task: t.Optional[asyncio.Task] = None
         self.obj_identifier = ObjectIdentifier(
             (point.properties.type, int(point.properties.address))
         )
