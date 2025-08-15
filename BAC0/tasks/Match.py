@@ -16,8 +16,8 @@ Example:
 
 import asyncio
 
-from ..core.utils.notes import note_and_log
 from ..core.io.IOExceptions import NotReadyError
+from ..core.utils.notes import note_and_log
 
 # --- this application's modules ---
 from .TaskManager import Task
@@ -94,7 +94,7 @@ class Match_Value(Task):
     def __init__(
         self, value=None, point=None, delay=5, name=None, use_last_value=False
     ):
-        self.log(f"Creating MatchValue task for {value} and {point}", level="debug")
+        # self.log(f"Creating MatchValue task for {value} and {point}", level="debug")
         # if not isinstance(value, (float, int, str, bool)) or not hasattr(self.value, "__call__"):
         #    raise ValueError("Value must be a float, int, str or bool OR must be a callable function that returns one of these types.")
         self.value = value

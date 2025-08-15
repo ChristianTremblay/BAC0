@@ -91,12 +91,14 @@ class VirtualPointProperties(object):
 @note_and_log
 class VirtualPoint:
     """
-    Virtual points could be used to show calculation result on Bokeh
+    Virtual points could be used to show calculation result on simulations
     A function is passed at creation time and this function must return a pandas Serie
 
     I chose to create those points without using BACnet classes because Virtual
     points are meant to be used on BAC0.device and creating fake BACnet objects
     could lead to potential confusion.
+
+    Actually, VirtualPoints are numerical numbers only
     """
 
     def __init__(
@@ -139,7 +141,7 @@ class VirtualPoint:
         self._match_task.running = False
 
         self.fake_pv = None
-        if initial_value:
+        if initial_value is not None:
             self.fake_pv = float(initial_value)
             self._trend(float(initial_value))
 
@@ -200,7 +202,7 @@ class VirtualPoint:
         """
         Retrieve value of the point
         """
-        return self.lastValue
+        return float(self.lastValue)
 
     @property
     def lastValue(self):
