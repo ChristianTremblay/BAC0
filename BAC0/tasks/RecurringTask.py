@@ -8,8 +8,9 @@
 RecurringTask.py - execute a recurring task
 """
 import asyncio
-from typing import Any, Callable, Tuple, Union, Coroutine
-from concurrent.futures import ThreadPoolExecutor
+import functools
+import inspect
+from typing import Any, Callable, Coroutine, Tuple, Union
 
 from ..core.utils.notes import note_and_log
 from .TaskManager import Task
@@ -46,18 +47,34 @@ class RecurringTask(Task):
         Task.__init__(self, name=name, delay=delay)
 
     async def task(self) -> None:
-        loop = asyncio.get_event_loop()
-        executor = ThreadPoolExecutor()
-        if self.fnc_args:
-            if asyncio.iscoroutinefunction(self.func):
+        # Prefer awaiting async callables; offload sync callables with to_thread.
+        def _is_async_callable(fn: Callable) -> bool:
+            if inspect.iscoroutinefunction(fn):
+                return True
+            call = getattr(fn, "__call__", None)
+            if call and inspect.iscoroutinefunction(call):
+                return True
+            if isinstance(fn, functools.partial):
+                return _is_async_callable(fn.func)
+            return False
+
+        if self.fnc_args is not None:
+            if _is_async_callable(self.func):
                 await self.func(self.fnc_args)
             else:
-                await loop.run_in_executor(executor, self.func, self.fnc_args)
-                #self.func(self.fnc_args)
+                try:
+                    await asyncio.to_thread(self.func, self.fnc_args)
+                except (RuntimeError, AttributeError):
+                    # Fallback for environments without to_thread or loop quirks
+                    loop = asyncio.get_running_loop()
+                    await loop.run_in_executor(None, self.func, self.fnc_args)
         else:
-            if asyncio.iscoroutinefunction(self.func):
+            if _is_async_callable(self.func):
                 await self.func()
             else:
-                await loop.run_in_executor(executor, self.func)
-                #self.func()
+                try:
+                    await asyncio.to_thread(self.func)
+                except (RuntimeError, AttributeError):
+                    loop = asyncio.get_running_loop()
+                    await loop.run_in_executor(None, self.func)
         await asyncio.sleep(self.delay)
