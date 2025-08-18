@@ -41,7 +41,7 @@ class Config1(_Object):
     # object identifiers are interpreted from this customized subclass of the
     # standard ObjectIdentifier that leverages the ProprietaryObjectType
     # enumeration in the vendor information
-    objectIdentifier: ProprietaryObjectType.CONFIG1
+    objectIdentifier: ProprietaryObjectType
 
     # all objects get the object-type property to be this value
     objectType = ProprietaryObjectType("CONFIG1")
@@ -66,7 +66,7 @@ class Config2(_Object):
     # object identifiers are interpreted from this customized subclass of the
     # standard ObjectIdentifier that leverages the ProprietaryObjectType
     # enumeration in the vendor information
-    objectIdentifier: ProprietaryObjectType.CONFIG2
+    objectIdentifier: ProprietaryObjectType
 
     # all objects get the object-type property to be this value
     objectType = ProprietaryObjectType("CONFIG2")

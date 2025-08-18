@@ -17,7 +17,7 @@ from bacpypes3.constructeddata import ListOf
 from bacpypes3.primitivedata import Unsigned
 from ...utils.lookfordependency import pandas_if_available
 
-PANDAS, _, _, _ = pandas_if_available()
+PANDAS = pandas_if_available()[0]
 
 
 Record = namedtuple(
@@ -49,7 +49,7 @@ class LocalTrendLog(object):
             return None
 
     @staticmethod
-    def decompose_datetime(dt: datetime) -> Tuple[int, int, int, int, int]:
+    def decompose_datetime(dt: datetime) -> Tuple[int, int, int, int, int, int, int, int]:
         y = dt.year
         M = dt.month
         d = dt.day

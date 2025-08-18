@@ -40,7 +40,7 @@ class Config(_Object):
     # object identifiers are interpreted from this customized subclass of the
     # standard ObjectIdentifier that leverages the ProprietaryObjectType
     # enumeration in the vendor information
-    objectIdentifier: ProprietaryObjectType.CONFIG
+    objectIdentifier: ProprietaryObjectType
 
     # all objects get the object-type property to be this value
     objectType = ProprietaryObjectType("CONFIG")

@@ -48,7 +48,7 @@ class TrendLogProperties(object):
             "out_of_service": False,
         }
         self._history_components: List[HistoryComponent] = []
-        self._df: Optional[pd.DataFrame] = None
+        self._df = None
         self.type: str = "TrendLog"
         self.units_state: str = "None"
 
@@ -60,18 +60,6 @@ class TrendLogProperties(object):
     @property
     def name(self) -> Optional[str]:
         return self.object_name
-
-
-def TrendLog(*args: Tuple, **kwargs: Dict) -> "_TrendLog":
-    trend = _TrendLog(*args, **kwargs)
-    # update_properties_task = Task(trend.update_properties())
-    # update_properties_task.start()
-    # while not update_properties_task.done:
-    #    pass
-    # if "read_log_on_creation" in args:
-    #    trend.read_log_buffer_task = Task(trend.read_log_buffer())
-
-    return trend
 
 
 @note_and_log
@@ -86,7 +74,7 @@ class _TrendLog(TrendLogProperties):
         device: Optional[Any] = None,
         read_log_on_creation: bool = True,
         multiple_request: Optional[Any] = None,
-    ):
+        ):
         self.properties: TrendLogProperties = TrendLogProperties()
         self.properties.device = device
         self.properties.oid = OID
@@ -96,12 +84,13 @@ class _TrendLog(TrendLogProperties):
             self.read_log_buffer_task: Optional[Any] = None
 
     @staticmethod
-    def read_logDatum(logDatum: Any) -> Tuple[str, Any]:
+    def read_logDatum(logDatum: Any) -> Optional[Tuple[str, Any]]:
         for k, v in logDatum.__dict__.items():
             if v is None:
                 continue
             else:
                 return (k, v)
+        return None
 
     async def update_properties(self) -> None:
         try:
@@ -113,12 +102,12 @@ class _TrendLog(TrendLogProperties):
                 self.properties.total_record_count,
                 self.properties.statusFlags,
                 self.properties.log_interval,
-            ) = await self.properties.device.properties.network.readMultiple(
-                "{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount statusFlags logInterval".format(
-                    addr=self.properties.device.properties.address,
-                    oid=str(self.properties.oid),
-                )
-            )
+                ) = await self.properties.device.properties.network.readMultiple(
+                    "{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount statusFlags logInterval".format(
+                            addr=self.properties.device.properties.address,
+                            oid=str(self.properties.oid),
+                            )
+                    )
             self.properties.description = str(self.properties.description)
         except Exception as error:
             raise Exception(f"Problem reading trendLog informations: {error}")
@@ -126,11 +115,11 @@ class _TrendLog(TrendLogProperties):
     async def _total_record_count(self) -> int:
         self.properties.total_record_count = (
             await self.properties.device.properties.network.read(
-                "{addr} trendLog {oid} totalRecordCount".format(
-                    addr=self.properties.device.properties.address,
-                    oid=str(self.properties.oid),
-                )
-            )
+                    "{addr} trendLog {oid} totalRecordCount".format(
+                            addr=self.properties.device.properties.address,
+                            oid=str(self.properties.oid),
+                            )
+                    )
         )
         return self.properties.total_record_count
 
@@ -148,11 +137,11 @@ class _TrendLog(TrendLogProperties):
         for each in range(steps):
             range_params = ("s", _from, Date("1979-01-01"), Time("00:00"), RECORDS)
             _chunk = await self.properties.device.properties.network.readRange(
-                "{} trendLog {} logBuffer".format(
-                    self.properties.device.properties.address, str(self.properties.oid)
-                ),
-                range_params=range_params,
-            )
+                    "{} trendLog {} logBuffer".format(
+                            self.properties.device.properties.address, str(self.properties.oid)
+                            ),
+                    range_params=range_params,
+                    )
             _from += len(_chunk)
             for chunk in _chunk:
                 log_buffer.add(chunk)
@@ -167,9 +156,9 @@ class _TrendLog(TrendLogProperties):
             seconds = 0 if seconds == 255 else seconds
             ms = 0 if ms == 255 else ms
             _index = pd.to_datetime(
-                f"{year}-{month}-{day} {hours}:{minutes}:{seconds}.{ms}",
-                format="%Y-%m-%d %H:%M:%S.%f",
-            )
+                    f"{year}-{month}-{day} {hours}:{minutes}:{seconds}.{ms}",
+                    format="%Y-%m-%d %H:%M:%S.%f",
+                    )
             _choice, _logDatum = self.read_logDatum(each.logDatum)
             _status = each.statusFlags
             self._log.debug(f"{_index}, {_logDatum}, {_status}, {_choice}")
@@ -179,21 +168,21 @@ class _TrendLog(TrendLogProperties):
 
         if _PANDAS:
             df = pd.DataFrame(
-                {
-                    "index": [
-                        each.index for each in self.properties._history_components
-                    ],
-                    self.properties.object_name: [
-                        each.logdatum for each in self.properties._history_components
-                    ],
-                    "status": [
-                        each.status for each in self.properties._history_components
-                    ],
-                    "choice": [
-                        each.choice for each in self.properties._history_components
-                    ],
-                }
-            )
+                    {
+                        "index": [
+                            each.index for each in self.properties._history_components
+                            ],
+                        self.properties.object_name: [
+                            each.logdatum for each in self.properties._history_components
+                            ],
+                        "status": [
+                            each.status for each in self.properties._history_components
+                            ],
+                        "choice": [
+                            each.choice for each in self.properties._history_components
+                            ],
+                        }
+                    )
             df = df.set_index("index")
             # df["choice"] = _choice
             # df[self.properties.object_name] = df['logDatum']
@@ -202,8 +191,8 @@ class _TrendLog(TrendLogProperties):
         else:
             # self.properties._history_components = (self.index, self.logdatum, self.status)
             self._log.warning(
-                "Pandas not installed. Treating histories as simple list."
-            )
+                    "Pandas not installed. Treating histories as simple list."
+                    )
 
     @property
     async def history(self) -> Union[Dict, Any]:
@@ -211,26 +200,26 @@ class _TrendLog(TrendLogProperties):
 
         if not _PANDAS or self.properties._df is None:
             return dict(
-                zip(
-                    [each.index for each in self.properties._history_components],
-                    [each.logDatum for each in self.properties._history_components],
-                )
-            )
+                    zip(
+                            [each.index for each in self.properties._history_components],
+                            [each.logDatum for each in self.properties._history_components],
+                            )
+                    )
 
         try:
             if not self.properties.log_device_object_property:
                 self.properties.log_device_object_property = (
                     await self.properties.device.properties.network.read(
-                        "{addr} trendLog {oid} logDeviceObjectProperty".format(
-                            addr=self.properties.device.properties.address,
-                            oid=str(self.properties.oid),
-                        )
-                    )
+                            "{addr} trendLog {oid} logDeviceObjectProperty".format(
+                                    addr=self.properties.device.properties.address,
+                                    oid=str(self.properties.oid),
+                                    )
+                            )
                 )
             (
                 objectType,
                 objectAddress,
-            ) = self.properties.log_device_object_property.objectIdentifier
+                ) = self.properties.log_device_object_property.objectIdentifier
             logged_point = self.properties.device.find_point(objectType, objectAddress)
         except (Exception, ValueError):
             logged_point = None
@@ -238,8 +227,8 @@ class _TrendLog(TrendLogProperties):
         serie = self.properties._df[self.properties.object_name].copy()
         serie.units = logged_point.properties.units_state if logged_point else "n/a"
         serie.name = ("{}/{}").format(
-            self.properties.device.properties.name, self.properties.object_name
-        )
+                self.properties.device.properties.name, self.properties.object_name
+                )
         if not logged_point:
             serie.states = "unknown"
             serie.datatype = None
@@ -261,8 +250,8 @@ class _TrendLog(TrendLogProperties):
         """
         if not _PANDAS:
             self._log.error(
-                "Pandas must be installed to use live chart feature. See documentation how how to run BAC0 in complete mode"
-            )
+                    "Pandas must be installed to use live chart feature. See documentation how how to run BAC0 in complete mode"
+                    )
         else:
             if remove:
                 self.properties.device.properties.network.remove_trend(self)
@@ -271,3 +260,14 @@ class _TrendLog(TrendLogProperties):
 
     def __repr__(self):
         return self.properties.__repr__()
+
+def TrendLog(*args, **kwargs) -> _TrendLog:
+    trend = _TrendLog(*args, **kwargs)
+    # update_properties_task = Task(trend.update_properties())
+    # update_properties_task.start()
+    # while not update_properties_task.done:
+    #    pass
+    # if "read_log_on_creation" in args:
+    #    trend.read_log_buffer_task = Task(trend.read_log_buffer())
+
+    return trend
