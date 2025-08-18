@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytz
 import typing as t
@@ -95,7 +95,7 @@ class InfluxDB:
                 self.log(f"Error while writing{record} to db: {error}", level="error")
                 return False
 
-    async def query(self, query: str) -> list:
+    async def query(self, query: str) -> t.AsyncIterator:
         async with InfluxDBClientAsync.from_env_properties() as client:
             if await self._health() is False:
                 self.log("InfluxDB connection is not healthy", level="error")
@@ -109,8 +109,8 @@ class InfluxDB:
         self,
         predicate: str,
         value: str,
-        start: datetime = datetime.utcfromtimestamp(0),
-        stop: datetime = datetime.now(),
+        start: datetime = datetime.fromtimestamp(0, timezone.utc),
+        stop: datetime = datetime.now(timezone.utc),
         bucket: t.Optional[str] = None,
     ) -> bool:
         """
