@@ -138,7 +138,7 @@ class HostIP:
             )
             return "255.255.255.0"
 
-    def _findSubnetMask(self, ip: str) -> str:
+    def _findSubnetMask(self, ip: str) -> t.Optional[str]:
         """
         Retrieve the broadcast IP address connected to internet... used as
         a default IP address when defining Script

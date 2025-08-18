@@ -7,23 +7,16 @@
 """
 
 # from . import OptionalUnsigned
-from bacpypes3.basetypes import OptionalUnsigned, PropertyIdentifier
+from bacpypes3.basetypes import PropertyIdentifier
 from bacpypes3.debugging import ModuleLogger
 from bacpypes3.object import AnalogInputObject as _AnalogInputObject
 from bacpypes3.object import AnalogOutputObject as _AnalogOutputObject
 from bacpypes3.object import AnalogValueObject as _AnalogValueObject
 from bacpypes3.object import DeviceObject as _DeviceObject
 from bacpypes3.object import NetworkPortObject as _NetworkPortObject
-from bacpypes3.primitivedata import Boolean  # Signed,
 from bacpypes3.primitivedata import (
-    Atomic,
     CharacterString,
-    Date,
-    Enumerated,
     ObjectType,
-    Real,
-    Time,
-    Unsigned,
 )
 from bacpypes3.vendor import VendorInfo, get_vendor_info
 

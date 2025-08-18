@@ -19,8 +19,8 @@ _log = ModuleLogger(globals())
 
 
 # this vendor identifier reference is used when registering custom classes
-_vendor_id = 783
-_vendor_name = "Produal Oy"
+_vendor_id = 651
+_vendor_name = "SyxthSense Ltd"
 
 
 class ProprietaryObjectType(ObjectType):
@@ -29,11 +29,10 @@ class ProprietaryObjectType(ObjectType):
     see Clause 23.4.1.
     """
 
-    CONFIG1 = 128
-    CONFIG2 = 128
+    CONFIG = 128
 
 
-class Config1(_Object):
+class Config(_Object):
     """
     This is a proprietary object type.
     """
@@ -44,7 +43,7 @@ class Config1(_Object):
     objectIdentifier: ProprietaryObjectType
 
     # all objects get the object-type property to be this value
-    objectType = ProprietaryObjectType("CONFIG1")
+    objectType = ProprietaryObjectType("CONFIG")
 
     # all objects have an object-name property, provided by the parent class
     # with special hooks if an instance of this class is bound to an application
@@ -53,34 +52,11 @@ class Config1(_Object):
     # the property-list property of this object is provided by the getter
     # method defined in the parent class and computed dynamically
     # propertyList: ArrayOf(PropertyIdentifier)
-    TEMPSP_LL: Real
-    TEMPSP_HL: Real
-    NMBHTGSTAGES: Unsigned
-
-
-class Config2(_Object):
-    """
-    This is a proprietary object type.
-    """
-
-    # object identifiers are interpreted from this customized subclass of the
-    # standard ObjectIdentifier that leverages the ProprietaryObjectType
-    # enumeration in the vendor information
-    objectIdentifier: ProprietaryObjectType
-
-    # all objects get the object-type property to be this value
-    objectType = ProprietaryObjectType("CONFIG2")
-
-    # all objects have an object-name property, provided by the parent class
-    # with special hooks if an instance of this class is bound to an application
-    # objectName: CharacterString
-
-    # the property-list property of this object is provided by the getter
-    # method defined in the parent class and computed dynamically
-    # propertyList: ArrayOf(PropertyIdentifier)
-    LOCK_MODE: Unsigned
-    LOCK_PWD: Unsigned
-    BOOST_TRGT: Unsigned
+    NOMINAL_SETPOINT = Real
+    SETPOINT_UNIT = Unsigned
+    SENSOR3_SOURCE = Unsigned
+    MINIMUM_SETPOINT = Real
+    MAXIMUM_SETPOINT = Real
 
 
 class ProprietaryPropertyIdentifier(PropertyIdentifier):
@@ -90,6 +66,8 @@ class ProprietaryPropertyIdentifier(PropertyIdentifier):
     """
 
     # this is a custom property using a standard datatype
-    LOCK_MODE = 40155
-    LOCK_PWD = 40156
-    BOOST_TRGT = 40158
+    NOMINAL_SETPOINT = 40100
+    SETPOINT_UNIT = 40101
+    SENSOR3_SOURCE = 40102
+    MINIMUM_SETPOINT = 40104
+    MAXIMUM_SETPOINT = 40105

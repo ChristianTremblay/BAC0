@@ -3,14 +3,7 @@ from signal import SIGINT, SIGTERM, signal
 
 
 def run(main_task, bacnet):
-    global loop
-
-    def handler(sig, sig2):
-        if bacnet is not None:
-            bacnet._log.info(f"Got signal: {sig!s}, shutting down.")
-            bacnet.disconnect()
-        loop.stop()
-
+    #global loop
     try:
         loop = (
             asyncio.get_running_loop()
@@ -18,6 +11,14 @@ def run(main_task, bacnet):
     except RuntimeError:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+
+    def handler(sig, sig2):
+        if bacnet is not None:
+            bacnet._log.info(f"Got signal: {sig!s}, shutting down.")
+            bacnet.disconnect()
+        loop.stop()
+
+
     # for sig in (SIGINT, SIGTERM):
     #    loop.add_signal_handler(sig, handler)
     signal(SIGINT, handler)

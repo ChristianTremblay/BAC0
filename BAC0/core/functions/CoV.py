@@ -1,9 +1,10 @@
 import asyncio
+import typing as t
+from asyncio import Task
 from typing import Tuple
 
-from bacpypes3.basetypes import BinaryPV, PropertyIdentifier
 from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import Boolean, CharacterString, ObjectIdentifier
+from bacpypes3.primitivedata import ObjectIdentifier
 
 from ...core.app.asyncApp import BAC0Application
 from ...scripts.Base import Base
@@ -13,15 +14,15 @@ class COVSubscription:
     def __init__(
         self,
         address: Address = None,
-        objectID: Tuple[str, int] = None,
+        objectID: t.Optional[Tuple[str, int]] = None,
         lifetime: int = 900,
         confirmed: bool = False,
         callback=None,
-        BAC0App: BAC0Application = None,
+        BAC0App: t.Optional[BAC0Application] = None,
     ):
         self.address = Address(address) if isinstance(address, str) else address
         self.cov_fini = asyncio.Event()
-        self.task = None
+        self.task: t.Optional[Task] = None
         self.obj_identifier = ObjectIdentifier(objectID)
         self._lite = BAC0App
         self._this_application = self._lite.this_application

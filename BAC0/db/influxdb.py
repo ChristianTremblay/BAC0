@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytz
+import typing as t
 
 from ..core.utils.lookfordependency import influxdb_if_available
 from ..core.utils.notes import note_and_log
@@ -51,7 +52,7 @@ class InfluxDB:
         if self.bucket is None:
             raise ValueError("Missing bucket name, please provide one in db_params")
         # self.connect_to_db()
-        self.points = []
+        self.points: list[Point] = []
         self.write_options = WriteOptions(
             batch_size=getattr(self, "batch_size", 25),
             flush_interval=getattr(self, "flush_interval", 10_000),
@@ -94,7 +95,7 @@ class InfluxDB:
                 self.log(f"Error while writing{record} to db: {error}", level="error")
                 return False
 
-    async def query(self, query: str) -> list:
+    async def query(self, query: str) -> t.AsyncIterator:
         async with InfluxDBClientAsync.from_env_properties() as client:
             if await self._health() is False:
                 self.log("InfluxDB connection is not healthy", level="error")
@@ -108,9 +109,9 @@ class InfluxDB:
         self,
         predicate: str,
         value: str,
-        start: datetime = datetime.utcfromtimestamp(0),
-        stop: datetime = datetime.now(),
-        bucket: str = None,
+        start: datetime = datetime.fromtimestamp(0, timezone.utc),
+        stop: datetime = datetime.now(timezone.utc),
+        bucket: t.Optional[str] = None,
     ) -> bool:
         """
          Asynchronously delete data from the specified bucket in the InfluxDB database.
@@ -270,7 +271,8 @@ class InfluxDB:
         Returns:
             None
         """
-
+        if self.bucket is None:
+            raise ValueError("Missing bucket name, please provide one in db_params")
         self.log(f"Writing to db: {self.points}", level="debug")
         success = await self.write(self.bucket, self.points)
         if success:

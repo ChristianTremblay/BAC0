@@ -19,6 +19,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 # --- this application's modules ---
 from bacpypes3.basetypes import ServicesSupported
 from bacpypes3.errors import NoResponse
+from bacpypes3.primitivedata import PropertyIdentifier
 
 # from ...bokeh.BokehRenderer import BokehPlot
 from ...db.sql import SQLMixin
@@ -58,7 +59,7 @@ class DeviceProperties(object):
         self.history_size: Optional[int] = None
         self.save_resampling: str = "1s"
         self.clear_history_on_save: Optional[bool] = None
-        self.bacnet_properties: Dict = {}
+        self.bacnet_properties: Dict[PropertyIdentifier, Any] = {}
         self.auto_save: Optional[bool] = None
         self.fast_polling: bool = False
         self.vendor_id: int = 0
@@ -215,7 +216,7 @@ class Device(SQLMixin):
     def initialize_device_from_db(self) -> None:
         raise NotImplementedError()
 
-    def df(self, list_of_points: List[str], force_read: bool = True) -> pd.DataFrame:
+    def df(self, list_of_points: List[str], force_read: bool = True):
         """
         Build a pandas DataFrame from a list of points.  DataFrames are used to present and analyze data.
 
@@ -245,7 +246,7 @@ class Device(SQLMixin):
 
     def __getitem__(
         self, point_name: Union[str, List[str]]
-    ) -> Union[Point, pd.DataFrame]:
+    ) -> Point:
         """
         Get a point from its name.
         If a list is passed - a dataframe is returned.
@@ -478,7 +479,7 @@ class DeviceConnected(Device):
         else:
             await self.new_state(DeviceDisconnected)
 
-    async def connect(self, *, db=None):
+    async def connect(self, *args, db=None, **kwargs):
         """
         A connected device can be switched to 'database mode' where the device will
         not use the BACnet network but instead obtain its contents from a previously
@@ -729,7 +730,7 @@ class DeviceConnected(Device):
                 return trend
         raise ValueError(f"{name} doesn't exist in controller")
 
-    async def read_property(self, prop):
+    async def read_property(self, prop) -> Any:
         # if instance == -1:
         #    pass
         if isinstance(prop, tuple):
@@ -796,14 +797,14 @@ class DeviceConnected(Device):
         except Exception as e:
             raise Exception(f"Problem reading : {self.properties.name} | {e}")
 
-    def _bacnet_properties(self, update=False):
+    async def _bacnet_properties(self, update=False) -> Dict[PropertyIdentifier, Any]:
         if not self.properties.bacnet_properties or update:
-            self.update_bacnet_properties()
+            await self.update_bacnet_properties()
         return self.properties.bacnet_properties
 
     @property
-    def bacnet_properties(self):
-        return self._bacnet_properties(update=True)
+    async def bacnet_properties(self) -> Dict:
+        return await self._bacnet_properties(update=True)
 
     async def update_description(self, value):
         await self.properties.network.send_text_write_request(
@@ -870,7 +871,7 @@ class DeviceDisconnected(Device):
         # self.initialized = False
         await self.connect()
 
-    async def connect(self, *, db=None, network=None):
+    async def connect(self, *args, network=None, db=None, **kwargs):
         """
         Attempt to connect to device.  If unable, attempt to connect to a controller database
         (so the user can use previously saved data).
@@ -888,12 +889,6 @@ class DeviceDisconnected(Device):
 
         else:
             try:
-                await self.properties.network.read(
-                    "{} device {} objectName".format(
-                        self.properties.address, self.properties.device_id
-                    )
-                )
-
                 segmentation = await self.properties.network.read(
                     "{} device {} segmentationSupported".format(
                         self.properties.address, self.properties.device_id
@@ -1018,7 +1013,7 @@ class DeviceFromDB(DeviceConnected):
             # self.new_state(DeviceDisconnected)
             raise
 
-    async def connect(self, *, network=None, from_backup=None):
+    async def connect(self, *args, network=None, from_backup=None, **kwargs):
         """
         In DBState, a device can be reconnected to BACnet using:
             device.connect(network=bacnet) (bacnet = BAC0.connect())

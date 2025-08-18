@@ -1,7 +1,6 @@
 import asyncio
 
 import BAC0
-from BAC0.scripts.script_runner import run
 
 bacnet = None
 
@@ -12,7 +11,7 @@ async def main():
     print(BAC0.infos.__version__)
 
     async with BAC0.start(ip="127.0.0.1/24", deviceId=111) as bacnet:
-        async with BAC0.start(ip="127.0.0.1/24:47809", deviceId=222) as fakedevice:
+        async with BAC0.start(ip="127.0.0.1/24:47809", deviceId=222):
 
             await bacnet._discover(global_broadcast=True)
             lst = await bacnet._devices(_return_list=True)

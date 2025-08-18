@@ -15,6 +15,9 @@ import pickle
 
 # --- 3rd party modules ---
 import aiosqlite
+import sqlite3
+import functools
+import asyncio as _asyncio
 
 from ..core.io.IOExceptions import (
     DataError,
@@ -222,21 +225,48 @@ class SQLMixin(object):
         # DataFrames that will be saved to SQL
         async with aiosqlite.connect(f"{self.properties.db_name}.db") as con:
             try:
-                async with con.execute("SELECT * FROM history") as cursor:
-                    data = await cursor.fetchall()
-                    columns = [description[0] for description in cursor.description]
-                    data = pd.DataFrame(data, columns=columns)
-                    df = pd.concat([data, df_to_backup], sort=True)
-                    sql.to_sql(
-                        df_to_backup,
-                        name="history",
-                        con=con,
-                        index_label="index",
-                        index=True,
-                        if_exists="append",
+                # Read only the existing index values so we can append only new rows
+                async with con.execute('SELECT "index" FROM history') as cursor:
+                    rows = await cursor.fetchall()
+                    existing_index = {r[0] for r in rows}
+
+                # Filter df_to_backup to rows not already present in DB (by index)
+                if df_to_backup.empty:
+                    self._log.debug("No new rows to append to history DB")
+                    return
+
+                try:
+                    mask_new = ~df_to_backup.index.map(lambda x: x in existing_index)
+                except Exception:
+                    # Fallback to string comparison of index values
+                    mask_new = ~df_to_backup.index.map(lambda x: str(x) in existing_index)
+
+                df_to_append = df_to_backup.loc[mask_new]
+                if df_to_append.empty:
+                    self._log.debug("No new rows after deduplication, skipping append")
+                else:
+                    # pandas' DataFrame.to_sql is synchronous and expects a sqlite3/SQLAlchemy
+                    # connection. Run it in a thread to avoid blocking the event loop.
+                    def _sync_df_to_sql(df_local, db_name):
+                        conn = sqlite3.connect(f"{db_name}.db")
+                        try:
+                            df_local.to_sql(
+                                "history",
+                                con=conn,
+                                index_label="index",
+                                index=True,
+                                if_exists="append",
+                            )
+                        finally:
+                            conn.close()
+
+                    loop = _asyncio.get_running_loop()
+                    # run the append in the default ThreadPoolExecutor
+                    await loop.run_in_executor(
+                        None, functools.partial(_sync_df_to_sql, df_to_append, self.properties.db_name)
                     )
+
             except Exception:
-                # df = df_to_backup
                 self._log.error("Error saving to SQL database")
 
             # asyncio.run(
