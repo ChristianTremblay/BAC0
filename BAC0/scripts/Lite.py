@@ -370,23 +370,23 @@ class Lite(
         lst: t.List[t.Tuple[str, str, int, str, t.Set[int]]] = []
         if self.discoveredDevices is not None:
             for k, v in self.discoveredDevices.items():
-                devId = v["object_instance"]
+                object, instance = v["object_instance"]
                 device_address = v["address"]
                 network_number = v["network_number"]
                 try:
                     deviceName, vendorName = await self.readMultiple(
-                        f"{device_address} device {devId} objectName vendorName"
+                        f"{device_address} {object} {instance} objectName vendorName"
                     )
                 except (UnrecognizedService, ValueError):
                     self._log.warning(
-                        f"Unrecognized service for {devId} | {device_address}"
+                        f"Unrecognized service for {object} {instance} | {device_address}"
                     )
                     try:
                         deviceName = await self.read(
-                            f"{device_address} device {devId} objectName"
+                            f"{device_address} {object} {instance} objectName"
                         )
                         vendorName = await self.read(
-                            f"{device_address} device {devId} vendorName"
+                            f"{device_address} {object} {instance} vendorName"
                         )
                     except NoResponseFromController:
                         self.log(f"No response from {k}", level="warning")
@@ -394,7 +394,7 @@ class Lite(
                 except (NoResponseFromController, Timeout):
                     self.log(f"No response from {k}", level="warning")
                     continue
-                lst.append((str(deviceName), str(vendorName), devId, device_address, network_number))
+                lst.append((str(deviceName), str(vendorName), instance, device_address, network_number))
             if RICH:
                 console = Console()
                 table = Table(show_header=True, header_style="bold magenta")
