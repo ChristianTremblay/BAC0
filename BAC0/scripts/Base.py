@@ -331,7 +331,7 @@ class Base:
         return self._routers
 
     @classmethod
-    def extract_value_from_primitive_data(value):
+    def extract_value_from_primitive_data(cls, value):
         if isinstance(value, float):
             return float(value)
         # elif isinstance(value, Boolean):

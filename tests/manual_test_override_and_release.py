@@ -1,7 +1,6 @@
 import asyncio
 
 import BAC0
-from BAC0.scripts.script_runner import run
 
 bacnet = None
 

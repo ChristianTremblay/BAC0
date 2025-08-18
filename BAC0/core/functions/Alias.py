@@ -3,7 +3,6 @@ from typing import List, Optional, Tuple, Union
 
 from bacpypes3.app import Application
 from bacpypes3.netservice import RouterEntryStatus
-from bacpypes3.npdu import RejectMessageToNetwork
 from bacpypes3.pdu import Address, GlobalBroadcast
 
 from BAC0.core.app.asyncApp import BAC0Application

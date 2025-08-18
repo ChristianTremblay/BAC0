@@ -1,9 +1,8 @@
 import asyncio
 from typing import Tuple
 
-from bacpypes3.basetypes import BinaryPV, PropertyIdentifier
 from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import Boolean, CharacterString, ObjectIdentifier
+from bacpypes3.primitivedata import ObjectIdentifier
 
 from ...core.app.asyncApp import BAC0Application
 from ...scripts.Base import Base

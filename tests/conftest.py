@@ -6,7 +6,6 @@ Test Bacnet communication with another device
 """
 
 import asyncio
-import os
 
 import pytest
 
