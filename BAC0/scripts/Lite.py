@@ -25,6 +25,7 @@ from bacpypes3.primitivedata import ObjectIdentifier
 from BAC0.core.app.asyncApp import BAC0Application
 from BAC0.scripts.Base import Base
 
+
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
 from ..core.devices.Points import Point
 from ..core.devices.Trends import _TrendLog
@@ -64,9 +65,8 @@ from ..infos import __version__ as version
 from ..tasks.RecurringTask import RecurringTask
 from ..tasks.TaskManager import Task
 
-INFLUXDB, _ = influxdb_if_available()
-if INFLUXDB:
-    from ..db.influxdb import InfluxDB
+from ..db.influxdb import InfluxDB
+
 RICH, rich = rich_if_available()
 if RICH:
     from rich import pretty
@@ -75,6 +75,7 @@ if RICH:
 
     pretty.install()
 
+INFLUXDB = False
 
 # ------------------------------------------------------------------------------
 
@@ -185,6 +186,8 @@ class Lite(
         self.log(f"Device instance (id) : {self.Boid}", level="info")
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
+
+        INFLUXDB, _, _ = influxdb_if_available(db_params['version'])
 
         # Activate InfluxDB if params are available
         if db_params and INFLUXDB:
