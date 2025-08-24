@@ -143,18 +143,22 @@ As of the latest change, the v3 implementation writes all points into a single s
 Example query (v3, single table with a name provided in params)::
 
     SELECT time, name, value
-    FROM client_006s
+    FROM myTable
     WHERE name IN ('${Names:csv}') AND time > $__timeFrom and time < $__timeTo
+
+..Note
+    Here, Names would be a variable created in Grafana, see below. Dashes are critical to escape special characters.
 
 Compatibility note
 ------------------
 
 The older v2 behavior (one measurement per variable) is still supported for v2 instances. When migrating to v3, update dashboards and queries to use tag-based filtering against the single measurement.
 
-To get all Names
-------------------
+Grafana variable
+-----------------
+To get all Names in a Variable (so it can be used in a dashboard query):
 
-    SELECT DISTINCT name from client_006s
+    SELECT DISTINCT name from myTable
 
 Configuration note
 ^^^^^^^^^^^^^^^^^^^
