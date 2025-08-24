@@ -153,8 +153,9 @@ class InfluxDBCommon:
             if PointClass is None:
                 # fallback to a lightweight dict-like point if no Point class
                 _point = {
-                    "measurement": _id,
+                    "measurement": self.table if self.version == 3 else _id,
                     "tags": {
+                        "id": _id,
                         "object_name": _object_name,
                         "name": _name,
                         "description": _description,
@@ -167,8 +168,9 @@ class InfluxDBCommon:
                     "time": point.lastTimestamp.astimezone(pytz.UTC),
                 }
             else:
+                measurement = self.table if self.version == 3 else _id
                 _point = (
-                    PointClass(_id)
+                    PointClass(measurement)
                     .tag("object_name", _object_name)
                     .tag("name", _name)
                     .tag("description", _description)
@@ -176,10 +178,12 @@ class InfluxDBCommon:
                     .tag("object", _object)
                     .tag("device", _devicename)
                     .tag("device_id", _device_id)
-                    .field("value", _value)
+                    .field("value", float(_value))
                     .field("string_value", _string_value)
                     .time(point.lastTimestamp.astimezone(pytz.UTC))
                 )
+                if self.version == 3:
+                    _point.tag("id", _id)
             for each in point.tags:
                 _tag_id, _tag_value = each
                 # if using dict-like fallback, add tags there
@@ -238,6 +242,7 @@ class InfluxDBv3(InfluxDBCommon):
     tags_file = None
     bucket = None
     client: InfluxDBClient
+    table: str
 
     def __init__(self, params):
         for k, v in params.items():

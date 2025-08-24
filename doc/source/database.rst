@@ -135,6 +135,27 @@ Here's a small example showing how to acquire a client from environment and run 
         resp = client.query("SELECT * FROM 'Device_5221/analog-input:10056' WHERE time >= now() - interval '5 minutes'")
         print(resp)
 
+Table (Measurement) strategy (v2 vs v3)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As of the latest change, the v3 implementation writes all points into a single shared measurement (table) rather than creating one measurement per variable. This simplifies queries and is the recommended default for new deployments. Identification of variables is preserved using tags (for example `device_id`, `object`, `object_name`, `name`, etc.), so queries should filter by tags instead of by measurement name.
+
+Example query (v3, single table with a name provided in params)::
+
+    SELECT time, name, value
+    FROM client_006s
+    WHERE name IN ('${Names:csv}') AND time > $__timeFrom and time < $__timeTo
+
+Compatibility note
+------------------
+
+The older v2 behavior (one measurement per variable) is still supported for v2 instances. When migrating to v3, update dashboards and queries to use tag-based filtering against the single measurement.
+
+To get all Names
+------------------
+
+    SELECT DISTINCT name from client_006s
+
 Configuration note
 ^^^^^^^^^^^^^^^^^^^
 
