@@ -187,8 +187,7 @@ class Lite(
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
 
-        INFLUXDB, _, _ = influxdb_if_available(db_params['version'])
-
+        INFLUXDB = influxdb_if_available(db_params['version'])[0] if db_params is not None else False
         # Activate InfluxDB if params are available
         if db_params and INFLUXDB:
             try:
