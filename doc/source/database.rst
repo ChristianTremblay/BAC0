@@ -327,7 +327,7 @@ InfluxDB 3 does not include a built-in dashboard UI. Use Grafana to build dashbo
       
       SELECT time, value
       FROM my_measurement
-      WHERE zone = 'A'
+      WHERE device_id = '4221'
       ORDER BY time
 
   - Binary/multistate:
@@ -336,7 +336,23 @@ InfluxDB 3 does not include a built-in dashboard UI. Use Grafana to build dashbo
       
       SELECT time, string_value AS state
       FROM my_measurement
-      WHERE floor = '2'
+      WHERE object_name = 'ZN-T'
       ORDER BY time
 
 Tip: Expose tags (e.g., ``zone``, ``floor``) as Grafana template variables to filter panels.
+
+Default tags and fields written by BAC0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When BAC0 writes points it attaches a set of default tags and fields that are useful for filtering and dashboarding. The typical chain (using the client Point API) looks like:
+
+    - object_name
+    - name
+    - description
+    - units_state
+    - object
+    - device
+    - device_id
+
+
+Use these tags in your Grafana/SQL queries to filter and group results (for v3 the single-measurement design relies on tags to target subsets of data).
