@@ -33,8 +33,8 @@ async def test_pattern(network_and_devices, req):
     objId = match.group("objId")
     prop_id = match.group("propId")
     value = match.group("value")
-    indx = match.group("indx")
-    priority = match.group("priority")
+    indx = match.group("indx") #noqa F841
+    priority = match.group("priority") #noqa F841
     assert address is not None, "Address not found"
     assert objId is not None, "Object ID not found"
     assert prop_id is not None, "Property ID not found"
