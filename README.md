@@ -1,6 +1,6 @@
 # BAC0
 
-[![Build status](https://img.shields.io/github/actions/workflow/status/ChristianTremblay/BAC0/build-and-test.yml?branch=main&label=build&style=flat-square)](https://github.com/ChristianTremblay/BAC0/actions)
+[![Build status](https://img.shields.io/github/actions/workflow/status/ChristianTremblay/BAC0/.github/workflows/test.yml?branch=main&label=build&style=flat-square)](https://github.com/ChristianTremblay/BAC0/actions)
 [![Coverage](https://coveralls.io/repos/github/ChristianTremblay/BAC0/badge.svg?branch=main)](https://coveralls.io/github/ChristianTremblay/BAC0?branch=main)
 [![Documentation Status](https://readthedocs.org/projects/bac0/badge/?version=stable)](https://bac0.readthedocs.io/en/stable/)
 [![Gitter](https://badges.gitter.im/ChristianTremblay/BAC0.svg)](https://gitter.im/ChristianTremblay/BAC0)
