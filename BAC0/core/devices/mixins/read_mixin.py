@@ -465,7 +465,6 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
 
                 for request in batch_requests(big_request, points_per_request):
                     try:
-                        self.properties.address
                         request = f"{self.properties.address} {''.join(request)}"
                         self.log(f"RPM_Request: {request} ", level="debug")
                         try:

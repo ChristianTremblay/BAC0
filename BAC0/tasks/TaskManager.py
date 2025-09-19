@@ -9,9 +9,11 @@ TaskManager.py - creation of threads used for repetitive tasks.
 
 A key building block for point simulation.
 """
+
 import asyncio
 import time
 from random import random
+import typing as t
 
 # --- 3rd party modules ---
 # --- this application's modules ---
@@ -25,53 +27,83 @@ async def stopAllTasks():
     for each in Task.tasks:
         each.aio_task.cancel()
     Task._log.info("Ok all tasks stopped")
-    Task.clean_tasklist(all=True)
+    await Task.clean_tasklist(all=True)
     return True
 
 
 @note_and_log
 class Task(object):
     tasks = []
-    high_latency = 60
+    # high_latency = 60 -> delay * 2
 
     @classmethod
-    def clean_tasklist(cls, all=False):
-        if all is True:
-            cls._log.debug("Cleaning tasks list")
+    async def clean_tasklist(cls, all: bool = False) -> None:
+        """
+        Async-clean the task list. If all=True, cancel and await all running tasks,
+        otherwise remove finished tasks only.
+        """
+        if all:
+            cls._log.debug("Cleaning tasks list (cancel & await all)")
+            # capture current tasks snapshot to avoid mid-iteration mutation
+            running = [
+                t for t in list(cls.tasks) if getattr(t, "aio_task", None) is not None
+            ]
+            # cancel all running aio tasks
+            for t in running:
+                try:
+                    t.aio_task.cancel()
+                except Exception:
+                    pass
+            # await completion (collect exceptions, including CancelledError)
+            if running:
+                await asyncio.gather(
+                    *(t.aio_task for t in running), return_exceptions=True
+                )
             cls.tasks = []
         else:
-            for each in cls.tasks:
-                if each.done:
+            # keep only tasks that are not done
+            remaining = []
+            for each in list(cls.tasks):
+                if getattr(each, "done", False):
                     cls._log.debug(f"Removing task {each.name}")
-                    cls.tasks.remove(each)
+                else:
+                    remaining.append(each)
+            cls.tasks = remaining
 
     @classmethod
     def number_of_tasks(cls):
         return len(cls.tasks)
 
-    def __init__(self, fn=None, name=None, delay=0):
+    def __init__(
+        self,
+        fn: t.Any = None,
+        name: t.Optional[str] = None,
+        delay: float = 0,
+        minimum_delay: float = 5,
+    ):
         # delay = 0 -> one shot
-        self.id = id(self)
-        self.name = name if name is not None else f"Task_{self.id}"
+        self.id: int = id(self)
+        self.args: t.Any = None
+        self.name: str = name if name is not None else f"Task_{self.id}"
         if isinstance(fn, tuple):
             self.fn, self.args = fn
         else:
             self.fn = fn
-
+        minimum_delay = minimum_delay + 0.1 if minimum_delay == 0 else minimum_delay
         if delay > 0:
-            self.delay = delay if delay >= 5 else 5
+            self.delay = delay if delay >= minimum_delay else minimum_delay
         else:
             self.delay = 0
-        self.previous_execution = None
-        self.average_execution_delay = 0
-        self.average_latency = 0
-        self.next_execution = time.time() + delay + (random() * 10)
-        self.execution_time = 0.0
-        self.count = 0
+        self.previous_execution: t.Optional[float] = None
+        self.average_execution_delay: float = 0
+        self.average_latency: float = 0
+        self.next_execution: float = time.time() + delay + (random() / 10)
+        self.execution_time: float = 0.0
+        self.count: int = 0
 
-        self._kwargs = None
-        self._task = None
-        self.aio_task = None
+        self._kwargs: t.Optional[t.Dict[str, t.Any]] = None
+        self._task: t.Optional[asyncio.Task] = None
+        self.aio_task: t.Optional[asyncio.Task] = None
 
     async def task(self):
         raise NotImplementedError("Must be implemented")
@@ -83,7 +115,7 @@ class Task(object):
             )
             while True:
                 self.count += 1
-                _start_time = time.time()
+                _start_time: float = time.time()
                 self.log(
                     f"Executing : {self.name} | Count : {self.count}", level="debug"
                 )
@@ -99,15 +131,15 @@ class Task(object):
                     self.average_latency + (_start_time - self.next_execution)
                 ) / 2
                 try:
-                    if self.fn and self.args is not None:
-                        await self.fn(self.args)
-                    elif self.fn:
-                        await self.fn()
+                    # if self.fn and self.args is not None:
+                    #    await self.fn(self.args)
+                    # elif self.fn:
+                    #    await self.fn()
+                    # else:
+                    if self._kwargs is not None:
+                        await self.task(**self._kwargs)
                     else:
-                        if self._kwargs is not None:
-                            await self.task(**self._kwargs)
-                        else:
-                            await self.task()
+                        await self.task()
                 except Exception as error:
                     self.log(
                         f"An exception occured while running the task {self.name} (id:{self.id}) : {error}",
@@ -122,7 +154,7 @@ class Task(object):
                     self.average_execution_delay = self.delay
 
                 # self.log('Stat for task {}'.format(self), level='info')
-                if self.average_latency > Task.high_latency:
+                if self.average_latency > (self.delay * 2):
                     self.log(f"High latency for {self.name}", level="warning")
                     self.log(f"Stats : {self}", level="warning")
 
@@ -130,7 +162,7 @@ class Task(object):
                 self.log(f"Execution Time : {self.execution_time}", level="debug")
                 self.previous_execution = _start_time
                 self.next_execution = time.time() + self.delay
-                await asyncio.sleep(self.delay)
+                await asyncio.sleep(self.delay - (random() / 10))
         else:  # one shot
             self.log(f"Running one shot task {self.name} (id:{self.id})", level="info")
             if self.fn and self.args is not None:

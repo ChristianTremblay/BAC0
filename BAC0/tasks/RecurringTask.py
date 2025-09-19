@@ -7,6 +7,7 @@
 """
 RecurringTask.py - execute a recurring task
 """
+
 import asyncio
 import functools
 import inspect
@@ -25,8 +26,9 @@ class RecurringTask(Task):
     def __init__(
         self,
         fnc: Union[Tuple[Callable, Any], Callable, Coroutine],
-        delay: int = 60,
+        delay: Union[int, float] = 60,
         name: str = "recurring",
+        minimum_delay: Union[int, float] = 5,
     ) -> None:
         """
         :param fnc: a function or a tuple (function, args)
@@ -44,7 +46,7 @@ class RecurringTask(Task):
             raise ValueError(
                 "You must pass a function or a tuple (function,args) to this..."
             )
-        Task.__init__(self, name=name, delay=delay)
+        Task.__init__(self, name=name, delay=delay, minimum_delay=minimum_delay)
 
     async def task(self) -> None:
         # Prefer awaiting async callables; offload sync callables with to_thread.
@@ -77,4 +79,3 @@ class RecurringTask(Task):
                 except (RuntimeError, AttributeError):
                     loop = asyncio.get_running_loop()
                     await loop.run_in_executor(None, self.func)
-        await asyncio.sleep(self.delay)

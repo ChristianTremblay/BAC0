@@ -22,6 +22,7 @@ Read.py - creation of ReadProperty and ReadPropertyMultiple requests
 
 import asyncio
 import re
+import logging
 
 # --- standard Python modules ---
 import typing as t
@@ -87,6 +88,15 @@ class ReadProperty:
     Data exchange is made via a Queue object
     A timeout of 10 seconds allows detection of invalid device or communciation errors.
     """
+    # Attributes provided by the application that mixes this class in.
+    # These are declared so static type checkers understand the mixin's
+    # dependency on the hosting application instance.
+    _started: bool
+    this_application: BAC0Application
+    # Logging and helper methods provided by the host application
+    log: t.Callable[..., None]
+    log_title: t.Callable[..., None]
+    _log: logging.Logger
 
     async def read(
         self,
@@ -96,7 +106,7 @@ class ReadProperty:
         bacoid=None,
         timeout: int = 10,
         show_property_name: bool = False,
-    ) -> t.Union[ReadValue, t.Tuple[ReadValue, str], None]:
+    ) -> t.Any:
         """
         Build a ReadProperty request, wait for the answer and return the value
 
@@ -164,7 +174,6 @@ class ReadProperty:
 
         except ErrorRejectAbortNack as err:
             response = err
-
             if "unknown-property" in str(err.reason):
                 if "description" in args:
                     self._log.warning(
@@ -228,7 +237,7 @@ class ReadProperty:
         timeout: int = 10,
         show_property_name: bool = False,
         from_regex=False,
-    ) -> t.Union[t.Dict, t.List[t.Tuple[t.Any, str]]]:
+    ) -> t.Union[t.Dict, t.List]:
         """Build a ReadPropertyMultiple request, wait for the answer and return the values
 
         :param args: String with <addr> ( <type> <inst> ( <prop> [ <indx> ] )... )...
@@ -277,8 +286,8 @@ class ReadProperty:
             )
             self.log(f"Device Info Cache : {dic}", level="debug")
 
-        values = []
-        dict_values = {}
+        values: t.List = []
+        dict_values: t.Dict[str, t.List[t.Tuple[str, t.Any]]] = {}
 
         self.log(f"Parameter list : {parameter_list}", level="debug")
 
@@ -299,7 +308,7 @@ class ReadProperty:
                 self.log(f"Unknown object {args}", level="warning")
                 raise UnknownObjectError(f"Unknown object {args}")
             if "unknown-property" in str(err.reason):
-                values.append("")  # type: ignore[arg-type]
+                values.append(())  # type: ignore[arg-type]
                 return values
             if "no-response" in str(err.reason):
                 # values.append("")  # type: ignore[arg-type]
@@ -335,15 +344,14 @@ class ReadProperty:
                 if str(object_identifier) not in dict_values:
                     dict_values[str(object_identifier)] = []
                 if show_property_name:
-                    values.append((property_value, property_identifier))
+                    values.append((str(property_value), int(property_identifier)))
                     dict_values[str(object_identifier)].append(
-                        (property_identifier, (property_value, property_identifier))
+                        (str(property_identifier), (property_value, property_identifier))
                     )
                 else:
                     values.append(property_value)
                     dict_values[str(object_identifier)].append(
-                        (property_identifier, property_value)
-                    )
+                            (property_identifier, property_value))
 
             if request_dict is not None:
                 return dict_values
@@ -355,7 +363,6 @@ class ReadProperty:
     def build_rp_request(
         self, args: t.List[str], arr_index=None, vendor_id: int = 0, bacoid=None
     ) -> t.Tuple:
-        vendor = get_vendor_info(vendor_id)
         try:
             addr, obj_type_str, obj_inst_str, prop_id_str = args[:4]
             object_identifier = ObjectIdentifier((obj_type_str, int(obj_inst_str)))
@@ -367,14 +374,15 @@ class ReadProperty:
 
         # TODO : This part needs work to find proprietary objects
         # obj_type = self.__get_obj_type(obj_type_str, vendor_id)
-
+        prop_id: t.Union[int, str]
         if prop_id_str.isdigit():
             prop_id = int(prop_id_str)
-        elif "@prop_" in prop_id_str or "@idx" in prop_id_str:
+        elif "@prop_" in prop_id_str or "@idx:" in prop_id_str:
             if "@idx" in prop_id_str:
-                prop_id, arr_index = prop_id_str.split("@idx:")
-            if "@prop_" in prop_id_str:
-                prop_id = int(prop_id_str.split("_")[1])
+                prop_id, arr_index_str = prop_id_str.split("@idx:")
+                arr_index = int(arr_index_str)
+            else:
+                prop_id = prop_id_str.split("@prop_")[1]
         else:
             prop_id = prop_id_str  # type: ignore
         prop_id = PropertyIdentifier(prop_id)
@@ -409,19 +417,29 @@ class ReadProperty:
 
         parameter_list = []
         while args:
+
             # get the object identifier and using the vendor information, look
             # up the class
-            obj_id = args.pop(0)
-            if obj_id.isdigit():
-                obj_id = int(obj_id)
-            elif "@obj_" in obj_id:
-                obj_id = int(obj_id.split("@obj_")[1])
-            if ":" not in str(obj_id):
+            
+            obj_id_arg: t.Union[int, str] = args.pop(0)
+            obj_id: t.Union[int, str]
+            obj_instance: t.Union[int, str]
+            if obj_id_arg.isdigit():
+                obj_id = int(obj_id_arg)
+            elif "@obj_" in str(obj_id_arg):
+                obj_id = int(obj_id_arg.split("@obj_")[1])
+            else:
+                obj_id = obj_id_arg
+            if ":" not in str(obj_id_arg):
                 obj_instance = args.pop(0)
             else:
-                obj_instance = obj_id.split(":")[1]
-                obj_id = obj_id.split(":")[0]
-            object_identifier = vendor_info.object_identifier((obj_id, obj_instance))
+                obj_id = obj_id_arg.split(":")[0]
+                obj_instance = int(obj_id_arg.split(":")[1])
+            try:
+                object_identifier = vendor_info.object_identifier((obj_id, obj_instance))
+            except UnboundLocalError:
+                self._log.error(obj_id_arg)
+                raise
             object_class = vendor_info.get_object_class(object_identifier[0])
             if not object_class:
                 await self.response(f"unrecognized object type: {object_identifier}")
@@ -432,11 +450,11 @@ class ReadProperty:
                 # now get the property type from the class
                 if "@obj_" in args[0]:
                     break
-                elif "@prop_" in args[0] or "@idx" in args[0]:
-                    if "@idx" in args[0]:
+                elif "@prop_" in args[0] or "@idx_" in args[0]:
+                    if "@idx_" in args[0]:
                         prop_id, arr_index = args.pop(0).split("@idx_")
                     else:
-                        prop_id = int(args.pop(0).split("prop_")[1])
+                        prop_id = args.pop(0).split("@prop_")[1]
                 else:
                     prop_id = args.pop(0)
                 try:
@@ -515,11 +533,8 @@ class ReadProperty:
 
         """
 
-        vendor_id = vendor_id
         address = Address(request_dict["address"])
         objects = request_dict["objects"]
-        if "vendor_id" in request_dict.keys():
-            vendor_id = int(request_dict["vendor_id"])
 
         _this_application: BAC0Application = self.this_application
         _app: Application = _this_application.app
@@ -552,7 +567,7 @@ class ReadProperty:
                 property_identifier = vendor_info.property_identifier(prop_id)
 
                 if arr_index:
-                    properties_list.append(property_identifier, arr_index)
+                    properties_list.append((property_identifier, arr_index))
                 else:
                     properties_list.append(property_identifier)
             parameter_list.append(object_identifier)

@@ -190,8 +190,8 @@ def note_and_log(cls):
 
     # Console Handler
     if RICH:
-        ch = RichHandler()
-        ch2 = RichHandler()
+        ch: logging.Handler = RichHandler()
+        ch2: logging.Handler = RichHandler()
     else:
         ch = logging.StreamHandler(sys.stderr)
         ch2 = logging.StreamHandler(sys.stdout)

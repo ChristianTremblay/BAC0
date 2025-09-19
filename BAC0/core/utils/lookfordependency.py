@@ -1,6 +1,5 @@
 import importlib.util
-from types import ModuleType
-from typing import Type
+from typing import Type, Callable, Any
 
 
 # Function to dynamically import a module
@@ -38,25 +37,41 @@ def rich_if_available():
     return (_RICH, rich)
 
 
-def influxdb_if_available():
-    if not check_dependencies(["influxdb_client"]):
-        _INFLUXDB = False
-        return (_INFLUXDB, FakeInflux)
-    try:
-        influxdb_spec = importlib.util.find_spec("influxdb_client")
-        if influxdb_spec is not None:
-            influxdb_client = import_module("influxdb_client")
-            _INFLUXDB = True
-        else:
+def influxdb_if_available(version:int = 2) -> tuple[bool, int, Any]:
+    if version == 2:
+        if not check_dependencies(["influxdb_client"]):
             _INFLUXDB = False
-    except ImportError:
-        _INFLUXDB = False
-        influxdb_client = False
-    return (_INFLUXDB, influxdb_client)
+            return (_INFLUXDB, 2, FakeInflux)
+        try:
+            influxdb_spec = importlib.util.find_spec("influxdb_client")
+            if influxdb_spec is not None:
+                influxdb_client = import_module("influxdb_client")
+                _INFLUXDB = True
+            else:
+                _INFLUXDB = False
+        except ImportError:
+            _INFLUXDB = False
+            influxdb_client = False
+        return (_INFLUXDB, 2, influxdb_client)
+    elif version == 3:
+        if not check_dependencies(["influxdb_client_3"]):
+            _INFLUXDB = False
+            return (_INFLUXDB, 3, FakeInflux)
+        try:
+            influxdb_spec = importlib.util.find_spec("influxdb_client_3")
+            if influxdb_spec is not None:
+                influxdb_client = import_module("influxdb_client_3.InfluxDBClient3")
+                _INFLUXDB = True
+            else:
+                _INFLUXDB = False
+        except ImportError:
+            _INFLUXDB = False
+            influxdb_client = False
+        return (_INFLUXDB, 3, influxdb_client)
+    return (False, 0, False)
 
 
-def pandas_if_available() -> tuple[bool, Type, ModuleType, ModuleType]:
-    global _PANDAS
+def pandas_if_available() -> tuple[bool, Type, Callable, Callable]:
     if not check_dependencies(["pandas"]):
         _PANDAS = False
         return (_PANDAS, FakePandas, FakePandas.sql, FakePandas.Timestamp)

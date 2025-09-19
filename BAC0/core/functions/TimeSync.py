@@ -10,6 +10,7 @@ TimeSync.py - creation of time synch requests
 """
 
 import datetime as dt
+import typing as t
 from datetime import datetime
 
 # --- standard Python modules ---
@@ -55,7 +56,7 @@ class TimeSync:
     """
 
     def time_sync(
-        self, destination: str = None, datetime: DateTime = None, UTC: bool = False
+        self, destination: t.Optional[str] = None, datetime: t.Optional[DateTime] = None, UTC: bool = False
     ) -> None:
         """
         Take local time and send it to devices. User can also provide
@@ -148,7 +149,7 @@ class TimeHandler(object):
     def local_time(self):
         return self.now.time()
 
-    def local_date(self) -> datetime.date:
+    def local_date(self) -> dt.date:
         return self.now.date()
 
     def utcOffset(self) -> float:

@@ -21,8 +21,10 @@ Even if another database is configured, the local SQLite file will be used.
 
 InfluxDB
 --------------------
-Work is done using InfluxDB v2.0 OSS. 
-My setup is a RaspberryPi 4 running Ubuntu Server 64-bit
+BAC0 supports InfluxDB v2.0 OSS and InfluxDB v3.0. 
+Example setup could be a RaspberryPi 4 running Ubuntu Server 64-bit
+Or a Docker container running on any machine.
+
 
 InfluxDB is installed on the RPi using default options.
 BAC0 will point to a Bucket (ex. named BAC0) using a token created 
@@ -32,8 +34,7 @@ To create the dashboard, I use [Grafana](https://grafana.com/oss/)
 which is also installed on the same RaspberryPi. (ex. http://ip_of_rpi:3000)
 
 .. note:: 
-    The python client used works also for InfluxDB v1.8+. Connecting to this version
-    is supported and you must pass a username and a password in db_params
+    The python client used works also for InfluxDB v1.8+. You must pass a username and a password in db_params. That said, I will not support versions below 2
 
 .. _database_influxdb_connection:
 
@@ -43,25 +44,43 @@ For BAC0 to connect to the InfluxDB server, it needs to know where to send the d
 This information can be given by using a dict ::
 
     _params = {"name": "InfluxDB",
+               "version": 2, # set to 2 or 3 depending on your InfluxDB server
                "url" : "http://ip_of_rpi",
                "port" : 8086,
                "token" : "token_created in influxDB web interface",
                "org" : "the organization you created",
-               "bucket" : "BAC0"
-               # (V1.8) "user" : " ",
-               # (v1.8) "password" : "",
-               }
+               "bucket" : "BAC0",
+                }
+
+    .. note::
+        For InfluxDB v3 instances the field name `bucket` has been replaced by `database`.
+        If you are using version 3, provide the database name using::
+
+            _params = {"name": "InfluxDB",
+                       "database": "BAC0",
+                       "version": 3,
+                       # other connection keys (url/token/org) ...
+                      }
 
 Then you pass this information when you instantiate `bacnet`
 
-    bacnet = BAC0.lite(db_params=_params)
+    bacnet = BAC0.start(db_params=_params)
 
 The information can also be provided as environment variables. In that
-case, you must still provide name and bucket ::
+case, you must still provide name and bucket (or database) ::
 
     _params = {"name": "InfluxDB",
-               "bucket" : "BAC0"
+               "version": 3,
+               "database" : "BAC0"
                }
+
+Note
+::::
+    It is required to include the database client version in your `db_params` using the `version` key. Use
+
+    ``"version": 2``  or  ``"version": 3``
+
+    to select the client implementation. If omitted some code paths may default to v2, so prefer setting it explicitly.
 
 To use environment variables, BAC0 will count on python-dotenv to 
 load a .env file in the folder when BAC0 is used.
@@ -78,6 +97,78 @@ The .env file must contain ::
     # INFLUXDB_V2_CONNECTION_POOL_MAXSIZE= 
     # INFLUXDB_V2_AUTH_BASIC=
     # INFLUXDB_V2_PROFILERS=
+
+Additional InfluxDB v3 notes
+----------------------------
+When creating the database helper via `db_params` ensure you set ``"version": 3`` in the params dict so the v3 client implementation will be used.
+
+
+Support for InfluxDB v3 core is available (optional dependency). When using v3 you can provide connection
+information via environment variables (the project ships an example `.env~`):
+
+    INFLUX_HOST=192.168.1.10:8181
+    INFLUX_ORG=my-org
+    INFLUX_DATABASE=my_database
+    INFLUX_TOKEN=123456789abcdefg
+
+On Windows: gRPC DNS resolver
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+InfluxDB v3 uses gRPC for some operations. On Windows, the gRPC DNS resolver may fail in some environments. Set:
+
+    GRPC_DNS_RESOLVER=native
+
+in your environment (for example in your `.env` file) to force gRPC to use the platform native resolver and avoid DNS errors when querying.
+
+Example usage (InfluxDB v3)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here's a small example showing how to acquire a client from environment and run a query. Adjust the query to your schema and client library semantics:
+
+.. code-block:: python
+
+    dbc = bacnet.database.InfluxDBClient
+    with dbc.from_env() as client:
+        # health helper returns True/False depending on client availability
+        print(await bacnet.database._health())
+        print(client.get_server_version())
+        resp = client.query("SELECT * FROM 'Device_5221/analog-input:10056' WHERE time >= now() - interval '5 minutes'")
+        print(resp)
+
+Table (Measurement) strategy (v2 vs v3)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As of the latest change, the v3 implementation writes all points into a single shared measurement (table) rather than creating one measurement per variable. This simplifies queries and is the recommended default for new deployments. Identification of variables is preserved using tags (for example `device_id`, `object`, `object_name`, `name`, etc.), so queries should filter by tags instead of by measurement name.
+
+Example query (v3, single table with a name provided in params)::
+
+    SELECT time, name, value
+    FROM myTable
+    WHERE name IN ('${Names:csv}') AND time > $__timeFrom and time < $__timeTo
+
+..Note
+    Here, Names would be a variable created in Grafana, see below. Dashes are critical to escape special characters.
+
+Compatibility note
+------------------
+
+The older v2 behavior (one measurement per variable) is still supported for v2 instances. When migrating to v3, update dashboards and queries to use tag-based filtering against the single measurement.
+
+Grafana variable
+-----------------
+To get all Names in a Variable (so it can be used in a dashboard query):
+
+    SELECT DISTINCT name from myTable
+
+Configuration note
+^^^^^^^^^^^^^^^^^^^
+
+If you provide both a host which already includes a port (for example `192.168.1.10:8181`) and a separate `port` configuration, the constructed URI can end up with two ports (for example `grpc+tcp://docker.servisys.com:8181:443`) producing a syntax error. Prefer one of the following:
+
+- Pass a full URL/host including port and do not set a separate `port` field.
+- Or pass host and a numeric `port` separately (host without a trailing `:port`).
+
+If you prefer, a small normalization helper can be added to the code to automatically sanitize host+port combinations before creating the client.
 
 .. note:: 
     The name parameters in db_params would be use if any other implementation is made for another product.
@@ -186,8 +277,8 @@ aggregation functions using the numerical value (standard value), but it is
 also possible to make database request on the string_value field and get 
 a more readable result (ex. Occupied instead of 0)
 
-Viewing data and dashboards
----------------------------
+Viewing data and dashboards (Version 2)
+----------------------------------------
 You can explore data and build dashboards directly in the InfluxDB UI or in Grafana.
 
 InfluxDB UI (Data Explorer)
@@ -220,3 +311,48 @@ Tips
 - Use point tags (e.g., zone, floor) to simplify filtering in dashboards.
 - For binary/multistate displays, plot ``string_value`` or map numeric ``value``.
 
+Viewing data and dashboards (Version 3)
+----------------------------------------
+InfluxDB3 do not provide a web dashboard tool anymore.
+InfluxDB 3 does not include a built-in dashboard UI. Use Grafana to build dashboards.
+
+- Install Grafana (Docker or package).
+- Add a data source for “InfluxDB v3 / Flight SQL.” If not listed, install the official InfluxDB v3/Flight SQL Grafana plugin.
+- Configure the data source with your InfluxDB 3 host, TLS settings, database name, and token.
+- Build panels using SQL queries. Example patterns:
+  
+  - Numeric trend:
+  
+    ::
+      
+      SELECT time, value
+      FROM my_measurement
+      WHERE device_id = '4221'
+      ORDER BY time
+
+  - Binary/multistate:
+  
+    ::
+      
+      SELECT time, string_value AS state
+      FROM my_measurement
+      WHERE object_name = 'ZN-T'
+      ORDER BY time
+
+Tip: Expose tags (e.g., ``zone``, ``floor``) as Grafana template variables to filter panels.
+
+Default tags and fields written by BAC0
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When BAC0 writes points it attaches a set of default tags and fields that are useful for filtering and dashboarding. The typical chain (using the client Point API) looks like:
+
+    - object_name
+    - name
+    - description
+    - units_state
+    - object
+    - device
+    - device_id
+
+
+Use these tags in your Grafana/SQL queries to filter and group results (for v3 the single-measurement design relies on tags to target subsets of data).

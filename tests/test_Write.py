@@ -15,7 +15,7 @@ async def test_WriteAV(network_and_devices):
     async for resources in network_and_devices:
         loop, bacnet, device_app, device30_app, test_device, test_device_30 = resources
         # Write to an object and validate new value is correct
-        old_value = await test_device["AV"].value
+        old_value = await test_device["AV"].value #noqa F841
         test_device["AV"] = 11.2
         await asyncio.sleep(1.5)  # or cache will play a trick on you
         new_value = await test_device["AV"].value
@@ -28,7 +28,7 @@ async def test_RelinquishDefault(network_and_devices):
         loop, bacnet, device_app, device30_app, test_device, test_device_30 = resources
         test_device = test_device
         # Write to an object and validate new value is correct
-        old_value = await test_device["AV"].value
+        old_value = await test_device["AV"].value #noqa F841
         test_device["AV"].default(90)
         # time.sleep(1)
         new_value = await test_device["AV"].value
@@ -56,7 +56,7 @@ async def test_SimulateAI(network_and_devices):
         loop, bacnet, device_app, device30_app, test_device, test_device_30 = resources
         test_device["AI"] = 1
         # time.sleep(1)
-        new_value = test_device["AI"].value
+        new_value = test_device["AI"].value #noqa F841
         assert test_device.read_property(("analogInput", 0, "outOfService"))
         # something is missing so pv can be written to if outOfService == True
         # assert new_value == 1

@@ -19,7 +19,7 @@ from bacpypes3.json.util import sequence_to_json
 from bacpypes3.local.device import DeviceObject
 from bacpypes3.local.networkport import NetworkPortObject
 from bacpypes3.pdu import Address
-from bacpypes3.primitivedata import CharacterString
+from bacpypes3.primitivedata import CharacterString, ObjectIdentifier
 from bacpypes3.vendor import VendorInfo, get_vendor_info
 
 # --- this application's modules ---
@@ -59,6 +59,12 @@ class LocalObjects(object):
 def charstring(val):
     return CharacterString(val) if isinstance(val, str) else val
 
+class DiscoveredDevice(t.TypedDict):
+    object_instance: ObjectIdentifier
+    address: Address
+    network_number: t.Set[int]
+    vendor_id: int
+    vendor_name: str
 
 @note_and_log
 class Base:
@@ -81,23 +87,23 @@ class Base:
     def __init__(
         self,
         localIPAddr: Address = Address("127.0.0.1/24"),
-        networkNumber: int = None,
+        networkNumber: t.Optional[int] = None,
         localObjName: str = "BAC0",
-        deviceId: int = None,
+        deviceId: t.Optional[int] = None,
         firmwareRevision: str = "".join(sys.version.split("|")[:2]),
         maxAPDULengthAccepted: str = "1024",
         maxSegmentsAccepted: str = "1024",
         segmentationSupported: str = "segmentedBoth",
-        bbmdAddress: str = None,
-        bbmdTTL: int = 0,
-        bdtable: list = None,
+        bbmdAddress: t.Optional[str] = None,
+        bbmdTTL: t.Optional[int] = 0,
+        bdtable: t.Optional[list] = None,
         modelName: str = "BAC0 Scripting Tool",
         vendorId: int = 842,
         vendorName: str = "SERVISYS inc.",
         description: str = "http://christiantremblay.github.io/BAC0/",
         location: str = "Bromont, Québec",
         timezone: str = "America/Montreal",
-        json_file: str = None,
+        json_file: t.Optional[str] = None,
     ):
         self.log("Configurating app", level="debug")
 
@@ -152,7 +158,7 @@ class Base:
         self.description = charstring(description)
         self.location = charstring(location)
 
-        self.discoveredDevices: t.Optional[t.Dict[t.Tuple[str, int], int]] = None
+        self.discoveredDevices: t.Optional[t.Dict[str, DiscoveredDevice]] = None
         self.systemStatus = DeviceStatus(1)
 
         self.bbmdAddress = bbmdAddress
@@ -162,7 +168,8 @@ class Base:
         self.firmwareRevision = firmwareRevision
         self._ric = {}
         self.subscription_contexts = {}
-        self.database = None
+        # Cannot reference db.InfluxDB directly since it's an optional import
+        self.database: t.Optional[t.Any] = None
         self.json_file = json_file
 
         try:
@@ -243,6 +250,8 @@ class Base:
                 self._log.info(
                     f"Registering as a foreign device to host {self.bbmdAddress} for {self.bbmdTTL} seconds"
                 )
+                if self.bbmdAddress is None or self.bbmdTTL is None:
+                    raise ValueError("Missing bbmdAddress and/or bbmdTTL")
                 self.this_application.register_as_foreign_device_to(
                     host=self.bbmdAddress, lifetime=self.bbmdTTL
                 )
@@ -331,7 +340,7 @@ class Base:
         return self._routers
 
     @classmethod
-    def extract_value_from_primitive_data(value):
+    def extract_value_from_primitive_data(cls, value):
         if isinstance(value, float):
             return float(value)
         # elif isinstance(value, Boolean):

@@ -15,6 +15,7 @@
 
 import os
 import sys
+from BAC0 import infos as infos
 
 # Magic: allowing sphinx to find the 'current source' vs the installed BAC0 library.
 PACKAGE_PARENT = "../.."
@@ -24,7 +25,6 @@ SCRIPT_DIR = os.path.dirname(
 # Put local project root at the beginning of sys.path so autodoc uses local sources
 sys.path.insert(0, os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
-from BAC0 import infos as infos
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the

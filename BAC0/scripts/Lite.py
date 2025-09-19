@@ -25,9 +25,10 @@ from bacpypes3.primitivedata import ObjectIdentifier
 from BAC0.core.app.asyncApp import BAC0Application
 from BAC0.scripts.Base import Base
 
+
 from ..core.devices.Device import RPDeviceConnected, RPMDeviceConnected
 from ..core.devices.Points import Point
-from ..core.devices.Trends import TrendLog
+from ..core.devices.Trends import _TrendLog
 from ..core.devices.Virtuals import VirtualPoint
 from ..core.functions.Alias import Alias
 from ..core.functions.CoV import COVSubscription
@@ -64,9 +65,8 @@ from ..infos import __version__ as version
 from ..tasks.RecurringTask import RecurringTask
 from ..tasks.TaskManager import Task
 
-INFLUXDB, _ = influxdb_if_available()
-if INFLUXDB:
-    from ..db.influxdb import InfluxDB
+from ..db.influxdb import InfluxDB
+
 RICH, rich = rich_if_available()
 if RICH:
     from rich import pretty
@@ -75,6 +75,7 @@ if RICH:
 
     pretty.install()
 
+INFLUXDB = False
 
 # ------------------------------------------------------------------------------
 
@@ -186,6 +187,7 @@ class Lite(
         self.bokehserver = False
         self._points_to_trend = weakref.WeakValueDictionary()
 
+        INFLUXDB = influxdb_if_available(db_params['version'])[0] if db_params is not None else False
         # Activate InfluxDB if params are available
         if db_params and INFLUXDB:
             try:
@@ -315,7 +317,7 @@ class Lite(
         except KeyError:
             pass
 
-    def add_trend(self, point_to_trend: t.Union[Point, TrendLog, VirtualPoint]) -> None:
+    def add_trend(self, point_to_trend: t.Union[Point, _TrendLog, VirtualPoint]) -> None:
         """
         Add point to the list of histories that will be handled by Bokeh
 
@@ -324,7 +326,7 @@ class Lite(
         """
         if (
             isinstance(point_to_trend, Point)
-            or isinstance(point_to_trend, TrendLog)
+            or isinstance(point_to_trend, _TrendLog)
             or isinstance(point_to_trend, VirtualPoint)
         ):
             oid = id(point_to_trend)
@@ -333,7 +335,7 @@ class Lite(
             raise TypeError("Please provide point containing history")
 
     def remove_trend(
-        self, point_to_remove: t.Union[Point, TrendLog, VirtualPoint]
+        self, point_to_remove: t.Union[Point, _TrendLog, VirtualPoint]
     ) -> None:
         """
         Remove point from the list of histories that will be handled by Bokeh
@@ -343,7 +345,7 @@ class Lite(
         """
         if (
             isinstance(point_to_remove, Point)
-            or isinstance(point_to_remove, TrendLog)
+            or isinstance(point_to_remove, _TrendLog)
             or isinstance(point_to_remove, VirtualPoint)
         ):
             oid = id(point_to_remove)
@@ -358,7 +360,7 @@ class Lite(
 
     async def _devices(
         self, _return_list: bool = False
-    ) -> t.List[t.Tuple[str, str, str, int]]:
+    ) -> t.List[t.Tuple[str, str, int, str, t.Set[int]]]:
         """
         This property will create a good looking table of all the discovered devices
         seen on the network.
@@ -367,31 +369,26 @@ class Lite(
         manufacturer, etc and in big network, this could be a long process.
         """
 
-        lst = []
+        lst: t.List[t.Tuple[str, str, int, str, t.Set[int]]] = []
         if self.discoveredDevices is not None:
             for k, v in self.discoveredDevices.items():
-                objid, device_address, network_number, vendor_id, vendor_name = (
-                    v["object_instance"],
-                    v["address"],
-                    v["network_number"],
-                    v["vendor_id"],
-                    v["vendor_name"],
-                )
-                devId = objid[1]
+                object, instance = v["object_instance"]
+                device_address = v["address"]
+                network_number = v["network_number"]
                 try:
                     deviceName, vendorName = await self.readMultiple(
-                        f"{device_address} device {devId} objectName vendorName"
+                        f"{device_address} {object} {instance} objectName vendorName"
                     )
                 except (UnrecognizedService, ValueError):
                     self._log.warning(
-                        f"Unrecognized service for {devId} | {device_address}"
+                        f"Unrecognized service for {object} {instance} | {device_address}"
                     )
                     try:
                         deviceName = await self.read(
-                            f"{device_address} device {devId} objectName"
+                            f"{device_address} {object} {instance} objectName"
                         )
                         vendorName = await self.read(
-                            f"{device_address} device {devId} vendorName"
+                            f"{device_address} {object} {instance} vendorName"
                         )
                     except NoResponseFromController:
                         self.log(f"No response from {k}", level="warning")
@@ -399,9 +396,7 @@ class Lite(
                 except (NoResponseFromController, Timeout):
                     self.log(f"No response from {k}", level="warning")
                     continue
-                lst.append(
-                    (deviceName, vendorName, devId, device_address, network_number)
-                )
+                lst.append((str(deviceName), str(vendorName), instance, device_address, network_number))
             if RICH:
                 console = Console()
                 table = Table(show_header=True, header_style="bold magenta")
@@ -421,7 +416,8 @@ class Lite(
                     )
                 console.print(table)
         if _return_list:
-            return lst  # type: ignore[return-value]
+            return lst
+        return []
 
     @property
     def trends(self) -> t.List[t.Any]:
@@ -437,8 +433,8 @@ class Lite(
         """
         return Task.tasks
 
-    def disconnect(self) -> None:
-        asyncio.create_task(self._disconnect())
+    def disconnect(self) -> asyncio.Task:
+        return asyncio.create_task(self._disconnect())
 
     async def _disconnect(self) -> None:
         self.log("Disconnecting", level="debug")
@@ -504,8 +500,8 @@ class Lite(
 
     def cov(
         self,
-        address: str = None,
-        objectID: t.Tuple[str, int] = None,
+        address: str,
+        objectID: t.Tuple[str, int],
         lifetime: int = 900,
         confirmed: bool = False,
         callback: t.Optional[
