@@ -146,7 +146,7 @@ Example query (v3, single table with a name provided in params)::
     FROM myTable
     WHERE name IN ('${Names:csv}') AND time > $__timeFrom and time < $__timeTo
 
-..Note
+.. note:: 
     Here, Names would be a variable created in Grafana, see below. Dashes are critical to escape special characters.
 
 Compatibility note
