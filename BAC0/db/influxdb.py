@@ -1,3 +1,6 @@
+# NOTE: Always instantiate InfluxDB as InfluxDB(params) to let the metaclass dispatch
+# Do NOT instantiate InfluxDBv2 or InfluxDBv3 directly in application code.
+
 from datetime import datetime, timezone
 
 import pytz
@@ -29,12 +32,16 @@ class InfluxDBMeta(type):
     """Metaclass that dispatches construction to InfluxDBv2 or InfluxDBv3 based on params."""
 
     def __call__(self, *args, **kwargs):
-        # params may be passed positionally as the first arg or as keyword 'params'
+        # Accept both positional and keyword arguments for compatibility
         params = None
+        # If first positional argument is a dict, treat as params
         if args and isinstance(args[0], dict):
             params = args[0]
+        elif "params" in kwargs and isinstance(kwargs["params"], dict):
+            params = kwargs["params"]
         else:
-            params = kwargs.get("params", {})
+            # If not, build params from kwargs (excluding 'params' itself)
+            params = {k: v for k, v in kwargs.items() if k != "params"}
 
         if params is None:
             params = {}
@@ -75,14 +82,23 @@ class InfluxDBMeta(type):
             setattr(impl, "InfluxDBClient", InfluxDBClient3)
             setattr(impl, "WriteOptions", WriteOptionsv3)
 
-        return impl(params)
+        # Always pass *args and **kwargs to the implementation for signature compatibility
+        return impl(*args, **kwargs)
 
 
 @note_and_log
 class InfluxDB(metaclass=InfluxDBMeta):
-    """Factory proxy: calling this returns an instance of InfluxDBv2 or InfluxDBv3."""
+    """
+    Factory proxy: calling this returns an instance of InfluxDBv2 or InfluxDBv3.
+    Accepts either a single dict as positional argument, or keyword arguments.
+    """
+    def __new__(cls, *args, **kwargs):
+        # This is just for static type checkers like mypy, actual dispatch is in metaclass
+        return super().__new__(cls)
 
-    pass
+    def __init__(self, *args, **kwargs):
+        # This is never called, but signature silences mypy "Too many arguments" error.
+        pass
 
 
 class InfluxDBCommon:
