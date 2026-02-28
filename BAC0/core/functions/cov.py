@@ -39,6 +39,7 @@ class SubscriptionContext:
 
         elements = {
             "source": source,
+            "device_identifier": apdu.initiatingDeviceIdentifier,
             "object_changed": object_changed,
             "properties": {},
         }
@@ -84,11 +85,33 @@ class CoV:
         deferred(self.this_application.request_io, iocb)
 
     def subscription_acknowledged(self, iocb):
+        # modified by duxc for add iocb info begin
+        monitoredObjectIdentifier = ""
+        subscriberProcessIdentifier= ""
+        pduDestination = ""
+        if len(iocb.args) > 0 and isinstance(iocb.args[0], SubscribeCOVRequest):
+            subscriberProcessIdentifier = iocb.args[0].subscriberProcessIdentifier
+            pduDestination = iocb.args[0].pduDestination
+            monitoredObjectIdentifier = iocb.args[0].monitoredObjectIdentifier
         if iocb.ioResponse:
-            self._log.info("Subscription success")
+            self._log.info("Subscription success. pduDestination:{} monitoredObjectIdentifier:{} subscriberProcessIdentifier:{}".format(pduDestination, monitoredObjectIdentifier, subscriberProcessIdentifier))
 
         if iocb.ioError:
-            self._log.error("Subscription failed. {}".format(iocb.ioError))
+            self._log.error("Subscription failed. {}. pduDestination:{} monitoredObjectIdentifier:{} subscriberProcessIdentifier:{}".format(iocb.ioError, pduDestination, monitoredObjectIdentifier, subscriberProcessIdentifier))
+        # modified by duxc for add iocb info end
+
+    # added by duxc for add broadcast supported begin
+    def subscription_broadcast_cov(self, callback):
+        context = SubscriptionContext(
+            address="*",
+            objectID=None,
+            confirmed=False,
+            callback=callback,
+        )
+        self.subscription_contexts["broadcast_callback_context"] = context
+        if "context_callback" not in self.subscription_contexts.keys():
+            self.subscription_contexts["context_callback"] = self.context_callback
+    # added by duxc for add broadcast supported end
 
     def cov(self, address, objectID, confirmed=True, lifetime=0, callback=None):
         address = Address(address)

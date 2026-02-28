@@ -147,10 +147,20 @@ class common_mixin:
                 context.callback(elements=elements)
 
     def do_UnconfirmedCOVNotificationRequest(self, apdu):
+        # modified by duxc for add broadcast supported begin
+        dic = apdu.dict_contents()
+        self._log.debug(f'duxc do_UnconfirmedCOVNotificationRequest1 =========================================== apdu.pduSource={apdu.pduSource} dic={dic}')
         # look up the process identifier
         context = self.subscription_contexts.get(apdu.subscriberProcessIdentifier, None)
-        if not context or apdu.pduSource != context.address:
+        # if not context or apdu.pduSource != context.address:
+        #    return
+        if (not context) and (apdu.subscriberProcessIdentifier == 0 or apdu.pduDestination == "*") and "broadcast_callback_context" in self.subscription_contexts.keys():
+            self._log.debug("duxc do_UnconfirmedCOVNotificationRequest2 =========================================== broadcast")
+            context = self.subscription_contexts["broadcast_callback_context"]
+
+        if not context or (context.address != "*" and apdu.pduSource != context.address):
             return
+        # modified by duxc for add broadcast supported end
 
         # now tell the context object
         elements = context.cov_notification(apdu)
