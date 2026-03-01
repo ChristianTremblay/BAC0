@@ -9,13 +9,13 @@ read_mixin.py - Add ReadProperty and ReadPropertyMultiple to a device
 """
 # --- standard Python modules ---
 import typing as t
-
 # --- this application's modules ---
 from ....tasks.Poll import DeviceFastPoll, DeviceNormalPoll
 from ...io.IOExceptions import (
     BufferOverflow,
     NoResponseFromController,
     SegmentationNotSupported,
+    UnknownPropertyError
 )
 from ..Points import BooleanPoint, DateTimePoint, EnumPoint, NumericPoint, StringPoint
 from ..Trends import TrendLog
@@ -375,9 +375,12 @@ class RPObjectsProcessing:
                     f"{point_type} {point_address} units "
                 )
             elif obj_type == "multi":
-                units_state = await self.read_single(
-                    f"{point_type} {point_address} stateText "
-                )
+                try:
+                    units_state = await self.read_single(
+                        f"{point_type} {point_address} stateText "
+                    )
+                except UnknownPropertyError:
+                    units_state = 'not implemented'
             elif obj_type == "loop":
                 units_state = await self.read_single(
                     f"{point_type} {point_address} units "
@@ -608,7 +611,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
 
         if (
             str(command).lower() == "stop"
-            or command == False  # noqa E712
+            or command is False  # noqa E712
             or command == 0
             or delay == 0
         ):

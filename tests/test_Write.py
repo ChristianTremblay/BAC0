@@ -58,7 +58,7 @@ async def test_SimulateAI(network_and_devices):
         # time.sleep(1)
         new_value = test_device["AI"].value #noqa F841
         assert test_device.read_property(("analogInput", 0, "outOfService"))
-        # something is missing so pv can be written to if outOfService == True
+        # something is missing so pv can be written to if outOfService is True
         # assert new_value == 1
 
 

@@ -230,7 +230,7 @@ class Device(SQLMixin):
         """
         iterate over simulated points
 
-        :returns: points if simulated (out_of_service == True)
+        :returns: points if simulated (out_of_service is True)
         :rtype: BAC0.core.devices.Points.Point
         """
         for each in self.points:
