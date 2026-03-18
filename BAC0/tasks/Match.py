@@ -105,18 +105,15 @@ class Match_Value(Task):
         Task.__init__(self, delay=delay, name=name)
 
     async def task(self):
-        if (
-            self.point.properties.device.initialized is False
-            or self.point.properties.device.initialized is None
-            or self.point is None
-        ):
+        initialized = getattr(self.point.properties.device, "initialized", True)
+        if initialized is False or initialized is None or self.point is None:
             raise NotReadyError(f"{self.point} is not ready")
+        value = self.value() if hasattr(self.value, "__call__") else self.value
         try:
             if self.use_last_value:
                 _point = self.point.lastValue
             else:
                 _point = await self.point.value
-            value = self.value() if hasattr(self.value, "__call__") else self.value
             if value != _point:
                 await self.point._set(value=value)
         except (NotReadyError, TypeError) as error:

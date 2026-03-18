@@ -849,6 +849,8 @@ class BooleanPoint(Point):
             history_size=history_size,
         )
         self.properties.units_state = tuple(str(x) for x in units_state)
+        self._key = 0
+        self._boolKey = False
 
     def _trend(self, res):
         if res is not None:
