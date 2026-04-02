@@ -51,7 +51,7 @@ jobs:
         coverage run --source BAC0 -m pytest -v
         coverage report
     - name: Upload coverage data to coveralls.io
-      if: matrix.python-version == '3.12'
+      if: matrix.python-version == '3.14'
       run: coveralls
       env:
         GITHUB_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
