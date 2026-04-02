@@ -722,14 +722,21 @@ class ReadProperty:
         return value
 
     async def read_priority_array(self, addr, obj, obj_instance) -> t.List:
-        pa = await self.read(f"{addr} {obj}:{obj_instance} priorityArray")
-        res = [pa]
-        for each in range(1, 17):
-            _pa = pa[each]  # type: ignore[index]
-            for k, v in _pa.__dict__.items():
-                if v is not None:
-                    res.append(v)
-        return res
+        res = await self.read(f"{addr} {obj}:{obj_instance} priorityArray")
+
+        priority_array = []
+        for i, each in enumerate(res):
+            _t = each.__dict__["_choice"]
+            val = each.__dict__[_t]
+            priority_array.append(
+                {
+                    "priority": i + 1,
+                    "priorityValue": each,
+                    "value": val,
+                    "choice": _t,
+                }
+            )
+        return priority_array
 
 
 def find_reason(apdu):
