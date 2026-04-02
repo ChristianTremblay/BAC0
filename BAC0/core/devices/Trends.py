@@ -103,7 +103,7 @@ class _TrendLog(TrendLogProperties):
                 self.properties.statusFlags,
                 self.properties.log_interval,
                 ) = await self.properties.device.properties.network.readMultiple(
-                    "{addr} trendLog {oid} objectName description recordCount bufferSize totalRecordCount statusFlags logInterval".format(
+                    "{addr} trendLog:{oid} objectName description recordCount bufferSize totalRecordCount statusFlags logInterval".format(
                             addr=self.properties.device.properties.address,
                             oid=str(self.properties.oid),
                             )
@@ -115,7 +115,7 @@ class _TrendLog(TrendLogProperties):
     async def _total_record_count(self) -> int:
         self.properties.total_record_count = (
             await self.properties.device.properties.network.read(
-                    "{addr} trendLog {oid} totalRecordCount".format(
+                    "{addr} trendLog:{oid} totalRecordCount".format(
                             addr=self.properties.device.properties.address,
                             oid=str(self.properties.oid),
                             )
@@ -137,7 +137,7 @@ class _TrendLog(TrendLogProperties):
         for each in range(steps):
             range_params = ("s", _from, Date("1979-01-01"), Time("00:00"), RECORDS)
             _chunk = await self.properties.device.properties.network.readRange(
-                    "{} trendLog {} logBuffer".format(
+                    "{} trendLog:{} logBuffer".format(
                             self.properties.device.properties.address, str(self.properties.oid)
                             ),
                     range_params=range_params,
@@ -210,7 +210,7 @@ class _TrendLog(TrendLogProperties):
             if not self.properties.log_device_object_property:
                 self.properties.log_device_object_property = (
                     await self.properties.device.properties.network.read(
-                            "{addr} trendLog {oid} logDeviceObjectProperty".format(
+                            "{addr} trendLog:{oid} logDeviceObjectProperty".format(
                                     addr=self.properties.device.properties.address,
                                     oid=str(self.properties.oid),
                                     )

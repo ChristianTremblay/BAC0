@@ -154,7 +154,7 @@ class Schedule:
                 priority,
                 presentValue,
             ) = await self.readMultiple(
-                "{} schedule {} weeklySchedule listOfObjectPropertyReferences reliability priorityForWriting presentValue".format(
+                "{} schedule:{} weeklySchedule listOfObjectPropertyReferences reliability priorityForWriting presentValue".format(
                     address, schedule_instance
                 )
             )
@@ -162,7 +162,7 @@ class Schedule:
         except Exception:
             # Read Multiple not supported... try single prop read
             def _read(prop):
-                return self.read(f"{address} schedule {schedule_instance} {prop}")
+                return self.read(f"{address} schedule:{schedule_instance} {prop}")
 
             try:
                 _schedule = _read("weeklySchedule")
@@ -185,7 +185,7 @@ class Schedule:
                 _state_text = ["inactive", "active"]
             elif "multi" in str(obj_type):
                 _state_text = await self.read(
-                    f"{address} {obj_type} {obj_instance} stateText"
+                    f"{address} {obj_type}:{obj_instance} stateText"
                 )
             elif "analog" in str(obj_type):
                 _state_text = "analog"
@@ -195,9 +195,7 @@ class Schedule:
             ]
             schedule["references_names"] = [
                 await self.read(
-                    "{} {} {} objectName".format(
-                        address, each.objectIdentifier[0], each.objectIdentifier[1]
-                    )
+                    f"{address} {each.objectIdentifier[0]}:{each.objectIdentifier[1]} objectName"
                 )
                 for each in object_references
             ]

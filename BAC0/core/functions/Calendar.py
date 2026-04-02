@@ -122,7 +122,7 @@ class Calendar:
 
         try:
             dateList_object = await self.read(
-                f"{address} calendar {calendar_instance} dateList"
+                f"{address} calendar:{calendar_instance} dateList"
             )
             dict_calendar = self.decode_dateList(dateList_object)
         except Exception as error:

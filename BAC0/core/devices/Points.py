@@ -142,7 +142,7 @@ class Point:
 
         try:
             res = await self.properties.device.properties.network.read(
-                "{} {} {} presentValue".format(
+                "{} {}:{} presentValue".format(
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
@@ -162,7 +162,7 @@ class Point:
         if self.properties.priority_array is not False:
             try:
                 res = await self.properties.device.properties.network.read(
-                    "{} {} {} priorityArray".format(
+                    "{} {}:{} priorityArray".format(
                         self.properties.device.properties.address,
                         self.properties.type,
                         str(self.properties.address),
@@ -189,7 +189,7 @@ class Point:
     async def read_property(self, prop):
         try:
             return await self.properties.device.properties.network.read(
-                "{} {} {} {}".format(
+                "{} {}:{} {}".format(
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
@@ -209,7 +209,7 @@ class Point:
         """
         try:
             res = await self.properties.device.properties.network.readMultiple(
-                "{} {} {} all".format(
+                "{} {}:{} all".format(
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),

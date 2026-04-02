@@ -289,7 +289,7 @@ class Lite(
             else:
                 device_id = each.properties.device_id
                 addr = each.properties.address
-                name = await self.read(f"{addr} device {device_id} objectName")
+                name = await self.read(f"{addr} device:{device_id} objectName")
                 if name == each.properties.name:
                     each.properties.ping_failures = 0
                     self._log.info(
@@ -377,18 +377,18 @@ class Lite(
                 network_number = v["network_number"]
                 try:
                     deviceName, vendorName = await self.readMultiple(
-                        f"{device_address} {object} {instance} objectName vendorName"
+                        f"{device_address} {object}:{instance} objectName vendorName"
                     )
                 except (UnrecognizedService, ValueError):
                     self._log.warning(
-                        f"Unrecognized service for {object} {instance} | {device_address}"
+                        f"Unrecognized service for {object}:{instance} | {device_address}"
                     )
                     try:
                         deviceName = await self.read(
-                            f"{device_address} {object} {instance} objectName"
+                            f"{device_address} {object}:{instance} objectName"
                         )
                         vendorName = await self.read(
-                            f"{device_address} {object} {instance} vendorName"
+                            f"{device_address} {object}:{instance} vendorName"
                         )
                     except NoResponseFromController:
                         self.log(f"No response from {k}", level="warning")
