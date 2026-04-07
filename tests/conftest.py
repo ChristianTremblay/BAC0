@@ -7,7 +7,7 @@ Test Bacnet communication with another device
 
 import asyncio
 
-import pytest
+import pytest_asyncio
 
 import BAC0
 from BAC0.core.devices.local.factory import (
@@ -76,29 +76,7 @@ def add_points(qty_per_type, device):
     _new_objects.add_objects_to_application(device)
 
 
-class NetworkAndDevices:
-    def __init__(
-        self, loop, bacnet, device_app, device30_app, test_device, test_device_30
-    ):
-        self.loop = loop
-        self.bacnet = bacnet
-        self.device_app = device_app
-        self.device30_app = device30_app
-        self.test_device = test_device
-        self.test_device_30 = test_device_30
-
-    def __repr__(self):
-        return "NetworkAndDevices({!r}, {!r}, {!r}, {!r}, {!r}, {!r})".format(
-            self.loop,
-            self.bacnet,
-            self.device_app,
-            self.device30_app,
-            self.test_device,
-            self.test_device_30,
-        )
-
-
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def network_and_devices():
     global loop
     global bacnet
@@ -147,9 +125,13 @@ async def network_and_devices():
                 test_device_30 = await BAC0.device(
                     "{}:47810".format(ip_30), boid_30, bacnet, poll=0
                 )
-                # t1 = test_device.creation_task
-                # t2 = test_device_30.creation_task
-                # await asyncio.gather(t1, t2)
+                pending_init_tasks = []
+                if test_device.creation_task is not None:
+                    pending_init_tasks.append(test_device.creation_task)
+                if test_device_30.creation_task is not None:
+                    pending_init_tasks.append(test_device_30.creation_task)
+                if pending_init_tasks:
+                    await asyncio.gather(*pending_init_tasks)
                 # Wait for the instances to be initialized
                 net_and_dev = (
                     loop,
