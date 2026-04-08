@@ -202,6 +202,8 @@ class ReadProperty:
                 else:
 
                     raise UnknownPropertyError(f"Unknown property {args}")
+            elif 'no-response' in str(err.reason):
+                raise NoResponseFromController(f"No response from controller for {args}")
             else:
                 self.log(f"Error : {err}", level="error")
         except ObjectError:
@@ -299,7 +301,7 @@ class ReadProperty:
         except ErrorRejectAbortNack as err:
             # construction error
             response = err
-            self._log.exception(f"exception: {err.reason}")
+            self.log(f"exception: {err.reason}", level='debug')
             if "segmentation-not-supported" in str(err.reason):
                 raise SegmentationNotSupported
             if "unrecognized-service" in str(err.reason):
@@ -314,12 +316,7 @@ class ReadProperty:
                 # values.append("")  # type: ignore[arg-type]
                 # return values
                 # try again
-                try:
-                    response = await _app.read_property_multiple(
-                        address, parameter_list
-                    )
-                except ErrorRejectAbortNack as err:
-                    raise err
+                raise NoResponseFromController(f"No response from controller for {args}")
 
         if not isinstance(response, ErrorRejectAbortNack):
             """
@@ -661,13 +658,13 @@ class ReadProperty:
             myIPAddr = '192.168.1.10/24'
             bacnet = BAC0.connect(ip=myIPAddr)
 
-            log_records = bacnet.readRange('2:5 trendLog 1 logBuffer', range_params=('t', None, '2023-05-12', '12:00:00', 2))
+            log_records = bacnet.readRange('2:5 trendLog:1 logBuffer', range_params=('t', None, '2023-05-12', '12:00:00', 2))
             for log_record in log_records:
               print(Date(log_record.timestamp.date), Time(log_record.timestamp.time), log_record.logDatum.realValue)
             # Date(2023-5-12 fri) Time(12:10:00.00) 130.331
             # Date(2023-5-12 fri) Time(12:20:00.00) 134.123
 
-            log_records = bacnet.readRange('2:5 trendLog 1 logBuffer', range_params=('t', None, '2023-05-12', '12:00:00', -2))
+            log_records = bacnet.readRange('2:5 trendLog:1 logBuffer', range_params=('t', None, '2023-05-12', '12:00:00', -2))
             for log_record in log_records:
               print(Date(log_record.timestamp.date), Time(log_record.timestamp.time), log_record.logDatum.realValue)
             # Date(2023-5-12 fri) Time(11:40:00.00) 123.4
@@ -725,14 +722,21 @@ class ReadProperty:
         return value
 
     async def read_priority_array(self, addr, obj, obj_instance) -> t.List:
-        pa = await self.read(f"{addr} {obj} {obj_instance} priorityArray")
-        res = [pa]
-        for each in range(1, 17):
-            _pa = pa[each]  # type: ignore[index]
-            for k, v in _pa.__dict__.items():
-                if v is not None:
-                    res.append(v)
-        return res
+        res = await self.read(f"{addr} {obj}:{obj_instance} priorityArray")
+
+        priority_array = []
+        for i, each in enumerate(res):
+            _t = each.__dict__["_choice"]
+            val = each.__dict__[_t]
+            priority_array.append(
+                {
+                    "priority": i + 1,
+                    "priorityValue": each,
+                    "value": val,
+                    "choice": _t,
+                }
+            )
+        return priority_array
 
 
 def find_reason(apdu):

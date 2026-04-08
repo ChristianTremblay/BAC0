@@ -6,6 +6,7 @@ logging feature at the same time.
 Goal is to be able to access quickly to important informations for
 the web interface.
 """
+
 import inspect
 import logging
 import os
@@ -15,50 +16,66 @@ import typing as t
 # --- standard Python modules ---
 from collections import namedtuple
 from datetime import datetime
-from logging import FileHandler, Logger
+from logging import Logger
 from os.path import expanduser, join
 
 # --- 3rd party modules ---
 from ...core.utils.lookfordependency import rich_if_available, pandas_if_available
+from weakref import WeakSet  # Avoid lingering refs to loggers
+from logging.handlers import RotatingFileHandler  # Safer file logging
 
 RICH, rich = rich_if_available()
 if RICH:
     from rich.logging import RichHandler
+    from rich.console import Console  # Use Console bound to desired stream
+
+# Consistent handler names
+FILE_HANDLER_NAME = "file_handler"
+STDERR_HANDLER_NAME = "stderr"
+STDOUT_HANDLER_NAME = "stdout"
 
 _PANDAS, pd, _, _ = pandas_if_available()
 
 
 class LogList:
-    LOGGERS: t.List[Logger] = []
+    # Keep weak references to avoid memory leaks/duplicates on reloads
+    LOGGERS: t.MutableSet[Logger] = WeakSet()
 
 
 def convert_level(level):
-    if not level:
+    if level is None:
         return None
-    _valid_levels = [
-        logging.DEBUG,
-        logging.INFO,
-        logging.WARNING,
-        logging.ERROR,
-        logging.CRITICAL,
-    ]
-    if level in _valid_levels:
+    # Accept ints directly
+    if isinstance(level, int):
         return level
-    if level.lower() == "info":
-        return logging.INFO
-    elif level.lower() == "debug":
-        return logging.DEBUG
-    elif level.lower() == "warning":
-        return logging.WARNING
-    elif level.lower() == "error":
-        return logging.ERROR
-    elif level.lower() == "critical":
-        return logging.CRITICAL
-    raise ValueError(f"Wrong log level use one of the following : {_valid_levels}")
+    # Accept strings and common aliases
+    if isinstance(level, str):
+        lv = level.strip().lower()
+        aliases = {
+            "debug": logging.DEBUG,
+            "info": logging.INFO,
+            "warning": logging.WARNING,
+            "warn": logging.WARNING,
+            "error": logging.ERROR,
+            "critical": logging.CRITICAL,
+            "fatal": logging.CRITICAL,
+        }
+        if lv in aliases:
+            return aliases[lv]
+    raise ValueError(
+        "Wrong log level, use one of: debug, info, warning|warn, error, critical|fatal or an int"
+    )
 
 
 def update_log_level(
-    level=None, *, log_file=None, stderr=None, stdout=None, log_this=True
+    level=None,
+    *,
+    log_file=None,
+    stderr=None,
+    stdout=None,
+    logger=None,
+    propagate=None,
+    log_this=True,
 ):
     """
     Typical usage ::
@@ -75,7 +92,11 @@ def update_log_level(
         BAC0.log_level('debug')
         # OR
         BAC0.log_level(file='debug', stdout='info', stderr='critical')
-
+        # Additionally, control the logger level (not just handlers) and propagation:
+        # Set logger level for all BAC0 loggers
+        BAC0.log_level(logger='warning')
+        # Disable propagation to the root logger (useful in Docker)
+        BAC0.log_level(propagate=False)
 
     Giving only one parameter will set file and console to the same level.
     I tend to keep stderr CRITICAL
@@ -84,6 +105,8 @@ def update_log_level(
     update_log_file_lvl = False
     update_stderr_lvl = False
     update_stdout_lvl = False
+    update_logger_lvl = False
+    logger_lvl = None
 
     if level:
         logging.getLogger("BAC0_Root.BAC0.scripts.Base.Base").disabled = False
@@ -91,28 +114,36 @@ def update_log_level(
             log_file_lvl = logging.CRITICAL
             stderr_lvl = logging.CRITICAL
             stdout_lvl = logging.CRITICAL
+            logger_lvl = logging.CRITICAL
             update_log_file_lvl = True
             update_stderr_lvl = True
             update_stdout_lvl = True
+            update_logger_lvl = True
             logging.getLogger("BAC0_Root.BAC0.scripts.Base.Base").disabled = True
         elif level.lower() == "default":
             log_file_lvl = logging.WARNING
             stderr_lvl = logging.CRITICAL
             stdout_lvl = logging.INFO
+            logger_lvl = logging.INFO
             update_log_file_lvl = True
             update_stderr_lvl = True
             update_stdout_lvl = True
+            update_logger_lvl = True
         elif level.lower() == "debug":
             log_file_lvl = logging.DEBUG
             stdout_lvl = logging.INFO
+            logger_lvl = logging.DEBUG
             update_log_file_lvl = True
             update_stdout_lvl = True
+            update_logger_lvl = True
         else:
             level = convert_level(level)
             log_file_lvl = level
             stdout_lvl = level
+            logger_lvl = level
             update_log_file_lvl = True
             update_stdout_lvl = True
+            update_logger_lvl = True
 
     else:
         if log_file:
@@ -124,36 +155,55 @@ def update_log_level(
         if stdout:
             stdout_lvl = convert_level(stdout)
             update_stdout_lvl = True
+        if logger:
+            logger_lvl = convert_level(logger)
+            update_logger_lvl = True
 
     # Choose Base as logger for this task
     if log_this:
         BAC0_logger = logging.getLogger("BAC0_Root.BAC0.scripts.Base.Base")
 
     for each in LogList.LOGGERS:
+        if update_logger_lvl:
+            if logger_lvl is not None:
+                each.setLevel(logger_lvl)
+                if log_this:
+                    BAC0_logger.warning(
+                        "Changed logger level of %s to %s",
+                        each.name,
+                        logging.getLevelName(logger_lvl),
+                    )
+            elif log_this:
+                BAC0_logger.warning(
+                    "Requested logger level change for %s but level was None", each.name
+                )
+        if propagate is not None:
+            each.propagate = bool(propagate)
+            if log_this:
+                BAC0_logger.warning(
+                    "Set propagate=%s for %s", each.propagate, each.name
+                )
         for handler in each.handlers:
-            if update_log_file_lvl and handler.get_name() == "file_handler":
+            if update_log_file_lvl and handler.get_name() == FILE_HANDLER_NAME:
                 handler.setLevel(log_file_lvl)
                 if log_this:
                     BAC0_logger.warning(
-                        "Changed log level of file to {}".format(
-                            logging.getLevelName(log_file_lvl)
-                        )
+                        "Changed handler 'file' level to %s",
+                        logging.getLevelName(log_file_lvl),
                     )
-            elif update_stdout_lvl and handler.get_name() == "stdout":
+            elif update_stdout_lvl and handler.get_name() == STDOUT_HANDLER_NAME:
                 handler.setLevel(stdout_lvl)
                 if log_this:
                     BAC0_logger.warning(
-                        "Changed log level of console stdout to {}".format(
-                            logging.getLevelName(stdout_lvl)
-                        )
+                        "Changed handler 'stdout' level to %s",
+                        logging.getLevelName(stdout_lvl),
                     )
-            elif update_stderr_lvl and handler.get_name() == "stderr":
+            elif update_stderr_lvl and handler.get_name() == STDERR_HANDLER_NAME:
                 handler.setLevel(stderr_lvl)
                 if log_this:
                     BAC0_logger.warning(
-                        "Changed log level of console stderr to {}".format(
-                            logging.getLevelName(stderr_lvl)
-                        )
+                        "Changed handler 'stderr' level to %s",
+                        logging.getLevelName(stderr_lvl),
                     )
 
 
@@ -187,23 +237,27 @@ def note_and_log(cls):
 
     # Set level to debug so filter is done by handler
     cls._log.setLevel(logging.DEBUG)
+    # Default to no propagation to avoid duplicate logs (e.g., in Docker)
+    cls._log.propagate = False
 
     # Console Handler
     if RICH:
-        ch: logging.Handler = RichHandler()
-        ch2: logging.Handler = RichHandler()
+        # Keep stderr handler on stderr
+        ch: logging.Handler = RichHandler(console=Console(file=sys.stderr))
+        # Bind stdout handler to stdout
+        ch2: logging.Handler = RichHandler(console=Console(file=sys.stdout))
     else:
         ch = logging.StreamHandler(sys.stderr)
         ch2 = logging.StreamHandler(sys.stdout)
 
-    ch.set_name("stderr")
+    ch.set_name(STDERR_HANDLER_NAME)
     ch.setLevel(logging.CRITICAL)
-    ch2.set_name("stdout")
+    ch2.set_name(STDOUT_HANDLER_NAME)
     ch2.setLevel(console_level)
 
     formatter = logging.Formatter("{asctime} - {levelname:<8}| {message}", style="{")
 
-    # File Handler
+    # File Handler (rotating, UTF-8, delayed open)
     _PERMISSION_TO_WRITE = True
     logUserPath = expanduser("~")
     logSaveFilePath = join(logUserPath, ".BAC0")
@@ -212,11 +266,12 @@ def note_and_log(cls):
     try:
         if not os.path.exists(logSaveFilePath):
             os.makedirs(logSaveFilePath)
-        fh = FileHandler(logFile)
-        fh.set_name("file_handler")
+        fh = RotatingFileHandler(
+            logFile, maxBytes=5_000_000, backupCount=3, encoding="utf-8", delay=True
+        )
+        fh.set_name(FILE_HANDLER_NAME)
         fh.setLevel(file_level)
         fh.setFormatter(formatter)
-
     except OSError:
         _PERMISSION_TO_WRITE = False
 
@@ -229,7 +284,8 @@ def note_and_log(cls):
         cls._log.addHandler(ch)
         cls._log.addHandler(ch2)
 
-    LogList.LOGGERS.append(cls._log)
+    # Track logger without preventing GC
+    LogList.LOGGERS.add(cls._log)
 
     def log_title(self, title, args=None, width=35):
         cls._log.debug("")
@@ -280,7 +336,7 @@ def note_and_log(cls):
         cls._notes.timestamp.append(datetime.now().astimezone())
         cls._notes.notes.append(note)
         if log:
-            cls.log(level, note)
+            self.log(note, level=level)
 
     @property
     def notes(self):

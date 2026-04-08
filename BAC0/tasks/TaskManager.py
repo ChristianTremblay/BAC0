@@ -81,6 +81,10 @@ class Task(object):
         delay: float = 0,
         minimum_delay: float = 5,
     ):
+        if name in Task.tasks:
+            self._log.warning(f"Task with name {name} already exists, stopping it before creating new one")
+            Task[name].stop()
+
         # delay = 0 -> one shot
         self.id: int = id(self)
         self.args: t.Any = None
@@ -222,6 +226,12 @@ class Task(object):
     def __lt__(self, other):
         # list sort use __lt__... little cheat to reverse list already
         return self.next_execution > other.next_execution
+    
+    def __getitems__(self, key:str=None) -> "Task":
+        for each in Task.tasks:
+            if each.name == key:
+                return each
+
 
     def __eq__(self, other):
         # list remove use __eq__... so compare with id

@@ -142,7 +142,7 @@ class Point:
 
         try:
             res = await self.properties.device.properties.network.read(
-                "{} {} {} presentValue".format(
+                "{} {}:{} presentValue".format(
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
@@ -162,7 +162,7 @@ class Point:
         if self.properties.priority_array is not False:
             try:
                 res = await self.properties.device.properties.network.read(
-                    "{} {} {} priorityArray".format(
+                    "{} {}:{} priorityArray".format(
                         self.properties.device.properties.address,
                         self.properties.type,
                         str(self.properties.address),
@@ -189,7 +189,7 @@ class Point:
     async def read_property(self, prop):
         try:
             return await self.properties.device.properties.network.read(
-                "{} {} {} {}".format(
+                "{} {}:{} {}".format(
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
@@ -209,7 +209,7 @@ class Point:
         """
         try:
             res = await self.properties.device.properties.network.readMultiple(
-                "{} {} {} all".format(
+                "{} {}:{} all".format(
                     self.properties.device.properties.address,
                     self.properties.type,
                     str(self.properties.address),
@@ -302,7 +302,7 @@ class Point:
             last_val_clean = None if len(last_val) == 0 else last_val.iloc[-1]
             return last_val_clean
         else:
-            return None if len(self._history.value) == 0 else self._history.value.iloc[-1]
+            return None if len(self._history.value) == 0 else self._history.value[-1]
 
     @property
     def lastTimestamp(self):
@@ -849,6 +849,8 @@ class BooleanPoint(Point):
             history_size=history_size,
         )
         self.properties.units_state = tuple(str(x) for x in units_state)
+        self._key = 0
+        self._boolKey = False
 
     def _trend(self, res):
         if res is not None:

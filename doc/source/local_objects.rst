@@ -64,20 +64,20 @@ Minimal example::
     async def main():
         async with BAC0.lite(deviceId=1234, port=47808, localObjName="MyDevice") as dev:
             # Declare objects (units via property strings)
-            analog_input(name="TW1", description="Water temperature 1", properties={"units": "degreesCelsius"})
-            binary_output(name="Night", description="Day/Night flag", properties={"inactiveText": "day", "activeText": "night"})
+            new_objects = analog_input(name="TW1", description="Water temperature 1", properties={"units": "degreesCelsius"})
+            new_objects = binary_output(name="Night", description="Day/Night flag", properties={"inactiveText": "day", "activeText": "night"})
 
             # State text for multistate
             lang_states = make_state_text(["en", "fr"])
-            multistate_value(name="Language", description="Language for requests", presentValue=1, properties={"stateText": lang_states})
+            new_objects = multistate_value(name="Language", description="Language for requests", presentValue=1, properties={"stateText": lang_states})
 
             # Commandable string
-            character_string(name="Application_Status", description="Health/status", presentValue="Normal")
+            new_objects = character_string(name="Application_Status", description="Health/status", presentValue="Normal")
 
             # Push all declared objects into the running application
             # (call add_objects_to_application on any created model)
-            _ = character_string  # to emphasize any model can be used for the call
-            _.add_objects_to_application(dev)
+            # _ = character_string  # to emphasize any model can be used for the call
+            new_objects.add_objects_to_application(dev)
 
             # Update values at runtime
             dev["TW1"].presentValue = 21.5

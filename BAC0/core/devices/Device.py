@@ -8,6 +8,7 @@
 Device.py - describe a BACnet Device
 
 """
+
 import asyncio
 import logging
 import os.path
@@ -230,7 +231,7 @@ class Device(SQLMixin):
         """
         iterate over simulated points
 
-        :returns: points if simulated (out_of_service == True)
+        :returns: points if simulated (out_of_service is True)
         :rtype: BAC0.core.devices.Points.Point
         """
         for each in self.points:
@@ -244,9 +245,7 @@ class Device(SQLMixin):
         """
         raise NotImplementedError()
 
-    def __getitem__(
-        self, point_name: Union[str, List[str]]
-    ) -> Point:
+    def __getitem__(self, point_name: Union[str, List[str]]) -> Point:
         """
         Get a point from its name.
         If a list is passed - a dataframe is returned.
@@ -516,7 +515,7 @@ class DeviceConnected(Device):
         """
         try:
             self.properties.pss.value = await self.properties.network.read(
-                "{} device {} protocolServicesSupported".format(
+                "{} device:{} protocolServicesSupported".format(
                     self.properties.address, self.properties.device_id
                 )
             )
@@ -532,13 +531,11 @@ class DeviceConnected(Device):
 
         self.properties.name = str(
             await self.properties.network.read(
-                f"{self.properties.address} device {self.properties.device_id} objectName"
+                f"{self.properties.address} device:{self.properties.device_id} objectName"
             )
         )
         self.properties.vendor_id = await self.properties.network.read(
-            "{} device {} vendorIdentifier".format(
-                self.properties.address, self.properties.device_id
-            )
+            f"{self.properties.address} device:{self.properties.device_id} vendorIdentifier"
         )
         self._log.info(
             "Device {}:[{}] found... building points list".format(
@@ -744,7 +741,7 @@ class DeviceConnected(Device):
                 "Please provide property using tuple with object, instance and property"
             )
         try:
-            request = f"{self.properties.address} {_obj} {_instance} {_prop}"
+            request = f"{self.properties.address} {_obj}:{_instance} {_prop}"
             val = await self.properties.network.read(
                 request, vendor_id=self.properties.vendor_id
             )
@@ -782,7 +779,7 @@ class DeviceConnected(Device):
         """
         try:
             res = await self.properties.network.readMultiple(
-                "{} device {} all".format(
+                "{} device:{} all".format(
                     self.properties.address, str(self.properties.device_id)
                 ),
                 vendor_id=self.properties.vendor_id,
@@ -890,9 +887,7 @@ class DeviceDisconnected(Device):
         else:
             try:
                 segmentation = await self.properties.network.read(
-                    "{} device {} segmentationSupported".format(
-                        self.properties.address, self.properties.device_id
-                    )
+                    f"{self.properties.address} device:{self.properties.device_id} segmentationSupported"
                 )
 
                 self.segmentation_supported = (
@@ -1026,15 +1021,11 @@ class DeviceFromDB(DeviceConnected):
             self.properties.network = network
             try:
                 name = await self.properties.network.read(
-                    "{} device {} objectName".format(
-                        self.properties.address, self.properties.device_id
-                    )
+                    f"{self.properties.address} device:{self.properties.device_id} objectName"
                 )
 
                 segmentation = await self.properties.network.read(
-                    "{} device {} segmentationSupported".format(
-                        self.properties.address, self.properties.device_id
-                    )
+                    f"{self.properties.address} device:{self.properties.device_id} segmentationSupported"
                 )
                 segmentation_supported = False if segmentation.numerator == 3 else True
 

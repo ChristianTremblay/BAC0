@@ -561,7 +561,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
 
         if (
             str(command).lower() == "stop"
-            or command == False  # noqa E712
+            or command is False  # noqa E712
             or command == 0
             or delay == 0
         ):

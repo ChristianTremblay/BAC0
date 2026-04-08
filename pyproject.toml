@@ -1,6 +1,6 @@
 [project]
 name = "BAC0"
-version = "2025.09.15"
+version = "2026.04.02"
 description = "BACnet Scripting Framework for testing DDC Controls"
 authors = [{name = "Christian Tremblay", email = "christian.tremblay@servisys.com"}]
 readme = "README.md"
@@ -41,4 +41,5 @@ include = [
 namespaces = false
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"

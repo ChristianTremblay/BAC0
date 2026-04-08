@@ -16,6 +16,7 @@ from ...io.IOExceptions import (
     BufferOverflow,
     NoResponseFromController,
     SegmentationNotSupported,
+    UnknownPropertyError
 )
 from ..Points import BooleanPoint, DateTimePoint, EnumPoint, NumericPoint, StringPoint
 from ..Trends import TrendLog
@@ -127,7 +128,7 @@ class ReadUtilsMixin:
             points.append(point)
 
             str_list.append(
-                f" {point.properties.type} {point.properties.address} {property_identifier}"
+                f" {point.properties.type}:{point.properties.address} {property_identifier}"
             )
             rpm_param = "".join(str_list)
             requests.append(rpm_param)
@@ -141,12 +142,12 @@ class DiscoveryUtilsMixin:
     """
 
     async def read_objects_list(self, custom_object_list=None):
-        if custom_object_list:
-            objList = custom_object_list
+        if custom_object_list is not None:
+            return custom_object_list
         else:
             try:
                 objList = await self.properties.network.read(
-                    "{} device {} objectList".format(
+                    "{} device:{} objectList".format(
                         self.properties.address, self.properties.device_id
                     ),
                     vendor_id=self.properties.vendor_id,
@@ -165,7 +166,7 @@ class DiscoveryUtilsMixin:
             except (SegmentationNotSupported, BufferOverflow):
                 objList = []
                 number_of_objects = await self.properties.network.read(
-                    "{} device {} objectList".format(
+                    "{} device:{} objectList".format(
                         self.properties.address, self.properties.device_id
                     ),
                     arr_index=0,
@@ -175,7 +176,7 @@ class DiscoveryUtilsMixin:
                 for i in range(1, number_of_objects + 1):
                     objList.append(
                         await self.properties.network.read(
-                            "{} device {} objectList".format(
+                            "{} device:{} objectList".format(
                                 self.properties.address, self.properties.device_id
                             ),
                             arr_index=i,
@@ -276,7 +277,7 @@ class RPMObjectsProcessing:
             raise ValueError("Unsupported objectType")
 
         for points, address in retrieve_type(objList, obj_type):
-            request.append(f"{points} {address} {prop_list} ")
+            request.append(f"{points}:{address} {prop_list} ")
 
         def _find_propid_index(key):
             self.log(f"Prop List : {prop_list}", level="debug")
@@ -372,26 +373,29 @@ class RPObjectsProcessing:
 
             if obj_type == "analog":
                 units_state = await self.read_single(
-                    f"{point_type} {point_address} units "
+                    f"{point_type}:{point_address} units "
                 )
             elif obj_type == "multi":
-                units_state = await self.read_single(
-                    f"{point_type} {point_address} stateText "
-                )
+                try:
+                    units_state = await self.read_single(
+                        f"{point_type}:{point_address} stateText "
+                    )
+                except UnknownPropertyError:
+                    units_state = 'not implemented'
             elif obj_type == "loop":
                 units_state = await self.read_single(
-                    f"{point_type} {point_address} units "
+                    f"{point_type}:{point_address} units "
                 )
             elif obj_type == "binary":
                 units_state = (
                     (
                         await self.read_single(
-                            f"{point_type} {point_address} inactiveText "
+                            f"{point_type}:{point_address} inactiveText "
                         )
                     ),
                     (
                         await self.read_single(
-                            f"{point_type} {point_address} activeText "
+                            f"{point_type}:{point_address} activeText "
                         )
                     ),
                 )
@@ -399,7 +403,7 @@ class RPObjectsProcessing:
                 units_state = None
 
             presentValue = await self.read_single(
-                f"{point_type} {point_address} presentValue "
+                f"{point_type}:{point_address} presentValue "
             )
             if (obj_type == "analog" or obj_type == "loop") and presentValue:
                 presentValue = float(presentValue)
@@ -409,10 +413,10 @@ class RPObjectsProcessing:
                     pointType=point_type,
                     pointAddress=point_address,
                     pointName=await self.read_single(
-                        f"{point_type} {point_address} objectName "
+                        f"{point_type}:{point_address} objectName "
                     ),
                     description=await self.read_single(
-                        f"{point_type} {point_address} description "
+                        f"{point_type}:{point_address} description "
                     ),
                     presentValue=presentValue,
                     units_state=units_state,
@@ -454,9 +458,9 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             )
         else:
             if not self.properties.segmentation_supported:
-                points_per_request = 1
+                points_per_request = 1 # safer
 
-            if discover_request[0]:
+            if discover_request[0] is not None:
                 values = []
                 info_length = discover_request[1]
                 big_request = discover_request[0]
@@ -464,6 +468,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                 self.log(f"Length : {info_length}", level="debug")
 
                 for request in batch_requests(big_request, points_per_request):
+                    retry = 0
                     try:
                         request = f"{self.properties.address} {''.join(request)}"
                         self.log(f"RPM_Request: {request} ", level="debug")
@@ -471,6 +476,15 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                             val = await self.properties.network.readMultiple(
                                 request, vendor_id=self.properties.vendor_id
                             )
+                        except NoResponseFromController:
+                            self.log(f"No response from device {self.properties.address} for request {request}. Retrying once.", level="warning")
+                            if retry == 0:
+                                retry += 1
+                                val = await self.properties.network.readMultiple(
+                                    request, vendor_id=self.properties.vendor_id
+                                )
+                            else:
+                                raise
                         except SegmentationNotSupported:
                             raise
                         except ValueError as error:
@@ -518,20 +532,29 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                             values.append(points_info)
                 return values
 
-            else:
+            else: # A normal read multiple request not discovery
                 self.log("Read Multiple", level="debug")
                 big_request = self._rpm_request_by_name(
                     points_list, property_identifier=property_identifier
                 )
                 i = 0
                 for request in batch_requests(big_request[0], points_per_request):
+                    retry = 0
                     try:
                         request = f"{self.properties.address} {''.join(request)}"
                         self.log(request, level="debug")
                         val = await self.properties.network.readMultiple(
                             request, vendor_id=self.properties.vendor_id
                         )
-
+                    except NoResponseFromController:
+                        self.log(f"No response from device {self.properties.address} for request {request}. Retrying once.", level="warning")
+                        if retry == 0:
+                            retry += 1
+                            val = await self.properties.network.readMultiple(
+                                request, vendor_id=self.properties.vendor_id
+                            )
+                        else:
+                            raise
                     except SegmentationNotSupported:
                         self.properties.segmentation_supported = False
                         await self.read_multiple(
@@ -561,6 +584,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
             big_request = self._rpm_request_by_name(points_list)
             i = 0
             for request in batch_requests(big_request[0], points_per_request):
+                retry = 0
                 try:
                     request = f"{self.properties.address} {''.join(request)}"
                     val = await self.properties.network.read(
@@ -570,7 +594,19 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
                     i += len(val)
                     for each in points_values:
                         each[0]._trend(each[1])
-
+                except NoResponseFromController:
+                    self.log(f"No response from device {self.properties.address} for request {request}. Retrying once.", level="warning")
+                    if retry == 0:
+                        retry += 1
+                        val = await self.properties.network.read(
+                            request, vendor_id=self.properties.vendor_id
+                        )
+                        points_values = zip(big_request[1][i : i + len(val)], val)
+                        i += len(val)
+                        for each in points_values:
+                            each[0]._trend(each[1])
+                    else:
+                        raise
                 except KeyError as error:
                     raise Exception(f"Unknown point name : {error}")
 
@@ -608,7 +644,7 @@ class ReadPropertyMultiple(ReadUtilsMixin, DiscoveryUtilsMixin, RPMObjectsProces
 
         if (
             str(command).lower() == "stop"
-            or command == False  # noqa E712
+            or command is False  # noqa E712
             or command == 0
             or delay == 0
         ):
