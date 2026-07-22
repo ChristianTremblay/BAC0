@@ -132,7 +132,7 @@ class Discover:
 
         else:
             msg = (
-                "Global braodacast required"
+                "Global broadcast required"
                 if global_broadcast
                 else "No BACnet network found"
             )
@@ -142,7 +142,7 @@ class Discover:
             )
             if global_broadcast is True:
                 self._log.warning(
-                    "Issuing a global Broadcast whois can create network flood. Use with care."
+                    "Issuing a global broadcast whois can create a network flood. Use with care."
                 )
             else:
                 self.log("Issuing a local broadcast whois request.", level="info")
