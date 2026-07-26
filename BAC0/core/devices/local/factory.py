@@ -146,7 +146,13 @@ class ObjectFactory(object):
                 self.objects[objectName], datatype=_localTrendLogDataType
             )  # this will need to be fed by another process.
         else:
-            self.objects[objectName]._cov_criteria = criteria_type_map[objectType.objectType]
+            try:
+                self.objects[objectName]._cov_criteria = criteria_type_map[objectType.objectType]
+            except KeyError:
+                self.log(
+                    f"Object {objectType} does not support COV, skipping criteria assignment",
+                    level="warning",
+                )
 
     def validate_instance(self, objectType, instance):
         _warning = True

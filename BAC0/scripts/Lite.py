@@ -297,7 +297,7 @@ class Lite(
                             each.properties.name, each.properties.address
                         )
                     )
-                    each.connect(network=self)
+                    await each.connect(network=self)
                     each.poll(delay=each.properties.pollDelay)
 
     @property
