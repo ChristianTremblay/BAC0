@@ -110,13 +110,14 @@ class Base:
         # Register Servisys
         try:
             _BAC0_vendor = VendorInfo(vendorId)
+            _BAC0_vendor.register_object_class(
+                ObjectTypesSupported.networkPort, NetworkPortObject
+            )
+            _BAC0_vendor.register_object_class(ObjectTypesSupported.device, DeviceObject)
         except RuntimeError:
             pass  # we are re-running the script... forgive us
             _BAC0_vendor = get_vendor_info(vendorId)
-        _BAC0_vendor.register_object_class(
-            ObjectTypesSupported.networkPort, NetworkPortObject
-        )
-        _BAC0_vendor.register_object_class(ObjectTypesSupported.device, DeviceObject)
+
 
         self.timehandler = TimeHandler(tz=timezone)
 
