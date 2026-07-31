@@ -205,6 +205,24 @@ class Base:
                 mode = "bbmd"
             else:
                 mode = "normal"
+
+            network_port_cfg = {
+                "ip-address": str(self.localIPAddr),
+                "ip-subnet-mask": str(self.localIPAddr.netmask),
+                "bacnet-ip-udp-port": self.localIPAddr.addrPort,
+                "network-number": None,
+                "bacnet-ip-mode": mode,
+            }
+            if mode == "foreign":
+                network_port_cfg.update(
+                    {
+                        "fd-bbmd-address": sequence_to_json(
+                            HostNPort(self.bbmdAddress)
+                        ),
+                        "fd-subscription-lifetime": self.bbmdTTL,
+                    }
+                )
+
             cfg = {
                 "BAC0": {
                     "bbmdAddress": self.bbmdAddress,
@@ -224,15 +242,7 @@ class Base:
                     # "location": self.location,
                     # "description": self.description
                 },
-                "network-port": {
-                    "ip-address": str(self.localIPAddr),
-                    "ip-subnet-mask": str(self.localIPAddr.netmask),
-                    "bacnet-ip-udp-port": self.localIPAddr.addrPort,
-                    "network-number": None,
-                    "fd-bbmd-address": sequence_to_json(HostNPort(self.bbmdAddress)),
-                    "fd-subscription-lifetime": self.bbmdTTL,
-                    "bacnet-ip-mode": mode,
-                },
+                "network-port": network_port_cfg,
             }
             if mode == "bbmd":
                 # bdt_json_seq = [f"BDTEntry({addr})" for addr in self.bdtable]
